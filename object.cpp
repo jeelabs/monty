@@ -128,7 +128,7 @@ ClassObj::ClassObj (int argc, Value argv[])
     atKey("__name__", DictObj::Set) = argv[1];
     auto fp = new FrameObj (bc, *this);
     fp->enter(argc, argv, this);
-    fp->caller = fp->stack->ctx.flip(fp);
+    fp->caller = fp->ctx->flip(fp);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -145,7 +145,7 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
         auto& bc = (const BytecodeObj&) init.obj();
         auto fp = new FrameObj (bc, *this);
         fp->enter(argc + 1, argv - 1, this);
-        fp->caller = fp->stack->ctx.flip(fp);
+        fp->caller = fp->ctx->flip(fp);
     }
 }
 
@@ -289,29 +289,15 @@ Value BytecodeObj::call (int argc, Value argv[]) const {
     fp->enter(argc, argv);
     if (fp->isCoro())
         return fp;
-    fp->caller = fp->stack->ctx.flip(fp);
+    fp->caller = fp->ctx->flip(fp);
     return Value::nil; // no result yet, this call has only started
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
     auto fp = new FrameObj (*init, *(DictObj*) this); // FIXME loses const
     fp->enter(argc, argv);
-    fp->caller = fp->stack->ctx.flip(fp);
+    fp->caller = fp->ctx->flip(fp);
     return Value::nil; // no result yet, this call has only started
-}
-
-int Stack::extend (int num) {
-    auto n = length();
-    ctx.saveState(); // Context::sp may change due the a realloc in insert
-    insert(n, num);
-    ctx.restoreState();
-    return n;
-}
-
-void Stack::shrink (int num) {
-    ctx.saveState(); // Context::sp may change due the a realloc in remove
-    remove(length() - num, num);
-    ctx.restoreState();
 }
 
 FrameObj::FrameObj (const BytecodeObj& bco)
@@ -326,16 +312,16 @@ FrameObj::FrameObj (const BytecodeObj& bco, DictObj& dp)
 FrameObj::~FrameObj () {
     // TODO see enter(), here too the stack can move, but should be harmless
     if (isCoro())
-        delete stack;
+        delete ctx;
 }
 
 Value FrameObj::next () {
-    stack->ctx.resume(this);
+    ctx->resume(this);
     return Value::nil; // TODO really?
 }
 
 Value* FrameObj::bottom () const {
-    return stack->limit() - bcObj.frameSize();
+    return ctx->limit() - bcObj.frameSize();
 }
 
 void FrameObj::enter (int argc, Value argv[], const Object* r) {
@@ -350,22 +336,44 @@ void FrameObj::enter (int argc, Value argv[], const Object* r) {
 Value FrameObj::leave (Value v) {
     if (result != 0)
         v = result;
-    stack->shrink(bcObj.frameSize());
+    ctx->shrink(bcObj.frameSize());
     if (!isCoro())
         delete this; // TODO always safe, but note that the stack could move
     return v;
 }
 
+volatile uint32_t Context::pending = 0;
+
+VecOf<Value> Context::handlers;
+
+Context::Context () {
+    handlers.set(MAX_HANDLERS, Value::nil); // make sure it has enough slots
+}
+
+int Context::extend (int num) {
+    auto n = length();
+    saveState(); // Context::sp may change due the a realloc in insert
+    insert(n, num);
+    restoreState();
+    return n;
+}
+
+void Context::shrink (int num) {
+    saveState(); // Context::sp may change due the a realloc in remove
+    remove(length() - num, num);
+    restoreState();
+}
+
 Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     // TODO yuck, but FrameObj::enter() needs a stack (too) early on ...
     assert(vm != 0);
-    auto sv = vm->fp != 0 ? vm->fp->stack : 0;
-    fo.stack = sv == 0 || fo.isCoro() ? new Stack (*vm) : sv;
+    auto sv = vm->fp != 0 ? vm->fp->ctx : 0;
+    fo.ctx = sv == 0 || fo.isCoro() ? new Context : sv;
 
     // TODO this is the only (?) place where the stack may be reallocated and
     // since argv points into it, it needs to be relocated when this happens
     int off = sv != 0 ? argv - sv->base() : 0;
-    fo.spOffset = fo.stack->extend(fo.bcObj.frameSize()) - 1;
+    fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
     return sv != 0 ? sv->base() + off : 0;
 }
 
@@ -417,12 +425,22 @@ int Context::setHandler (Value h) {
     return -1;
 }
 
+// TODO - This code still has a strange design quirk: the vm.run() called at
+//  startup is the one which keeps running across coro context switches, by
+//  copying the relevant state to this first instance - it would make much
+//  more sense to have a single global "ctx" (iso "vm") which points to the
+//  currently *running* coro/vm instance. This probably means that the inner
+//  loop in the vm should return, and the outer loop should be static and
+//  resume the proper context/coro/vm instance in every switch. The benefit
+//  will be less state-saving/-restoring, and perhaps faster context switches.
+// TODO - Will need more review to support multiple threads, and even cores.
+
 void Context::saveState () {
     assert(vm != 0);
     auto frame = vm->fp;
     if (frame != 0) {
         frame->savedIp = vm->ip;
-        frame->spOffset = vm->sp - frame->stack->base();
+        frame->spOffset = vm->sp - frame->ctx->base();
     }
 }
 
@@ -430,7 +448,7 @@ void Context::restoreState () {
     assert(vm != 0);
     auto frame = vm->fp;
     vm->ip = frame != 0 ? frame->savedIp : 0;
-    vm->sp = frame != 0 ? frame->stack->base() + frame->spOffset : 0;
+    vm->sp = frame != 0 ? frame->ctx->base() + frame->spOffset : 0;
 }
 
 FrameObj* Context::flip (FrameObj* frame) {
@@ -443,7 +461,7 @@ FrameObj* Context::flip (FrameObj* frame) {
     return fp;
 }
 
-Value Context::pop () {
+Value Context::exit () {
     assert(fp != 0);
     Value v = *sp;
     auto& caller = fp->caller; // TODO messy, fp will change in flip

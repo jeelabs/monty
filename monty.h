@@ -48,7 +48,6 @@ struct SeqObj;    // forward decl
 struct MutSeqObj; // forward decl
 struct ForceObj;  // forward decl
 struct Context;   // forward decl
-struct Stack;     // forward decl
 
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
@@ -463,7 +462,7 @@ struct FrameObj : DictObj {
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
     uint8_t excTop = 0;
-    Stack* stack = 0;
+    Context* ctx = 0;
     DictObj& locals;
 
     FrameObj (const BytecodeObj& bc);
@@ -493,19 +492,13 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
-struct Stack : VecOf<Value> {
-    Context& ctx;
-
-    Stack (Context& vm) : ctx (vm) {}
+struct Context : VecOf<Value> {
+    Value* base () const { return &get(0); }
+    Value* limit () const { return base() + length(); }
 
     int extend (int num);
     void shrink (int num);
 
-    Value* base () const { return &get(0); }
-    Value* limit () const { return base() + length(); }
-};
-
-struct Context {
     static void print (Value);
 
     Value nextPending ();
@@ -515,7 +508,7 @@ struct Context {
     void saveState ();
     void restoreState ();
     FrameObj* flip (FrameObj*);
-    Value pop ();
+    Value exit ();
 
     static void suspend ();
     void resume (FrameObj*);
@@ -523,16 +516,16 @@ struct Context {
     static Value* prepareStack (FrameObj& fo, Value* av);
 
 protected:
-    Context () { handlers.insert(0, MAX_HANDLERS); }
+    Context ();
 
     OpPtrRO ip = 0;
     Value* sp = 0;
     FrameObj* fp = 0;
 
     static Context* vm;
-    volatile uint32_t pending = 0;
+    static volatile uint32_t pending;
 private:
     static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
 
-    VecOf<Value> handlers;
+    static VecOf<Value> handlers;
 };

@@ -267,7 +267,7 @@ private:
 
     //CG1 op
     void op_YieldValue () {
-        Value v = pop();
+        Value v = exit();
         assert(fp != 0 && sp != 0); // can't yield out of main
         //printf("\t"); print(*sp); print(v); printf(" (yield)\n");
         *sp = v;
@@ -276,7 +276,7 @@ private:
     //CG1 op
     void op_ReturnValue () {
         auto ofp = fp; // fp may become invalid
-        Value v = pop();
+        Value v = exit();
         v = ofp->leave(v);
         //printf("\t"); print(v); printf(" (return)\n");
         if (sp != 0) // null when returning from main, i.e. top level
