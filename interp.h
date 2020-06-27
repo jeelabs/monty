@@ -1,0 +1,480 @@
+// Main interpreter loop. Only run() is public, it cannot be called recursively.
+
+//CG: off op:print # set to "on" to enable per-opcode debug output
+
+struct QstrPool {
+    const char* vec;
+    int len;
+    uint16_t off [];
+
+    static const QstrPool* create (const uint8_t* p, int n) {
+        QstrPool* qp;
+        qp = (QstrPool*) malloc(sizeof *qp + (n+1) * sizeof qp->off[0]);
+        qp->vec = (const char*) p;
+        qp->len = n;
+        qp->off[0] = 0;
+        for (int i = 0; i < n; ++i) {
+            auto pos = qp->off[i];
+            qp->off[i+1] = pos + strlen(qp->vec + pos) + 1;
+#if VERBOSE_LOAD
+            printf("%4d: %s\n", i + (int) qstrNext, qp->vec + pos);
+#endif
+        }
+        return qp;
+    }
+
+    const char* at (int idx) const {
+        assert(idx >= qstrFrom);
+        if (idx < (int) qstrNext)
+            return qstrData + qstrPos[idx-qstrFrom];
+        idx -= qstrNext;
+        assert(idx < len);
+        return vec + off[idx];
+    }
+};
+
+struct Interp : Context {
+    const QstrPool* qPool;
+
+    Interp () { vm = this; }
+    ~Interp () { vm = 0; }
+
+    void run () {
+        while (ip != 0) {
+            assert(sp != 0 && fp != 0);
+            Value h = nextPending();
+            if (!h.isNil()) {
+                if (h.isObj())
+                    h.obj().next();
+                else {
+                    assert(fp->excTop > 0); // simple case, no stack unwind
+                    auto exc = fp->exceptionPushPop(0);
+                    ip = fp->bcObj.code + (int) exc[0];
+                    sp = fp->bottom() + (int) exc[1];
+                    *++sp = h;
+                }
+            } else
+                inner();
+        }
+    }
+
+private:
+    uint32_t fetchVarInt (uint32_t v =0) {
+        uint8_t b = 0x80;
+        while (b & 0x80) {
+            b = (uint8_t) *ip++;
+            v = (v << 7) | (b & 0x7F);
+        }
+        return v;
+    }
+
+    int fetchOffset () {
+        int n = (uint8_t) *ip++;
+        return n | ((uint8_t) *ip++ << 8);
+    }
+
+    const char* fetchQstr () {
+        return qPool->at(fetchOffset() + 1);
+    }
+
+    static bool opInRange (uint8_t op, Op from, int count) {
+        return (uint8_t) from <= op && op < (uint8_t) from + count;
+    }
+
+    //CG: op-init
+
+    //CG1 op q
+    void op_LoadConstString (const char* arg) {
+        *++sp = arg;
+    }
+
+    //CG1 op q
+    void op_LoadName (const char* arg) {
+        *++sp = fp->locals.at(arg);
+        if (sp->isNil())
+            printf("loadname? %s\n", arg);
+        assert(!sp->isNil());
+    }
+
+    //CG1 op q
+    void op_StoreName (const char* arg) {
+        fp->locals.atKey(arg, DictObj::Set) = *sp--;
+    }
+
+    //CG1 op
+    void op_LoadConstNone () {
+        *++sp = Value::nil; // TODO
+    }
+
+    //CG1 op
+    void op_LoadConstFalse () {
+        *++sp = 0; // TODO
+    }
+
+    //CG1 op
+    void op_LoadConstTrue () {
+        *++sp = 1; // TODO
+    }
+
+    //CG1 op
+    void op_LoadConstSmallInt () {
+        *++sp = fetchVarInt((uint8_t) *ip & 0x40 ? ~0 : 0);
+    }
+
+    //CG1 op
+    void op_LoadNull () {
+        *++sp = Value::nil; // TODO wrong
+    }
+
+    //CG1 op
+    void op_DupTop () {
+        ++sp; sp[0] = sp[-1];
+    }
+
+    //CG1 op
+    void op_DupTopTwo () {
+        sp += 2; sp[0] = sp[-2]; sp[-1] = sp[-3];
+    }
+
+    //CG1 op
+    void op_PopTop () {
+        --sp;
+    }
+
+    //CG1 op
+    void op_RotTwo () {
+        auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = v;
+    }
+
+    //CG1 op
+    void op_RotThree () {
+        auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = sp[-2]; sp[-2] = v;
+    }
+
+    //CG1 op o
+    void op_SetupExcept (int arg) {
+        auto exc = fp->exceptionPushPop(1);
+        exc[0] = (ip - fp->bcObj.code) + arg; // int offset iso pointer
+        exc[1] = sp - fp->bottom(); // again as offset, as sp is not a Value
+        exc[2] = Value::nil; // no previous exception
+        assert(exc[0].isInt() && exc[1].isInt());
+        //printf("setup  %p %p %p\n", sp, fp, fp->stack);
+    }
+
+    //CG1 op o
+    void op_PopExceptJump (int arg) {
+        (void) fp->exceptionPushPop(-1);
+        ip += arg;
+    }
+
+    //CG1 op
+    void op_RaiseLast () {
+        raise(""); // TODO
+    }
+
+    //CG1 op q
+    void op_LoadAttr (const char* arg) {
+        Value self = Value::nil;
+        *sp = sp->obj().attr(arg, self);
+        assert(!sp->isNil());
+        if (false && !self.isNil()) // TODO only when it's a method!
+            *sp = new BoundMethObj (*sp, self);
+    }
+
+    //CG1 op q
+    void op_StoreAttr (const char* arg) {
+        //printf("\t"); print(sp[-1]); print(sp[0]); printf(" (store-attr)\n");
+        assert(&sp->obj().type().type() == &ClassObj::info);
+        auto& io = (InstanceObj&) sp->obj(); // TODO yuck
+        io.atKey(arg, DictObj::Set) = sp[-1];
+        sp -= 2;
+    }
+
+    //CG1 op q
+    void op_LoadMethod (const char* arg) {
+        Value self = *sp;
+        *sp = self.objPtr()->attr(arg, sp[1]);
+        //printf("\t"); print(*sp); printf(" (found)\n");
+        ++sp;
+        if (sp->isNil())
+            *sp = self;
+        //printf("\t"); print(*sp); printf(" (self)\n");
+        assert(!sp->isNil());
+    }
+
+    //CG1 op v
+    void op_CallMethod (uint32_t arg) {
+        uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
+        sp -= nargs + 2 * nkw + 1;
+        //printf("\t"); print(*sp); printf(" (call meth)\n");
+        // FIXME call -> enter/leave problem
+        auto ofp = fp;
+        Value v = sp->obj().call(nargs + 1, sp + 1);
+        if (fp == ofp)
+            *sp = v;
+    }
+
+    //CG1 op s
+    void op_Jump (int arg) {
+        ip += arg;
+    }
+
+    //CG1 op s
+    void op_UnwindJump (int arg) {
+        //printf("*ip %d\n", *ip);
+        fp->excTop -= (uint8_t) *ip; // TODO hardwired for simplest case
+        ip += arg;
+    }
+
+    //CG1 op s
+    void op_PopJumpIfFalse (int arg) {
+        if (*sp-- == 0)
+            ip += arg;
+    }
+
+    //CG1 op s
+    void op_PopJumpIfTrue (int arg) {
+        if (*sp-- != 0)
+            ip += arg;
+    }
+
+    //CG1 op v
+    void op_LoadConstObj (uint32_t arg) {
+        *++sp = fp->bcObj.constObjs[arg];
+    }
+
+    //CG1 op v
+    void op_MakeFunction (uint32_t arg) {
+        *++sp = fp->bcObj.constObjs[arg];
+    }
+
+    //CG1 op v
+    void op_MakeFunctionDefargs (uint32_t arg) {
+        *sp = fp->bcObj.constObjs[arg]; // TODO need to deal with defargs!
+    }
+
+    //CG1 op v
+    void op_CallFunction (uint32_t arg) {
+        uint8_t nargs = arg, nkw = arg >> 8;
+        sp -= nargs + 2 * nkw;
+        // FIXME call -> enter/leave problem
+        auto ofp = fp;
+        //printf("\t"); print(*sp); printf(" (call)\n");
+        Value v = sp->obj().call(nargs, sp + 1);
+        if (fp == ofp)
+            *sp = v;
+    }
+
+    //CG1 op
+    void op_YieldValue () {
+        Value v = pop();
+        assert(fp != 0 && sp != 0); // can't yield out of main
+        //printf("\t"); print(*sp); print(v); printf(" (yield)\n");
+        *sp = v;
+    }
+
+    //CG1 op
+    void op_ReturnValue () {
+        auto ofp = fp; // fp may become invalid
+        Value v = pop();
+        v = ofp->leave(v);
+        //printf("\t"); print(v); printf(" (return)\n");
+        if (sp != 0) // null when returning from main, i.e. top level
+            *sp = v;
+    }
+
+    //CG1 op v
+    void op_BuildTuple (uint32_t arg) {
+        sp -= (int) arg - 1; // in case arg is 0
+        *sp = TupleObj::create(TupleObj::info, arg, sp);
+    }
+
+    //CG1 op v
+    void op_BuildList (uint32_t arg) {
+        sp -= (int) arg - 1; // in case arg is 0
+        *sp = new ListObj (arg, sp);
+    }
+
+    //CG1 op v
+    void op_BuildMap (uint32_t arg) {
+        *++sp = new DictObj (arg);
+    }
+
+    //CG1 op q
+    void op_LoadGlobal (const char* arg) {
+        *++sp = fp->bcObj.owner.at(arg);
+        assert(!sp->isNil());
+    }
+
+    //CG1 op q
+    void op_StoreGlobal (const char* arg) {
+        fp->bcObj.owner.atKey(arg, DictObj::Set) = *sp--;
+    }
+
+    //CG1 op
+    void op_LoadSubscr () {
+        Value index = *sp--;
+        *sp = sp->objPtr()->at(index);
+    }
+
+    //CG1 op
+    void op_StoreSubscr () {
+        auto& d = (DictObj&) sp[-1].objPtr()->asMutSeq(); // TODO yuck
+        d.atKey(sp[0], DictObj::Set) = sp[-2];
+        sp -= 3;
+    }
+
+    //CG1 op
+    void op_LoadBuildClass () {
+        *++sp = ClassObj::info;
+    }
+
+    //CG1 op
+    void op_GetIterStack () {
+        Value seq = *sp;
+        sp += 3; // TODO yuck, the compiler assumes 4 stack entries are used!
+        *sp = new IterObj (seq);
+        //printf("\t"); print(*sp); printf(" (iter)\n");
+    }
+
+    //CG1 op o
+    void op_ForIter (int arg) {
+        Value v = sp->obj().next();
+        //printf("\t"); print(v); printf(" (next)\n");
+        if (v.isNil()) {
+            delete &sp->obj(); // IterObj
+            sp -= 4;
+            ip += arg;
+        } else
+            *++sp = v;
+    }
+
+    void inner () {
+        do {
+#ifdef INNER_HOOK
+            INNER_HOOK
+#endif
+            assert(ip != 0 && sp != 0 && fp != 0);
+            Value* bottom = fp->bottom();
+#if SHOW_INSTR_PTR
+            printf("\tip %p 0x%02x sp %d e %d ",
+                    ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
+            if (sp >= bottom)
+                print(*sp);
+            printf("\n");
+#endif
+            assert(bottom - 1 <= sp && sp < bottom + fp->bcObj.stackSz);
+            assert(0 <= fp->excTop && fp->excTop <= fp->bcObj.excDepth);
+            auto& bco = fp->bcObj; (void) bco;
+            assert(bco.code <= ip && ip < bco.code + bco.size - bco.hdrSz);
+            switch (*ip++) {
+
+                //CG< op-emit
+                case Op::LoadConstString:
+                    op_LoadConstString(fetchQstr()); break;
+                case Op::LoadName:
+                    op_LoadName(fetchQstr()); break;
+                case Op::StoreName:
+                    op_StoreName(fetchQstr()); break;
+                case Op::LoadConstNone:
+                    op_LoadConstNone(); break;
+                case Op::LoadConstFalse:
+                    op_LoadConstFalse(); break;
+                case Op::LoadConstTrue:
+                    op_LoadConstTrue(); break;
+                case Op::LoadConstSmallInt:
+                    op_LoadConstSmallInt(); break;
+                case Op::LoadNull:
+                    op_LoadNull(); break;
+                case Op::DupTop:
+                    op_DupTop(); break;
+                case Op::DupTopTwo:
+                    op_DupTopTwo(); break;
+                case Op::PopTop:
+                    op_PopTop(); break;
+                case Op::RotTwo:
+                    op_RotTwo(); break;
+                case Op::RotThree:
+                    op_RotThree(); break;
+                case Op::SetupExcept:
+                    op_SetupExcept(fetchOffset()); break;
+                case Op::PopExceptJump:
+                    op_PopExceptJump(fetchOffset()); break;
+                case Op::RaiseLast:
+                    op_RaiseLast(); break;
+                case Op::LoadAttr:
+                    op_LoadAttr(fetchQstr()); break;
+                case Op::StoreAttr:
+                    op_StoreAttr(fetchQstr()); break;
+                case Op::LoadMethod:
+                    op_LoadMethod(fetchQstr()); break;
+                case Op::CallMethod:
+                    op_CallMethod(fetchVarInt()); break;
+                case Op::Jump:
+                    op_Jump(fetchOffset()-0x8000); break;
+                case Op::UnwindJump:
+                    op_UnwindJump(fetchOffset()-0x8000); break;
+                case Op::PopJumpIfFalse:
+                    op_PopJumpIfFalse(fetchOffset()-0x8000); break;
+                case Op::PopJumpIfTrue:
+                    op_PopJumpIfTrue(fetchOffset()-0x8000); break;
+                case Op::LoadConstObj:
+                    op_LoadConstObj(fetchVarInt()); break;
+                case Op::MakeFunction:
+                    op_MakeFunction(fetchVarInt()); break;
+                case Op::MakeFunctionDefargs:
+                    op_MakeFunctionDefargs(fetchVarInt()); break;
+                case Op::CallFunction:
+                    op_CallFunction(fetchVarInt()); break;
+                case Op::YieldValue:
+                    op_YieldValue(); break;
+                case Op::ReturnValue:
+                    op_ReturnValue(); break;
+                case Op::BuildTuple:
+                    op_BuildTuple(fetchVarInt()); break;
+                case Op::BuildList:
+                    op_BuildList(fetchVarInt()); break;
+                case Op::BuildMap:
+                    op_BuildMap(fetchVarInt()); break;
+                case Op::LoadGlobal:
+                    op_LoadGlobal(fetchQstr()); break;
+                case Op::StoreGlobal:
+                    op_StoreGlobal(fetchQstr()); break;
+                case Op::LoadSubscr:
+                    op_LoadSubscr(); break;
+                case Op::StoreSubscr:
+                    op_StoreSubscr(); break;
+                case Op::LoadBuildClass:
+                    op_LoadBuildClass(); break;
+                case Op::GetIterStack:
+                    op_GetIterStack(); break;
+                case Op::ForIter:
+                    op_ForIter(fetchOffset()); break;
+                //CG>
+
+                default: {
+                    auto v = (uint8_t) ip[-1];
+                    if (opInRange(v, Op::LoadConstSmallIntMulti , 64)) {
+                        v -= (uint8_t) Op::LoadConstSmallIntMulti ;
+                        *++sp = v - 16;
+                    } else if (opInRange(v, Op::LoadFastMulti, 16)) {
+                        v -= (uint8_t) Op::LoadFastMulti ;
+                        assert(!fp->fastSlot(v).isNil());
+                        *++sp = fp->fastSlot(v);
+                    } else if (opInRange(v, Op::StoreFastMulti, 16)) {
+                        v -= (uint8_t) Op::StoreFastMulti;
+                        fp->fastSlot(v) = *sp--;
+                    } else if (opInRange(v, Op::UnaryOpMulti , 7)) {
+                        v -= (uint8_t) Op::UnaryOpMulti;
+                        *sp = sp->unOp((UnOp) v);
+                    } else if (opInRange(v, Op::BinaryOpMulti , 35)) {
+                        v -= (uint8_t) Op::BinaryOpMulti;
+                        Value rhs = *sp--;
+                        *sp = sp->binOp((BinOp) v, rhs);
+                    } else
+                        assert(false);
+                }
+            }
+        } while (pending == 0);
+    }
+};
