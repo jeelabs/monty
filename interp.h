@@ -355,7 +355,7 @@ private:
             INNER_HOOK
 #endif
             assert(ip != 0 && sp != 0 && fp != 0);
-            Value* bottom = fp->bottom();
+            Value* bottom = fp->bottom(); (void) bottom;
 #if SHOW_INSTR_PTR
             printf("\tip %p 0x%02x sp %d e %d ",
                     ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
