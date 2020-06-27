@@ -128,7 +128,7 @@ ClassObj::ClassObj (int argc, Value argv[])
     atKey("__name__", DictObj::Set) = argv[1];
     auto fp = new FrameObj (bc, *this);
     fp->enter(argc, argv, this);
-    Context::push(fp);
+    fp->caller = fp->stack->ctx.flip(fp);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -145,7 +145,7 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
         auto& bc = (const BytecodeObj&) init.obj();
         auto fp = new FrameObj (bc, *this);
         fp->enter(argc + 1, argv - 1, this);
-        Context::push(fp);
+        fp->caller = fp->stack->ctx.flip(fp);
     }
 }
 
@@ -289,14 +289,14 @@ Value BytecodeObj::call (int argc, Value argv[]) const {
     fp->enter(argc, argv);
     if (fp->isCoro())
         return fp;
-    Context::push(fp);
+    fp->caller = fp->stack->ctx.flip(fp);
     return Value::nil; // no result yet, this call has only started
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
     auto fp = new FrameObj (*init, *(DictObj*) this); // FIXME loses const
     fp->enter(argc, argv);
-    Context::push(fp);
+    fp->caller = fp->stack->ctx.flip(fp);
     return Value::nil; // no result yet, this call has only started
 }
 
@@ -330,7 +330,7 @@ FrameObj::~FrameObj () {
 }
 
 Value FrameObj::next () {
-    Context::resume(this);
+    stack->ctx.resume(this);
     return Value::nil; // TODO really?
 }
 
@@ -359,7 +359,7 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     fo.stack = sv == 0 || fo.isCoro() ? new Stack (*vm) : sv;
 
     // TODO this is the only (?) place where the stack may be reallocated and
-    // since argv points into it, it can't be used when this happens
+    // since argv points into it, it needs to be relocated when this happens
     int off = sv != 0 ? argv - sv->base() : 0;
     fo.spOffset = fo.stack->extend(fo.bcObj.frameSize()) - 1;
     return sv != 0 ? sv->base() + off : 0;
@@ -439,24 +439,15 @@ FrameObj* Context::flip (FrameObj* frame) {
     return fp;
 }
 
-void Context::push (FrameObj* frame) {
-    assert(vm != 0 && frame != 0);
-    frame->caller = flip(frame);
-}
-
 Value Context::pop () {
-    assert(vm != 0 && vm->fp != 0);
-
-    Value v = *vm->sp;
-
-    auto& caller = vm->fp->caller;
+    assert(fp != 0);
+    Value v = *sp;
+    auto& caller = fp->caller; // TODO messy, fp will change in flip
     flip(caller);
-
     if (caller != 0)
         caller = 0; // cleared to flag as suspended if this is a coro
     else
         raise(0); // TODO, but at least this exists the vm loop
-
     return v;
 }
 
@@ -465,7 +456,7 @@ void Context::suspend () {
 
     for (auto top = vm->fp; top != 0; top = top->caller) {
         if (top->isCoro()) {
-            top->caller = flip(top->caller);
+            top->caller = vm->flip(top->caller);
             return;
         }
     }
@@ -474,10 +465,8 @@ void Context::suspend () {
 }
 
 void Context::resume (FrameObj* frame) {
-    assert(vm != 0 && frame != 0 && frame->isCoro());
-
-    auto& caller = frame->caller;
-    caller = flip(caller != 0 ? caller : frame);
+    assert(frame != 0 && frame->isCoro());
+    frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 
 Context* Context::vm = 0;

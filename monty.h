@@ -454,11 +454,6 @@ struct ModuleObj : DictObj {
     Value call (int argc, Value argv[]) const override;
 };
 
-// TODO stack vectors need to be moved to Context, I think ...
-//  frames are just there for the ride, the context is their owner
-//  if a context pointer is saved inside, many funs could be simplified
-//  maybe the Context also needs to create/own the first stack vector
-//  and generators just detach/reattach them when suspended/activated
 struct Stack : VecOf<Value> {
     Context& ctx;
 
@@ -512,20 +507,17 @@ private:
 struct Context {
     static void print (Value);
 
-    static void raise (Value);
     Value nextPending ();
-
+    static void raise (Value);
     static int setHandler (Value);
 
     void saveState ();
     void restoreState ();
-    static FrameObj* flip (FrameObj*);
-
-    static void push (FrameObj*);
-    static Value pop ();
+    FrameObj* flip (FrameObj*);
+    Value pop ();
 
     static void suspend ();
-    static void resume (FrameObj*);
+    void resume (FrameObj*);
 
     static Value* prepareStack (FrameObj& fo, Value* av);
 
