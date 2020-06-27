@@ -40,14 +40,15 @@ enum class UnOp : uint8_t;
 enum class BinOp : uint8_t;
 typedef const Op* OpPtrRO;
 
-struct Object;      // forward decl
-struct TypeObj;     // forward decl
-struct ModuleObj;   // forward decl
-struct LookupObj;   // forward decl
-struct SeqObj;      // forward decl
-struct MutSeqObj;   // forward decl
-struct ForceObj;    // forward decl
-struct Context;     // forward decl
+struct Object;    // forward decl
+struct TypeObj;   // forward decl
+struct ModuleObj; // forward decl
+struct LookupObj; // forward decl
+struct SeqObj;    // forward decl
+struct MutSeqObj; // forward decl
+struct ForceObj;  // forward decl
+struct Context;   // forward decl
+struct Stack;     // forward decl
 
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
@@ -454,18 +455,6 @@ struct ModuleObj : DictObj {
     Value call (int argc, Value argv[]) const override;
 };
 
-struct Stack : VecOf<Value> {
-    Context& ctx;
-
-    Stack (Context& vm) : ctx (vm) {}
-
-    int extend (int num);
-    void shrink (int num);
-
-    Value* base () const { return &get(0); }
-    Value* limit () const { return base() + length(); }
-};
-
 //CG3 type <frame>
 struct FrameObj : DictObj {
     static const TypeObj info;
@@ -484,7 +473,7 @@ struct FrameObj : DictObj {
     Value next () override;
 
     // TODO careful: bottom is only correct when this frame is the top one
-    Value* bottom () const { return stack->limit() - bcObj.frameSize(); }
+    Value* bottom () const;
     void enter (int argc, Value argv[], const Object* r =0);
     Value leave (Value r);
 
@@ -502,6 +491,18 @@ private:
     OpPtrRO savedIp = 0; // could be an offset
     int16_t spOffset = -1;
     friend Context; // Context::flip() can access savedIp & spOffset
+};
+
+struct Stack : VecOf<Value> {
+    Context& ctx;
+
+    Stack (Context& vm) : ctx (vm) {}
+
+    int extend (int num);
+    void shrink (int num);
+
+    Value* base () const { return &get(0); }
+    Value* limit () const { return base() + length(); }
 };
 
 struct Context {

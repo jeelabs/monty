@@ -334,6 +334,10 @@ Value FrameObj::next () {
     return Value::nil; // TODO really?
 }
 
+Value* FrameObj::bottom () const {
+    return stack->limit() - bcObj.frameSize();
+}
+
 void FrameObj::enter (int argc, Value argv[], const Object* r) {
     result = r;
     savedIp = bcObj.code;
