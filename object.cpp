@@ -300,6 +300,20 @@ Value ModuleObj::call (int argc, Value argv[]) const {
     return Value::nil; // no result yet, this call has only started
 }
 
+int Stack::extend (int num) {
+    auto n = length();
+    ctx.saveState(); // Context::sp may change due the a realloc in insert
+    insert(n, num);
+    ctx.restoreState();
+    return n;
+}
+
+void Stack::shrink (int num) {
+    ctx.saveState(); // Context::sp may change due the a realloc in remove
+    remove(length() - num, num);
+    ctx.restoreState();
+}
+
 FrameObj::FrameObj (const BytecodeObj& bco)
         : bcObj (bco), locals (*this) {
     chain = &bco.owner;
@@ -321,27 +335,9 @@ Value FrameObj::next () {
 }
 
 void FrameObj::enter (int argc, Value argv[], const Object* r) {
-    auto sp = Context::currentStack();
-    stack = sp == 0 || isCoro() ? new Stack : sp;
-    // TODO idea: include a pointer to the Context in Frame:: Stack ???
-    //  would get rid of a lot of static context defs, maybe even global vm ???
-
-    // FIXME a quick hack to prevent stack reallocs for now: allocate plenty!
-    //stack->extend(500); stack->shrink(500);
-
     result = r;
     savedIp = bcObj.code;
-
-    // TODO this is the only (?) place where the stack may be reallocated and
-    // since argv points into it, it needs to be relocated when this happens
-    // FIXME oops, Context->sp also needs to be fixed, can't reach it here ...
-
-    int argvOffset = sp != 0 ? argv - sp->base() : 0;
-    Context::saveState();
-    spOffset = stack->extend(bcObj.frameSize()) - 1;
-    Context::restoreState();
-    if (sp != 0)
-        argv = sp->base() + argvOffset;
+    argv = Context::prepareStack (*this, argv);
 
     for (int i = 0; i < bcObj.n_pos; ++i) // TODO more arg cases
         fastSlot(i) = argv[i];
@@ -356,10 +352,17 @@ Value FrameObj::leave (Value v) {
     return v;
 }
 
-// TODO not very clean, but FrameObj::enter() needs a stack (too) early on ...
-FrameObj::Stack* Context::currentStack () {
+Value* Context::prepareStack (FrameObj& fo, Value* argv) {
+    // TODO yuck, but FrameObj::enter() needs a stack (too) early on ...
     assert(vm != 0);
-    return vm->fp != 0 ? vm->fp->stack : 0;
+    auto sv = vm->fp != 0 ? vm->fp->stack : 0;
+    fo.stack = sv == 0 || fo.isCoro() ? new Stack (*vm) : sv;
+
+    // TODO this is the only (?) place where the stack may be reallocated and
+    // since argv points into it, it can't be used when this happens
+    int off = sv != 0 ? argv - sv->base() : 0;
+    fo.spOffset = fo.stack->extend(fo.bcObj.frameSize()) - 1;
+    return sv != 0 ? sv->base() + off : 0;
 }
 
 void Context::raise (Value e) {
@@ -430,9 +433,9 @@ FrameObj* Context::flip (FrameObj* frame) {
     assert(vm != 0 && vm->fp != frame);
     auto fp = vm->fp;
     if (fp != 0)
-        saveState();
+        vm->saveState();
     vm->fp = frame;
-    restoreState();
+    vm->restoreState();
     return fp;
 }
 

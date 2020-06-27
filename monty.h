@@ -454,22 +454,27 @@ struct ModuleObj : DictObj {
     Value call (int argc, Value argv[]) const override;
 };
 
+// TODO stack vectors need to be moved to Context, I think ...
+//  frames are just there for the ride, the context is their owner
+//  if a context pointer is saved inside, many funs could be simplified
+//  maybe the Context also needs to create/own the first stack vector
+//  and generators just detach/reattach them when suspended/activated
+struct Stack : VecOf<Value> {
+    Context& ctx;
+
+    Stack (Context& vm) : ctx (vm) {}
+
+    int extend (int num);
+    void shrink (int num);
+
+    Value* base () const { return &get(0); }
+    Value* limit () const { return base() + length(); }
+};
+
 //CG3 type <frame>
 struct FrameObj : DictObj {
     static const TypeObj info;
     const TypeObj& type () const override;
-
-    // TODO stack vectors need to be moved to Context, I think ...
-    //  frames are just there for the ride, the context is their owner
-    //  if a context pointer is saved inside, many funs could be simplified
-    //  maybe the Context also needs to create/own the first stack vector
-    //  and generators just detach/reattach them when suspended/activated
-    struct Stack : VecOf<Value> {
-        int extend (int num) { auto n = length(); insert(n, num); return n; }
-        void shrink (int num) { remove(length() - num, num); }
-        Value* base () const { return &get(0); }
-        Value* limit () const { return base() + length(); }
-    };
 
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
@@ -512,8 +517,8 @@ struct Context {
 
     static int setHandler (Value);
 
-    static void saveState ();
-    static void restoreState ();
+    void saveState ();
+    void restoreState ();
     static FrameObj* flip (FrameObj*);
 
     static void push (FrameObj*);
@@ -522,7 +527,7 @@ struct Context {
     static void suspend ();
     static void resume (FrameObj*);
 
-    static FrameObj::Stack* currentStack ();
+    static Value* prepareStack (FrameObj& fo, Value* av);
 
 protected:
     Context () { handlers.insert(0, MAX_HANDLERS); }
