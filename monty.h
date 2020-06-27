@@ -461,9 +461,9 @@ struct FrameObj : DictObj {
 
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
-    uint8_t excTop = 0;
     Context* ctx = 0;
     DictObj& locals;
+    uint8_t excTop = 0;
 
     FrameObj (const BytecodeObj& bc);
     FrameObj (const BytecodeObj& bc, DictObj& dp);
@@ -473,8 +473,9 @@ struct FrameObj : DictObj {
 
     // TODO careful: bottom is only correct when this frame is the top one
     Value* bottom () const;
-    void enter (int argc, Value argv[], const Object* r =0);
+    void enter (int argc, Value argv[]);
     Value leave (Value r);
+    void push (const Object* r =0);
 
     bool isCoro () const { return (bcObj.scope & 1) != 0; }
     Value& fastSlot (int n) const { return bottom()[bcObj.stackSz + ~n]; }
@@ -485,10 +486,10 @@ struct FrameObj : DictObj {
     }
 
 private:
+    int16_t spOffset = -1;
+    OpPtrRO savedIp = 0; // could be an offset
     const Object* result = 0;
 
-    OpPtrRO savedIp = 0; // could be an offset
-    int16_t spOffset = -1;
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
@@ -505,10 +506,7 @@ struct Context : VecOf<Value> {
     static void raise (Value);
     static int setHandler (Value);
 
-    void saveState ();
-    void restoreState ();
     FrameObj* flip (FrameObj*);
-    Value exit ();
 
     static void suspend ();
     void resume (FrameObj*);
@@ -522,10 +520,15 @@ protected:
     Value* sp = 0;
     FrameObj* fp = 0;
 
+    Value exit ();
+
     static Context* vm;
     static volatile uint32_t pending;
 private:
     static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
+
+    void saveState ();
+    void restoreState ();
 
     static VecOf<Value> handlers;
 };

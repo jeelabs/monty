@@ -127,8 +127,8 @@ ClassObj::ClassObj (int argc, Value argv[])
     auto& bc = (const BytecodeObj&) argv[0].obj();
     atKey("__name__", DictObj::Set) = argv[1];
     auto fp = new FrameObj (bc, *this);
-    fp->enter(argc, argv, this);
-    fp->caller = fp->ctx->flip(fp);
+    fp->enter(argc, argv);
+    fp->push(this);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -144,8 +144,8 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
         argv[-1] = this;
         auto& bc = (const BytecodeObj&) init.obj();
         auto fp = new FrameObj (bc, *this);
-        fp->enter(argc + 1, argv - 1, this);
-        fp->caller = fp->ctx->flip(fp);
+        fp->enter(argc + 1, argv - 1);
+        fp->push(this);
     }
 }
 
@@ -289,14 +289,14 @@ Value BytecodeObj::call (int argc, Value argv[]) const {
     fp->enter(argc, argv);
     if (fp->isCoro())
         return fp;
-    fp->caller = fp->ctx->flip(fp);
+    fp->push();
     return Value::nil; // no result yet, this call has only started
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
     auto fp = new FrameObj (*init, *(DictObj*) this); // FIXME loses const
     fp->enter(argc, argv);
-    fp->caller = fp->ctx->flip(fp);
+    fp->push();
     return Value::nil; // no result yet, this call has only started
 }
 
@@ -324,8 +324,7 @@ Value* FrameObj::bottom () const {
     return ctx->limit() - bcObj.frameSize();
 }
 
-void FrameObj::enter (int argc, Value argv[], const Object* r) {
-    result = r;
+void FrameObj::enter (int argc, Value argv[]) {
     savedIp = bcObj.code;
     argv = Context::prepareStack (*this, argv);
 
@@ -342,9 +341,11 @@ Value FrameObj::leave (Value v) {
     return v;
 }
 
-volatile uint32_t Context::pending = 0;
+void FrameObj::push (const Object* r) {
+    result = r;
+    caller = ctx->flip(this);
+}
 
-VecOf<Value> Context::handlers;
 
 Context::Context () {
     handlers.set(MAX_HANDLERS, Value::nil); // make sure it has enough slots
@@ -366,19 +367,17 @@ void Context::shrink (int num) {
 
 Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     // TODO yuck, but FrameObj::enter() needs a stack (too) early on ...
-    assert(vm != 0);
-    auto sv = vm->fp != 0 ? vm->fp->ctx : 0;
-    fo.ctx = sv == 0 || fo.isCoro() ? new Context : sv;
+    auto sv = vm->fp != 0 ? vm->fp->ctx : vm;
+    fo.ctx = fo.isCoro() ? new Context : sv;
 
     // TODO this is the only (?) place where the stack may be reallocated and
     // since argv points into it, it needs to be relocated when this happens
-    int off = sv != 0 ? argv - sv->base() : 0;
+    int off = argv - sv->base();
     fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
-    return sv != 0 ? sv->base() + off : 0;
+    return sv->base() + off;
 }
 
 void Context::raise (Value e) {
-    assert(vm != 0);
     assert(!e.isNil());
     int slot = 0;
     if (e.isInt()) {
@@ -407,8 +406,6 @@ Value Context::nextPending () {
 }
 
 int Context::setHandler (Value h) {
-    assert(vm != 0);
-
     if (h.isInt()) {
         int i = h;
         if (1 <= i && i < (int) MAX_HANDLERS)
@@ -436,7 +433,6 @@ int Context::setHandler (Value h) {
 // TODO - Will need more review to support multiple threads, and even cores.
 
 void Context::saveState () {
-    assert(vm != 0);
     auto frame = vm->fp;
     if (frame != 0) {
         frame->savedIp = vm->ip;
@@ -445,14 +441,13 @@ void Context::saveState () {
 }
 
 void Context::restoreState () {
-    assert(vm != 0);
     auto frame = vm->fp;
     vm->ip = frame != 0 ? frame->savedIp : 0;
     vm->sp = frame != 0 ? frame->ctx->base() + frame->spOffset : 0;
 }
 
 FrameObj* Context::flip (FrameObj* frame) {
-    assert(vm != 0 && vm->fp != frame);
+    assert(vm->fp != frame);
     auto fp = vm->fp;
     if (fp != 0)
         vm->saveState();
@@ -474,7 +469,7 @@ Value Context::exit () {
 }
 
 void Context::suspend () {
-    assert(vm != 0 && vm->fp != 0);
+    assert(vm->fp != 0);
 
     for (auto top = vm->fp; top != 0; top = top->caller) {
         if (top->isCoro()) {
@@ -491,7 +486,9 @@ void Context::resume (FrameObj* frame) {
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 
-Context* Context::vm = 0;
+volatile uint32_t Context::pending;
+VecOf<Value> Context::handlers;
+Context* Context::vm;
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);
 static const MethObj m_count = mo_count;

@@ -43,18 +43,17 @@ struct Interp : Context {
         while (ip != 0) {
             assert(sp != 0 && fp != 0);
             Value h = nextPending();
-            if (!h.isNil()) {
-                if (h.isObj())
-                    h.obj().next();
-                else {
-                    assert(fp->excTop > 0); // simple case, no stack unwind
-                    auto exc = fp->exceptionPushPop(0);
-                    ip = fp->bcObj.code + (int) exc[0];
-                    sp = fp->bottom() + (int) exc[1];
-                    *++sp = h;
-                }
-            } else
+            if (h.isNil())
                 inner();
+            else if (h.isObj())
+                h.obj().next();
+            else {
+                assert(fp->excTop > 0); // simple case, no stack unwind
+                auto exc = fp->exceptionPushPop(0);
+                ip = fp->bcObj.code + (int) exc[0];
+                sp = fp->bottom() + (int) exc[1];
+                *++sp = h;
+            }
         }
     }
 
