@@ -206,11 +206,7 @@ private:
         uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
         sp -= nargs + 2 * nkw + 1;
         //printf("\t"); print(*sp); printf(" (call meth)\n");
-        // FIXME call -> enter/leave problem
-        auto ofp = fp;
-        Value v = sp->obj().call(nargs + 1, sp + 1);
-        if (fp == ofp)
-            *sp = v;
+        *sp = sp->obj().call(nargs + 1, sp + 1);
     }
 
     //CG1 op s
@@ -256,17 +252,16 @@ private:
     void op_CallFunction (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-        // FIXME call -> enter/leave problem
-        auto ofp = fp;
         //printf("\t"); print(*sp); printf(" (call)\n");
         Value v = sp->obj().call(nargs, sp + 1);
-        if (fp == ofp)
+        if (!v.isNil())
             *sp = v;
     }
 
     //CG1 op
     void op_YieldValue () {
-        Value v = exit();
+        Value v = *sp;
+        popState();
         assert(fp != 0 && sp != 0); // can't yield out of main
         //printf("\t"); print(*sp); print(v); printf(" (yield)\n");
         *sp = v;
@@ -275,7 +270,8 @@ private:
     //CG1 op
     void op_ReturnValue () {
         auto ofp = fp; // fp may become invalid
-        Value v = exit();
+        Value v = *sp;
+        popState();
         v = ofp->leave(v);
         //printf("\t"); print(v); printf(" (return)\n");
         if (sp != 0) // null when returning from main, i.e. top level

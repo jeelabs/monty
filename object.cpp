@@ -377,13 +377,15 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     return sv->base() + off;
 }
 
+// raise(int n) triggers handler, 1..MAX_HANDLERS-1
+// raise(str|obj) raises an exception, i.e triggers slot 0
+// raise(nil) quits inner vm loop
 void Context::raise (Value e) {
-    assert(!e.isNil());
     int slot = 0;
     if (e.isInt()) {
         slot = e;
-        assert(0 <= slot && slot < (int) MAX_HANDLERS);
-        assert(slot == 0 || !vm->handlers.get(slot).isNil());
+        assert(0 < slot && slot < (int) MAX_HANDLERS);
+        assert(!vm->handlers.get(slot).isNil());
     } else
         vm->handlers.set(0, e);
 
@@ -456,28 +458,22 @@ FrameObj* Context::flip (FrameObj* frame) {
     return fp;
 }
 
-Value Context::exit () {
+void Context::popState () {
     assert(fp != 0);
-    Value v = *sp;
     auto& caller = fp->caller; // TODO messy, fp will change in flip
     flip(caller);
-    if (caller != 0)
-        caller = 0; // cleared to flag as suspended if this is a coro
-    else
-        raise(0); // TODO, but at least this exists the vm loop
-    return v;
+    if (caller == 0)
+        raise(Value::nil); // exists the vm loop
+    caller = 0; // cleared to flag as suspended if this is a coro
 }
 
 void Context::suspend () {
     assert(vm->fp != 0);
-
-    for (auto top = vm->fp; top != 0; top = top->caller) {
+    for (auto top = vm->fp; top != 0; top = top->caller)
         if (top->isCoro()) {
             top->caller = vm->flip(top->caller);
             return;
         }
-    }
-
     assert(false);
 }
 

@@ -520,7 +520,7 @@ protected:
     Value* sp = 0;
     FrameObj* fp = 0;
 
-    Value exit ();
+    void popState ();
 
     static Context* vm;
     static volatile uint32_t pending;
