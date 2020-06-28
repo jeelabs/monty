@@ -462,20 +462,18 @@ struct FrameObj : DictObj {
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
     Context* ctx = 0;
-    DictObj& locals;
+    DictObj* locals;
+    const Object* result = 0;
     uint8_t excTop = 0;
 
-    FrameObj (const BytecodeObj& bc);
-    FrameObj (const BytecodeObj& bc, DictObj& dp);
+    FrameObj (const BytecodeObj& bc, int argc, Value argv[], DictObj* dp = 0);
     ~FrameObj ();
 
     Value next () override;
 
     // TODO careful: bottom is only correct when this frame is the top one
     Value* bottom () const;
-    void enter (int argc, Value argv[]);
-    Value leave (Value r);
-    void push (const Object* r =0);
+    void leave ();
 
     bool isCoro () const { return (bcObj.scope & 1) != 0; }
     Value& fastSlot (int n) const { return bottom()[bcObj.stackSz + ~n]; }
@@ -487,8 +485,7 @@ struct FrameObj : DictObj {
 
 private:
     int16_t spOffset = -1;
-    OpPtrRO savedIp = 0; // could be an offset
-    const Object* result = 0;
+    OpPtrRO savedIp; // could be an offset
 
     friend Context; // Context::flip() can access savedIp & spOffset
 };

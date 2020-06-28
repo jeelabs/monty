@@ -126,9 +126,8 @@ ClassObj::ClassObj (int argc, Value argv[])
         : TypeObj (argv[1], InstanceObj::create) {
     auto& bc = (const BytecodeObj&) argv[0].obj();
     atKey("__name__", DictObj::Set) = argv[1];
-    auto fp = new FrameObj (bc, *this);
-    fp->enter(argc, argv);
-    fp->push(this);
+    auto fp = new FrameObj (bc, argc, argv, this);
+    fp->result = this;
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -143,9 +142,8 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
     if (!init.isNil()) {
         argv[-1] = this;
         auto& bc = (const BytecodeObj&) init.obj();
-        auto fp = new FrameObj (bc, *this);
-        fp->enter(argc + 1, argv - 1);
-        fp->push(this);
+        auto fp = new FrameObj (bc, argc + 1, argv - 1, this);
+        fp->result = this;
     }
 }
 
@@ -255,7 +253,7 @@ Value DictObj::create (const TypeObj&, int argc, Value argv[]) {
 
 Value DictObj::at (Value key) const {
     // with Get, the const property can safely be ignored
-    Value v = ((DictObj*) this)->atKey(key, Get);
+    Value v = ((DictObj*) this)->atKey(key);
     if (v.isNil() && chain != 0)
         return chain->at(key);
     return v;
@@ -285,32 +283,31 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
 }
 
 Value BytecodeObj::call (int argc, Value argv[]) const {
-    auto fp = new FrameObj (*this);
-    fp->enter(argc, argv);
-    if (fp->isCoro())
-        return fp;
-    fp->push();
-    return Value::nil; // no result yet, this call has only started
+    auto fp = new FrameObj (*this, argc, argv);
+    return fp->isCoro() ? fp : Value::nil; // no result yet
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
-    auto fp = new FrameObj (*init, *(DictObj*) this); // FIXME loses const
-    fp->enter(argc, argv);
-    fp->push();
+    new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
     return Value::nil; // no result yet, this call has only started
 }
 
-FrameObj::FrameObj (const BytecodeObj& bco)
-        : bcObj (bco), locals (*this) {
-    chain = &bco.owner;
-}
+FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
+        : bcObj (bco), locals (dp), savedIp (bco.code) {
+    if (locals == 0) {
+        locals = this;
+        chain = &bco.owner;
+    }
 
-FrameObj::FrameObj (const BytecodeObj& bco, DictObj& dp)
-        : bcObj (bco), locals (dp) {
+    argv = Context::prepareStack (*this, argv);
+    for (int i = 0; i < bcObj.n_pos; ++i) // TODO more arg cases
+        fastSlot(i) = argv[i];
+
+    if (!isCoro())
+        caller = ctx->flip(this);
 }
 
 FrameObj::~FrameObj () {
-    // TODO see enter(), here too the stack can move, but should be harmless
     if (isCoro())
         delete ctx;
 }
@@ -324,28 +321,11 @@ Value* FrameObj::bottom () const {
     return ctx->limit() - bcObj.frameSize();
 }
 
-void FrameObj::enter (int argc, Value argv[]) {
-    savedIp = bcObj.code;
-    argv = Context::prepareStack (*this, argv);
-
-    for (int i = 0; i < bcObj.n_pos; ++i) // TODO more arg cases
-        fastSlot(i) = argv[i];
+void FrameObj::leave () {
+    ctx->shrink(bcObj.frameSize()); // note that the stack could move
+    if (!isCoro()) // don't delete frame on return, it may have a reference
+        delete this;
 }
-
-Value FrameObj::leave (Value v) {
-    if (result != 0)
-        v = result;
-    ctx->shrink(bcObj.frameSize());
-    if (!isCoro())
-        delete this; // TODO always safe, but note that the stack could move
-    return v;
-}
-
-void FrameObj::push (const Object* r) {
-    result = r;
-    caller = ctx->flip(this);
-}
-
 
 Context::Context () {
     handlers.set(MAX_HANDLERS, Value::nil); // make sure it has enough slots
@@ -366,7 +346,7 @@ void Context::shrink (int num) {
 }
 
 Value* Context::prepareStack (FrameObj& fo, Value* argv) {
-    // TODO yuck, but FrameObj::enter() needs a stack (too) early on ...
+    // TODO yuck, but FrameObj needs a stack (too) early on ...
     auto sv = vm->fp != 0 ? vm->fp->ctx : vm;
     fo.ctx = fo.isCoro() ? new Context : sv;
 

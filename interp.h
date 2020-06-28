@@ -86,13 +86,13 @@ private:
 
     //CG1 op q
     void op_LoadName (const char* arg) {
-        *++sp = fp->locals.at(arg);
+        *++sp = fp->locals->at(arg);
         assert(!sp->isNil());
     }
 
     //CG1 op q
     void op_StoreName (const char* arg) {
-        fp->locals.atKey(arg, DictObj::Set) = *sp--;
+        fp->locals->atKey(arg, DictObj::Set) = *sp--;
     }
 
     //CG1 op
@@ -257,9 +257,9 @@ private:
     //CG1 op
     void op_ReturnValue () {
         auto ofp = fp; // fp may become invalid
-        Value v = *sp;
+        Value v = fp->result != 0 ? fp->result : *sp;
         popState();
-        v = ofp->leave(v);
+        ofp->leave();
         if (sp != 0) // null when returning from main, i.e. top level
             *sp = v;
     }
