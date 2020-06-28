@@ -103,14 +103,21 @@ struct Object {
     virtual Value next   ();
 
     virtual const SeqObj& asSeq () const;
+
+    void* operator new (size_t);
+    void* operator new (size_t, void*);
+    void operator delete (void*, size_t);
+
+    static void* allocator (size_t sz, void* p =0);
+    static void gcStats ();
 };
 
 //CG< type int
 struct IntObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
 
     IntObj (int v) : i (v) {}
@@ -122,8 +129,8 @@ private:
 
 //CG3 type <sequence>
 struct SeqObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     const SeqObj& asSeq () const override { return *this; }
 
@@ -145,8 +152,8 @@ protected:
 struct StrObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
 
     StrObj (const char* v) : s (v) {}
@@ -175,8 +182,8 @@ ForceObj Value::objPtr () const { return this; }
 
 //CG3 type <mut-seq>
 struct MutSeqObj : SeqObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     Value len () const override { return vec.length(); }
 
@@ -198,14 +205,13 @@ protected:
 struct TupleObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
     Value len () const override { return length; }
     Value at (Value) const override;
 
 private:
-    void* operator new (size_t, void* p) { return p; }
     TupleObj (int argc, Value argv[]);
 
     uint16_t length;
@@ -216,8 +222,8 @@ private:
 struct ListObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
 
     ListObj (int argc, Value argv[]);
@@ -228,8 +234,8 @@ struct ListObj : MutSeqObj {
 
 //CG3 type <iterator>
 struct IterObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     IterObj (Value arg) : seq (arg) {}
 
@@ -242,8 +248,8 @@ private:
 
 //CG3 type <lookup>
 struct LookupObj : SeqObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     struct Item { const char* k; const Object* v; };
 
@@ -260,8 +266,8 @@ private:
 struct DictObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
     enum Mode { Get, Set, Del };
     const Object* chain = 0; // TODO hide
@@ -275,8 +281,8 @@ struct DictObj : MutSeqObj {
 
 //CG3 type <type>
 struct TypeObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     typedef Value (*Factory)(const TypeObj&,int,Value[]);
 
@@ -297,8 +303,8 @@ private:
 struct ClassObj : TypeObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj names;
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 //CG>
     ClassObj (int argc, Value argv[]);
 };
@@ -307,7 +313,7 @@ struct ClassObj : TypeObj {
 struct InstanceObj : DictObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
 
-    const TypeObj& type () const override { return *(const TypeObj*) chain; }
+    TypeObj& type () const override { return *(TypeObj*) chain; }
     Value attr (const char*, Value&) const override;
 
 private:
@@ -363,8 +369,8 @@ private:
 
 //CG3 type <method>
 struct MethObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     MethObj (const MethodBase& m) : meth (m) {}
 
@@ -383,8 +389,8 @@ private:
 
 //CG3 type <function>
 struct FunObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     typedef Value (*Func)(int,Value[]);
 
@@ -400,8 +406,8 @@ private:
 
 //CG3 type <bound-meth>
 struct BoundMethObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     BoundMethObj (Value f, Value o) : meth (f), self (o) {}
 
@@ -414,8 +420,8 @@ private:
 
 //CG3 type <bytecode>
 struct BytecodeObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     ModuleObj& owner;
 
@@ -441,8 +447,8 @@ struct BytecodeObj : Object {
 
 //CG3 type <module>
 struct ModuleObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     const BytecodeObj* init = 0;
 
@@ -453,8 +459,8 @@ struct ModuleObj : DictObj {
 
 //CG3 type <frame>
 struct FrameObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+    static TypeObj info;
+    TypeObj& type () const override;
 
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
@@ -487,7 +493,10 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
-struct Context : VecOf<Value> {
+struct Context : Object, VecOf<Value> {
+    static TypeObj info;
+    TypeObj& type () const override;
+
     Value* base () const { return &get(0); }
     Value* limit () const { return base() + length(); }
 

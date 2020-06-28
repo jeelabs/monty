@@ -1,42 +1,45 @@
 // Some implementation details for the built-in data types and functions.
 
+TypeObj  Context::info ("<context>");
+TypeObj& Context::type () const { return info; }
+
 //CG< builtin-types lib/monty/monty.h
-const TypeObj BoundMethObj::info ("<bound-meth>");
-const TypeObj  BytecodeObj::info ("<bytecode>");
-const TypeObj     FrameObj::info ("<frame>");
-const TypeObj       FunObj::info ("<function>");
-const TypeObj      IterObj::info ("<iterator>");
-const TypeObj    LookupObj::info ("<lookup>");
-const TypeObj      MethObj::info ("<method>");
-const TypeObj    ModuleObj::info ("<module>");
-const TypeObj    MutSeqObj::info ("<mut-seq>");
-const TypeObj       SeqObj::info ("<sequence>");
-const TypeObj      TypeObj::info ("<type>");
+TypeObj BoundMethObj::info ("<bound-meth>");
+TypeObj  BytecodeObj::info ("<bytecode>");
+TypeObj     FrameObj::info ("<frame>");
+TypeObj       FunObj::info ("<function>");
+TypeObj      IterObj::info ("<iterator>");
+TypeObj    LookupObj::info ("<lookup>");
+TypeObj      MethObj::info ("<method>");
+TypeObj    ModuleObj::info ("<module>");
+TypeObj    MutSeqObj::info ("<mut-seq>");
+TypeObj       SeqObj::info ("<sequence>");
+TypeObj      TypeObj::info ("<type>");
 
-const TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::names);
-const TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::names);
-const TypeObj   IntObj::info ("int", IntObj::create, &IntObj::names);
-const TypeObj  ListObj::info ("list", ListObj::create, &ListObj::names);
-const TypeObj   StrObj::info ("str", StrObj::create, &StrObj::names);
-const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::names);
+TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::names);
+TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::names);
+TypeObj   IntObj::info ("int", IntObj::create, &IntObj::names);
+TypeObj  ListObj::info ("list", ListObj::create, &ListObj::names);
+TypeObj   StrObj::info ("str", StrObj::create, &StrObj::names);
+TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::names);
 
-const TypeObj& BoundMethObj::type () const { return info; }
-const TypeObj&  BytecodeObj::type () const { return info; }
-const TypeObj&     FrameObj::type () const { return info; }
-const TypeObj&       FunObj::type () const { return info; }
-const TypeObj&      IterObj::type () const { return info; }
-const TypeObj&    LookupObj::type () const { return info; }
-const TypeObj&      MethObj::type () const { return info; }
-const TypeObj&    ModuleObj::type () const { return info; }
-const TypeObj&    MutSeqObj::type () const { return info; }
-const TypeObj&       SeqObj::type () const { return info; }
-const TypeObj&      TypeObj::type () const { return info; }
-const TypeObj&     ClassObj::type () const { return info; }
-const TypeObj&      DictObj::type () const { return info; }
-const TypeObj&       IntObj::type () const { return info; }
-const TypeObj&      ListObj::type () const { return info; }
-const TypeObj&       StrObj::type () const { return info; }
-const TypeObj&     TupleObj::type () const { return info; }
+TypeObj& BoundMethObj::type () const { return info; }
+TypeObj&  BytecodeObj::type () const { return info; }
+TypeObj&     FrameObj::type () const { return info; }
+TypeObj&       FunObj::type () const { return info; }
+TypeObj&      IterObj::type () const { return info; }
+TypeObj&    LookupObj::type () const { return info; }
+TypeObj&      MethObj::type () const { return info; }
+TypeObj&    ModuleObj::type () const { return info; }
+TypeObj&    MutSeqObj::type () const { return info; }
+TypeObj&       SeqObj::type () const { return info; }
+TypeObj&      TypeObj::type () const { return info; }
+TypeObj&     ClassObj::type () const { return info; }
+TypeObj&      DictObj::type () const { return info; }
+TypeObj&       IntObj::type () const { return info; }
+TypeObj&      ListObj::type () const { return info; }
+TypeObj&       StrObj::type () const { return info; }
+TypeObj&     TupleObj::type () const { return info; }
 //CG>
 
 //CG1 builtin print
