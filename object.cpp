@@ -88,10 +88,8 @@ Value Object::iter   () const                    { assert(false); }
 Value Object::next   ()                          { assert(false); }
 
 SeqObj const SeqObj::dummy;
-MutSeqObj MutSeqObj::dummy;
 
 const SeqObj& Object::asSeq () const { return SeqObj::dummy; }
-MutSeqObj& Object::asMutSeq () { return MutSeqObj::dummy; }
 
 Object& ForceObj::operator* () const {
     switch (tag()) {

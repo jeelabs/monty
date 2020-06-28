@@ -103,7 +103,6 @@ struct Object {
     virtual Value next   ();
 
     virtual const SeqObj& asSeq () const;
-    virtual MutSeqObj& asMutSeq ();
 };
 
 //CG< type int
@@ -178,8 +177,6 @@ ForceObj Value::objPtr () const { return this; }
 struct MutSeqObj : SeqObj {
     static const TypeObj info;
     const TypeObj& type () const override;
-
-    MutSeqObj& asMutSeq () override { return *this; }
 
     Value len () const override { return vec.length(); }
 

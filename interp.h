@@ -300,7 +300,8 @@ private:
 
     //CG1 op
     void op_StoreSubscr () {
-        auto& d = (DictObj&) sp[-1].objPtr()->asMutSeq(); // TODO yuck
+        assert(&sp[-1].obj().type() == &DictObj::info);
+        auto& d = (DictObj&) sp[-1].obj(); // TODO yuck
         d.atKey(sp[0], DictObj::Set) = sp[-2];
         sp -= 3;
     }
