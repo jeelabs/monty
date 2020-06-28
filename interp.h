@@ -16,9 +16,6 @@ struct QstrPool {
         for (int i = 0; i < n; ++i) {
             auto pos = qp->off[i];
             qp->off[i+1] = pos + strlen(qp->vec + pos) + 1;
-#if VERBOSE_LOAD
-            printf("%4d: %s\n", i + (int) qstrNext, qp->vec + pos);
-#endif
         }
         return qp;
     }
@@ -90,8 +87,6 @@ private:
     //CG1 op q
     void op_LoadName (const char* arg) {
         *++sp = fp->locals.at(arg);
-        if (sp->isNil())
-            printf("loadname? %s\n", arg);
         assert(!sp->isNil());
     }
 
@@ -157,7 +152,6 @@ private:
         exc[1] = sp - fp->bottom(); // again as offset, as sp is not a Value
         exc[2] = Value::nil; // no previous exception
         assert(exc[0].isInt() && exc[1].isInt());
-        //printf("setup  %p %p %p\n", sp, fp, fp->stack);
     }
 
     //CG1 op o
@@ -182,7 +176,6 @@ private:
 
     //CG1 op q
     void op_StoreAttr (const char* arg) {
-        //printf("\t"); print(sp[-1]); print(sp[0]); printf(" (store-attr)\n");
         assert(&sp->obj().type().type() == &ClassObj::info);
         auto& io = (InstanceObj&) sp->obj(); // TODO yuck
         io.atKey(arg, DictObj::Set) = sp[-1];
@@ -193,11 +186,9 @@ private:
     void op_LoadMethod (const char* arg) {
         Value self = *sp;
         *sp = self.objPtr()->attr(arg, sp[1]);
-        //printf("\t"); print(*sp); printf(" (found)\n");
         ++sp;
         if (sp->isNil())
             *sp = self;
-        //printf("\t"); print(*sp); printf(" (self)\n");
         assert(!sp->isNil());
     }
 
@@ -205,7 +196,6 @@ private:
     void op_CallMethod (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
         sp -= nargs + 2 * nkw + 1;
-        //printf("\t"); print(*sp); printf(" (call meth)\n");
         *sp = sp->obj().call(nargs + 1, sp + 1);
     }
 
@@ -216,7 +206,6 @@ private:
 
     //CG1 op s
     void op_UnwindJump (int arg) {
-        //printf("*ip %d\n", *ip);
         fp->excTop -= (uint8_t) *ip; // TODO hardwired for simplest case
         ip += arg;
     }
@@ -252,7 +241,6 @@ private:
     void op_CallFunction (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-        //printf("\t"); print(*sp); printf(" (call)\n");
         Value v = sp->obj().call(nargs, sp + 1);
         if (!v.isNil())
             *sp = v;
@@ -263,7 +251,6 @@ private:
         Value v = *sp;
         popState();
         assert(fp != 0 && sp != 0); // can't yield out of main
-        //printf("\t"); print(*sp); print(v); printf(" (yield)\n");
         *sp = v;
     }
 
@@ -273,7 +260,6 @@ private:
         Value v = *sp;
         popState();
         v = ofp->leave(v);
-        //printf("\t"); print(v); printf(" (return)\n");
         if (sp != 0) // null when returning from main, i.e. top level
             *sp = v;
     }
@@ -329,13 +315,11 @@ private:
         Value seq = *sp;
         sp += 3; // TODO yuck, the compiler assumes 4 stack entries are used!
         *sp = new IterObj (seq);
-        //printf("\t"); print(*sp); printf(" (iter)\n");
     }
 
     //CG1 op o
     void op_ForIter (int arg) {
         Value v = sp->obj().next();
-        //printf("\t"); print(v); printf(" (next)\n");
         if (v.isNil()) {
             delete &sp->obj(); // IterObj
             sp -= 4;
