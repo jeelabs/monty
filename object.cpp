@@ -198,7 +198,7 @@ void  MutSeqObj::insert  (int idx, Value val) {
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
-    auto p = malloc(sizeof (TupleObj) + argc * sizeof (Value));
+    auto p = allocator(sizeof (TupleObj) + argc * sizeof (Value));
     return new (p) TupleObj (argc, argv);
 }
 

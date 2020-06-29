@@ -108,8 +108,9 @@ struct Object {
     void* operator new (size_t, void*);
     void operator delete (void*, size_t);
 
-    static void* allocator (size_t sz, void* p =0);
     static void gcStats ();
+protected:
+    static void* allocator (size_t sz, void* p =0);
 };
 
 //CG< type int
