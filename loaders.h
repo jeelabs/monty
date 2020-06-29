@@ -151,6 +151,7 @@ struct Loader {
 
     const BytecodeObj& loadRaw (ModuleObj& modobj) {
         auto& bc = *new BytecodeObj (modobj);
+        printf("ha\n");
 
         auto typsiz = varInt();
         printf("type %d size %d (%d)\n", typsiz & 3, typsiz >> 2, typsiz);
