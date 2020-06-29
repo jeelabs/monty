@@ -1,15 +1,15 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      1 // show detailed memory allocation info & stats
+#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
-#define GC_REPORTS   1000 // print a gc stats report every N allocs
+#define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
 #include "monty.h"
 
 #include <assert.h>
 #include <string.h>
 
-#if VERBOSE_GC // 0 = off, 1 = stats, 2 = detailed
+#if VERBOSE_GC
 #if NATIVE
 #include <stdio.h>
 #else
@@ -17,7 +17,7 @@
 #endif
 #endif
 
-#if VERBOSE_GC <= 1
+#if VERBOSE_GC < 2
 #define printf(...)
 #endif
 
@@ -123,7 +123,6 @@ static void release (void* p) {
         auto& h = p2h(p);
         assert(inUse(h));
         h &= ~USED;
-        ///dump();
         --currAllocs;
         currBytes -= h2s(h) * MEM_ALIGN;
     }
@@ -135,7 +134,6 @@ static void* allocate (size_t sz) {
 
     auto ns = b2s(sz);
     printf("  alloc %d slots %d\n", (int) sz, ns);
-    ///dump();
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
         if (!inUse(*h)) {
             //printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
@@ -171,31 +169,29 @@ static void* allocate (size_t sz) {
 }
 
 static void* resize (void* p, size_t sz) {
-    if (sz == 0) {
-        release(p);
-        return 0;
+    void* q = 0;
+    if (sz > 0) {
+        // determine old and new slot sizes
+        auto os = p != 0 ? h2s(p2h(p)) : 0;
+        size_t ns = b2s(sz);
+        if (ns == os) // no change
+            return p;
+        if (ns < os) { // truncate
+            auto& h = p2h(p);
+            h = USED | ns;
+            next(&h) = os - ns;
+            return p;
+        }
+        // won't fit, need to copy to a new block
+        q = allocate(sz);
+        if (p != 0) {
+            printf("resize #%d: %p #%d -> %p #%d (%db)\n",
+                    (int) sz, p, (int) os, q, (int) ns,
+                    (int) (os * MEM_ALIGN - HBYT));
+            memcpy(q, p, os * MEM_ALIGN - HBYT);
+        }
     }
-    // determine old and new slot sizes
-    auto os = p != 0 ? h2s(p2h(p)) : 0;
-    size_t ns = b2s(sz);
-    if (ns == os) // no change
-        return p;
-    if (ns < os) { // truncate
-        auto& h = p2h(p);
-        h = USED | ns;
-        next(&h) = os - ns;
-        return p;
-    }
-    // won't fit, need to copy to a new block
-    auto q = allocate(sz);
-    if (p != 0) {
-        printf("resize #%d: %p #%d -> %p #%d (%db)\n",
-                (int) sz, p, (int) os, q, (int) ns,
-                (int) (os * MEM_ALIGN - HBYT));
-        ///dump();
-        memcpy(q, p, os * MEM_ALIGN - HBYT);
-        release(p);
-    }
+    release(p);
     return q;
 }
 
@@ -241,5 +237,5 @@ bool Context::gcCheck () {
 }
 
 void Context::gcTrigger () {
-    printf("GC triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
+    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
 }
