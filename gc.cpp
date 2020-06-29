@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      0 // show detailed memory allocation info & stats
+#define VERBOSE_GC      2 // show detailed memory allocation info & stats
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every N allocs
 
@@ -136,7 +136,7 @@ static void* allocate (size_t bytes) {
     printf("  alloc %d slots %d\n", (int) bytes, sz);
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
         if (!inUse(*h)) {
-            printf("    b %d sz %d h %p *h %04x\n", bytes, sz, h, *h);
+            printf("    b %d sz %d h %p *h %04x\n", (int) bytes, sz, h, *h);
             coalesce(h);
             if (*h >= sz) {
                 auto n = *h;
@@ -168,17 +168,29 @@ static void* allocate (size_t bytes) {
 }
 
 static void* resize (void* p, size_t sz) {
-    void* q = 0;
-    if (sz > 0) {
-        // TODO shrink needs no alloc, also should try to expand in-place
-        q = allocate(sz);
-        if (p != 0) {
-            auto osz = h2b(p2h(p));
-            printf("resize %p #%d -> %p #%d\n", p, osz, q, sz);
-            memcpy(q, p, sz < osz ? sz : osz);
-        }
+    if (sz == 0) {
+        release(p);
+        return 0;
     }
-    release(p);
+    // determine slot sizes
+    auto sOld = p != 0 ? h2s(p2h(p)) : 0;
+    size_t sNew = b2s(sz);
+    if (sNew == sOld) // no change
+        return p;
+    if (sNew < sOld) { // truncate
+        auto& h = p2h(p);
+        h = USED | sNew;
+        next(&h) = sOld - sNew;
+        return p;
+    }
+    // won't fit, need to copy to a new block
+    auto q = allocate(sz);
+    if (p != 0) {
+        printf("resize #%d: %p #%d -> %p #%d\n",
+                (int) sz, p, (int) sOld, q, (int) sNew);
+        memcpy(q, p, sOld * MEM_ALIGN);
+        release(p);
+    }
     return q;
 }
 
