@@ -1,11 +1,20 @@
 // Memory allocation and garbage collection for objects and vectors.
 
 #define VERBOSE_GC      1 // show detailed memory allocation info & stats
+#define USE_MALLOC      0 // use standard allocator, no garbage collection
+#define GC_REPORTS   1000 // print a gc stats report every N allocs
 
 #include "monty.h"
 
 #include <assert.h>
 #include <string.h>
+
+#if !USE_MALLOC
+#define malloc allocate
+#define realloc resize
+#define free release
+#endif
+
 
 #if VERBOSE_GC // 0 = off, 1 = stats, 2 = detailed
 #if NATIVE
@@ -101,13 +110,22 @@ static void coalesce (hdr_t* h) {
             *h += next(h); // free headers are positive and can be added
 }
 
-static void* release (void* p) {
+uint32_t totalAllocs,
+         totalBytes,
+         currAllocs,
+         currBytes,
+         maxAllocs,
+         maxBytes;
+
+static void release (void* p) {
     if (p != 0) {
         auto& h = p2h(p);
         assert(inUse(h));
         h &= ~USED;
+
+        --currAllocs;
+        currBytes -= h2s(h) * MEM_ALIGN;
     }
-    return 0;
 }
 
 static void* allocate (size_t bytes) {
@@ -115,7 +133,7 @@ static void* allocate (size_t bytes) {
         initMem();
 
     auto sz = b2s(bytes);
-    printf("  alloc %d %d\n", (int) bytes, sz);
+    printf("  alloc %d slots %d\n", (int) bytes, sz);
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
         if (!inUse(*h)) {
             printf("    b %d sz %d h %p *h %04x\n", bytes, sz, h, *h);
@@ -131,6 +149,16 @@ static void* allocate (size_t bytes) {
                 printf("    -> %p *h %04x next %04x\n",
                         p, (uint16_t) *h, (uint16_t) next(h));
                 //memset(p, 0, bytes);
+
+                if (++totalAllocs % GC_REPORTS == 0)
+                    Object::gcStats();
+                if (++currAllocs > maxAllocs)
+                    maxAllocs = currAllocs;
+                totalBytes += sz * MEM_ALIGN;
+                currBytes += sz * MEM_ALIGN;
+                if (currBytes > maxBytes)
+                    maxBytes = currBytes;
+
                 return p;
             }
         }
@@ -142,6 +170,7 @@ static void* allocate (size_t bytes) {
 static void* resize (void* p, size_t sz) {
     void* q = 0;
     if (sz > 0) {
+        // TODO shrink needs no alloc, also should try to expand in-place
         q = allocate(sz);
         if (p != 0) {
             auto osz = h2b(p2h(p));
@@ -153,59 +182,33 @@ static void* resize (void* p, size_t sz) {
 }
 
 void* Object::allocator (size_t sz, void* p) {
-#if 0
     if (sz != 0)
         return realloc(p, sz);
     free(p);
-#else
-    if (sz != 0)
-        return resize(p, sz);
-    release(p);
-#endif
     return 0;
 }
 
-uint32_t totalAllocs,
-         totalBytes,
-         currAllocs,
-         currBytes,
-         maxAllocs,
-         maxBytes;
-
 void* Object::operator new (size_t sz) {
-    auto p = allocator(sz);
+    auto p = malloc(sz);
     printf(PREFIX "new    %5d -> %p\n", (int) sz, p);
-
-    ++totalAllocs;
-    if (++currAllocs > maxAllocs)
-        maxAllocs = currAllocs;
-    totalBytes += sz;
-    currBytes += sz;
-    if (++currBytes > maxBytes)
-        maxBytes = currBytes;
-
     return p;
 }
 
 void* Object::operator new (size_t sz, void* p) {
     printf(PREFIX "new #  %5d  @ %p\n", (int) sz, p);
-
     return p;
 }
 
-void Object::operator delete (void* p, size_t sz) {
-    allocator(0, p);
-    printf(PREFIX "delete %5d  : %p\n", (int) sz, p);
-
-    --currAllocs;
-    currBytes -= sz;
+void Object::operator delete (void* p) {
+    free(p);
+    printf(PREFIX "delete        : %p\n", p);
 }
 
 void Object::gcStats () {
 #if VERBOSE_GC
 #undef printf
-    printf(PREFIX "total: %5d allocs %8d b\n", totalAllocs, totalBytes);
-    printf(PREFIX " curr: %5d allocs %8d b\n", currAllocs, currBytes);
-    printf(PREFIX "  max: %5d allocs %8d b\n", maxAllocs, maxBytes);
+    printf("gc: total: %5d allocs %8d b\n", totalAllocs, totalBytes);
+    printf("gc:  curr: %5d allocs %8d b\n", currAllocs, currBytes);
+    printf("gc:   max: %5d allocs %8d b\n", maxAllocs, maxBytes);
 #endif
 }

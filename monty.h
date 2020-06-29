@@ -106,7 +106,7 @@ struct Object {
 
     void* operator new (size_t);
     void* operator new (size_t, void*);
-    void operator delete (void*, size_t);
+    void operator delete (void*);
 
     static void gcStats ();
 protected:
