@@ -331,14 +331,14 @@ Context::Context () {
 
 int Context::extend (int num) {
     auto n = length();
-    saveState(); // Context::sp may change due the a realloc in insert
+    saveState(); // Context::sp may change due the a realloc in ins()
     ins(n, num);
     restoreState();
     return n;
 }
 
 void Context::shrink (int num) {
-    saveState(); // Context::sp may change due the a realloc in remove
+    saveState(); // Context::sp may change due the a realloc in del()
     del(length() - num, num);
     restoreState();
 }
@@ -363,22 +363,22 @@ void Context::raise (Value e) {
     if (e.isInt()) {
         slot = e;
         assert(0 < slot && slot < (int) MAX_HANDLERS);
-        assert(!vm->handlers.get(slot).isNil());
+        assert(!handlers.get(slot).isNil());
     } else
-        vm->handlers.set(0, e);
+        handlers.set(0, e);
 
     // this spinloop correctly sets one bit in volatile "pending" state
     do // potential race when an irq raises *inside* the "pending |= ..."
-        vm->pending |= 1<<slot;
-    while ((vm->pending & (1<<slot)) == 0);
+        pending |= 1<<slot;
+    while ((pending & (1<<slot)) == 0);
 }
 
 Value Context::nextPending () {
     for (size_t slot = 0; slot < MAX_HANDLERS; ++slot)
         if (pending & (1<<slot)) {
             do // again a spinloop, see notes above in raise()
-                vm->pending &= ~(1<<slot);
-            while (vm->pending & (1<<slot));
+                pending &= ~(1<<slot);
+            while (pending & (1<<slot));
             return handlers.get(slot);
         }
 
@@ -389,13 +389,13 @@ int Context::setHandler (Value h) {
     if (h.isInt()) {
         int i = h;
         if (1 <= i && i < (int) MAX_HANDLERS)
-            vm->handlers.set(i, Value::nil);
+            handlers.set(i, Value::nil);
         return 0;
     }
 
     for (int i = 1; i < (int) MAX_HANDLERS; ++i)
-        if (vm->handlers.get(i).isNil()) {
-            vm->handlers.set(i, h);
+        if (handlers.get(i).isNil()) {
+            handlers.set(i, h);
             return i;
         }
 
@@ -430,9 +430,9 @@ FrameObj* Context::flip (FrameObj* frame) {
     assert(vm->fp != frame);
     auto fp = vm->fp;
     if (fp != 0)
-        vm->saveState();
+        saveState();
     vm->fp = frame;
-    vm->restoreState();
+    restoreState();
     return fp;
 }
 

@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      2 // show detailed memory allocation info & stats
+#define VERBOSE_GC      0 // show detailed memory allocation info & stats
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every N allocs
 
@@ -8,13 +8,6 @@
 
 #include <assert.h>
 #include <string.h>
-
-#if !USE_MALLOC
-#define malloc allocate
-#define realloc resize
-#define free release
-#endif
-
 
 #if VERBOSE_GC // 0 = off, 1 = stats, 2 = detailed
 #if NATIVE
@@ -110,6 +103,14 @@ static void coalesce (hdr_t* h) {
             *h += next(h); // free headers are positive and can be added
 }
 
+#if 0
+static void dump () {
+    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
+        printf("\t\t\t\tdump: %p %4x %6db next %4x\n",
+                h, (uint16_t) *h, h2b(*h), (uint16_t) next(h));
+}
+#endif
+
 uint32_t totalAllocs,
          totalBytes,
          currAllocs,
@@ -122,40 +123,40 @@ static void release (void* p) {
         auto& h = p2h(p);
         assert(inUse(h));
         h &= ~USED;
-
+        ///dump();
         --currAllocs;
         currBytes -= h2s(h) * MEM_ALIGN;
     }
 }
 
-static void* allocate (size_t bytes) {
+static void* allocate (size_t sz) {
     if (mem[HPS-1] == 0)
         initMem();
 
-    auto sz = b2s(bytes);
-    printf("  alloc %d slots %d\n", (int) bytes, sz);
+    auto ns = b2s(sz);
+    printf("  alloc %d slots %d\n", (int) sz, ns);
+    ///dump();
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
         if (!inUse(*h)) {
-            printf("    b %d sz %d h %p *h %04x\n", (int) bytes, sz, h, *h);
+            printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
             coalesce(h);
-            if (*h >= sz) {
-                auto n = *h;
-                *h = sz;
+            if (*h >= ns) {
+                auto os = *h;
+                *h = ns;
                 printf("    h %p next h %p end %p\n", h, &next(h), mem + MAX);
-                if (n > sz)
-                    next(h) = n - sz;
+                if (os > ns)
+                    next(h) = os - ns;
                 *h |= USED;
                 auto p = h2p(h);
                 printf("    -> %p *h %04x next %04x\n",
                         p, (uint16_t) *h, (uint16_t) next(h));
-                //memset(p, 0, bytes);
 
                 if (++totalAllocs % GC_REPORTS == 0)
                     Object::gcStats();
                 if (++currAllocs > maxAllocs)
                     maxAllocs = currAllocs;
-                totalBytes += sz * MEM_ALIGN;
-                currBytes += sz * MEM_ALIGN;
+                totalBytes += ns * MEM_ALIGN;
+                currBytes += ns * MEM_ALIGN;
                 if (currBytes > maxBytes)
                     maxBytes = currBytes;
 
@@ -172,35 +173,42 @@ static void* resize (void* p, size_t sz) {
         release(p);
         return 0;
     }
-    // determine slot sizes
-    auto sOld = p != 0 ? h2s(p2h(p)) : 0;
-    size_t sNew = b2s(sz);
-    if (sNew == sOld) // no change
+    // determine old and new slot sizes
+    auto os = p != 0 ? h2s(p2h(p)) : 0;
+    size_t ns = b2s(sz);
+    if (ns == os) // no change
         return p;
-    if (sNew < sOld) { // truncate
+    if (ns < os) { // truncate
         auto& h = p2h(p);
-        h = USED | sNew;
-        next(&h) = sOld - sNew;
+        h = USED | ns;
+        next(&h) = os - ns;
         return p;
     }
     // won't fit, need to copy to a new block
     auto q = allocate(sz);
     if (p != 0) {
-        printf("resize #%d: %p #%d -> %p #%d\n",
-                (int) sz, p, (int) sOld, q, (int) sNew);
-        memcpy(q, p, sOld * MEM_ALIGN);
+        printf("resize #%d: %p #%d -> %p #%d (%db)\n",
+                (int) sz, p, (int) os, q, (int) ns, os * MEM_ALIGN - HBYT);
+        ///dump();
+        memcpy(q, p, os * MEM_ALIGN - HBYT);
         release(p);
     }
     return q;
 }
 
-// used only for resizing the variable data vectors
+#if USE_MALLOC
+#define allocate malloc
+#define resize realloc
+#define release free
+#endif
+
+// used only to alloc/resize/free variable data vectors
 void* Vector::alloc (void* p, size_t sz) {
-    return realloc(p, sz);
+    return resize(p, sz);
 }
 
 void* Object::operator new (size_t sz) {
-    auto p = malloc(sz);
+    auto p = allocate(sz);
     printf(PREFIX "new    %5d -> %p\n", (int) sz, p);
     return p;
 }
@@ -211,8 +219,8 @@ void* Object::operator new (size_t sz, void* p) {
 }
 
 void Object::operator delete (void* p) {
-    free(p);
     printf(PREFIX "delete        : %p\n", p);
+    release(p);
 }
 
 void Object::gcStats () {

@@ -251,7 +251,8 @@ private:
         Value v = *sp;
         popState();
         assert(fp != 0 && sp != 0); // can't yield out of main
-        *sp = v;
+        if (!v.isNil())
+            *sp = v;
     }
 
     //CG1 op

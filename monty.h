@@ -495,7 +495,7 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
-struct Context : MutSeqObj {
+struct Context : Object, private VecOf<Value> {
     static TypeObj info;
     TypeObj& type () const override;
 
