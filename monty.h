@@ -27,6 +27,9 @@ public:
 
     void ins (int idx, int num =1);
     void del (int idx, int num =1);
+
+private:
+    static void* alloc (void* p, size_t sz);
 };
 
 template< typename T >
@@ -111,8 +114,6 @@ struct Object {
     void operator delete (void*);
 
     static void gcStats ();
-protected:
-    static void* allocator (size_t sz, void* p =0);
 };
 
 //CG< type int

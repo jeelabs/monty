@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      1 // show detailed memory allocation info & stats
+#define VERBOSE_GC      0 // show detailed memory allocation info & stats
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every N allocs
 
@@ -174,6 +174,7 @@ static void* resize (void* p, size_t sz) {
         q = allocate(sz);
         if (p != 0) {
             auto osz = h2b(p2h(p));
+            printf("resize %p #%d -> %p #%d\n", p, osz, q, sz);
             memcpy(q, p, sz < osz ? sz : osz);
         }
     }
@@ -181,11 +182,9 @@ static void* resize (void* p, size_t sz) {
     return q;
 }
 
-void* Object::allocator (size_t sz, void* p) {
-    if (sz != 0)
-        return realloc(p, sz);
-    free(p);
-    return 0;
+// used only for resizing the variable data vectors
+void* Vector::alloc (void* p, size_t sz) {
+    return realloc(p, sz);
 }
 
 void* Object::operator new (size_t sz) {
@@ -207,8 +206,8 @@ void Object::operator delete (void* p) {
 void Object::gcStats () {
 #if VERBOSE_GC
 #undef printf
-    printf("gc: total: %5d allocs %8d b\n", totalAllocs, totalBytes);
-    printf("gc:  curr: %5d allocs %8d b\n", currAllocs, currBytes);
-    printf("gc:   max: %5d allocs %8d b\n", maxAllocs, maxBytes);
+    printf("gc: total %6d allocs %8d b\n", totalAllocs, totalBytes);
+    printf("gc:  curr %6d allocs %8d b\n", currAllocs, currBytes);
+    printf("gc:   max %6d allocs %8d b\n", maxAllocs, maxBytes);
 #endif
 }
