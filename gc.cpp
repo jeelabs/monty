@@ -24,10 +24,10 @@
 #define PREFIX "\t\tgc "
 
 #if NATIVE
-constexpr int MEM_BYTES = 24 * 1024;    // 24 Kb total memory
+constexpr int MEM_BYTES = 20 * 1024;    // 20 Kb total memory
 constexpr int MEM_ALIGN = 16;           // 16-byte slot boundaries
 #else
-constexpr int MEM_BYTES = 12 * 1024;    // 12 Kb total memory
+constexpr int MEM_BYTES = 10 * 1024;    // 10 Kb total memory
 constexpr int MEM_ALIGN = 8;            // 8-byte slot boundaries
 #endif
 
