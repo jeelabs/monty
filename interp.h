@@ -39,13 +39,20 @@ struct Interp : Context {
     void run () {
         while (ip != 0) {
             assert(sp != 0 && fp != 0);
+
+            if (gcCheck()) {            // collect garbage, if needed
+                saveState();
+                gcTrigger();
+                restoreState();
+            }
+
             Value h = nextPending();
             if (h.isNil())
-                inner();
+                inner();                // go process some bytecode
             else if (h.isObj())
-                h.obj().next();
+                h.obj().next();         // resume the triggered handler
             else {
-                assert(fp->excTop > 0); // simple case, no stack unwind
+                assert(fp->excTop > 0); // simple exception, no stack unwind
                 auto exc = fp->exceptionPushPop(0);
                 ip = fp->bcObj.code + (int) exc[0];
                 sp = fp->bottom() + (int) exc[1];

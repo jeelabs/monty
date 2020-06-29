@@ -518,6 +518,9 @@ struct Context : Object, private VecOf<Value> {
 
     static Value* prepareStack (FrameObj& fo, Value* av);
 
+    static bool gcCheck ();     // see gc.c, called from outer vm loop
+    static void gcTrigger ();   // see gc.c, called from outer vm loop
+
 protected:
     Context ();
 
@@ -526,14 +529,13 @@ protected:
     FrameObj* fp = 0;
 
     void popState ();
+    void saveState ();
+    void restoreState ();
 
     static Context* vm;
     static volatile uint32_t pending;
 private:
     static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
-
-    void saveState ();
-    void restoreState ();
 
     static VecOf<Value> handlers;
 };

@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      0 // show detailed memory allocation info & stats
+#define VERBOSE_GC      1 // show detailed memory allocation info & stats
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every N allocs
 
@@ -138,12 +138,12 @@ static void* allocate (size_t sz) {
     ///dump();
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
         if (!inUse(*h)) {
-            printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
+            //printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
             coalesce(h);
             if (*h >= ns) {
                 auto os = *h;
                 *h = ns;
-                printf("    h %p next h %p end %p\n", h, &next(h), mem + MAX);
+                //printf("    h %p next h %p end %p\n", h, &next(h), mem + MAX);
                 if (os > ns)
                     next(h) = os - ns;
                 *h |= USED;
@@ -160,6 +160,8 @@ static void* allocate (size_t sz) {
                 if (currBytes > maxBytes)
                     maxBytes = currBytes;
 
+                if (Context::gcCheck())
+                    Context::raise(Value::nil); // exit inner loop
                 return p;
             }
         }
@@ -188,7 +190,8 @@ static void* resize (void* p, size_t sz) {
     auto q = allocate(sz);
     if (p != 0) {
         printf("resize #%d: %p #%d -> %p #%d (%db)\n",
-                (int) sz, p, (int) os, q, (int) ns, os * MEM_ALIGN - HBYT);
+                (int) sz, p, (int) os, q, (int) ns,
+                (int) (os * MEM_ALIGN - HBYT));
         ///dump();
         memcpy(q, p, os * MEM_ALIGN - HBYT);
         release(p);
@@ -204,17 +207,18 @@ static void* resize (void* p, size_t sz) {
 
 // used only to alloc/resize/free variable data vectors
 void* Vector::alloc (void* p, size_t sz) {
+    printf(PREFIX "alloc  %5d -> %p (used %d)\n", (int) sz, p, currBytes);
     return resize(p, sz);
 }
 
 void* Object::operator new (size_t sz) {
     auto p = allocate(sz);
-    printf(PREFIX "new    %5d -> %p\n", (int) sz, p);
+    printf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currBytes);
     return p;
 }
 
 void* Object::operator new (size_t sz, void* p) {
-    printf(PREFIX "new #  %5d  @ %p\n", (int) sz, p);
+    printf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currBytes);
     return p;
 }
 
@@ -230,4 +234,12 @@ void Object::gcStats () {
     printf("gc:  curr %6d allocs %8d b\n", currAllocs, currBytes);
     printf("gc:   max %6d allocs %8d b\n", maxAllocs, maxBytes);
 #endif
+}
+
+bool Context::gcCheck () {
+    return vm != 0 && (MEM_BYTES - currBytes) < (MEM_BYTES / 10);
+}
+
+void Context::gcTrigger () {
+    printf("GC triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
 }
