@@ -25,8 +25,8 @@ public:
     void set (int idx, int val);
     void set (int idx, const void* ptr);
 
-    void insert (int idx, int num =1);
-    void remove (int idx, int num =1);
+    void ins (int idx, int num =1);
+    void del (int idx, int num =1);
 };
 
 template< typename T >
@@ -48,7 +48,6 @@ struct TypeObj;   // forward decl
 struct ModuleObj; // forward decl
 struct LookupObj; // forward decl
 struct SeqObj;    // forward decl
-struct MutSeqObj; // forward decl
 struct ForceObj;  // forward decl
 struct Context;   // forward decl
 
@@ -185,24 +184,22 @@ private:
 ForceObj Value::objPtr () const { return this; }
 
 //CG3 type <mut-seq>
-struct MutSeqObj : SeqObj {
+struct MutSeqObj : SeqObj, protected VecOf<Value> {
     static TypeObj info;
     TypeObj& type () const override;
 
-    Value len () const override { return vec.length(); }
+    Value len () const override { return length(); }
 
     virtual void  insert (int, Value);
     virtual Value pop (int =-1);
     virtual void  remove (Value);
     virtual void  reverse ();
 
-    void append (Value v) { insert(vec.length(), v); }
+    void append (Value v) { insert(length(), v); }
 
     static MutSeqObj dummy;
 protected:
     MutSeqObj () {} // cannot be instantiated directly
-
-    VecOf<Value> vec;
 };
 
 //CG< type tuple
@@ -278,7 +275,7 @@ struct DictObj : MutSeqObj {
 
     DictObj (int size =0) {} // TODO
 
-    Value len () const override { return vec.length() / 2; }
+    Value len () const override { return length() / 2; }
     Value at (Value key) const override;
     Value& atKey (Value key, Mode =Get);
 };
@@ -497,7 +494,7 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
-struct Context : Object, VecOf<Value> {
+struct Context : MutSeqObj {
     static TypeObj info;
     TypeObj& type () const override;
 

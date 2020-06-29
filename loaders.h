@@ -76,7 +76,7 @@ struct Loader {
         dp += 3;
         int n = varInt();
         printf("qwin %u\n", n);
-        qWin.insert(0, n); // qstr window
+        qWin.ins(0, n); // qstr window
 
         qBuf = qNext = (char*) malloc(2000); // TODO need to handle pre-loaded
 
@@ -119,8 +119,8 @@ struct Loader {
         printf("q:%s\n", s);
         int n = qVec.length();
         qVec.set(n, s);
-        qWin.remove(qWin.length()-1);
-        qWin.insert(0);
+        qWin.del(qWin.length()-1);
+        qWin.ins(0);
         n += qstrNext;
         qWin.set(0, n);
         return n;
@@ -135,8 +135,8 @@ struct Loader {
 
     int winQstr (int i) {
         int n = qWin.get(i);
-        qWin.remove(i);
-        qWin.insert(0);
+        qWin.del(i);
+        qWin.ins(0);
         qWin.set(0, n);
         return n;
     }

@@ -53,12 +53,12 @@ void Vector::set (int idx, const void* ptr) {
     assert(logBits >= 3); // TODO
     if (idx * width() >= (int) capacity) {
         auto n = capacity / width();
-        insert(n, idx + 1 - n);
+        ins(n, idx + 1 - n);
     }
     memcpy(getPtr(idx), ptr, width());
 }
 
-void Vector::insert (int idx, int num) {
+void Vector::ins (int idx, int num) {
     assert(logBits >= 3); // TODO
     auto needed = (fill + num) * width();
     if (needed > (int) capacity) {
@@ -72,7 +72,7 @@ void Vector::insert (int idx, int num) {
     fill += num;
 }
 
-void Vector::remove (int idx, int num) {
+void Vector::del (int idx, int num) {
     assert(logBits >= 3); // TODO
     fill -= num;
     memmove(getPtr(idx), getPtr(idx + num), (fill - idx) * width());

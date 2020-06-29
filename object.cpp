@@ -193,8 +193,8 @@ void  MutSeqObj::remove  (Value)      { assert(false); }
 void  MutSeqObj::reverse ()           { assert(false); }
 
 void  MutSeqObj::insert  (int idx, Value val) {
-    vec.insert(idx);
-    vec.set(idx, val);
+    ins(idx);
+    set(idx, val);
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -219,13 +219,13 @@ Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
 }
 
 ListObj::ListObj (int argc, Value argv[]) {
-    vec.insert(0, argc);
-    memcpy(vec.getPtr(0), argv, argc * sizeof *argv);
+    ins(0, argc);
+    memcpy(getPtr(0), argv, argc * sizeof *argv);
 }
 
 Value ListObj::at (Value idx) const {
     assert(idx.isInt());
-    return vec.get(idx);
+    return get(idx);
 }
 
 Value IterObj::next () {
@@ -258,17 +258,17 @@ Value DictObj::at (Value key) const {
 }
 
 Value& DictObj::atKey (Value key, Mode mode) {
-    auto n = vec.length();
+    auto n = length();
     for (size_t i = 0; i < n; i += 2)
-        if (key.isEq(vec.get(i))) {
+        if (key.isEq(get(i))) {
             if (mode == Del)
-                vec.remove(i, 2);
-            return vec.get(i+1);
+                del(i, 2);
+            return get(i+1);
         }
     if (mode == Set) {
-        vec.insert(n, 2);
-        vec.set(n, key);
-        return vec.get(n+1);
+        ins(n, 2);
+        set(n, key);
+        return get(n+1);
     }
     // result can't be const, but may not be changed
     assert(Value::invalid.isNil());
@@ -332,14 +332,14 @@ Context::Context () {
 int Context::extend (int num) {
     auto n = length();
     saveState(); // Context::sp may change due the a realloc in insert
-    insert(n, num);
+    ins(n, num);
     restoreState();
     return n;
 }
 
 void Context::shrink (int num) {
     saveState(); // Context::sp may change due the a realloc in remove
-    remove(length() - num, num);
+    del(length() - num, num);
     restoreState();
 }
 
