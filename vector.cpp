@@ -5,13 +5,13 @@
 
 #include "monty.h"
 
-Vector::Vector (size_t bits) : data (0), size (0), fill (0), logBits (0) {
+Vector::Vector (size_t bits) {
     while (bits > (1U << logBits))
         ++logBits;
 }
 
 Vector::~Vector () {
-    if (size > 0)
+    if (capacity > 0)
         free(data);
 }
 
@@ -51,8 +51,8 @@ void Vector::set (int idx, int val) {
 
 void Vector::set (int idx, const void* ptr) {
     assert(logBits >= 3); // TODO
-    if (idx * width() >= (int) size) {
-        auto n = size / width();
+    if (idx * width() >= (int) capacity) {
+        auto n = capacity / width();
         insert(n, idx + 1 - n);
     }
     memcpy(getPtr(idx), ptr, width());
@@ -61,10 +61,10 @@ void Vector::set (int idx, const void* ptr) {
 void Vector::insert (int idx, int num) {
     assert(logBits >= 3); // TODO
     auto needed = (fill + num) * width();
-    if (needed > (int) size) {
+    if (needed > (int) capacity) {
         data = (uint8_t*) realloc(data, needed);
         assert(data != 0);
-        size = needed;
+        capacity = needed;
     }
     auto p = getPtr(idx);
     memmove(getPtr(idx + num), p, (fill - idx) * width());

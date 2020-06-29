@@ -4,10 +4,13 @@
 #include <stdlib.h>
 
 struct Vector {
-    uint8_t* data;
-    size_t size; // in bytes
-    uint16_t fill; // in elements
-    uint8_t logBits;
+    uint8_t extra = 0; // available for any use
+protected:
+    uint8_t logBits = 0;
+    uint16_t fill = 0; // in elements
+    size_t capacity = 0; // in bytes
+    uint8_t* data = 0;
+public:
 
     Vector (size_t bits);
     ~Vector ();
