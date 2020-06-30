@@ -78,6 +78,16 @@ Value Value::binOp (BinOp op, Value rhs) const {
 const Value Value::nil;
 Value Value::invalid;
 
+#include <stdio.h>
+static void markVec (const VecOf<Value>& vec, void (*gc)(const Object&)) {
+    //printf("    markVec %p #%d\n", &vec, vec.length());
+    for (int i = 0; i < vec.length(); ++i) {
+        Value v = vec.get(i);
+        if (v.isObj())
+            gc(v.obj());
+    }
+}
+
 Value Object::repr   () const                    { assert(false); }
 Value Object::call   (int, Value[]) const        { assert(false); }
 Value Object::unop   (UnOp) const                { assert(false); }
@@ -192,6 +202,10 @@ Value MutSeqObj::pop     (int)        { assert(false); }
 void  MutSeqObj::remove  (Value)      { assert(false); }
 void  MutSeqObj::reverse ()           { assert(false); }
 
+void MutSeqObj::mark (void (*gc)(const Object&)) const {
+    markVec(*this, gc);
+}
+
 void  MutSeqObj::insert  (int idx, Value val) {
     ins(idx);
     set(idx, val);
@@ -204,6 +218,14 @@ Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
 
 TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
     memcpy(vec, argv, length * sizeof (Value));
+}
+
+void TupleObj::mark (void (*gc)(const Object&)) const {
+    for (int i = 0; i < length; ++i) {
+        Value v = vec[i];
+        if (v.isObj())
+            gc(v.obj());
+    }
 }
 
 Value TupleObj::at (Value idx) const {
@@ -280,9 +302,19 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
     return Value::nil;
 }
 
+void BytecodeObj::mark (void (*gc)(const Object&)) const {
+    gc(owner);
+}
+
 Value BytecodeObj::call (int argc, Value argv[]) const {
     auto fp = new FrameObj (*this, argc, argv);
     return fp->isCoro() ? fp : Value::nil; // no result yet
+}
+
+void ModuleObj::mark (void (*gc)(const Object&)) const {
+    markVec(*this, gc);
+    if (init != 0)
+        gc(*init);
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
@@ -310,6 +342,16 @@ FrameObj::~FrameObj () {
         delete ctx;
 }
 
+void FrameObj::mark (void (*gc)(const Object&)) const {
+    markVec(*this, gc);
+
+    gc(bcObj);
+    gc(*locals);
+    if (caller != 0) gc(*caller);
+    if (ctx != 0)    gc(*ctx);
+    if (result != 0) gc(*result);
+}
+
 Value FrameObj::next () {
     ctx->resume(this);
     return Value::nil; // TODO really?
@@ -327,6 +369,14 @@ void FrameObj::leave () {
 
 Context::Context () {
     handlers.set(MAX_HANDLERS, Value::nil); // make sure it has enough slots
+}
+
+void Context::mark (void (*gc)(const Object&)) const {
+    markVec(*this, gc);
+    if (fp != 0)
+        gc(*fp);
+    if (this == vm)
+        markVec(handlers, gc);
 }
 
 int Context::extend (int num) {

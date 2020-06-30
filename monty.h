@@ -97,6 +97,7 @@ struct Object {
     virtual ~Object () {}
 
     virtual const TypeObj& type () const =0;
+    virtual void mark (void (*gc)(const Object&)) const {};
 
     virtual Value repr   () const;
     virtual Value call   (int, Value[]) const;
@@ -189,6 +190,8 @@ struct MutSeqObj : SeqObj, protected VecOf<Value> {
     static TypeObj info;
     TypeObj& type () const override;
 
+    void mark (void (*gc)(const Object&)) const override;
+
     Value len () const override { return length(); }
 
     virtual void  insert (int, Value);
@@ -210,6 +213,8 @@ struct TupleObj : SeqObj {
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
+    void mark (void (*gc)(const Object&)) const override;
+
     Value len () const override { return length; }
     Value at (Value) const override;
 
@@ -444,6 +449,8 @@ struct BytecodeObj : Object {
 
     int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
 
+    void mark (void (*gc)(const Object&)) const override;
+
     Value call (int argc, Value argv[]) const override;
 };
 
@@ -455,6 +462,8 @@ struct ModuleObj : DictObj {
     const BytecodeObj* init = 0;
 
     ModuleObj () {}
+
+    void mark (void (*gc)(const Object&)) const override;
 
     Value call (int argc, Value argv[]) const override;
 };
@@ -473,6 +482,8 @@ struct FrameObj : DictObj {
 
     FrameObj (const BytecodeObj& bc, int argc, Value argv[], DictObj* dp = 0);
     ~FrameObj ();
+
+    void mark (void (*gc)(const Object&)) const override;
 
     Value next () override;
 
@@ -531,6 +542,8 @@ protected:
     void popState ();
     void saveState ();
     void restoreState ();
+
+    void mark (void (*gc)(const Object&)) const override;
 
     static Context* vm;
     static volatile uint32_t pending;

@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -105,9 +105,15 @@ static void coalesce (hdr_t* h) {
 
 #if 0
 static void dump () {
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
-        printf("\t\t\t\tdump: %p %4x %6db next %4x\n",
-                h, (uint16_t) *h, h2b(*h), (uint16_t) next(h));
+    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h)) {
+        const char* s = "*FREE*";
+        if (inUse(*h)) {
+            auto& obj = *(const Object*) h2p(h);
+            s = obj.type().name;
+        }
+        printf("\t\t\t\tdump: %p %4x>%4x %6db %s\n",
+                h, (uint16_t) *h, (uint16_t) next(h), h2b(*h), s);
+    }
 }
 #endif
 
@@ -204,7 +210,11 @@ static void* resize (void* p, size_t sz) {
 // used only to alloc/resize/free variable data vectors
 void* Vector::alloc (void* p, size_t sz) {
     printf(PREFIX "alloc  %5d -> %p (used %d)\n", (int) sz, p, currBytes);
+#if 0
     return resize(p, sz);
+#else
+    return realloc(p, sz);
+#endif
 }
 
 void* Object::operator new (size_t sz) {
@@ -220,6 +230,8 @@ void* Object::operator new (size_t sz, void* p) {
 
 void Object::operator delete (void* p) {
     printf(PREFIX "delete        : %p\n", p);
+    auto& obj = *(const Object*) p;
+    printf("\t\t\tdelete %p %s\n", &obj, obj.type().name);
     release(p);
 }
 
@@ -236,6 +248,39 @@ bool Context::gcCheck () {
     return vm != 0 && (MEM_BYTES - currBytes) < (MEM_BYTES / 10);
 }
 
+static uint8_t tag [MAX];
+
+static void gcMarker (const Object& obj) {
+    auto& vt = *(const void**) &obj;
+    auto off = (const hdr_t*) &obj - mem;
+    if (0 <= off && off < MAX) {
+        if (tag[off])
+            return;
+        printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
+        tag[off] = 1;
+    }
+    obj.mark(gcMarker);
+}
+
+static void gcSweeper () {
+    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h)) {
+        const char* s = "*FREE*";
+        if (inUse(*h)) {
+            auto obj = (Object*) h2p(h);
+            auto off = (const hdr_t*) obj - mem;
+            assert(0 <= off && off < MAX);
+            if (tag[off] == 0) {
+                //printf("deleting %p %s\n", obj, obj->type().name);
+                delete obj;
+            }
+        }
+    }
+}
+
 void Context::gcTrigger () {
     printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
+    memset(tag, 0, sizeof tag);
+    assert(vm != 0);
+    gcMarker(*vm);
+    gcSweeper();
 }
