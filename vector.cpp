@@ -41,7 +41,7 @@ void* Vector::getPtr (int idx) const {
     assert(logBits >= 3); // TODO
     if (idx < 0)
         idx += fill;
-    return (uint8_t*) data + idx * width();
+    return data->d + idx * width();
 }
 
 void Vector::set (int idx, int val) {

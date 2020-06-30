@@ -367,16 +367,14 @@ void FrameObj::leave () {
         delete this;
 }
 
-Context::Context () {
-    handlers.set(MAX_HANDLERS, Value::nil); // make sure it has enough slots
-}
-
 void Context::mark (void (*gc)(const Object&)) const {
     markVec(*this, gc);
     if (fp != 0)
         gc(*fp);
     if (this == vm)
-        markVec(handlers, gc);
+        for (size_t i = 0; i < MAX_HANDLERS; ++i)
+            if (handlers[i].isObj())
+                gc(handlers[i].obj());
 }
 
 int Context::extend (int num) {
@@ -413,9 +411,9 @@ void Context::raise (Value e) {
     if (e.isInt()) {
         slot = e;
         assert(0 < slot && slot < (int) MAX_HANDLERS);
-        assert(!handlers.get(slot).isNil());
+        assert(!handlers[slot].isNil());
     } else
-        handlers.set(0, e);
+        handlers[0] = e;
 
     // this spinloop correctly sets one bit in volatile "pending" state
     do // potential race when an irq raises *inside* the "pending |= ..."
@@ -429,7 +427,7 @@ Value Context::nextPending () {
             do // again a spinloop, see notes above in raise()
                 pending &= ~(1<<slot);
             while (pending & (1<<slot));
-            return handlers.get(slot);
+            return handlers[slot];
         }
 
     return Value::nil;
@@ -439,13 +437,13 @@ int Context::setHandler (Value h) {
     if (h.isInt()) {
         int i = h;
         if (1 <= i && i < (int) MAX_HANDLERS)
-            handlers.set(i, Value::nil);
+            handlers[i] = Value::nil;
         return 0;
     }
 
     for (int i = 1; i < (int) MAX_HANDLERS; ++i)
-        if (handlers.get(i).isNil()) {
-            handlers.set(i, h);
+        if (handlers[i].isNil()) {
+            handlers[i] = h;
             return i;
         }
 
@@ -511,7 +509,7 @@ void Context::resume (FrameObj* frame) {
 }
 
 volatile uint32_t Context::pending;
-VecOf<Value> Context::handlers;
+Value Context::handlers [MAX_HANDLERS];
 Context* Context::vm;
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);

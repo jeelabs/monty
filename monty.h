@@ -4,12 +4,18 @@
 #include <stdlib.h>
 
 struct Vector {
+    struct Data {
+        Vector* v;
+        union { uint32_t n; uint8_t d [1]; };
+        Data* next() const;
+    };
+
     uint8_t extra = 0; // available for any use
 protected:
     uint8_t logBits = 0;
     uint16_t fill = 0; // in elements
     size_t capacity = 0; // in bytes
-    uint8_t* data = 0;
+    Data* data = 0;
 public:
 
     Vector (size_t bits);
@@ -31,13 +37,6 @@ public:
     static void gcCompact ();   // see gc.c
 
 private:
-    struct Data {
-        Vector* v;
-        union { uint32_t n; uint8_t d [1]; };
-
-        Data* next() const;
-    };
-
     void alloc (size_t sz);     // see gc.c
 };
 
@@ -100,6 +99,8 @@ private:
     Value () : v (0) {}
 
     uintptr_t v;
+
+    friend Context; // TODO yuck, just to Context::handlers [] can be inited
 };
 
 struct Object {
@@ -542,7 +543,7 @@ struct Context : Object, private VecOf<Value> {
     static void gcTrigger ();   // see gc.c, called from outer vm loop
 
 protected:
-    Context ();
+    Context () {}
 
     OpPtrRO ip = 0;
     Value* sp = 0;
@@ -559,5 +560,5 @@ protected:
 private:
     static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
 
-    static VecOf<Value> handlers;
+    static Value handlers [];
 };

@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -181,63 +181,12 @@ static void* allocate (size_t sz) {
     return 0; // ouch, ran out of memory
 }
 
-#if 0
-static void* resize (void* p, size_t osz, size_t nsz) {
-    if (nsz == 0) {
-        assert(p != 0);
-        --currVecAllocs;
-        currVecBytes -= osz;
-        free(p);
-        return 0;
-    }
-
-    if (p == 0) {
-        ++totalVecAllocs;
-        if (++currVecAllocs > maxVecAllocs)
-            maxVecAllocs = currVecAllocs;
-    }
-
-    currVecBytes += nsz - osz;
-    if (currVecBytes > maxVecBytes)
-        maxVecBytes = currVecBytes;
-
-#if 1 // USE_MALLOC
-    return realloc(p, nsz);
-#else
-    void* q = 0;
-    if (sz > 0) {
-        // determine old and new slot sizes
-        auto os = p != 0 ? h2s(p2h(p)) : 0;
-        size_t ns = b2s(sz);
-        if (ns == os) // no change
-            return p;
-        if (ns < os) { // truncate
-            auto& h = p2h(p);
-            h = USED | ns;
-            next(&h) = os - ns;
-            return p;
-        }
-        // won't fit, need to copy to a new block
-        q = allocate(sz);
-        if (p != 0) {
-            printf("resize #%d: %p #%d -> %p #%d (%db)\n",
-                    (int) sz, p, (int) os, q, (int) ns,
-                    (int) (os * MEM_ALIGN - HBYT));
-            memcpy(q, p, os * MEM_ALIGN - HBYT);
-        }
-    }
-    release(p);
-    return q;
-#endif
-}
-#endif
-
 #if USE_MALLOC
 #define allocate malloc
 #define release free
 #endif
 
-static uint8_t vecs [3000] __attribute__ ((aligned (MEM_ALIGN)));
+static uint8_t vecs [9500] __attribute__ ((aligned (MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
@@ -251,7 +200,7 @@ void Vector::alloc (size_t sz) {
     printf(PREFIX "resize %5d -> %-5d @ %p (u %d) d %p\n",
             capacity, (int) sz, this, (int) (vecTop - vecs), data);
 #if 0
-    data = (uint8_t*) resize(data, capacity, sz);
+    data = (Data*) realloc(data, sizeof (void*) + sz);
 #else
     currVecBytes += sz - capacity;
     if (currVecBytes > maxVecBytes)
@@ -263,10 +212,10 @@ void Vector::alloc (size_t sz) {
 
     if (sz == 0) {
         if (data != 0) {
-            auto d = (Data*) (data - PSZ);
-            assert(d->v == this);
-            d->v = 0;
-            d->n = capacity;
+            //printf("v %p\n", data->v); // TODO when v == 0? some early alloc?
+            assert(data->v == 0 || data->v == this);
+            data->v = 0;
+            data->n = capacity;
             data = 0;
         }
         return;
@@ -274,10 +223,9 @@ void Vector::alloc (size_t sz) {
 
     if (data == 0) {
         assert(capacity == 0);
-        auto d = (Data*) vecTop;
+        data = (Data*) vecTop;
         vecTop += DSZ;
-        d->v = this;
-        data = d->d;
+        data->v = this;
         printf("new data %p vecTop %p\n", data, vecTop);
     }
 
@@ -289,25 +237,24 @@ void Vector::alloc (size_t sz) {
         return; // it already fits
 
     printf("  incr sz %d to %d top %p\n", osz, nsz, vecTop);
-    auto d = (Data*) (data - PSZ);
-    assert(d->v == this);
-    assert((uint8_t*) d->next() <= vecTop);
+    assert(data->v == this);
+    assert((uint8_t*) data->next() <= vecTop);
 
-    if ((uint8_t*) d->next() == vecTop) {
+    if ((uint8_t*) data + osz == vecTop) {
         printf("    last vector, expanding in-place\n");
-        vecTop = (uint8_t*) d + nsz;
+        vecTop = (uint8_t*) data + nsz;
         return;
     }
 
     auto p = (Data*) vecTop;
     vecTop += nsz;
     p->v = this;
-    memcpy(p->d, data, fill);
+    memcpy(p->d, data->d, fill * width());
 
-    d->v = 0;
-    d->n = capacity;
+    data->v = 0;
+    data->n = capacity;
 
-    data = p->d;
+    data = p;
 #endif
 }
 
@@ -388,17 +335,37 @@ static void gcSweeper () {
 }
 
 Vector::Data* Vector::Data::next () const {
-    auto off = sizeof (void*) + (v == 0 ? n : v->capacity);
-    return (Data*) (d - sizeof (void*) + roundUp(off, sizeof (Data)));
+    auto off = sizeof (void*) + (v != 0 ? v->capacity : n);
+    return (Data*) ((uint8_t*) this + roundUp(off, sizeof (Data)));
 }
 
 void Vector::gcCompact () {
 #if VERBOSE_GC
-    printf("gc compaction, %d b spare\n", (int) (vecTop - vecs + sizeof vecs));
+    printf("gc compaction, %d b used\n", (int) (vecTop - vecs));
 #endif
-    for (auto p = (Data*) vecs; (uint8_t*) p < vecTop; p = p->next()) {
-        printf("\t\t\t\tvec %p v %p next %p\n", p, p->v, p->next());
+    auto newTop = (Data*) vecs;
+    for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
+        int n = p->next() - p;
+#if VERBOSE_GC
+        printf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
+                (int) (p->v != 0 ? p->v->capacity : -1),
+                (int) (n * sizeof (Data)));
+#endif
+        if (p->v != 0 && newTop < p) {
+#if VERBOSE_GC
+            printf("\tcompact %p -> %p #%d\n",
+                    p, newTop, (int) (n * sizeof (Data)));
+#endif
+            p->v->data = newTop; // adjust now, p->v may get clobbered
+            memmove(newTop, p, n);
+            newTop += n;
+        }
     }
+#if VERBOSE_GC
+    printf("gc compaction done, %p -> %p, %d b less, used %d\n", vecTop, newTop,
+        (int) (vecTop - (uint8_t*) newTop), (int) ((uint8_t*) newTop - vecs));
+#endif
+    vecTop = (uint8_t*) newTop;
 }
 
 void Context::gcTrigger () {
