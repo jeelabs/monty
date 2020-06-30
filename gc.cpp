@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -181,6 +181,7 @@ static void* allocate (size_t sz) {
     return 0; // ouch, ran out of memory
 }
 
+#if 0
 static void* resize (void* p, size_t osz, size_t nsz) {
     if (nsz == 0) {
         assert(p != 0);
@@ -229,16 +230,26 @@ static void* resize (void* p, size_t osz, size_t nsz) {
     return q;
 #endif
 }
+#endif
 
 #if USE_MALLOC
 #define allocate malloc
 #define release free
 #endif
 
+static uint8_t vecs [3000] __attribute__ ((aligned (MEM_ALIGN)));
+static uint8_t* vecTop = vecs;
+
+static size_t roundUp (size_t n, size_t unit) {
+    auto mask = unit - 1;
+    assert((unit & mask) == 0); // must be power of 2
+    return (n + mask) & ~ mask;
+}
+
 // used only to alloc/resize/free variable data vectors
 void Vector::alloc (size_t sz) {
-    printf(PREFIX "resize %5d -> %-5d @ %p (used %d)\n",
-            capacity, (int) sz, this, currObjBytes);
+    printf(PREFIX "resize %5d -> %-5d @ %p (u %d) d %p\n",
+            capacity, (int) sz, this, (int) (vecTop - vecs), data);
 #if 0
     data = (uint8_t*) resize(data, capacity, sz);
 #else
@@ -247,29 +258,56 @@ void Vector::alloc (size_t sz) {
         maxVecBytes = currVecBytes;
 
     constexpr auto PSZ = sizeof (void*);
-    Data* p = 0;
-    if (data != 0) {
-        if (sz > 0)
-            p = (Data*) realloc(data - PSZ, sz + PSZ);
-        else {
-            --currVecAllocs;
+    constexpr auto DSZ = sizeof (Data);
+    static_assert (2 * PSZ == DSZ, "unexpected Vector::Data size");
 
-            free(data - PSZ);
+    if (sz == 0) {
+        if (data != 0) {
+            auto d = (Data*) (data - PSZ);
+            assert(d->v == this);
+            d->v = 0;
+            d->n = capacity;
+            data = 0;
         }
-    } else {
-        if (sz > 0) {
-            ++totalVecAllocs;
-            if (++currVecAllocs > maxVecAllocs)
-                maxVecAllocs = currVecAllocs;
-
-            p = (Data*) malloc(sz + PSZ);
-        }
+        return;
     }
-    if (p != 0) {
-        p->v = this;
-        data = p->d;
-    } else
-        data = 0;
+
+    if (data == 0) {
+        assert(capacity == 0);
+        auto d = (Data*) vecTop;
+        vecTop += DSZ;
+        d->v = this;
+        data = d->d;
+        printf("new data %p vecTop %p\n", data, vecTop);
+    }
+
+    auto osz = roundUp(PSZ + capacity, DSZ);
+    auto nsz = roundUp(PSZ + sz, DSZ);
+    assert(nsz >= osz); // no need to support shrinking, gcCompact will do that
+
+    if (nsz == osz)
+        return; // it already fits
+
+    printf("  incr sz %d to %d top %p\n", osz, nsz, vecTop);
+    auto d = (Data*) (data - PSZ);
+    assert(d->v == this);
+    assert((uint8_t*) d->next() <= vecTop);
+
+    if ((uint8_t*) d->next() == vecTop) {
+        printf("    last vector, expanding in-place\n");
+        vecTop = (uint8_t*) d + nsz;
+        return;
+    }
+
+    auto p = (Data*) vecTop;
+    vecTop += nsz;
+    p->v = this;
+    memcpy(p->d, data, fill);
+
+    d->v = 0;
+    d->n = capacity;
+
+    data = p->d;
 #endif
 }
 
@@ -306,7 +344,8 @@ void Object::gcStats () {
 }
 
 bool Context::gcCheck () {
-    return vm != 0 && (MEM_BYTES - currObjBytes) < (MEM_BYTES / 10);
+    return vm != 0 && ((MEM_BYTES - currObjBytes) < (MEM_BYTES / 10) ||
+            (vecTop - vecs > (int) sizeof vecs - 500)); // TODO 10? 500?
 }
 
 static uint32_t tagBits [MAX/HPS/32];
@@ -325,7 +364,9 @@ static void gcMarker (const Object& obj) {
     if (0 <= off && off < MAX/HPS) {
         if (tagged(off))
             return;
-        //printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
+#if VERBOSE_GC
+        printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
+#endif
         setTag(off);
     }
     obj.mark(gcMarker);
@@ -346,10 +387,27 @@ static void gcSweeper () {
     }
 }
 
+Vector::Data* Vector::Data::next () const {
+    auto off = sizeof (void*) + (v == 0 ? n : v->capacity);
+    return (Data*) (d - sizeof (void*) + roundUp(off, sizeof (Data)));
+}
+
+void Vector::gcCompact () {
+#if VERBOSE_GC
+    printf("gc compaction, %d b spare\n", (int) (vecTop - vecs + sizeof vecs));
+#endif
+    for (auto p = (Data*) vecs; (uint8_t*) p < vecTop; p = p->next()) {
+        printf("\t\t\t\tvec %p v %p next %p\n", p, p->v, p->next());
+    }
+}
+
 void Context::gcTrigger () {
-    //printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
+#if VERBOSE_GC
+    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
+#endif
     memset(tagBits, 0, sizeof tagBits);
     assert(vm != 0);
     gcMarker(*vm);
     gcSweeper();
+    Vector::gcCompact();
 }

@@ -28,10 +28,17 @@ public:
     void ins (int idx, int num =1);
     void del (int idx, int num =1);
 
-private:
-    struct Data { Vector* v; union { uint32_t n; uint8_t d [1]; }; };
+    static void gcCompact ();   // see gc.c
 
-    void alloc (size_t sz); // see gc.c
+private:
+    struct Data {
+        Vector* v;
+        union { uint32_t n; uint8_t d [1]; };
+
+        Data* next() const;
+    };
+
+    void alloc (size_t sz);     // see gc.c
 };
 
 template< typename T >
