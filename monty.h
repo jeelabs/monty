@@ -29,6 +29,8 @@ public:
     void del (int idx, int num =1);
 
 private:
+    struct Data { Vector* v; uint8_t data []; };
+
     static void* alloc (void* p, size_t sz);
 };
 

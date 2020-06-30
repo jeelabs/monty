@@ -117,12 +117,12 @@ static void dump () {
 }
 #endif
 
-uint32_t totalAllocs,
-         totalBytes,
-         currAllocs,
-         currBytes,
-         maxAllocs,
-         maxBytes;
+static uint32_t totalAllocs,
+                totalBytes,
+                currAllocs,
+                currBytes,
+                maxAllocs,
+                maxBytes;
 
 static void release (void* p) {
     if (p != 0) {
@@ -209,6 +209,8 @@ static void* resize (void* p, size_t sz) {
 
 // used only to alloc/resize/free variable data vectors
 void* Vector::alloc (void* p, size_t sz) {
+    static_assert (sizeof (Data) == sizeof (Vector*), "sizeof Vector::Data ?");
+
     printf(PREFIX "alloc  %5d -> %p (used %d)\n", (int) sz, p, currBytes);
 #if 0
     return resize(p, sz);
@@ -231,6 +233,7 @@ void* Object::operator new (size_t sz, void* p) {
 void Object::operator delete (void* p) {
     printf(PREFIX "delete        : %p\n", p);
     auto& obj = *(const Object*) p;
+    (void) obj;
     printf("\t\t\tdelete %p %s\n", &obj, obj.type().name);
     release(p);
 }
@@ -272,7 +275,7 @@ static void gcMarker (const Object& obj) {
 
 static void gcSweeper () {
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h)) {
-        const char* s = "*FREE*";
+        //const char* s = "*FREE*";
         if (inUse(*h)) {
             auto obj = (Object*) h2p(h);
             auto off = ((const hdr_t*) obj - mem) / HPS;

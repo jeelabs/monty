@@ -81,7 +81,7 @@ Value Value::invalid;
 #include <stdio.h>
 static void markVec (const VecOf<Value>& vec, void (*gc)(const Object&)) {
     //printf("    markVec %p #%d\n", &vec, vec.length());
-    for (int i = 0; i < vec.length(); ++i) {
+    for (size_t i = 0; i < vec.length(); ++i) {
         Value v = vec.get(i);
         if (v.isObj())
             gc(v.obj());
