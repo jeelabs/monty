@@ -12,7 +12,7 @@ Vector::Vector (size_t bits) {
 
 Vector::~Vector () {
     if (capacity > 0)
-        alloc(data, 0);
+        alloc(0);
 }
 
 int Vector::getInt (int idx) const {
@@ -62,7 +62,7 @@ void Vector::ins (int idx, int num) {
     assert(logBits >= 3); // TODO
     auto needed = (fill + num) * width();
     if (needed > (int) capacity) {
-        data = (uint8_t*) alloc(data, needed);
+        alloc(needed);
         assert(data != 0);
         capacity = needed;
     }

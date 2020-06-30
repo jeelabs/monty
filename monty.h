@@ -29,9 +29,9 @@ public:
     void del (int idx, int num =1);
 
 private:
-    struct Data { Vector* v; uint8_t data []; };
+    struct Data { Vector* v; union { uint32_t n; uint8_t d []; }; };
 
-    static void* alloc (void* p, size_t sz);
+    void alloc (size_t sz); // see gc.c
 };
 
 template< typename T >

@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -117,20 +117,26 @@ static void dump () {
 }
 #endif
 
-static uint32_t totalAllocs,
-                totalBytes,
-                currAllocs,
-                currBytes,
-                maxAllocs,
-                maxBytes;
+static uint32_t totalObjAllocs,
+                totalObjBytes,
+                currObjAllocs,
+                currObjBytes,
+                maxObjAllocs,
+                maxObjBytes,
+                totalVecAllocs,
+                totalVecBytes,
+                currVecAllocs,
+                currVecBytes,
+                maxVecAllocs,
+                maxVecBytes;
 
 static void release (void* p) {
     if (p != 0) {
         auto& h = p2h(p);
         assert(inUse(h));
         h &= ~USED;
-        --currAllocs;
-        currBytes -= h2s(h) * MEM_ALIGN;
+        --currObjAllocs;
+        currObjBytes -= h2s(h) * MEM_ALIGN;
     }
 }
 
@@ -155,14 +161,15 @@ static void* allocate (size_t sz) {
                 printf("    -> %p *h %04x next %04x\n",
                         p, (uint16_t) *h, (uint16_t) next(h));
 
-                if (++totalAllocs % GC_REPORTS == 0)
+                if (++totalObjAllocs % GC_REPORTS == 0)
                     Object::gcStats();
-                if (++currAllocs > maxAllocs)
-                    maxAllocs = currAllocs;
-                totalBytes += ns * MEM_ALIGN;
-                currBytes += ns * MEM_ALIGN;
-                if (currBytes > maxBytes)
-                    maxBytes = currBytes;
+                if (++currObjAllocs > maxObjAllocs)
+                    maxObjAllocs = currObjAllocs;
+
+                totalObjBytes += ns * MEM_ALIGN;
+                currObjBytes += ns * MEM_ALIGN;
+                if (currObjBytes > maxObjBytes)
+                    maxObjBytes = currObjBytes;
 
                 if (Context::gcCheck())
                     Context::raise(Value::nil); // exit inner loop
@@ -174,7 +181,28 @@ static void* allocate (size_t sz) {
     return 0; // ouch, ran out of memory
 }
 
-static void* resize (void* p, size_t sz) {
+static void* resize (void* p, size_t osz, size_t nsz) {
+    if (nsz == 0) {
+        assert(p != 0);
+        --currVecAllocs;
+        currVecBytes -= osz;
+        free(p);
+        return 0;
+    }
+
+    if (p == 0) {
+        ++totalVecAllocs;
+        if (++currVecAllocs > maxVecAllocs)
+            maxVecAllocs = currVecAllocs;
+    }
+
+    currVecBytes += nsz - osz;
+    if (currVecBytes > maxVecBytes)
+        maxVecBytes = currVecBytes;
+
+#if 1 // USE_MALLOC
+    return realloc(p, nsz);
+#else
     void* q = 0;
     if (sz > 0) {
         // determine old and new slot sizes
@@ -199,34 +227,60 @@ static void* resize (void* p, size_t sz) {
     }
     release(p);
     return q;
+#endif
 }
 
 #if USE_MALLOC
 #define allocate malloc
-#define resize realloc
 #define release free
 #endif
 
 // used only to alloc/resize/free variable data vectors
-void* Vector::alloc (void* p, size_t sz) {
-    static_assert (sizeof (Data) == sizeof (Vector*), "sizeof Vector::Data ?");
-
-    printf(PREFIX "alloc  %5d -> %p (used %d)\n", (int) sz, p, currBytes);
+void Vector::alloc (size_t sz) {
+    printf(PREFIX "resize %5d -> %-5d @ %p (used %d)\n",
+            capacity, (int) sz, this, currObjBytes);
 #if 0
-    return resize(p, sz);
+    data = (uint8_t*) resize(data, capacity, sz);
 #else
-    return realloc(p, sz);
+    currVecBytes += sz - capacity;
+    if (currVecBytes > maxVecBytes)
+        maxVecBytes = currVecBytes;
+
+    constexpr auto PSZ = sizeof (void*);
+    Data* p = 0;
+    if (data != 0) {
+        if (sz > 0)
+            p = (Data*) realloc(data - PSZ, sz + PSZ);
+        else {
+            --currVecAllocs;
+
+            free(data - PSZ);
+        }
+    } else {
+        if (sz > 0) {
+            ++totalVecAllocs;
+            if (++currVecAllocs > maxVecAllocs)
+                maxVecAllocs = currVecAllocs;
+
+            p = (Data*) malloc(sz + PSZ);
+        }
+    }
+    if (p != 0) {
+        p->v = this;
+        data = p->d;
+    } else
+        data = 0;
 #endif
 }
 
 void* Object::operator new (size_t sz) {
     auto p = allocate(sz);
-    printf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currBytes);
+    printf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currObjBytes);
     return p;
 }
 
 void* Object::operator new (size_t sz, void* p) {
-    printf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currBytes);
+    printf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currObjBytes);
     return p;
 }
 
@@ -238,17 +292,21 @@ void Object::operator delete (void* p) {
     release(p);
 }
 
+#undef printf
+
 void Object::gcStats () {
 #if VERBOSE_GC
-#undef printf
-    printf("gc: total %6d allocs %8d b\n", totalAllocs, totalBytes);
-    printf("gc:  curr %6d allocs %8d b\n", currAllocs, currBytes);
-    printf("gc:   max %6d allocs %8d b\n", maxAllocs, maxBytes);
+    printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
+            totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes);
+    printf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
+            currObjAllocs, currObjBytes, currVecAllocs, currVecBytes);
+    printf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
+            maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes);
 #endif
 }
 
 bool Context::gcCheck () {
-    return vm != 0 && (MEM_BYTES - currBytes) < (MEM_BYTES / 10);
+    return vm != 0 && (MEM_BYTES - currObjBytes) < (MEM_BYTES / 10);
 }
 
 static uint32_t tagBits [MAX/HPS/32];
@@ -289,7 +347,7 @@ static void gcSweeper () {
 }
 
 void Context::gcTrigger () {
-    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
+    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
     memset(tagBits, 0, sizeof tagBits);
     assert(vm != 0);
     gcMarker(*vm);
