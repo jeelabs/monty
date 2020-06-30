@@ -186,7 +186,7 @@ static void* allocate (size_t sz) {
 #define release free
 #endif
 
-static uint8_t vecs [9500] __attribute__ ((aligned (MEM_ALIGN)));
+static uint8_t vecs [1500] __attribute__ ((aligned (MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
