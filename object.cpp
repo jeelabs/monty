@@ -398,7 +398,7 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
 
     // TODO this is the only (?) place where the stack may be reallocated and
     // since argv points into it, it needs to be relocated when this happens
-    int off = argv - sv->base();
+    int off = sv->length() > 0 ? argv - sv->base() : 0; // TODO argc zero? yuck
     fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
     return sv->base() + off;
 }

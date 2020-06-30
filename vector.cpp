@@ -41,7 +41,7 @@ void* Vector::getPtr (int idx) const {
     assert(logBits >= 3); // TODO
     if (idx < 0)
         idx += fill;
-    return data->d + idx * width();
+    return data != 0 ? data->d + idx * width() : 0; // TODO no data, edge case
 }
 
 void Vector::set (int idx, int val) {
