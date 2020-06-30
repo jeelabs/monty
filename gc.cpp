@@ -212,8 +212,7 @@ void Vector::alloc (size_t sz) {
 
     if (sz == 0) {
         if (data != 0) {
-            //printf("v %p\n", data->v); // TODO when v == 0? some early alloc?
-            assert(data->v == 0 || data->v == this);
+            assert(data->v == this);
             data->v = 0;
             data->n = capacity;
             data = 0;
