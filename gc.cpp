@@ -248,16 +248,24 @@ bool Context::gcCheck () {
     return vm != 0 && (MEM_BYTES - currBytes) < (MEM_BYTES / 10);
 }
 
-static uint8_t tag [MAX];
+static uint32_t tagBits [MAX/HPS/32];
+
+static bool tagged (size_t n) {
+    return (tagBits[n/32] & (1 << (n % 32))) != 0;
+}
+
+static void setTag (size_t n) {
+    tagBits[n/32] |= 1 << (n % 32);
+}
 
 static void gcMarker (const Object& obj) {
     auto& vt = *(const void**) &obj;
-    auto off = (const hdr_t*) &obj - mem;
-    if (0 <= off && off < MAX) {
-        if (tag[off])
+    auto off = ((const hdr_t*) &obj - mem) / HPS;
+    if (0 <= off && off < MAX/HPS) {
+        if (tagged(off))
             return;
         printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
-        tag[off] = 1;
+        setTag(off);
     }
     obj.mark(gcMarker);
 }
@@ -267,9 +275,9 @@ static void gcSweeper () {
         const char* s = "*FREE*";
         if (inUse(*h)) {
             auto obj = (Object*) h2p(h);
-            auto off = (const hdr_t*) obj - mem;
-            assert(0 <= off && off < MAX);
-            if (tag[off] == 0) {
+            auto off = ((const hdr_t*) obj - mem) / HPS;
+            assert(0 <= off && off < MAX/HPS);
+            if (!tagged(off)) {
                 //printf("deleting %p %s\n", obj, obj->type().name);
                 delete obj;
             }
@@ -279,7 +287,7 @@ static void gcSweeper () {
 
 void Context::gcTrigger () {
     printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currBytes));
-    memset(tag, 0, sizeof tag);
+    memset(tagBits, 0, sizeof tagBits);
     assert(vm != 0);
     gcMarker(*vm);
     gcSweeper();
