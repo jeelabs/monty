@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -325,7 +325,7 @@ static void gcMarker (const Object& obj) {
     if (0 <= off && off < MAX/HPS) {
         if (tagged(off))
             return;
-        printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
+        //printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
         setTag(off);
     }
     obj.mark(gcMarker);
@@ -347,7 +347,7 @@ static void gcSweeper () {
 }
 
 void Context::gcTrigger () {
-    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
+    //printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
     memset(tagBits, 0, sizeof tagBits);
     assert(vm != 0);
     gcMarker(*vm);

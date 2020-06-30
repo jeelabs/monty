@@ -29,7 +29,7 @@ public:
     void del (int idx, int num =1);
 
 private:
-    struct Data { Vector* v; union { uint32_t n; uint8_t d []; }; };
+    struct Data { Vector* v; union { uint32_t n; uint8_t d [1]; }; };
 
     void alloc (size_t sz); // see gc.c
 };
