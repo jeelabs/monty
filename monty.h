@@ -200,6 +200,8 @@ struct MutSeqObj : SeqObj, protected VecOf<Value> {
     static TypeObj info;
     TypeObj& type () const override;
 
+    ~MutSeqObj () override {} // make sure both destructors are called
+
     void mark (void (*gc)(const Object&)) const override;
 
     Value len () const override { return length(); }
@@ -244,6 +246,7 @@ struct ListObj : MutSeqObj {
 //CG>
 
     ListObj (int argc, Value argv[]);
+    ~ListObj () override {}
 
     Value at (Value) const override;
     Value attr (const char*, Value&) const override;
@@ -290,6 +293,7 @@ struct DictObj : MutSeqObj {
     const Object* chain = 0; // TODO hide
 
     DictObj (int size =0) {} // TODO
+    ~DictObj () override {}
 
     Value len () const override { return length() / 2; }
     Value at (Value key) const override;
@@ -323,7 +327,9 @@ struct ClassObj : TypeObj {
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
+
     ClassObj (int argc, Value argv[]);
+    ~ClassObj () override {}
 };
 
 // can't be generated, too different
@@ -335,6 +341,7 @@ struct InstanceObj : DictObj {
 
 private:
     InstanceObj (const ClassObj& parent, int argc, Value argv[]);
+    ~InstanceObj () override {}
 };
 
 struct MethodBase {
@@ -456,6 +463,7 @@ struct BytecodeObj : Object {
     int16_t nCode;
 
     BytecodeObj (ModuleObj& mo) : owner (mo) {}
+    ~BytecodeObj () override {}
 
     int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
 
@@ -491,7 +499,7 @@ struct FrameObj : DictObj {
     uint8_t excTop = 0;
 
     FrameObj (const BytecodeObj& bc, int argc, Value argv[], DictObj* dp = 0);
-    ~FrameObj ();
+    ~FrameObj () override;
 
     void mark (void (*gc)(const Object&)) const override;
 
@@ -519,6 +527,8 @@ private:
 struct Context : Object, private VecOf<Value> {
     static TypeObj info;
     TypeObj& type () const override;
+
+    ~Context () override {} // make sure both destructors are called
 
     Value* base () const { return &get(0); }
     Value* limit () const { return base() + length(); }

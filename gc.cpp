@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -197,11 +197,13 @@ static size_t roundUp (size_t n, size_t unit) {
 
 // used only to alloc/resize/free variable data vectors
 void Vector::alloc (size_t sz) {
-    printf(PREFIX "resize %5d -> %-5d @ %p (u %d) d %p\n",
+    printf(PREFIX "resize %5d -> %d   @ %p (u %d) d %p\n",
             (int) capacity, (int) sz, this, (int) (vecTop - vecs), data);
 #if USE_MALLOC
     data = (Data*) realloc(data, sizeof (void*) + sz);
 #else
+    assert(vecs <= vecTop && vecTop < vecs + sizeof vecs);
+
     currVecBytes += sz - capacity;
     if (currVecBytes > maxVecBytes)
         maxVecBytes = currVecBytes;
@@ -212,6 +214,7 @@ void Vector::alloc (size_t sz) {
 
     if (sz == 0) {
         if (data != 0) {
+            printf("resize gap %p #%d\n", data, (int) capacity);
             assert(data->v == this);
             data->v = 0;
             data->n = capacity;
@@ -269,10 +272,9 @@ void* Object::operator new (size_t sz, void* p) {
 }
 
 void Object::operator delete (void* p) {
-    printf(PREFIX "delete        : %p\n", p);
     auto& obj = *(const Object*) p;
     (void) obj;
-    printf("\t\t\tdelete %p %s\n", &obj, obj.type().name);
+    printf(PREFIX "delete        : %p %s\n", p, obj.type().name);
     release(p);
 }
 
@@ -326,8 +328,9 @@ static void gcSweeper () {
             auto off = ((const hdr_t*) obj - mem) / HPS;
             assert(0 <= off && off < MAX/HPS);
             if (!tagged(off)) {
-                //printf("deleting %p %s\n", obj, obj->type().name);
+                printf("deleting %p %s\n", obj, obj->type().name);
                 delete obj;
+                *(void**) obj = 0; // clear vtable to make Object* unusable
             }
         }
     }
@@ -335,28 +338,32 @@ static void gcSweeper () {
 
 Vector::Data* Vector::Data::next () const {
     auto off = sizeof (void*) + (v != 0 ? v->capacity : n);
-    return (Data*) ((uint8_t*) this + roundUp(off, sizeof (Data)));
+    auto p = (Data*) ((uint8_t*) this + roundUp(off, sizeof (Data)));
+    assert(vecs <= (uint8_t*) p && (uint8_t*) p <= vecs + sizeof vecs);
+    return p;
 }
 
 void Vector::gcCompact () {
 #if VERBOSE_GC
-    printf("gc compaction, %d b used\n", (int) (vecTop - vecs));
+    printf("gc compaction, %d b used, top %p\n", (int) (vecTop - vecs), vecTop);
 #endif
     auto newTop = (Data*) vecs;
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
 #if VERBOSE_GC
-        printf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
+        printf("\t\t\t\tvec %p v %p size %d (%dx%d = %d b)\n", p, p->v,
                 (int) (p->v != 0 ? p->v->capacity : -1),
-                (int) (n * sizeof (Data)));
+                n, (int) sizeof (Data), (int) (n * sizeof (Data)));
 #endif
-        if (p->v != 0 && newTop < p) {
+        if (p->v != 0) {
 #if VERBOSE_GC
             printf("\tcompact %p -> %p #%d\n",
                     p, newTop, (int) (n * sizeof (Data)));
 #endif
-            p->v->data = newTop; // adjust now, p->v may get clobbered
-            memmove(newTop, p, n);
+            if (newTop < p->v->data) {
+                p->v->data = newTop; // adjust now, p->v may get clobbered
+                memmove(newTop, p, n);
+            }
             newTop += n;
         }
     }
@@ -365,6 +372,8 @@ void Vector::gcCompact () {
         (int) (vecTop - (uint8_t*) newTop), (int) ((uint8_t*) newTop - vecs));
 #endif
     vecTop = (uint8_t*) newTop;
+    newTop->v = 0;
+    newTop->n = ~0; // TODO junk value
 }
 
 void Context::gcTrigger () {
