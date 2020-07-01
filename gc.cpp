@@ -103,20 +103,6 @@ static void coalesce (hdr_t* h) {
             *h += next(h); // free headers are positive and can be added
 }
 
-#if 0
-static void dump () {
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h)) {
-        const char* s = "*FREE*";
-        if (inUse(*h)) {
-            auto& obj = *(const Object*) h2p(h);
-            s = obj.type().name;
-        }
-        printf("\t\t\t\tdump: %p %4x>%4x %6db %s\n",
-                h, (uint16_t) *h, (uint16_t) next(h), h2b(*h), s);
-    }
-}
-#endif
-
 static uint32_t totalObjAllocs,
                 totalObjBytes,
                 currObjAllocs,
