@@ -198,7 +198,7 @@ static size_t roundUp (size_t n, size_t unit) {
 // used only to alloc/resize/free variable data vectors
 void Vector::alloc (size_t sz) {
     printf(PREFIX "resize %5d -> %-5d @ %p (u %d) d %p\n",
-            capacity, (int) sz, this, (int) (vecTop - vecs), data);
+            (int) capacity, (int) sz, this, (int) (vecTop - vecs), data);
 #if USE_MALLOC
     data = (Data*) realloc(data, sizeof (void*) + sz);
 #else
@@ -235,7 +235,7 @@ void Vector::alloc (size_t sz) {
     if (nsz == osz)
         return; // it already fits
 
-    printf("  incr sz %d to %d top %p\n", osz, nsz, vecTop);
+    printf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
     assert(data->v == this);
     assert((uint8_t*) data->next() <= vecTop);
 
