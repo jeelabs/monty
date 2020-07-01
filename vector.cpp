@@ -41,7 +41,8 @@ void* Vector::getPtr (int idx) const {
     assert(logBits >= 3); // TODO
     if (idx < 0)
         idx += fill;
-    return data != 0 ? data->d + idx * width() : 0; // TODO no data, edge case
+    assert(data != 0);
+    return data->d + idx * width();
 }
 
 void Vector::set (int idx, int val) {
@@ -60,6 +61,8 @@ void Vector::set (int idx, const void* ptr) {
 
 void Vector::ins (int idx, int num) {
     assert(logBits >= 3); // TODO
+    if (num <= 0)
+        return;
     auto needed = (fill + num) * width();
     if (needed > (int) capacity) {
         alloc(needed);
@@ -74,6 +77,8 @@ void Vector::ins (int idx, int num) {
 
 void Vector::del (int idx, int num) {
     assert(logBits >= 3); // TODO
+    if (num <= 0)
+        return;
     fill -= num;
     memmove(getPtr(idx), getPtr(idx + num), (fill - idx) * width());
 }

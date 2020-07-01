@@ -242,7 +242,8 @@ Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
 
 ListObj::ListObj (int argc, Value argv[]) {
     ins(0, argc);
-    memcpy(getPtr(0), argv, argc * sizeof *argv);
+    if (argc > 0)
+        memcpy(getPtr(0), argv, argc * sizeof *argv);
 }
 
 Value ListObj::at (Value idx) const {
@@ -332,8 +333,9 @@ FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
         chain = &bco.owner;
     }
 
+    // TODO many more arg cases, also default args
     argv = Context::prepareStack (*this, argv);
-    for (int i = 0; i < bcObj.n_pos; ++i) // TODO more arg cases
+    for (int i = 0; i < bcObj.n_pos; ++i)
         fastSlot(i) = argv[i];
 
     if (!isCoro())
@@ -403,6 +405,8 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
 
     // TODO this is the only (?) place where the stack may be reallocated and
     // since argv points into it, it needs to be relocated when this happens
+    // note: base() can't be called if there is no stack, i.e. no argv passed
+
     int off = argv != 0 ? argv - sv->base() : 0; // TODO argc zero? yuck
     fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
     return sv->base() + off;
