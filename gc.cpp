@@ -1,12 +1,12 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
 #include "monty.h"
 
-//#include <assert.h>
+#include <assert.h>
 #include <string.h>
 
 #if VERBOSE_GC
@@ -16,8 +16,6 @@
 #include <jee.h>
 #endif
 #endif
-
-#define assert(f) { if (!(f)) { printf("assert %d %s\n", __LINE__, __FILE__); while (true) {} } }
 
 #if VERBOSE_GC < 2
 #define printf(...)
@@ -29,7 +27,7 @@
 constexpr int MEM_BYTES = 20 * 1024;    // 20 Kb total memory
 constexpr int MEM_ALIGN = 16;           // 16-byte slot boundaries
 #else
-constexpr int MEM_BYTES = 10 * 1024;    // 10 Kb total memory
+constexpr int MEM_BYTES = 8 * 1024;    // 10 Kb total memory
 constexpr int MEM_ALIGN = 8;            // 8-byte slot boundaries
 #endif
 
@@ -188,7 +186,7 @@ static void* allocate (size_t sz) {
 #define release free
 #endif
 
-static uint8_t vecs [10240] __attribute__ ((aligned (MEM_ALIGN)));
+static uint8_t vecs [1536] __attribute__ ((aligned (MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
@@ -254,7 +252,6 @@ void Vector::alloc (size_t sz) {
     auto p = (Data*) vecTop;
     vecTop += nsz;
 ((Data*) vecTop)->v = 0; // TODO past top is unused
-assert(p->v == 0);
     p->v = this;
     memcpy(p->d, data->d, fill * width());
 
@@ -377,7 +374,7 @@ void Vector::gcCompact () {
 #endif
             if (newTop < p->v->data) {
                 p->v->data = newTop; // adjust now, p->v may get clobbered
-                memmove(newTop, p, n);
+                memmove(newTop, p, n * sizeof (Data));
             }
             newTop += n;
         }
