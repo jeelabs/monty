@@ -1,6 +1,6 @@
 // Memory allocation and garbage collection for objects and vectors.
 
-#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -199,7 +199,7 @@ static size_t roundUp (size_t n, size_t unit) {
 void Vector::alloc (size_t sz) {
     printf(PREFIX "resize %5d -> %-5d @ %p (u %d) d %p\n",
             capacity, (int) sz, this, (int) (vecTop - vecs), data);
-#if 0
+#if USE_MALLOC
     data = (Data*) realloc(data, sizeof (void*) + sz);
 #else
     currVecBytes += sz - capacity;

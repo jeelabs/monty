@@ -305,9 +305,7 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
 
 void BytecodeObj::mark (void (*gc)(const Object&)) const {
     gc(owner);
-    for (int i = 0; i < nData + nCode; ++i) // TODO should be a VecOf<Value>
-        if (constObjs[i].isObj())
-            gc(constObjs[i].obj());
+    markVec(constObjs, gc);
 }
 
 Value BytecodeObj::call (int argc, Value argv[]) const {

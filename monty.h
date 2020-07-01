@@ -443,7 +443,7 @@ struct BytecodeObj : Object {
     ModuleObj& owner;
 
     OpPtrRO code;
-    Value* constObjs;
+    VecOf<Value> constObjs;
     int16_t stackSz;
     int16_t scope;
     int8_t excDepth;

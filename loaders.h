@@ -197,7 +197,6 @@ struct Loader {
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
             loadQstr(); // is this to adjust qWin ?
 
-        bc.constObjs = (Value*) malloc((bc.nData+bc.nCode) * sizeof (Value));
         for (int i = 0; i < bc.nData; ++i) {
             auto type = *dp++;
             (void) type;
@@ -205,11 +204,11 @@ struct Loader {
             auto sz = varInt();
             auto ptr = skip(sz);
             printf("  obj %d = type %c %ub = %s\n", i, type, sz, ptr);
-            bc.constObjs[i] = (const char*) ptr;
+            bc.constObjs.set(i, (const char*) ptr);
         }
         for (int i = 0; i < bc.nCode; ++i) {
             printf("  raw %d:\n", i+bc.nData);
-            bc.constObjs[i+bc.nData] = loadRaw(modobj);
+            bc.constObjs.set(i+bc.nData, loadRaw(modobj));
         }
 
         return bc;
@@ -340,16 +339,15 @@ struct Linker {
                 bc.scope, bc.n_pos, bc.hdrSz, bc.size, bc.nData, bc.nCode);
         printf(" ns %u nx %u ko %u dp %u\n",
                 bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);
-        bc.constObjs = (Value*) malloc((bc.nData+bc.nCode) * sizeof (Value));
         for (int i = 0; i < bc.nData; ++i) {
             auto sz = varInt();
             auto ptr = skip(sz);
             printf("  obj %d = %ub = %s\n", i, sz, ptr);
-            bc.constObjs[i] = (const char*) ptr;
+            bc.constObjs.set(i, (const char*) ptr);
         }
         for (int i = 0; i < bc.nCode; ++i) {
             printf("  raw %d:\n", i+bc.nData);
-            bc.constObjs[i+bc.nData] = loadRaw(modobj);
+            bc.constObjs.set(i+bc.nData, loadRaw(modobj));
         }
         return bc;
     }

@@ -231,17 +231,17 @@ private:
 
     //CG1 op v
     void op_LoadConstObj (uint32_t arg) {
-        *++sp = fp->bcObj.constObjs[arg];
+        *++sp = fp->bcObj.constObjs.get(arg);
     }
 
     //CG1 op v
     void op_MakeFunction (uint32_t arg) {
-        *++sp = fp->bcObj.constObjs[arg];
+        *++sp = fp->bcObj.constObjs.get(arg);
     }
 
     //CG1 op v
     void op_MakeFunctionDefargs (uint32_t arg) {
-        *sp = fp->bcObj.constObjs[arg]; // TODO need to deal with defargs!
+        *sp = fp->bcObj.constObjs.get(arg); // TODO need to deal with defargs!
     }
 
     //CG1 op v
