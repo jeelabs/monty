@@ -346,24 +346,10 @@ Vector::Data* Vector::Data::next () const {
     return p;
 }
 
-void Vector::checkVecs () {
-#if VERBOSE_GC
-    assert(vecs <= vecTop && vecTop <= vecs + sizeof vecs);
-    Data* p;
-    for (p = (Data*) vecs; (uint8_t*) p < vecTop; p = p->next()) {
-        auto q = (uint8_t*) p;
-        assert(vecs <= q && q <= vecTop);
-    }
-    assert((uint8_t*) p == vecTop);
-#endif
-}
-
 void Vector::gcCompact () {
 #if VERBOSE_GC
     printf("gc compaction, %d b used, top %p\n", (int) (vecTop - vecs), vecTop);
 #endif
-    checkVecs();
-
     auto newTop = (Data*) vecs;
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
@@ -389,10 +375,6 @@ void Vector::gcCompact () {
         (int) (vecTop - (uint8_t*) newTop), (int) ((uint8_t*) newTop - vecs));
 #endif
     vecTop = (uint8_t*) newTop;
-    newTop->v = 0;
-    newTop->n = ~0; // TODO junk value
-
-    checkVecs();
 }
 
 void Context::gcTrigger () {

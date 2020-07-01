@@ -38,7 +38,6 @@ public:
 
 private:
     void alloc (size_t sz);     // see gc.c
-    static void checkVecs (); // FIXME, just to check vecs in gc
 };
 
 template< typename T >
