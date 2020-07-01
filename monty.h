@@ -141,6 +141,20 @@ private:
     int64_t i;
 };
 
+//CG3 type <iterator>
+struct IterObj : Object {
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    IterObj (Value arg) : seq (arg) {}
+
+    Value next () override;
+
+private:
+    Value seq;
+    int pos = 0;
+};
+
 //CG3 type <sequence>
 struct SeqObj : Object {
     static TypeObj info;
@@ -194,6 +208,41 @@ private:
 
 ForceObj Value::objPtr () const { return this; }
 
+//CG< type tuple
+struct TupleObj : SeqObj {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj names;
+    static TypeObj info;
+    TypeObj& type () const override;
+//CG>
+    void mark (void (*gc)(const Object&)) const override;
+
+    Value len () const override { return length; }
+    Value at (Value) const override;
+
+private:
+    TupleObj (int argc, Value argv[]);
+
+    uint16_t length;
+    Value vec [];
+};
+
+//CG3 type <lookup>
+struct LookupObj : SeqObj {
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    struct Item { const char* k; const Object* v; };
+
+    LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
+
+    Value at (Value) const override;
+
+private:
+    const Item* vec;
+    size_t len;
+};
+
 //CG3 type <mut-seq>
 struct MutSeqObj : SeqObj, protected VecOf<Value> {
     static TypeObj info;
@@ -215,25 +264,6 @@ protected:
     MutSeqObj () {} // cannot be instantiated directly
 };
 
-//CG< type tuple
-struct TupleObj : SeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
-    static TypeObj info;
-    TypeObj& type () const override;
-//CG>
-    void mark (void (*gc)(const Object&)) const override;
-
-    Value len () const override { return length; }
-    Value at (Value) const override;
-
-private:
-    TupleObj (int argc, Value argv[]);
-
-    uint16_t length;
-    Value vec [];
-};
-
 //CG< type list
 struct ListObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
@@ -246,36 +276,6 @@ struct ListObj : MutSeqObj {
 
     Value at (Value) const override;
     Value attr (const char*, Value&) const override;
-};
-
-//CG3 type <iterator>
-struct IterObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
-
-    IterObj (Value arg) : seq (arg) {}
-
-    Value next () override;
-
-private:
-    Value seq;
-    int pos = 0;
-};
-
-//CG3 type <lookup>
-struct LookupObj : SeqObj {
-    static TypeObj info;
-    TypeObj& type () const override;
-
-    struct Item { const char* k; const Object* v; };
-
-    LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
-
-    Value at (Value) const override;
-
-private:
-    const Item* vec;
-    size_t len;
 };
 
 //CG< type dict
@@ -335,6 +335,23 @@ struct InstanceObj : DictObj {
 
 private:
     InstanceObj (const ClassObj& parent, int argc, Value argv[]);
+};
+
+//CG3 type <function>
+struct FunObj : Object {
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    typedef Value (*Func)(int,Value[]);
+
+    FunObj (Func f) : func (f) {}
+
+    Value call (int argc, Value argv[]) const override {
+        return func(argc, argv);
+    }
+
+private:
+    const Func func;
 };
 
 struct MethodBase {
@@ -402,23 +419,6 @@ struct MethObj : Object {
 
 private:
     const MethodBase& meth;
-};
-
-//CG3 type <function>
-struct FunObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
-
-    typedef Value (*Func)(int,Value[]);
-
-    FunObj (Func f) : func (f) {}
-
-    Value call (int argc, Value argv[]) const override {
-        return func(argc, argv);
-    }
-
-private:
-    const Func func;
 };
 
 //CG3 type <bound-meth>
