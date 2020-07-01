@@ -16,10 +16,10 @@ extern void initBoard ();
 Vector::Vector (size_t bits) {
     while (bits > (1U << logBits))
         ++logBits;
+    assert(logBits >= 3); // TODO
 }
 
 Vector::~Vector () {
-    assert(capacity > 0 || data == 0);
     alloc(0);
 }
 
@@ -30,7 +30,6 @@ int Vector::getInt (int idx) const {
         case 4: return *(int16_t*) p;
         case 5: return *(int32_t*) p;
     }
-    assert(false); // TODO
     return 0;
 }
 
@@ -41,12 +40,10 @@ uint32_t Vector::getIntU (int idx) const {
         case 4: return *(uint16_t*) p;
         case 5: return *(uint32_t*) p;
     }
-    assert(false); // TODO
     return 0;
 }
 
 void* Vector::getPtr (int idx) const {
-    assert(logBits >= 3); // TODO
     if (idx < 0)
         idx += fill;
     assert(data != 0);
@@ -59,7 +56,6 @@ void Vector::set (int idx, int val) {
 }
 
 void Vector::set (int idx, const void* ptr) {
-    assert(logBits >= 3); // TODO
     if (idx * width() >= (int) capacity) {
         auto n = capacity / width();
         ins(n, idx + 1 - n);
@@ -68,7 +64,6 @@ void Vector::set (int idx, const void* ptr) {
 }
 
 void Vector::ins (int idx, int num) {
-    assert(logBits >= 3); // TODO
     if (num <= 0)
         return;
     auto needed = (fill + num) * width();
@@ -84,7 +79,6 @@ void Vector::ins (int idx, int num) {
 }
 
 void Vector::del (int idx, int num) {
-    assert(logBits >= 3); // TODO
     if (num <= 0)
         return;
     fill -= num;

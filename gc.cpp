@@ -1,6 +1,6 @@
-// Memory allocation and garbage collection for objects and vectors.
+// Memory allocation, garbage collection of objects, and compaction of vectors.
 
-#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -230,7 +230,7 @@ void Vector::alloc (size_t sz) {
         data = (Data*) vecTop;
         vecTop += DSZ;
         data->v = this;
-        printf("new data %p vecTop %p\n", data, vecTop);
+        //printf("new data %p vecTop %p\n", data, vecTop);
     }
 
     auto osz = roundUp(PSZ + capacity, DSZ);
@@ -240,12 +240,12 @@ void Vector::alloc (size_t sz) {
     if (nsz == osz)
         return; // it already fits
 
-    printf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
+    //printf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
     assert(data->v == this);
     assert((uint8_t*) data->next() <= vecTop);
 
     if ((uint8_t*) data + osz == vecTop) {
-        printf("    last vector, expanding in-place\n");
+        //printf("    last vector, expanding in-place\n");
         vecTop = (uint8_t*) data + nsz;
         return;
     }
