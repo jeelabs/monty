@@ -31,10 +31,10 @@ struct QstrPool {
 };
 
 struct Interp : Context {
-    const QstrPool* qPool;
+    const QstrPool* qPool = 0;
 
     Interp () { vm = this; }
-    ~Interp () { vm = 0; }
+    ~Interp () { vm = 0; free((void*) qPool); }
 
     void run () {
         while (ip != 0) {
