@@ -1,6 +1,6 @@
 // Memory allocation, garbage collection of objects, and compaction of vectors.
 
-#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -24,10 +24,10 @@
 #define PREFIX "\t\tgc "
 
 #if NATIVE
-constexpr int MEM_BYTES = 16 * 1024;    // 16 Kb total memory
+constexpr int MEM_BYTES = 20 * 1024;    // 20 Kb total memory
 constexpr int MEM_ALIGN = 16;           // 16-byte slot boundaries
 #else
-constexpr int MEM_BYTES = 8 * 1024;     // 8 Kb total memory
+constexpr int MEM_BYTES = 10 * 1024;    // 10 Kb total memory
 constexpr int MEM_ALIGN = 8;            // 8-byte slot boundaries
 #endif
 

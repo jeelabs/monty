@@ -78,7 +78,7 @@ struct Loader {
         printf("qwin %u\n", n);
         qWin.ins(0, n); // qstr window
 
-        qBuf = qNext = (char*) malloc(2000); // TODO need to handle pre-loaded
+        qBuf = qNext = (char*) malloc(500); // TODO need to handle pre-loaded
 
         auto mo = new ModuleObj;
         mo->init = &loadRaw(*mo); // circular: Module -> Bytecode -> Module
