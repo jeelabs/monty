@@ -1,4 +1,4 @@
-// Bytecode loaders: Loader loads .mpy files, Linker is for an internal test.
+// Bytecode loader for decyphering (most) .mpy files produced by mpy-cross.
 
 #if !VERBOSE_LOAD // see main.cpp
 #define printf(...)
@@ -265,91 +265,6 @@ struct Loader {
                     *bcNext++ = *dp++;
             }
         }
-    }
-};
-
-struct Linker {
-    const LookupObj* modules; // TODO cleanup when?
-    const QstrPool* qPool;
-    const uint8_t* dp;
-
-    ModuleObj* load (const uint8_t* data, int index) {
-        dp  = data;
-        if (varInt() != 123)
-            return 0; // incorrect file format
-
-        auto nMods = varInt();
-        (void) varInt(); // modLen, implicit in modCount
-
-        auto mods = (LookupObj::Item*) malloc(nMods * sizeof (LookupObj::Item));
-        for (uint32_t i = 0; i < nMods; ++i) {
-            printf("module %d: %s\n", i, (const char*) dp);
-            mods[i].k = (const char*) dp;
-            dp += strlen((const char*) dp) + 1;
-        }
-
-        auto qCount = varInt();
-        auto qBytes = varInt();
-        printf("qPool size #%d, %db\n", qCount, qBytes);
-        qPool = QstrPool::create(skip(qBytes), qCount);
-
-        ModuleObj* mainMod = 0;
-        for (int i = 0; i < (int) nMods; ++i) {
-            auto mo = new ModuleObj;
-            if (i <= index)
-                mainMod = mo;
-            mo->init = &loadRaw(*mo); // circular: Module -> Bytecode -> Module
-            mods[i].v = mo;
-        }
-
-        modules = new LookupObj (mods, nMods); // TODO only one module used!
-        return mainMod;
-    }
-
-    uint32_t varInt () {
-        uint32_t v = 0;
-        uint8_t b = 0x80;
-        while (b & 0x80) {
-            b = (uint8_t) *dp++;
-            v = (v << 7) | (b & 0x7F);
-        }
-        return v;
-    }
-
-    const uint8_t* skip (uint32_t n) {
-        auto p = (const uint8_t*) dp;
-        dp += n;
-        return p;
-    }
-
-    const BytecodeObj& loadRaw(ModuleObj& modobj) {
-        auto& bc = *new BytecodeObj (modobj);
-        bc.stackSz = varInt();
-        bc.excDepth = varInt();
-        bc.scope = varInt();
-        bc.n_pos = varInt();
-        bc.n_kwonly = varInt();
-        bc.n_def_pos = varInt();
-        bc.hdrSz = varInt();
-        bc.size = varInt();
-        bc.code = (OpPtrRO) skip(bc.size) + bc.hdrSz;
-        bc.nData = varInt();
-        bc.nCode = varInt();
-        printf("raw sc %u np %u ns %u len %u no %u nr %u",
-                bc.scope, bc.n_pos, bc.hdrSz, bc.size, bc.nData, bc.nCode);
-        printf(" ns %u nx %u ko %u dp %u\n",
-                bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);
-        for (int i = 0; i < bc.nData; ++i) {
-            auto sz = varInt();
-            auto ptr = skip(sz);
-            printf("  obj %d = %ub = %s\n", i, sz, ptr);
-            bc.constObjs.set(i, (const char*) ptr);
-        }
-        for (int i = 0; i < bc.nCode; ++i) {
-            printf("  raw %d:\n", i+bc.nData);
-            bc.constObjs.set(i+bc.nData, loadRaw(modobj));
-        }
-        return bc;
     }
 };
 
