@@ -4,14 +4,14 @@
 #include <stdlib.h>
 
 struct Vector {
+    uint8_t extra = 0; // available for any use
+protected:
     struct Data {
         Vector* v;
         union { uint32_t n; uint8_t d [1]; };
         Data* next() const;
     };
 
-    uint8_t extra = 0; // available for any use
-protected:
     uint8_t logBits = 0;
     uint16_t fill = 0; // in elements
     size_t capacity = 0; // in bytes
@@ -35,7 +35,6 @@ public:
     void del (int idx, int num =1);
 
     static void gcCompact ();   // see gc.c
-
 private:
     void alloc (size_t sz);     // see gc.c
 };
@@ -100,7 +99,7 @@ private:
 
     uintptr_t v;
 
-    friend Context; // TODO yuck, just to Context::handlers [] can be inited
+    friend Context; // TODO yuck, just so Context::handlers [] can be inited
 };
 
 struct Object {
