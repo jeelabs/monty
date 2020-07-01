@@ -1,12 +1,12 @@
 // Memory allocation and garbage collection for objects and vectors.
 
 #define VERBOSE_GC      2 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
-#define USE_MALLOC      1 // use standard allocator, no garbage collection
+#define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
 #include "monty.h"
 
-#include <assert.h>
+//#include <assert.h>
 #include <string.h>
 
 #if VERBOSE_GC
@@ -16,6 +16,8 @@
 #include <jee.h>
 #endif
 #endif
+
+#define assert(f) { if (!(f)) { printf("assert %d %s\n", __LINE__, __FILE__); while (true) {} } }
 
 #if VERBOSE_GC < 2
 #define printf(...)
@@ -215,7 +217,7 @@ void Vector::alloc (size_t sz) {
 
     if (sz == 0) {
         if (data != 0) {
-            printf("resize gap %p #%d\n", data, (int) capacity);
+            //printf("resize gap %p #%d\n", data, (int) capacity);
             assert(data->v == this);
             data->v = 0;
             data->n = capacity;
@@ -251,6 +253,8 @@ void Vector::alloc (size_t sz) {
 
     auto p = (Data*) vecTop;
     vecTop += nsz;
+((Data*) vecTop)->v = 0; // TODO past top is unused
+assert(p->v == 0);
     p->v = this;
     memcpy(p->d, data->d, fill * width());
 
@@ -329,7 +333,7 @@ static void gcSweeper () {
             auto off = ((const hdr_t*) obj - mem) / HPS;
             assert(0 <= off && off < MAX/HPS);
             if (!tagged(off)) {
-                printf("deleting %p %s\n", obj, obj->type().name);
+                //printf("deleting %p %s\n", obj, obj->type().name);
                 delete obj;
                 *(void**) obj = 0; // clear vtable to make Object* unusable
             }
@@ -344,6 +348,16 @@ Vector::Data* Vector::Data::next () const {
     return p;
 }
 
+void Vector::checkVecs () {
+    assert(vecs <= vecTop && vecTop <= vecs + sizeof vecs);
+    Data* p;
+    for (p = (Data*) vecs; (uint8_t*) p < vecTop; p = p->next()) {
+        auto q = (uint8_t*) p;
+        assert(vecs <= q && q <= vecTop);
+    }
+    assert((uint8_t*) p == vecTop);
+}
+
 void Vector::gcCompact () {
 #if VERBOSE_GC
     printf("gc compaction, %d b used, top %p\n", (int) (vecTop - vecs), vecTop);
@@ -352,9 +366,9 @@ void Vector::gcCompact () {
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
 #if VERBOSE_GC
-        printf("\t\t\t\tvec %p v %p size %d (%dx%d = %d b)\n", p, p->v,
+        printf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
                 (int) (p->v != 0 ? p->v->capacity : -1),
-                n, (int) sizeof (Data), (int) (n * sizeof (Data)));
+                (int) (n * sizeof (Data)));
 #endif
         if (p->v != 0) {
 #if VERBOSE_GC
@@ -375,6 +389,8 @@ void Vector::gcCompact () {
     vecTop = (uint8_t*) newTop;
     newTop->v = 0;
     newTop->n = ~0; // TODO junk value
+
+    checkVecs();
 }
 
 void Context::gcTrigger () {
