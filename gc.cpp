@@ -24,10 +24,10 @@
 #define PREFIX "\t\tgc "
 
 #if NATIVE
-constexpr int MEM_BYTES = 20 * 1024;    // 20 Kb total memory
+constexpr int MEM_BYTES = 16 * 1024;    // 16 Kb total memory
 constexpr int MEM_ALIGN = 16;           // 16-byte slot boundaries
 #else
-constexpr int MEM_BYTES = 8 * 1024;    // 10 Kb total memory
+constexpr int MEM_BYTES = 8 * 1024;     // 8 Kb total memory
 constexpr int MEM_ALIGN = 8;            // 8-byte slot boundaries
 #endif
 
@@ -186,7 +186,8 @@ static void* allocate (size_t sz) {
 #define release free
 #endif
 
-static uint8_t vecs [1536] __attribute__ ((aligned (MEM_ALIGN)));
+// 3 Kb is enough for current limited tests, on botg 32-bit and 64-bit machines
+static uint8_t vecs [3072] __attribute__ ((aligned (MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
@@ -251,7 +252,6 @@ void Vector::alloc (size_t sz) {
 
     auto p = (Data*) vecTop;
     vecTop += nsz;
-((Data*) vecTop)->v = 0; // TODO past top is unused
     p->v = this;
     memcpy(p->d, data->d, fill * width());
 
@@ -310,6 +310,7 @@ static void setTag (size_t n) {
 
 static void gcMarker (const Object& obj) {
     auto& vt = *(const void**) &obj;
+    (void) vt;
     auto off = ((const hdr_t*) &obj - mem) / HPS;
     if (0 <= off && off < MAX/HPS) {
         if (tagged(off))
@@ -346,6 +347,7 @@ Vector::Data* Vector::Data::next () const {
 }
 
 void Vector::checkVecs () {
+#if VERBOSE_GC
     assert(vecs <= vecTop && vecTop <= vecs + sizeof vecs);
     Data* p;
     for (p = (Data*) vecs; (uint8_t*) p < vecTop; p = p->next()) {
@@ -353,12 +355,15 @@ void Vector::checkVecs () {
         assert(vecs <= q && q <= vecTop);
     }
     assert((uint8_t*) p == vecTop);
+#endif
 }
 
 void Vector::gcCompact () {
 #if VERBOSE_GC
     printf("gc compaction, %d b used, top %p\n", (int) (vecTop - vecs), vecTop);
 #endif
+    checkVecs();
+
     auto newTop = (Data*) vecs;
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
