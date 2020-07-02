@@ -40,25 +40,27 @@ struct Interp : Context {
         while (ip != 0) {
             assert(sp != 0 && fp != 0);
 
-            if (gcCheck()) {            // collect garbage, if needed
-                saveState();
+            if (gcCheck())              // collect garbage, if needed
                 gcTrigger();
-                restoreState();
-            }
 
             Value h = nextPending();
             if (h.isNil())
                 inner();                // go process some bytecode
             else if (h.isObj())
                 h.obj().next();         // resume the triggered handler
-            else {
-                assert(fp->excTop > 0); // simple exception, no stack unwind
-                auto exc = fp->exceptionPushPop(0);
-                ip = fp->bcObj.code + (int) exc[0];
-                sp = fp->bottom() + (int) exc[1];
-                *++sp = h;
-            }
+            else
+                exception(h);
         }
+    }
+
+    void exception (Value h) {
+        restoreState();
+        assert(fp->excTop > 0); // simple exception, no stack unwind
+        auto exc = fp->exceptionPushPop(0);
+        ip = fp->bcObj.code + (int) exc[0];
+        sp = fp->bottom() + (int) exc[1];
+        *++sp = h;
+        saveState();
     }
 
 private:
@@ -340,6 +342,7 @@ private:
     }
 
     void inner () {
+        restoreState();
         do {
 #ifdef INNER_HOOK
             INNER_HOOK
@@ -466,5 +469,6 @@ private:
                 }
             }
         } while (pending == 0);
+        saveState();
     }
 };
