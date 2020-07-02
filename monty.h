@@ -75,10 +75,10 @@ struct Value {
     inline ForceObj objPtr () const;
 
     enum Tag tag () const {
-        return v & 1 ? Int : // bit 0 set
-              v == 0 ? Nil : // all bits 0
-               v & 2 ? Str : // bit 1 set, ptr shifted 2 up
-                       Obj;  // bits 0 and 1 clear, ptr stored as is
+        return (v & 1) ? Int : // bit 0 set
+                v == 0 ? Nil : // all bits 0
+               (v & 2) ? Str : // bit 1 set, ptr shifted 2 up
+                         Obj;  // bits 0 and 1 clear, ptr stored as is
     }
 
     uintptr_t id () const { return v; }

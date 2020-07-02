@@ -119,7 +119,7 @@ private:
 
     //CG1 op
     void op_LoadConstSmallInt () {
-        *++sp = fetchVarInt((uint8_t) *ip & 0x40 ? ~0 : 0);
+        *++sp = fetchVarInt(((uint8_t) *ip & 0x40) ? ~0 : 0);
     }
 
     //CG1 op
@@ -354,7 +354,7 @@ private:
             printf("\n");
 #endif
             assert(bottom - 1 <= sp && sp < bottom + fp->bcObj.stackSz);
-            assert(0 <= fp->excTop && fp->excTop <= fp->bcObj.excDepth);
+            assert(fp->excTop <= fp->bcObj.excDepth);
             auto& bco = fp->bcObj; (void) bco;
             assert(bco.code <= ip && ip < bco.code + bco.size - bco.hdrSz);
             switch (*ip++) {
