@@ -55,7 +55,7 @@ constexpr int HPS = MEM_ALIGN / HBYT;   // headers per alignment slot
 constexpr int MAX = MEM_BYTES / HBYT;   // memory size as header count
 
 // use a fixed memory pool for now, indexed as headers and aligned to slots
-static hdr_t mem [MAX] __attribute__ ((aligned (MEM_ALIGN)));
+static hdr_t mem [MAX] __attribute__ ((aligned (16)));
 
 // convert an alloc pointer to the header reference which precedes it
 static hdr_t& p2h (void *p) {
@@ -173,7 +173,7 @@ static void* allocate (size_t sz) {
 #endif
 
 // 3 Kb is enough for current limited tests, on both 32-bit and 64-bit machines
-static uint8_t vecs [3072] __attribute__ ((aligned (MEM_ALIGN)));
+static uint8_t vecs [3072] __attribute__ ((aligned (16)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
