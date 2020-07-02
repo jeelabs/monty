@@ -5,12 +5,6 @@
 
 #include "monty.h"
 
-#if NATIVE
-#include <stdio.h>
-#else
-#include <jee.h>
-#endif
-
 extern void initBoard ();
 
 Vector::Vector (size_t bits) {
