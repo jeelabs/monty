@@ -195,7 +195,7 @@ struct Loader {
         printf("nData %d nCode %d\n", bc.nData, bc.nCode);
 
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
-            loadQstr(); // is this to adjust qWin ?
+            storeQstr();
 
         for (int i = 0; i < bc.nData; ++i) {
             auto type = *dp++;
