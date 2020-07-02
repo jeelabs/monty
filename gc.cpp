@@ -1,6 +1,6 @@
 // Memory allocation, garbage collection of objects, and compaction of vectors.
 
-#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -288,7 +288,7 @@ void Object::gcStats () {
 
 bool Context::gcCheck () {
     return vm != 0 && ((MEM_BYTES - currObjBytes) < (MEM_BYTES / 10) ||
-            (vecTop - vecs > (int) sizeof vecs - 500)); // TODO 10? 500?
+            (vecTop - vecs > (int) sizeof vecs - 1000)); // TODO 10? 1000?
 }
 
 static uint32_t tagBits [MAX/HPS/32];
