@@ -1,6 +1,6 @@
 // Memory allocation, garbage collection of objects, and compaction of vectors.
 
-#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#define VERBOSE_GC      1 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
@@ -172,7 +172,7 @@ static void* allocate (size_t sz) {
 #define release free
 #endif
 
-// 3 Kb is enough for current limited tests, on botg 32-bit and 64-bit machines
+// 3 Kb is enough for current limited tests, on both 32-bit and 64-bit machines
 static uint8_t vecs [3072] __attribute__ ((aligned (MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
@@ -192,16 +192,22 @@ void Vector::alloc (size_t sz) {
 #else
     assert(vecs <= vecTop && vecTop < vecs + sizeof vecs);
 
-    currVecBytes += sz - capacity;
-    if (currVecBytes > maxVecBytes)
-        maxVecBytes = currVecBytes;
-
     constexpr auto PSZ = sizeof (void*);
     constexpr auto DSZ = sizeof (Data);
     static_assert (2 * PSZ == DSZ, "unexpected Vector::Data size");
 
+    auto osz = roundUp(PSZ + capacity, DSZ);
+    auto nsz = roundUp(PSZ + sz, DSZ);
+
+    if (nsz > osz)
+        totalVecBytes += nsz - osz;
+    currVecBytes += nsz - osz;
+    if (currVecBytes > maxVecBytes)
+        maxVecBytes = currVecBytes;
+
     if (sz == 0) {
         if (data != 0) {
+            --currVecAllocs;
             //printf("resize gap %p #%d\n", data, (int) capacity);
             assert(data->v == this);
             data->v = 0;
@@ -211,17 +217,18 @@ void Vector::alloc (size_t sz) {
         return;
     }
 
+    assert(nsz >= osz); // no need to support shrinking, gcCompact will do that
+
     if (data == 0) {
+        ++totalVecAllocs;
+        if (++currVecAllocs > maxVecAllocs)
+            maxVecAllocs = currVecAllocs;
         assert(capacity == 0);
         data = (Data*) vecTop;
         vecTop += DSZ;
         data->v = this;
         //printf("new data %p vecTop %p\n", data, vecTop);
     }
-
-    auto osz = roundUp(PSZ + capacity, DSZ);
-    auto nsz = roundUp(PSZ + sz, DSZ);
-    assert(nsz >= osz); // no need to support shrinking, gcCompact will do that
 
     if (nsz == osz)
         return; // it already fits
@@ -301,7 +308,7 @@ static void gcMarker (const Object& obj) {
     if (0 <= off && off < MAX/HPS) {
         if (tagged(off))
             return;
-#if VERBOSE_GC
+#if VERBOSE_GC > 1
         printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
 #endif
         setTag(off);
@@ -333,19 +340,16 @@ Vector::Data* Vector::Data::next () const {
 }
 
 void Vector::gcCompact () {
-#if VERBOSE_GC
-    printf("gc compaction, %d b used, top %p\n", (int) (vecTop - vecs), vecTop);
-#endif
     auto newTop = (Data*) vecs;
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
-#if VERBOSE_GC
+#if VERBOSE_GC > 1
         printf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
                 (int) (p->v != 0 ? p->v->capacity : -1),
                 (int) (n * sizeof (Data)));
 #endif
         if (p->v != 0) {
-#if VERBOSE_GC
+#if VERBOSE_GC > 1
             printf("\tcompact %p -> %p #%d\n",
                     p, newTop, (int) (n * sizeof (Data)));
 #endif
@@ -356,20 +360,24 @@ void Vector::gcCompact () {
             newTop += n;
         }
     }
-#if VERBOSE_GC
-    printf("gc compaction done, %p -> %p, %d b less, used %d\n", vecTop, newTop,
-        (int) (vecTop - (uint8_t*) newTop), (int) ((uint8_t*) newTop - vecs));
-#endif
     vecTop = (uint8_t*) newTop;
 }
 
 void Context::gcTrigger () {
 #if VERBOSE_GC
-    printf("gc triggered, %d b free\n", (int) (MEM_BYTES - currObjBytes));
+    printf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
+            (int) currObjBytes, (int) currVecBytes,
+            (int) (vecs + sizeof vecs - vecTop));
 #endif
     memset(tagBits, 0, sizeof tagBits);
     assert(vm != 0);
     gcMarker(*vm);
     gcSweeper();
     Vector::gcCompact();
+#if VERBOSE_GC
+    printf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
+            (int) (MEM_BYTES - currObjBytes),
+            (int) (sizeof vecs - currVecBytes),
+            (int) MEM_BYTES, (int) sizeof vecs);
+#endif
 }
