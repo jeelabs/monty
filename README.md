@@ -10,6 +10,6 @@ which proves that a modern dynamic language can run well on embedded µCs.
 
 The reason for creating this project, is to explore some stackless design ideas.
 
-See <https://git.jeelabs.org/jcw/pythonx/src/branch/master/toypy> for a main app.
+See `main/native/` for details - **the directory structure is still in flux.**
 
 [MPY]: https://micropython.org/
