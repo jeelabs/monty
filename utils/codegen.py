@@ -1,0 +1,281 @@
+#!/usr/bin/env python3
+
+import os
+
+verbose = 0
+
+# generate qstr definition
+qstrIndex = []
+
+def QSTR_EMIT(block):
+    return qstrIndex
+
+def QSTR(block, off=0):
+    out = []
+    qstrIndex.clear()
+    qstrIndex.append("   0, // %d" % off)
+    sep='"\\0"'
+    pos = 0
+    for s in block:
+        s = s.replace(sep, '')
+        s = '"%s"' % s.split('"')[-2]
+        out.append('%-21s %s // %d' % (s, sep, off))
+        n = pos + len(eval(s)) + 1 # deal with backslashes
+        off += 1
+        qstrIndex.append("%4d, // %d" % (n, off))
+        pos = n
+    return out
+
+# generate size printers
+def SIZES(block, *args):
+    fmt = 'printf("%%4d = sizeof %s\\n", (int) sizeof (%s));'
+    return [fmt % (t, t) for t in args]
+
+# generate a right-side comment tag
+def TAG(block, *args):
+    text = ' '.join(args)
+    return [(76-len(text)) * ' ' + '// ' + text]
+
+# generate the header of an exposed type
+def TYPE(block, tag, *_):
+    line = block[0].split()
+    name, base = line[1], line[3:-1]
+    base = ' '.join(base) # accept multi-word, e.g. protected
+    out = [
+        'struct %s : %s {' % (name, base),
+        '    static Value create (const TypeObj&, int argc, Value argv[]);',
+        '    static const LookupObj names;',
+        '    static TypeObj info;',
+        '    TypeObj& type () const override;',
+    ]
+    if tag.startswith('<'):
+        del out[1:3] # can't construct from the VM
+    return out
+
+# enable/disable flags for current file
+flags = {}
+
+def ON(block, *args):
+    for f in args:
+        flags[f] = True
+
+def OFF(block, *args):
+    for f in args:
+        if hasattr(flags, f):
+            del flags[f]
+
+# generate builtin function table
+builtins = [[], []]
+
+# parse the src/defs.h header
+def BUILTIN_TYPES(block, fname):
+    builtins[0].clear()
+    builtins[1].clear()
+    info = []
+    with open(fname, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('//CG'):
+                f1 = line.split()
+                if len(f1) > 1 and f1[1] == 'type':
+                    f2 = next(f).split()
+                    info.append([f1[2], f2[1], f2[3]])
+    info.sort()
+    out = []
+    fmt1a = 'TypeObj %12s::info ("%s");'
+    fmt1b = 'TypeObj %8s::info ("%s", %s::create, &%s::names);'
+    fmt2 = 'TypeObj& %12s::type () const { return info; }'
+    sep = True
+    for tag, name, base in info:
+        if tag.startswith('<'):
+            out.append(fmt1a % (name, tag))
+        else:
+            if sep: out.append('')
+            sep = False
+            out.append(fmt1b % (name, tag, name, name))
+    out.append('')
+    for tag, name, base in info:
+        out.append(fmt2 % name)
+        if not tag.startswith('<'):
+            builtins[1].append('{ "%s", &%s::info },' % (tag, name))
+    return out
+
+def BUILTIN_EMIT(block, sel):
+    return builtins[sel]
+
+def BUILTIN(block, name):
+    builtins[0].append('static const FunObj f_%s (bi_%s);' % (name, name))
+    builtins[1].append('{ "%s", &f_%s },' % (name, name))
+    fmt = 'static Value bi_%s (int argc, Value argv[]) {'
+    return [fmt % name]
+
+# generate opcode switch entries
+opdefs = []
+
+def OP_INIT(block): opdefs.clear()
+def OP_EMIT(block): return opdefs
+
+def OP(block, typ=''):
+    op = block[0].split()[1][3:]
+    opdefs.append('case Op::%s:' % op)
+    if typ == 'q':
+        fmt, arg, decl = ' %s', 'fetchQstr()', 'const char* arg'
+    elif typ == 'v':
+        fmt, arg, decl = ' %u', 'fetchVarInt()', 'uint32_t arg'
+    elif typ == 'o':
+        fmt, arg, decl = ' %d', 'fetchOffset()', 'int arg'
+    elif typ == 's':
+        fmt, arg, decl = ' %d', 'fetchOffset()-0x8000', 'int arg'
+    else:
+        fmt, arg, decl = '', '', ''
+    name = 'op_' + op
+    opdefs.append('    %s(%s); break;' % (name, arg))
+    out = ['void %s (%s) {' % (name, decl)]
+    if 'op:print' in flags:
+        info = ', arg' if arg else ''
+        out.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
+    return out
+
+# parse the py/runtime0.h header
+def BINOPS(block, fname, count):
+    out = []
+    with open(fname, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('MP_BINARY_OP_'):
+                out.append(line.split()[0][13:].title().replace('_', ''))
+                if len(out) >= count:
+                    break
+    return out
+
+# parse the py/bc0.h header
+def OPCODES(block, fname):
+    defs = []
+    bases = {}
+    with open(fname, 'r') as f:
+        for line in f:
+            if line.startswith('#define'):
+                fields = line.split()
+                if len(fields) > 3:
+                    if fields[3] == '//':
+                        bases['('+fields[1]] = '('+fields[2]
+                    if fields[3] == '+':
+                        fields[2] = bases[fields[2]]
+                        val = eval(''.join(fields[2:5]))
+                        key = fields[1][6:].title().replace('_', '')
+                        defs.append((val, key))
+    defs.sort()
+    return ['%-22s = 0x%02X,' % (k, v) for v, k in defs]
+
+# used to test codegen parameter handling
+def ARGS(block, *args, **kwargs):
+    out = []
+    if args: out.append('// %s' % repr(args))
+    if kwargs: out.append('// %s' % repr(kwargs))
+    return out
+
+# perform simple shell-like parsing of '-option value' pairs in the arg list
+def parseArgs(params):
+    args = []
+    kwargs = {}
+    it = iter(params)
+    for p in it:
+        v = p
+        if p.startswith('-'):
+            v = next(it)
+        try: v = int(v)
+        except ValueError:
+            try: v = float(v)
+            except ValueError: pass
+        if p.startswith('-'):
+            kwargs[p[1:]] = v
+        else:
+            args.append(v)
+    return args, kwargs
+
+# loop over all source lines and generate inline code at each //CG mark
+def processLines(lines):
+    result = []
+    for line in lines:
+        if line.strip()[0:4] != '//CG':
+            result.append(line)
+        else:
+            if verbose:
+                print(line) # TODO report line numbers
+            request, *comment = line.split('#', 1)
+            head, tag, *params = request.split()
+            block = []
+            if len(head) == 4:
+                pass
+            elif head[4] == ':':
+                pass
+            elif head[4] == '<':
+                while True:
+                    s = next(lines)
+                    if s.strip()[0:4] == '//CG':
+                        if s.strip()[4] != '>':
+                            raise 'missing //CG>, got: ' + s
+                        break
+                    block.append(s)
+            else:
+                count = int(head[4:])
+                for _ in range(count):
+                    s = next(lines)
+                    if s[0:4] == '//CG':
+                        raise 'unexpected //CG, got: ' + s
+                    block.append(s)
+
+            try:
+                handler = globals()[tag.replace('-','_').upper()]
+            except KeyError:
+                print('unknown tag:', tag)
+                return
+            args, kwargs = parseArgs(params)
+            replacement = handler(block, *args, **kwargs)
+            if replacement is not None:
+                block = replacement
+
+            n = line.find('//CG')
+            prefix = line[:n]
+
+            if len(block) > 3:
+                head = '//CG<'
+            elif len(block) > 0:
+                head = '//CG%d' % len(block)
+            else:
+                head = '//CG:'
+            out = ' '.join([head, tag, *params])
+            if comment:
+                out += ' # ' + comment[0].strip()
+
+            result.append(prefix + out)
+            for s in block:
+                result.append(prefix + s)
+            if head == '//CG<':
+                result.append(prefix + '//CG>')
+
+    return result
+
+# process one source file, replace it only if the new contents is different
+def processFile(path):
+    flags.clear()
+    if verbose:
+        print(path)
+    # TODO only process files if they have changed
+    with open(path, 'r') as f:
+        lines = [s.rstrip() for s in f]
+    result = processLines(iter(lines))
+    if result and result != lines:
+        print('rewriting:', path)
+        with open(path, 'w') as f: # FIXME not safe
+            for s in result:
+                f.write(s+'\n')
+
+# process all C/C++ sources and headers in specified directory
+def processDir(dir):
+    for name in os.listdir(dir):
+        if os.path.splitext(name)[1] in ['.h', '.c', '.cpp']:
+            processFile(os.path.join(dir, name))
+
+if __name__ == '__main__':
+    processDir('lib/monty/')
