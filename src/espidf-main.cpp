@@ -13,26 +13,18 @@ int printf(const char* fmt, ...) {
     return 0;
 }
 
-static void initBoard () {
-    console.init();
-    console.baud(115200, fullSpeedClock()/4);   // F4 Discovery
-}
-
-static int deinitBoard (bool ok) {
-    while (true) {}
-}
-
 #include <assert.h>
 #include <string.h>
 
 #include "monty.h"
+
+#include "mod_monty.h"
+
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"
 #include "interp.h"
 #include "loader.h"
-
-#include "mod_monty.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {
@@ -91,7 +83,7 @@ int main () {
     int argc = 1;
     const char* argv [] = { "" };
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
-    initBoard();
+    console.init();
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
@@ -102,17 +94,17 @@ int main () {
     auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
     if (bcData == 0) {
         printf("can't load bytecode\n");
-        return deinitBoard (false);
+        return 1;
     }
 
     if (!runInterp(bcData)) {
         printf("can't load module\n");
-        return deinitBoard (false);
+        return 2;
     }
 
     free((void*) bcData);
 
     printf("done\n");
     Object::gcStats();
-    return deinitBoard(true);
+    return 0;
 }

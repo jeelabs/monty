@@ -1,14 +1,13 @@
 #define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
+#include <assert.h>
 #include <stdio.h>
-static void initBoard () { setbuf(stdout, 0); }
-static int deinitBoard (bool ok) { return ok ? 0 : 1; }
+#include <string.h>
 
 #include "monty.h"
 
-#include <assert.h>
-#include <string.h>
+#include "mod_monty.h"
 
 #define INNER_HOOK  { timerHook(); }
 
@@ -18,8 +17,6 @@ static int deinitBoard (bool ok) { return ok ? 0 : 1; }
 #include "interp.h"
 #include "loader.h"
 #include "util.h"
-
-#include "mod_monty.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {
@@ -82,7 +79,7 @@ static const uint8_t* loadBytecode (const char* fname) {
 }
 
 int main (int argc, const char* argv []) {
-    initBoard();
+    setbuf(stdout, 0);
     printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
     //showAlignment();      // show string address details in flash and ram
@@ -92,17 +89,17 @@ int main (int argc, const char* argv []) {
     auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
     if (bcData == 0) {
         printf("can't load bytecode\n");
-        return deinitBoard (false);
+        return 1;
     }
 
     if (!runInterp(bcData)) {
         printf("can't load module\n");
-        return deinitBoard (false);
+        return 2;
     }
 
     free((void*) bcData);
 
     printf("done\n");
     Object::gcStats();
-    return deinitBoard(true);
+    return 0;
 }

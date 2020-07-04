@@ -8,18 +8,18 @@ int printf(const char* fmt, ...) {
     return 0;
 }
 
-#include "monty.h"
-
 #include <assert.h>
 #include <string.h>
+
+#include "monty.h"
+
+#include "mod_monty.h"
 
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"
 #include "interp.h"
 #include "loader.h"
-
-#include "mod_monty.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {
