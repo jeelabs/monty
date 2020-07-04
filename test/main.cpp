@@ -1,10 +1,11 @@
 // The actual tests are in header files, grouped by functionality.
 
-#include "monty.h"
-
 #include <assert.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "monty.h"
+#include "../src/version.h"
 
 #include "defs.h"
 #include "qstr.h"

@@ -58,6 +58,7 @@ static bool runInterp (const uint8_t* data) {
     return true;
 }
 
+#if !UNIT_TEST
 int main () {
     console.init();
     console.baud(115200, fullSpeedClock());
@@ -71,3 +72,4 @@ int main () {
         printf("done\n");
     while (true) {}
 }
+#endif
