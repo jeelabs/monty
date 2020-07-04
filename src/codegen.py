@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os
+import os, sys
 
 verbose = 0
 
@@ -278,4 +278,5 @@ def processDir(dir):
             processFile(os.path.join(dir, name))
 
 if __name__ == '__main__':
-    processDir('lib/monty/')
+    for d in sys.argv[1:]:
+        processDir(d)

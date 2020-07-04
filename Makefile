@@ -4,6 +4,7 @@ help:
 	# make mon   - build, upload, and view output of an attached board
 
 run: verify/demo.mpy
+	src/codegen.py lib/monty/
 	pio run -c configs/native.ini -s
 	.pio/build/native/program $<
 

@@ -1,7 +1,7 @@
 // The opcodes and unary/binary operators, as emitted by MicroPython 1.12.
 
 enum class Op : uint8_t {
-    //CG< opcodes ../../../git/micropython/py/bc0.h
+    //CG< opcodes ../../git/micropython/py/bc0.h
     LoadConstString        = 0x10,
     LoadName               = 0x11,
     LoadGlobal             = 0x12,
@@ -89,7 +89,7 @@ enum class UnOp : uint8_t {
 };
 
 enum class BinOp : uint8_t {
-    //CG< binops ../../../git/micropython/py/runtime0.h 35
+    //CG< binops ../../git/micropython/py/runtime0.h 35
     Less,
     More,
     Equal,
