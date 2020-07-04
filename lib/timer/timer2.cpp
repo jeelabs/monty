@@ -19,15 +19,19 @@ static uint32_t getTime () {
     return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
 }
 
+#elif ESP_PLATFORM
+static void hookTimerIRQ () {} // TODO
+static uint32_t getTime () { return 0; }
+
+#elif ESP8266
+#include <Arduino.h>
+static void hookTimerIRQ () {} // TODO
+static uint32_t getTime () { return millis(); }
+
 #else // embedded version, currently based on JeeH
 #include <jee.h>
 
-#if ESP_PLATFORM
-static void hookTimerIRQ () {} // TODO
-#else
 static void hookTimerIRQ () { VTableRam().systick = timerHook; }
-#endif
-
 static uint32_t getTime () { return ticks; }
 
 #endif

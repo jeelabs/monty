@@ -9,14 +9,6 @@
 #include <assert.h>
 #include <string.h>
 
-#if VERBOSE_GC
-#if NATIVE
-#include <stdio.h>
-#else
-#include <jee.h>
-#endif
-#endif
-
 #if VERBOSE_GC < 2
 #define printf(...)
 #endif

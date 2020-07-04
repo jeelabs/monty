@@ -1,3 +1,5 @@
+#ifndef ESP_PLATFORM
+
 #include <jee.h>
 
 UartBufDev< PinA<9>, PinA<10>, 2, 99 > console;
@@ -19,6 +21,8 @@ int printf(const char* fmt, ...) {
 #include "interp.h"
 #include "loader.h"
 
+#include "mod_monty.h"
+
 void Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("<nil>"); break;
@@ -39,3 +43,5 @@ int main () {
     
     while (true) {}
 }
+
+#endif // ESP_PLATFORM

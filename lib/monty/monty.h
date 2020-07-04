@@ -471,7 +471,7 @@ struct ModuleObj : DictObj {
 
     const BytecodeObj* init = 0;
 
-    ModuleObj () {}
+    ModuleObj (const LookupObj* lu =0) { chain = lu; }
 
     void mark (void (*gc)(const Object&)) const override;
 

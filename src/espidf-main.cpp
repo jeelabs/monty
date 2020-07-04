@@ -1,27 +1,38 @@
-#ifndef ESP_PLATFORM
+// ToyPy main application, this is a test shell for the Monty VM.
 
 #define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
-#include <stdio.h>
-static void initBoard () { setbuf(stdout, 0); }
-static int deinitBoard (bool ok) { return ok ? 0 : 1; }
+#include <jee.h>
 
-#include "monty.h"
+UartBufDev< PinA<2>, PinA<3> > console;         // ESP32 TinyPico
+
+int printf(const char* fmt, ...) {
+    va_list ap; va_start(ap, fmt);
+    veprintf(console.putc, fmt, ap); va_end(ap);
+    return 0;
+}
+
+static void initBoard () {
+    console.init();
+    console.baud(115200, fullSpeedClock()/4);   // F4 Discovery
+}
+
+static int deinitBoard (bool ok) {
+    while (true) {}
+}
 
 #include <assert.h>
 #include <string.h>
 
-#define INNER_HOOK  { timerHook(); }
-
+#include "monty.h"
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"
 #include "interp.h"
 #include "loader.h"
-#include "util.h"
 
-#include "mod_monty.h"
+//#include "mod-monty.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {
@@ -76,9 +87,13 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-int main (int argc, const char* argv []) {
+int main () {
+    int argc = 1;
+    const char* argv [] = { "" };
+    vTaskDelay(3000/10); // 3s delay, enough time to attach serial
     initBoard();
-    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+    printf("\xFF" // send out special marker for easier remote output capture
+           "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs
@@ -101,5 +116,3 @@ int main (int argc, const char* argv []) {
     Object::gcStats();
     return deinitBoard(true);
 }
-
-#endif // ESP_PLATFORM
