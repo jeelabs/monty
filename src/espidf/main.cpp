@@ -32,7 +32,7 @@ static int deinitBoard (bool ok) {
 #include "interp.h"
 #include "loader.h"
 
-//#include "mod-monty.h"
+#include "mod_monty.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {

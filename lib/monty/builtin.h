@@ -77,9 +77,11 @@ static const FunObj f_next (bi_next);
 static const FunObj f_suspend (bi_suspend);
 
 #include "timer.h"
-
 const FunObj f_setTimer (xSetTimer);
 const FunObj f_getTime (xGetTime);
+
+#include "version.h"
+static const StrObj s_version = VERSION;
 
 static const LookupObj::Item builtins [] = {
     //CG< builtin-emit 1
@@ -95,6 +97,7 @@ static const LookupObj::Item builtins [] = {
     //CG>
     { "setTimer", &f_setTimer },
     { "getTime", &f_getTime },
+    { "version", &s_version },
 };
 
 const LookupObj builtinDict (builtins, sizeof builtins / sizeof *builtins);

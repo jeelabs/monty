@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys
+import os, sys, subprocess
 
 verbose = 0
 
@@ -280,3 +280,8 @@ def processDir(dir):
 if __name__ == '__main__':
     for d in sys.argv[1:]:
         processDir(d)
+
+    p = os.path
+    with open(p.join(p.dirname(sys.argv[0]), "version.h"), "w") as f:
+        v = subprocess.getoutput('git describe --tags')
+        f.write('#define VERSION "%s"\n' % v)

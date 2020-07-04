@@ -185,6 +185,7 @@ struct StrObj : SeqObj {
 //CG>
 
     StrObj (const char* v) : s (v) {}
+    operator const char* () const { return s; }
 
     Value at (Value) const override;
     Value attr (const char*, Value&) const override;

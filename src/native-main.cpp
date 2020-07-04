@@ -27,8 +27,15 @@ void Context::print (Value v) {
         case Value::Int: printf("<Int %d>", (int) v); break;
         case Value::Str: printf("<Str '%s' at %p>",
                                  (const char*) v, (const char*) v); break;
-        case Value::Obj: printf("<Obj %s at %p>",
-                                 v.obj().type().name, &v.obj()); break;
+        case Value::Obj: {
+            auto& o = v.obj();
+            auto& t = o.type();
+            if (&t == &StrObj::info)
+                printf("%s", (const char*) (const StrObj&) o);
+            else
+                printf("<Obj %s at %p>", t.name, &o); break;
+            break;
+        }
     }
 }
 
