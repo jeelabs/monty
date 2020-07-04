@@ -1,1 +1,1 @@
-These configuration files are used the PlatformIO tool (`pio`).
+These configuration files are used by the PlatformIO tool (`pio`).
