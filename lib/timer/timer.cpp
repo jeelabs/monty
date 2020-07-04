@@ -1,6 +1,6 @@
 // Monty add-on to implement a periodic timer (uses SysTick on ARM µCs).
 
-#include "monty.h"
+#include <monty.h>
 #include "timer.h"
 
 static int ms, id;

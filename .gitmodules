@@ -1,0 +1,6 @@
+[submodule "ext/lwip"]
+	path = ext/lwip
+	url = https://git.savannah.nongnu.org/git/lwip
+[submodule "ext/enc28j60driver"]
+	path = ext/enc28j60driver
+	url = https://gitlab.com/enc28j60driver/enc28j60driver
