@@ -33,12 +33,41 @@ void Context::print (Value v) {
     }
 }
 
+static bool runInterp (const uint8_t* data) {
+    Interp vm;
+
+    ModuleObj* mainMod = 0;
+    if (data[0] == 'M' && data[1] == 5) {
+        Loader loader;
+        mainMod = loader.load (data);
+        vm.qPool = loader.qPool;
+    }
+
+    if (mainMod == 0)
+        return false;
+
+    mainMod->chain = &builtinDict;
+    mainMod->atKey("__name__", DictObj::Set) = "__main__";
+    mainMod->call(0, 0);
+
+    vm.run();
+
+    // must be placed here, before the vm destructor is called
+    Object::gcStats();
+    Context::gcTrigger();
+    return true;
+}
+
 int main () {
     console.init();
     console.baud(115200, fullSpeedClock());
     wait_ms(500);
+    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
-    printf("hello\n");
-    
+    auto bcData = (const uint8_t*) 0x20004000;
+    if (!runInterp(bcData))
+        printf("can't load bytecode\n");
+    else
+        printf("done\n");
     while (true) {}
 }
