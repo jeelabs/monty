@@ -1,6 +1,6 @@
-BOARD ?= bluepill
+BOARD ?= bluepill_f103c8
 
-ifeq ($(BOARD),bluepill)
+ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
 tty = /dev/cu.usbmodemDDD8B7B83
 ram = 0x20004000

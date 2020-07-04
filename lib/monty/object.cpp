@@ -320,8 +320,14 @@ void ModuleObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
-    new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
+    if (init != 0)
+        new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
     return Value::nil; // no result yet, this call has only started
+}
+
+Value ModuleObj::attr (const char* name, Value& self) const {
+    self = Value::nil;
+    return at(name);
 }
 
 FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)

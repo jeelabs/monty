@@ -1,1 +1,0 @@
-extern const ModuleObj& montyModule;

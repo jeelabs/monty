@@ -21,8 +21,6 @@ static bool initWifi () {
 #include "monty.h"
 #include "arch.h"
 
-#include "mod_monty.h"
-
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"

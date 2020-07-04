@@ -1,3 +1,6 @@
+print(monty)
+print(monty.version)
+
 print(getTime())
 
 try:

@@ -477,6 +477,7 @@ struct ModuleObj : DictObj {
     void mark (void (*gc)(const Object&)) const override;
 
     Value call (int argc, Value argv[]) const override;
+    Value attr (const char*, Value&) const override;
 };
 
 //CG3 type <frame>

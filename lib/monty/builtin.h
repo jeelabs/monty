@@ -77,10 +77,17 @@ static const FunObj f_next (bi_next);
 static const FunObj f_suspend (bi_suspend);
 
 #include "timer.h"
-const FunObj f_setTimer (xSetTimer);
-const FunObj f_getTime (xGetTime);
+static const FunObj f_setTimer (xSetTimer);
+static const FunObj f_getTime (xGetTime);
 
 static const StrObj s_version = VERSION;
+
+static const LookupObj::Item lo_monty [] = {
+    { "version", &s_version },
+};
+
+static const LookupObj ma_monty (lo_monty, sizeof lo_monty / sizeof *lo_monty);
+static const ModuleObj m_monty (&ma_monty);
 
 static const LookupObj::Item builtins [] = {
     //CG< builtin-emit 1
@@ -96,7 +103,7 @@ static const LookupObj::Item builtins [] = {
     //CG>
     { "setTimer", &f_setTimer },
     { "getTime", &f_getTime },
-    { "version", &s_version },
+    { "monty", &m_monty },
 };
 
 const LookupObj builtinDict (builtins, sizeof builtins / sizeof *builtins);

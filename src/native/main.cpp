@@ -8,8 +8,6 @@
 #include "monty.h"
 #include "arch.h"
 
-#include "mod_monty.h"
-
 #define INNER_HOOK  { timerHook(); }
 
 #include "defs.h"
