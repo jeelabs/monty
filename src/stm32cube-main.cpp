@@ -1,5 +1,3 @@
-#ifndef ESP_PLATFORM
-
 #include <jee.h>
 
 UartBufDev< PinA<9>, PinA<10>, 2, 99 > console;
@@ -43,5 +41,3 @@ int main () {
     
     while (true) {}
 }
-
-#endif // ESP_PLATFORM

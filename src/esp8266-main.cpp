@@ -1,5 +1,3 @@
-#ifndef ESP_PLATFORM
-
 #include <FS.h>
 #include <ESP8266WiFi.h>
 
@@ -103,5 +101,3 @@ void setup () {
 }
 
 void loop () {}
-
-#endif // ESP_PLATFORM
