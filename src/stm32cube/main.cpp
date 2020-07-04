@@ -12,6 +12,7 @@ int printf(const char* fmt, ...) {
 #include <string.h>
 
 #include "monty.h"
+#include "arch.h"
 
 #include "mod_monty.h"
 

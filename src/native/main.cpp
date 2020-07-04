@@ -1,30 +1,23 @@
-// ToyPy main application, this is a test shell for the Monty VM.
-
 #define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
-#include <jee.h>
-
-UartBufDev< PinA<2>, PinA<3> > console;         // ESP32 TinyPico
-
-int printf(const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    veprintf(console.putc, fmt, ap); va_end(ap);
-    return 0;
-}
-
 #include <assert.h>
+#include <stdio.h>
 #include <string.h>
 
 #include "monty.h"
+#include "arch.h"
 
 #include "mod_monty.h"
+
+#define INNER_HOOK  { timerHook(); }
 
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"
 #include "interp.h"
 #include "loader.h"
+#include "util.h"
 
 void Context::print (Value v) {
     switch (v.tag()) {
@@ -32,8 +25,15 @@ void Context::print (Value v) {
         case Value::Int: printf("<Int %d>", (int) v); break;
         case Value::Str: printf("<Str '%s' at %p>",
                                  (const char*) v, (const char*) v); break;
-        case Value::Obj: printf("<Obj %s at %p>",
-                                 v.obj().type().name, &v.obj()); break;
+        case Value::Obj: {
+            auto& o = v.obj();
+            auto& t = o.type();
+            if (&t == &StrObj::info)
+                printf("%s", (const char*) (const StrObj&) o);
+            else
+                printf("<Obj %s at %p>", t.name, &o); break;
+            break;
+        }
     }
 }
 
@@ -79,13 +79,9 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-int main () {
-    int argc = 1;
-    const char* argv [] = { "" };
-    vTaskDelay(3000/10); // 3s delay, enough time to attach serial
-    console.init();
-    printf("\xFF" // send out special marker for easier remote output capture
-           "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+int main (int argc, const char* argv []) {
+    setbuf(stdout, 0);
+    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs

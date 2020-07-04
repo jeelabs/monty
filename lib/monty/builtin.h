@@ -80,7 +80,6 @@ static const FunObj f_suspend (bi_suspend);
 const FunObj f_setTimer (xSetTimer);
 const FunObj f_getTime (xGetTime);
 
-#include "version.h"
 static const StrObj s_version = VERSION;
 
 static const LookupObj::Item builtins [] = {
