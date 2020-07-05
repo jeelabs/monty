@@ -302,6 +302,11 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
     return Value::nil;
 }
 
+BytecodeObj& BytecodeObj::create (ModuleObj& mo, int bytes) {
+    auto p = operator new (sizeof (BytecodeObj) + bytes);
+    return *new (p) BytecodeObj (mo);
+}
+
 void BytecodeObj::mark (void (*gc)(const Object&)) const {
     gc(owner);
     constObjs.markVec(gc);

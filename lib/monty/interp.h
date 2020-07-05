@@ -7,9 +7,9 @@ struct QstrPool : Object {
     int len;
     uint16_t off [];
 
-    static const QstrPool* create (const char* p, int n) {
-        auto q = operator new (sizeof (QstrPool) + (n+1) * sizeof (uint16_t));
-        return new (q) QstrPool (p, n);
+    static const QstrPool* create (const char* s, int n) {
+        auto p = operator new (sizeof (QstrPool) + (n+1) * sizeof (uint16_t));
+        return new (p) QstrPool (s, n);
     }
 
     QstrPool (const char* p, int n) : vec (p), len (n) {

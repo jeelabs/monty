@@ -150,18 +150,18 @@ struct Loader {
     }
 
     const BytecodeObj& loadRaw (ModuleObj& modobj) {
-        auto& bc = *new BytecodeObj (modobj);
-        printf("ha\n");
-
         auto typsiz = varInt();
-        printf("type %d size %d (%d)\n", typsiz & 3, typsiz >> 2, typsiz);
+        auto bCount = typsiz >> 2;
+        printf("type %d size %d (%d)\n", typsiz & 3, bCount, typsiz);
 
         auto savedDp = dp;
         auto nskip = prelude.load(*this);
         auto npre = dp - savedDp;
 
-        bcBuf = bcNext = (uint8_t*) malloc(typsiz>>2);
-        bcLimit = bcBuf + (typsiz>>2) - npre;
+        // bytecode will be stored in extra bytes allocated after BytecodeObj
+        auto& bc = BytecodeObj::create(modobj, bCount);
+        bcBuf = bcNext = (uint8_t*) (&bc + 1);
+        bcLimit = bcBuf + bCount - npre;
 
         bc.stackSz = prelude.n_state;
         bc.excDepth = prelude.n_exc_stack;
@@ -170,7 +170,7 @@ struct Loader {
         bc.n_kwonly = prelude.n_kwonly_args;
         bc.n_def_pos = prelude.n_def_pos_args;
         bc.hdrSz = prelude.n_info + prelude.n_cell;
-        bc.size = typsiz >> 2;
+        bc.size = bCount;
         printf("raw sc %u np %u hs %u sz %u ns %u nx %u ko %u dp %u\n",
                 bc.scope, bc.n_pos, bc.hdrSz, bc.size,
                 bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);

@@ -462,6 +462,7 @@ struct BytecodeObj : Object {
     int16_t nData;
     int16_t nCode;
 
+    static BytecodeObj& create (ModuleObj& mo, int bytes);
     BytecodeObj (ModuleObj& mo) : owner (mo) {}
 
     int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
