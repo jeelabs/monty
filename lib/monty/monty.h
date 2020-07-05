@@ -102,6 +102,10 @@ private:
     friend Context; // TODO yuck, just so Context::handlers [] can be inited
 };
 
+struct VecOfValue : VecOf<Value> {
+    void markVec (void (*gc)(const Object&)) const;
+};
+
 struct Object {
     virtual ~Object () {}
 
@@ -245,7 +249,7 @@ private:
 };
 
 //CG3 type <mut-seq>
-struct MutSeqObj : SeqObj, protected VecOf<Value> {
+struct MutSeqObj : SeqObj, protected VecOfValue {
     static TypeObj info;
     TypeObj& type () const override;
 
@@ -444,7 +448,7 @@ struct BytecodeObj : Object {
     ModuleObj& owner;
 
     OpPtrRO code;
-    VecOf<Value> constObjs;
+    VecOfValue constObjs;
     int16_t stackSz;
     int16_t scope;
     int8_t excDepth;
@@ -518,7 +522,7 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
-struct Context : Object, private VecOf<Value> {
+struct Context : Object, private VecOfValue {
     static TypeObj info;
     TypeObj& type () const override;
 

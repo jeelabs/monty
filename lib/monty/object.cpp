@@ -78,11 +78,10 @@ Value Value::binOp (BinOp op, Value rhs) const {
 const Value Value::nil;
 Value Value::invalid;
 
-#include <stdio.h>
-static void markVec (const VecOf<Value>& vec, void (*gc)(const Object&)) {
-    //printf("    markVec %p #%d\n", &vec, vec.length());
-    for (size_t i = 0; i < vec.length(); ++i) {
-        Value v = vec.get(i);
+void VecOfValue::markVec (void (*gc)(const Object&)) const {
+    //printf("    markVec %p #%d\n", this, length());
+    for (size_t i = 0; i < length(); ++i) {
+        Value v = get(i);
         if (v.isObj())
             gc(v.obj());
     }
@@ -203,7 +202,7 @@ void  MutSeqObj::remove  (Value)      { assert(false); }
 void  MutSeqObj::reverse ()           { assert(false); }
 
 void MutSeqObj::mark (void (*gc)(const Object&)) const {
-    markVec(*this, gc);
+    markVec(gc);
 }
 
 void  MutSeqObj::insert  (int idx, Value val) {
@@ -305,7 +304,7 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
 
 void BytecodeObj::mark (void (*gc)(const Object&)) const {
     gc(owner);
-    markVec(constObjs, gc);
+    constObjs.markVec(gc);
 }
 
 Value BytecodeObj::call (int argc, Value argv[]) const {
@@ -314,7 +313,7 @@ Value BytecodeObj::call (int argc, Value argv[]) const {
 }
 
 void ModuleObj::mark (void (*gc)(const Object&)) const {
-    markVec(*this, gc);
+    markVec(gc);
     if (init != 0)
         gc(*init);
 }
@@ -352,7 +351,7 @@ FrameObj::~FrameObj () {
 }
 
 void FrameObj::mark (void (*gc)(const Object&)) const {
-    markVec(*this, gc);
+    markVec(gc);
 
     gc(bcObj);
     gc(*locals);
@@ -377,7 +376,7 @@ void FrameObj::leave () {
 }
 
 void Context::mark (void (*gc)(const Object&)) const {
-    markVec(*this, gc);
+    markVec(gc);
     if (fp != 0)
         gc(*fp);
     if (this == vm)
