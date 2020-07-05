@@ -13,24 +13,6 @@
 #include "loader.h"
 #include "util.h"
 
-void Context::print (Value v) {
-    switch (v.tag()) {
-        case Value::Nil: printf("<nil>"); break;
-        case Value::Int: printf("<Int %d>", (int) v); break;
-        case Value::Str: printf("<Str '%s' at %p>",
-                                 (const char*) v, (const char*) v); break;
-        case Value::Obj: {
-            auto& o = v.obj();
-            auto& t = o.type();
-            if (&t == &StrObj::info)
-                printf("%s", (const char*) (const StrObj&) o);
-            else
-                printf("<Obj %s at %p>", t.name, &o); break;
-            break;
-        }
-    }
-}
-
 static bool runInterp (const uint8_t* data) {
     Interp vm;
 

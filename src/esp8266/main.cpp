@@ -27,17 +27,6 @@ static bool initWifi () {
 #include "interp.h"
 #include "loader.h"
 
-void Context::print (Value v) {
-    switch (v.tag()) {
-        case Value::Nil: printf("<nil>"); break;
-        case Value::Int: printf("<Int %d>", (int) v); break;
-        case Value::Str: printf("<Str '%s' at %p>",
-                                 (const char*) v, (const char*) v); break;
-        case Value::Obj: printf("<Obj %s at %p>",
-                                 v.obj().type().name, &v.obj()); break;
-    }
-}
-
 static const uint8_t* loadBytecode (const char* fname) {
     File f = SPIFFS.open(fname, "r");
     if (!f)
