@@ -2,8 +2,7 @@
 
 #define ENC28J60_USE_PBUF 1
 
-extern int debugf (const char*, ...);
-#define DEBUG debugf
+#define DEBUG(...)
 
 typedef struct {} enchw_device_t;
 
