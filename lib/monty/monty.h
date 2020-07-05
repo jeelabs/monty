@@ -109,7 +109,9 @@ struct VecOfValue : VecOf<Value> {
 struct Object {
     virtual ~Object () {}
 
-    virtual const TypeObj& type () const =0;
+    static TypeObj info;
+    virtual TypeObj& type () const;
+
     virtual void mark (void (*gc)(const Object&)) const {};
 
     virtual Value repr   () const;

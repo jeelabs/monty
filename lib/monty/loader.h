@@ -10,7 +10,7 @@ struct Loader {
     const uint8_t* dp;
     char* qBuf;
     char* qNext;
-    VecOf<const char*> qVec;
+    VecOfValue qVec;
     uint8_t* bcBuf;
     uint8_t* bcNext;
     uint8_t* bcLimit;
@@ -84,7 +84,7 @@ struct Loader {
         mo->init = &loadRaw(*mo); // circular: Module -> Bytecode -> Module
 
         printf("qUsed #%d %db\n", (int) qVec.length(), (int) (qNext-qBuf));
-        qPool = QstrPool::create((uint8_t*) qBuf, qVec.length());
+        qPool = QstrPool::create(qBuf, qVec.length());
 
         return mo;
     }
@@ -233,8 +233,8 @@ struct Loader {
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
                     assert(n > 0);
-                    auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1]
-                                                : qVec.get(n - qstrNext);
+                    auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1] :
+                                        (const char*) qVec.get(n - qstrNext);
                     (void) s;
                     printf("  Q: 0x%02X (%u) %s\n", op, n, s);
                     break;

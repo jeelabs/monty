@@ -1,5 +1,8 @@
 // Some implementation details for the built-in data types and functions.
 
+TypeObj  Object::info ("<object>");
+TypeObj& Object::type () const { return info; }
+
 TypeObj  Context::info ("<context>");
 TypeObj& Context::type () const { return info; }
 

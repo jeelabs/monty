@@ -2,22 +2,22 @@
 
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
-struct QstrPool {
+struct QstrPool : Object {
     const char* vec;
     int len;
     uint16_t off [];
 
-    static const QstrPool* create (const uint8_t* p, int n) {
-        auto sz = sizeof (QstrPool) + (n+1) * sizeof (uint16_t);
-        QstrPool* qp = (QstrPool*) malloc(sz);
-        qp->vec = (const char*) p;
-        qp->len = n;
-        qp->off[0] = 0;
+    static const QstrPool* create (const char* p, int n) {
+        auto q = operator new (sizeof (QstrPool) + (n+1) * sizeof (uint16_t));
+        return new (q) QstrPool (p, n);
+    }
+
+    QstrPool (const char* p, int n) : vec (p), len (n) {
+        off[0] = 0;
         for (int i = 0; i < n; ++i) {
-            auto pos = qp->off[i];
-            qp->off[i+1] = pos + strlen(qp->vec + pos) + 1;
+            auto pos = off[i];
+            off[i+1] = pos + strlen(vec + pos) + 1;
         }
-        return qp;
     }
 
     const char* at (int idx) const {
@@ -34,7 +34,12 @@ struct Interp : Context {
     const QstrPool* qPool = 0;
 
     Interp () { vm = this; }
-    ~Interp () { vm = 0; free((void*) qPool); }
+    ~Interp () { vm = 0; delete qPool; }
+
+    void mark (void (*gc)(const Object&)) const override {
+        if (qPool != 0) gc(*qPool);
+        Context::mark(gc);
+    }
 
     void run () {
         while (ip != 0) {
