@@ -126,13 +126,6 @@ struct Loader {
         return n;
     }
 
-    void addQstr (int i, const char* s) {
-        qVec.set(i, qNext);
-        auto n = strlen(s) + 1;
-        memcpy(qNext, s, n);
-        qNext += n;
-    }
-
     int winQstr (int i) {
         int n = qWin.get(i);
         qWin.del(i);

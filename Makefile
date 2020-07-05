@@ -14,6 +14,12 @@ up: platformio.ini
 mon: platformio.ini
 	pio run -t upload -t monitor -s
 
+many:
+	pio run -c configs/native.ini -s
+	pio run -c configs/bluepill_f103c8.ini -s
+	pio run -c configs/esp8266.env -e d1_mini -s
+	pio run -c configs/tinypico.ini -s
+
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.
 	#
