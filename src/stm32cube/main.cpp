@@ -13,7 +13,13 @@
 
 UartBufDev< PinA<9>, PinA<10>, 2, 99 > console;
 
-int printf(const char* fmt, ...) {
+int printf (const char* fmt, ...) {
+    va_list ap; va_start(ap, fmt);
+    veprintf(console.putc, fmt, ap); va_end(ap);
+    return 0;
+}
+
+extern "C" int debugf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
     veprintf(console.putc, fmt, ap); va_end(ap);
     return 0;
@@ -44,6 +50,8 @@ static bool runInterp (const uint8_t* data) {
     return true;
 }
 
+#include "net.h"
+
 int main () {
     console.init();
     console.baud(115200, fullSpeedClock());
@@ -52,6 +60,13 @@ int main () {
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db %s\n",
             (int) qstrNext, (int) sizeof qstrData, VERSION);
+
+    mch_net_init();
+    printf("Setup completed\n");
+    while (1) {
+        mch_net_poll();
+        sys_check_timeouts();
+    }
 
     auto bcData = (const uint8_t*) 0x20004000;
     if (!runInterp(bcData))

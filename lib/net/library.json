@@ -1,0 +1,5 @@
+{
+    "name": "net",
+    "version": "0.0.0",
+    "frameworks": "stm32cube"
+}
