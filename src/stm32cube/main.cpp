@@ -56,12 +56,13 @@ static bool runInterp (const uint8_t* data) {
     return true;
 }
 
-#if !UNIT_TEST
 int main () {
     console.init();
     console.baud(115200, fullSpeedClock());
     wait_ms(500);
-    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+    printf("\xFF" // send out special marker for easier remote output capture
+           "main qstr #%d %db %s\n",
+            (int) qstrNext, (int) sizeof qstrData, VERSION);
 
     auto bcData = (const uint8_t*) 0x20004000;
     if (!runInterp(bcData))
@@ -70,4 +71,3 @@ int main () {
         printf("done\n");
     while (true) {}
 }
-#endif

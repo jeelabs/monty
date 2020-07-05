@@ -80,6 +80,9 @@ static bool runInterp (const uint8_t* data) {
 
 void setup () {
     Serial.begin(115200);
+    printf("main qstr #%d %db %s\n",
+            (int) qstrNext, (int) sizeof qstrData, VERSION);
+
     if (initWifi())
         printf("Wifi connected\n");
     if (SPIFFS.begin())

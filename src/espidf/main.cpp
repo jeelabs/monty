@@ -84,7 +84,8 @@ int main () {
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
     console.init();
     printf("\xFF" // send out special marker for easier remote output capture
-           "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+           "main qstr #%d %db %s\n",
+            (int) qstrNext, (int) sizeof qstrData, VERSION);
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs

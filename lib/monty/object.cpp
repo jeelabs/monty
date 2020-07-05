@@ -320,8 +320,8 @@ void ModuleObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value ModuleObj::call (int argc, Value argv[]) const {
-    if (init != 0)
-        new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
+    assert(init != 0);
+    new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
     return Value::nil; // no result yet, this call has only started
 }
 

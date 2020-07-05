@@ -79,7 +79,8 @@ static const uint8_t* loadBytecode (const char* fname) {
 
 int main (int argc, const char* argv []) {
     setbuf(stdout, 0);
-    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+    printf("main qstr #%d %db %s\n",
+            (int) qstrNext, (int) sizeof qstrData, VERSION);
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs
