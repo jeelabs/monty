@@ -3,18 +3,20 @@
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
 struct QstrPool : Object {
-    const char* vec;
     int len;
     uint16_t off [];
 
-    static const QstrPool* create (const char* s, int n) {
-        auto p = operator new (sizeof (QstrPool) + (n+1) * sizeof (uint16_t));
-        return new (p) QstrPool (s, n);
+    static const QstrPool* create (const char* d, int n, int b) {
+        static_assert (sizeof *off == 2, "off is not a uint16_t ?");
+        auto p = operator new (sizeof (QstrPool) + 2*(n+1) + b);
+        return new (p) QstrPool (d, n, b);
     }
 
-    QstrPool (const char* p, int n) : vec (p), len (n) {
-        off[0] = 0;
-        for (int i = 0; i < n; ++i) {
+    QstrPool (const char* data, int num, int bytes) : len (num) {
+        auto vec = (char*) off;
+        off[0] = 2*(num+1);
+        memcpy(vec + off[0], data, bytes);
+        for (int i = 0; i < num; ++i) {
             auto pos = off[i];
             off[i+1] = pos + strlen(vec + pos) + 1;
         }
@@ -26,7 +28,7 @@ struct QstrPool : Object {
             return qstrData + qstrPos[idx-qstrFrom];
         idx -= qstrNext;
         assert(idx < len);
-        return vec + off[idx];
+        return (const char*) off + off[idx];
     }
 };
 

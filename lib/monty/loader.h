@@ -10,8 +10,7 @@ struct Loader {
     const LookupObj* modules; // TODO cleanup when?
     const QstrPool* qPool;
     const uint8_t* dp;
-    char* qBuf;
-    char* qNext;
+    VecOf<char> qBuf;
     VecOfValue qVec;
     uint8_t* bcBuf;
     uint8_t* bcNext;
@@ -80,14 +79,16 @@ struct Loader {
         loaderf("qwin %u\n", n);
         qWin.ins(0, n); // qstr window
 
-        qBuf = qNext = (char*) malloc(500); // TODO need to handle pre-loaded
+        qBuf.ins(0, 500); // TODO create space to avoid constant resizing
+        qBuf.del(0, 500);
 
         auto mo = new ModuleObj;
         mo->init = &loadRaw(*mo); // circular: Module -> Bytecode -> Module
 
-        loaderf("qUsed #%d %db\n", (int) qVec.length(), (int) (qNext-qBuf));
-        qPool = QstrPool::create(qBuf, qVec.length());
+        loaderf("qUsed #%d %db\n", (int) qVec.length(), qBuf.length());
+        qPool = QstrPool::create((const char*) qBuf.getPtr(0), qVec.length(), qBuf.length());
 
+        qBuf.del(0, qBuf.length()); // buffer no longer needed
         return mo;
     }
 
@@ -114,10 +115,12 @@ struct Loader {
         if (len & 1)
             return winQstr(len>>1);
         len >>= 1;
-        auto s = qNext;
+        auto o = qBuf.length();
+        qBuf.ins(o, len + 1);
+        auto s = (char*) qBuf.getPtr(o); // TODO careful, can move
         for (int i = 0; i < len; ++i)
-            *qNext++ = *dp++;
-        *qNext++ = 0;
+            s[i] = *dp++;
+        s[len] = 0;
         loaderf("q:%s\n", s);
         int n = qVec.length();
         qVec.set(n, s);
