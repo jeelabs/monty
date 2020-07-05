@@ -1,14 +1,3 @@
-void Context::print (Value v) {
-    switch (v.tag()) {
-        case Value::Nil: printf("<nil>"); break;
-        case Value::Int: printf("<Int %d>", (int) v); break;
-        case Value::Str: printf("<Str '%s' at %p>",
-                                 (const char*) v, (const char*) v); break;
-        case Value::Obj: printf("<Obj %s at %p>",
-                                 v.obj().type().name, &v.obj()); break;
-    }
-}
-
 struct TestInterp : Interp {
     using Context::vm; // expose access to protected member;
 };
