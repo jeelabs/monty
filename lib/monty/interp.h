@@ -20,7 +20,7 @@ struct QstrPool : Object {
         }
     }
 
-    const char* at (int idx) const {
+    const char* atIdx (int idx) const {
         assert(idx >= qstrFrom);
         if (idx < (int) qstrNext)
             return qstrData + qstrPos[idx-qstrFrom];
@@ -84,7 +84,7 @@ private:
     }
 
     const char* fetchQstr () {
-        return qPool->at(fetchOffset() + 1);
+        return qPool->atIdx(fetchOffset() + 1);
     }
 
     static bool opInRange (uint8_t op, Op from, int count) {
