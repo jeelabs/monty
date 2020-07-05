@@ -8,8 +8,8 @@ struct QstrPool {
     uint16_t off [];
 
     static const QstrPool* create (const uint8_t* p, int n) {
-        QstrPool* qp;
-        qp = (QstrPool*) malloc(sizeof *qp + (n+1) * sizeof qp->off[0]);
+        auto sz = sizeof (QstrPool) + (n+1) * sizeof (uint16_t);
+        QstrPool* qp = (QstrPool*) malloc(sz);
         qp->vec = (const char*) p;
         qp->len = n;
         qp->off[0] = 0;

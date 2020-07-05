@@ -2,14 +2,10 @@
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
 #include <assert.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "monty.h"
 #include "arch.h"
-
-#define INNER_HOOK  { timerHook(); }
-
 #include "defs.h"
 #include "qstr.h"
 #include "builtin.h"

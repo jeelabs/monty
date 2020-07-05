@@ -75,7 +75,7 @@ static int b2s (size_t bytes) {
 }
 
 // return a reference to the next block
-static hdr_t& next (hdr_t* h) {
+static hdr_t& nextObj (hdr_t* h) {
     return *(h + h2b(*h) / HBYT + 1);
 }
 
@@ -91,53 +91,37 @@ static void initMem () {
 // merge any following free blocks into this one
 static void coalesce (hdr_t* h) {
     if (!inUse(*h))
-        while (!inUse(next(h)))
-            *h += next(h); // free headers are positive and can be added
+        while (!inUse(nextObj(h)))
+            *h += nextObj(h); // free headers are positive and can be added
 }
 
-static uint32_t totalObjAllocs,
-                totalObjBytes,
-                currObjAllocs,
-                currObjBytes,
-                maxObjAllocs,
-                maxObjBytes,
-                totalVecAllocs,
-                totalVecBytes,
-                currVecAllocs,
-                currVecBytes,
-                maxVecAllocs,
-                maxVecBytes;
-
-static void release (void* p) {
-    if (p != 0) {
-        auto& h = p2h(p);
-        assert(inUse(h));
-        h &= ~USED;
-        --currObjAllocs;
-        currObjBytes -= h2s(h) * MEM_ALIGN;
-    }
-}
+static uint32_t totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes,
+                currObjAllocs, currObjBytes, currVecAllocs, currVecBytes,
+                maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes;
 
 static void* allocate (size_t sz) {
-    if (mem[HPS-1] == 0)
+#if USE_MALLOC
+    return malloc(sz);
+#else
+    if (mem[MAX-1] == 0)
         initMem();
 
     auto ns = b2s(sz);
     printf("  alloc %d slots %d\n", (int) sz, ns);
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h))
+    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &nextObj(h))
         if (!inUse(*h)) {
             //printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
             coalesce(h);
             if (*h >= ns) {
                 auto os = *h;
                 *h = ns;
-                //printf("    h %p next h %p end %p\n", h, &next(h), mem + MAX);
+                //printf("    h %p next h %p end %p\n", h, &nextObj(h), mem + MAX);
                 if (os > ns)
-                    next(h) = os - ns;
+                    nextObj(h) = os - ns;
                 *h |= USED;
                 auto p = h2p(h);
                 printf("    -> %p *h %04x next %04x\n",
-                        p, (uint16_t) *h, (uint16_t) next(h));
+                        p, (uint16_t) *h, (uint16_t) nextObj(h));
 
                 if (++totalObjAllocs % GC_REPORTS == 0)
                     Object::gcStats();
@@ -157,12 +141,22 @@ static void* allocate (size_t sz) {
 
     assert(false);
     return 0; // ouch, ran out of memory
+#endif
 }
 
+static void release (void* p) {
 #if USE_MALLOC
-#define allocate malloc
-#define release free
+    free(sz);
+#else
+    if (p != 0) {
+        auto& h = p2h(p);
+        assert(inUse(h));
+        h &= ~USED;
+        --currObjAllocs;
+        currObjBytes -= h2s(h) * MEM_ALIGN;
+    }
 #endif
+}
 
 // 3 Kb is enough for current limited tests, on both 32-bit and 64-bit machines
 static uint8_t vecs [3072] __attribute__ ((aligned (16)));
@@ -309,7 +303,7 @@ static void gcMarker (const Object& obj) {
 }
 
 static void gcSweeper () {
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &next(h)) {
+    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &nextObj(h)) {
         //const char* s = "*FREE*";
         if (inUse(*h)) {
             auto obj = (Object*) h2p(h);

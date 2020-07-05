@@ -9,7 +9,7 @@ protected:
     struct Data {
         Vector* v;
         union { uint32_t n; uint8_t d [1]; };
-        Data* next() const;
+        Data* next () const;
     };
 
     uint8_t logBits = 0;

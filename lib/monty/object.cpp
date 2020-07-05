@@ -420,6 +420,8 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
 // raise(str|obj) raises an exception, i.e triggers slot 0
 // raise(nil) quits inner vm loop
 void Context::raise (Value e) {
+    assert(vm != 0);
+
     int slot = 0;
     if (e.isInt()) {
         slot = e;
