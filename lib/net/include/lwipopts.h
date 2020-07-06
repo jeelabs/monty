@@ -9,5 +9,7 @@ typedef uint32_t sys_prot_t;
 #define LWIP_ARP 1
 #define LWIP_ETHERNET 1
 #define LWIP_DNS 1
+#define LWIP_DHCP 1
 #define LWIP_NETCONN 0
 #define LWIP_SOCKET 0
+#define LWIP_STATS 0

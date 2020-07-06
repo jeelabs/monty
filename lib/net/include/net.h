@@ -1,6 +1,8 @@
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/netif.h>
+#include <lwip/dhcp.h>
+#include <lwip/dns.h>
 #include <lwip/init.h>
 #include <lwip/pbuf.h>
 #include <lwip/stats.h>
@@ -32,8 +34,10 @@ uint8_t enchw_exchangebyte (enchw_device_t *dev, uint8_t byte) {
 }
 
 ip4_addr myip_addr = {0x02BCA8C0UL}; /* 192.168.188.2 */
+//ip4_addr myip_addr = {0}; /* dhcp */
 ip4_addr gw_addr = {0x01BCA8C0UL}; /* 192.168.188.1 */
 ip4_addr netmask = {0x000000FFUL}; /* 0.0.0.255 */
+ip4_addr dns = {0x08080808UL}; /* 8.8.8.8 */
 
 static netif mchdrv_netif;
 
@@ -97,6 +101,9 @@ void mch_net_init () {
 
     netif_set_default(&mchdrv_netif);
     netif_set_up(&mchdrv_netif);
+
+    //dhcp_start(&mchdrv_netif);
+    dns_setserver(0, &dns);
 }
 
 void mch_net_poll () {

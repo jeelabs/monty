@@ -2,7 +2,8 @@
 
 #define ENC28J60_USE_PBUF 1
 
-#define DEBUG(...)
+//#define DEBUG(...)
+#define DEBUG debugf
 
 typedef struct {} enchw_device_t;
 
