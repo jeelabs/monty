@@ -52,15 +52,7 @@ static bool runInterp (const uint8_t* data) {
 
 #include "net.h"
 
-int main () {
-    console.init();
-    console.baud(115200, fullSpeedClock());
-    wait_ms(500);
-
-    printf("\xFF" // send out special marker for easier remote output capture
-           "main qstr #%d %db %s\n",
-            (int) qstrNext, (int) sizeof qstrData, VERSION);
-
+static void testNet () {
     mch_net_init();
     printf("Setup completed\n");
 
@@ -112,6 +104,18 @@ int main () {
         mch_net_poll();
         sys_check_timeouts();
     }
+}
+
+int main () {
+    console.init();
+    console.baud(115200, fullSpeedClock());
+    wait_ms(500);
+
+    printf("\xFF" // send out special marker for easier remote output capture
+           "main qstr #%d %db %s\n",
+            (int) qstrNext, (int) sizeof qstrData, VERSION);
+
+    //testNet();
 
     auto bcData = (const uint8_t*) 0x20004000;
     if (!runInterp(bcData))
