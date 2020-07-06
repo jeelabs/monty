@@ -35,9 +35,8 @@ uint8_t enchw_exchangebyte (enchw_device_t*, uint8_t b) {
 }
 
 ip4_addr myip_addr = {0x02BCA8C0UL}; /* 192.168.188.2 */
-//ip4_addr myip_addr = {0}; /* dhcp */
 ip4_addr gw_addr = {0x01BCA8C0UL}; /* 192.168.188.1 */
-ip4_addr netmask = {0x000000FFUL}; /* 0.0.0.255 */
+ip4_addr netmask = {0x00FFFFFFUL}; /* 255.255.255.0 */
 ip4_addr dns = {0x08080808UL}; /* 8.8.8.8 */
 
 static netif enc_if;
@@ -52,6 +51,7 @@ void mchdrv_poll (netif* netif) {
         netif_set_link_down(netif);
 
     if (enc_RCR(dev, ENC_EPKTCNT)) {
+        //printf("\t\t receive!\n");
         pbuf* buf = NULL;
         if (enc_read_received_pbuf(dev, &buf) == 0)
             netif->input(buf, netif);
@@ -61,6 +61,7 @@ void mchdrv_poll (netif* netif) {
 static err_t mchdrv_linkoutput (netif* netif, pbuf* p) {
     enc_device_t* dev = (enc_device_t*)netif->state;
 
+    printf("\t\t send!\n");
     enc_transmit_pbuf(dev, p);
     return ERR_OK;
 }
@@ -77,7 +78,14 @@ err_t mchdrv_init (netif* netif) {
     netif->output = etharp_output;
     netif->linkoutput = mchdrv_linkoutput;
     netif->mtu = 1500;
-    netif->flags |= NETIF_FLAG_ETHARP | NETIF_FLAG_BROADCAST;
+    netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP;
+
+    NETIF_SET_CHECKSUM_CTRL(netif,
+        NETIF_CHECKSUM_CHECK_IP
+        | NETIF_CHECKSUM_CHECK_UDP
+        | NETIF_CHECKSUM_CHECK_TCP
+        | NETIF_CHECKSUM_CHECK_ICMP
+        | NETIF_CHECKSUM_CHECK_ICMP6);
 
     return ERR_OK;
 }
@@ -93,17 +101,22 @@ void mch_net_init () {
     enc_if.hwaddr[4] = 4;
     enc_if.hwaddr[5] = 5;
 
+    enc_if.name[0] = 'e';
+    enc_if.name[1] = '0';
     if (netif_add(&enc_if, &myip_addr, &netmask, &gw_addr, &enc_hw,
                 mchdrv_init, ethernet_input) == NULL) {
         //LWIP_ASSERT("mch_net_init: netif_add (mchdrv_init) failed\n", 0);
         assert(false);
     }
 
+    netif_set_hostname(&enc_if, "f103");
     netif_set_default(&enc_if);
     netif_set_up(&enc_if);
 
     //dhcp_start(&mchdrv_netif);
     dns_setserver(0, &dns);
+    
+    netif_set_link_up(&enc_if);
 }
 
 void mch_net_poll () {

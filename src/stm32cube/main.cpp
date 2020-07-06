@@ -90,16 +90,22 @@ int main () {
         return ERR_OK;
     });
 
-#if 0
     auto my_pcb = udp_new();
     assert(my_pcb != NULL);
 
     udp_recv(my_pcb, [](void *arg, udp_pcb *pcb, pbuf *p, const ip_addr_t *addr, uint16_t port) {
         printf("\t UDP! %s\n", p->payload);
+
+        auto r = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_RAM);
+        auto m = pbuf_alloc(PBUF_RAW, 5, PBUF_ROM);
+        m->payload = (char*) "hello";
+        pbuf_cat(r, m);
+        udp_sendto(pcb, r, addr, port);
+        pbuf_free(r);
+
 	pbuf_free(p);
     }, 0);
     udp_bind(my_pcb, IP_ADDR_ANY, 4321);
-#endif
 
     while (1) {
         mch_net_poll();
