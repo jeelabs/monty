@@ -21,8 +21,6 @@ typedef uintptr_t mem_ptr_t;
 
 #define BYTE_ORDER LITTLE_ENDIAN
 
-#define LWIP_CHKSUM_ALGORITHM 3
-
 #define LWIP_RAND() ((u32_t)rand())
 
 #include <assert.h>

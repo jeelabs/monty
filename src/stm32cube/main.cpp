@@ -11,7 +11,7 @@
 
 #include <jee.h>
 
-UartBufDev< PinA<9>, PinA<10> > console;
+UartDev< PinA<9>, PinA<10> > console;
 
 int printf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -66,30 +66,30 @@ int main () {
 
     auto pcb = tcp_new(); assert(pcb != NULL);
     auto r = tcp_bind(pcb, IP_ADDR_ANY, 1234); assert(r == 0);
-    //pcb = tcp_listen_with_backlog(pcb, 3);
-    pcb = tcp_listen(pcb); assert(pcb != NULL);
+    pcb = tcp_listen_with_backlog(pcb, 3); assert(pcb != NULL);
+    //pcb = tcp_listen(pcb); assert(pcb != NULL);
 
     tcp_accept(pcb, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
         printf("\t ACCEPT!\n");
 
         tcp_recv(newpcb, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
-            printf("\t RECEIVE! %s\n", p->payload);
-            if (err == ERR_OK) {
-                if (p != 0)
-                    tcp_recved(tpcb, p->tot_len);
-                else {
-                    printf("\t CLOSE!\n");
-                    tcp_recv(tpcb, 0);
-                    tcp_close(tpcb);
-                }
+            //printf("\t %p %d\n", p, err);
+            if (p != 0) {
+                printf("\t RECEIVE! %s\n", p->payload);
+                tcp_recved(tpcb, p->tot_len);
+                pbuf_free(p);
+            } else {
+                printf("\t CLOSE!\n");
+                tcp_recv(tpcb, 0);
+                tcp_close(tpcb);
             }
-            pbuf_free(p);
             return ERR_OK;
         });
 
         return ERR_OK;
     });
 
+#if 0
     auto my_pcb = udp_new();
     assert(my_pcb != NULL);
 
@@ -106,8 +106,9 @@ int main () {
 	pbuf_free(p);
     }, 0);
     udp_bind(my_pcb, IP_ADDR_ANY, 4321);
+#endif
 
-    while (1) {
+    while (true) {
         mch_net_poll();
         sys_check_timeouts();
     }
