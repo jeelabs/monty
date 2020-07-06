@@ -3,6 +3,7 @@
 #include <lwip/netif.h>
 #include <lwip/dhcp.h>
 #include <lwip/dns.h>
+#include <lwip/udp.h>
 #include <lwip/init.h>
 #include <lwip/pbuf.h>
 #include <lwip/stats.h>
@@ -79,14 +80,14 @@ err_t mchdrv_init (netif* netif) {
     netif->linkoutput = mchdrv_linkoutput;
     netif->mtu = 1500;
     netif->flags = NETIF_FLAG_BROADCAST | NETIF_FLAG_ETHARP | NETIF_FLAG_ETHERNET | NETIF_FLAG_IGMP;
-
+#if 0
     NETIF_SET_CHECKSUM_CTRL(netif,
         NETIF_CHECKSUM_CHECK_IP
         | NETIF_CHECKSUM_CHECK_UDP
         | NETIF_CHECKSUM_CHECK_TCP
         | NETIF_CHECKSUM_CHECK_ICMP
         | NETIF_CHECKSUM_CHECK_ICMP6);
-
+#endif
     return ERR_OK;
 }
 
@@ -109,12 +110,12 @@ void mch_net_init () {
         assert(false);
     }
 
-    netif_set_hostname(&enc_if, "f103");
+    //netif_set_hostname(&enc_if, "f103");
     netif_set_default(&enc_if);
     netif_set_up(&enc_if);
 
     //dhcp_start(&mchdrv_netif);
-    dns_setserver(0, &dns);
+    //dns_setserver(0, &dns);
     
     netif_set_link_up(&enc_if);
 }
