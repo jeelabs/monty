@@ -117,7 +117,7 @@ int main () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    wait_ms(500);
+    //wait_ms(500);
 
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db %s\n",
