@@ -11,7 +11,11 @@
 
 #include <jee.h>
 
+#if BOARD_discovery_f4
+UartDev< PinA<2>, PinA<3> > console;
+#else
 UartDev< PinA<9>, PinA<10> > console;
+#endif
 
 int printf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -108,7 +112,11 @@ static void testNet () {
 
 int main () {
     console.init();
+#if BOARD_discovery_f4
+    console.baud(115200, fullSpeedClock() / 4);
+#else
     console.baud(115200, fullSpeedClock());
+#endif
     wait_ms(500);
 
     printf("\xFF" // send out special marker for easier remote output capture
