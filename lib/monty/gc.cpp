@@ -9,6 +9,10 @@
 #include <assert.h>
 #include <string.h>
 
+#if VERBOSE_GC
+extern "C" int printf (const char*, ...);
+#endif
+
 #if VERBOSE_GC < 2
 #define printf(...)
 #endif
