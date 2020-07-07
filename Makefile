@@ -3,10 +3,8 @@ help:
 	# make up    - build and upload to an attached board
 	# make mon   - build, upload, and view output of an attached board
 
-run: verify/demo.mpy
-	src/codegen.py lib/monty/
-	pio run -c configs/native.ini -s
-	.pio/build/native/program $<
+run: gen native verify/demo.mpy
+	.pio/build/native/program verify/demo.mpy
 
 up: platformio.ini
 	pio run -t upload -s
@@ -14,11 +12,16 @@ up: platformio.ini
 mon: platformio.ini
 	pio run -t upload -t monitor -s
 
-many:
-	pio run -c configs/native.ini -s
-	pio run -c configs/bluepill_f103c8.ini -s
-	pio run -c configs/esp8266.env -e d1_mini -s
-	pio run -c configs/tinypico.ini -s
+many: native bluepill_f103c8 esp8266 tinypico
+
+gen:
+	src/codegen.py lib/monty/
+
+native bluepill_f103c8 esp8266 tinypico:
+	pio run -c configs/$@.ini -s
+
+verify: native
+	@ make -C $@ BOARD=$<
 
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.
@@ -44,3 +47,5 @@ platformio.ini:
 
 clean:
 	rm -rf .pio
+
+.PHONY: verify

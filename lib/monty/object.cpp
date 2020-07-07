@@ -380,14 +380,18 @@ void FrameObj::leave () {
         delete this;
 }
 
+volatile uint32_t Context::pending;
+Value Context::handlers [MAX_HANDLERS];
+Context* Context::vm;
+
 void Context::mark (void (*gc)(const Object&)) const {
     markVec(gc);
     if (fp != 0)
         gc(*fp);
     if (this == vm)
-        for (size_t i = 0; i < MAX_HANDLERS; ++i)
-            if (handlers[i].isObj())
-                gc(handlers[i].obj());
+        for (auto& h : handlers)
+            if (h.isObj())
+                gc(h.obj());
 }
 
 int Context::extend (int num) {
@@ -526,10 +530,6 @@ void Context::resume (FrameObj* frame) {
     assert(frame != 0 && frame->isCoro());
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
-
-volatile uint32_t Context::pending;
-Value Context::handlers [MAX_HANDLERS];
-Context* Context::vm;
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);
 static const MethObj m_count = mo_count;

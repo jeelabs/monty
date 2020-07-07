@@ -3,23 +3,20 @@
 #include "unittest_transport.h"
 #include <jee.h>
 
-#if STM32F1
-UartBufDev< PinA<9>, PinA<10>, 2, 99 > console; // Blue Pill
-#elif STM32F4
-UartBufDev< PinA<2>, PinA<3>, 2 > console;      // F4 Discovery
+#if BOARD_discovery_f4 || STM32L412xx
+UartBufDev< PinA<2>, PinA<3> > console;
 #else
-UartBufDev< PinA<2>, PinA<3> > console;         // ESP32 TinyPico
+UartBufDev< PinA<9>, PinA<10> > console; // Blue Pill
 #endif
 
 void unittest_uart_begin () {
     console.init();
-#if STM32F1
-    console.baud(115200, fullSpeedClock());     // Blue Pill
-    (void) powerDown; (void) enableClkAt8MHz;   // suppress warnings
+#if BOARD_discovery_f4
+    console.baud(115200, fullSpeedClock()/4);
 #else
-    console.baud(115200, fullSpeedClock()/4);   // F4 Discovery
+    console.baud(115200, fullSpeedClock());
 #endif
-    wait_ms(100);
+    wait_ms(500);
 }
 
 void unittest_uart_putchar (char c) {
