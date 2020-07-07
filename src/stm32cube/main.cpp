@@ -11,7 +11,7 @@
 
 #include <jee.h>
 
-#if BOARD_discovery_f4
+#if BOARD_discovery_f4 || STM32L412xx
 UartDev< PinA<2>, PinA<3> > console;
 #else
 UartDev< PinA<9>, PinA<10> > console;
