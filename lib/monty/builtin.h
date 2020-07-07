@@ -105,6 +105,9 @@ static const StrObj s_version = VERSION;
 
 static const LookupObj::Item lo_monty [] = {
     { "version", &s_version },
+    { "tasks", &Context::tasks },
+    { "timer", &f_setTimer },
+    { "ticks", &f_getTime },
 };
 
 static const LookupObj ma_monty (lo_monty, sizeof lo_monty / sizeof *lo_monty);
@@ -122,8 +125,8 @@ static const LookupObj::Item builtins [] = {
     { "next", &f_next },
     { "suspend", &f_suspend },
     //CG>
-    { "setTimer", &f_setTimer },
-    { "getTime", &f_getTime },
+    { "setTimer", &f_setTimer },    // TODO remove
+    { "getTime", &f_getTime },      // TODO remove
     { "monty", &m_monty },
 };
 

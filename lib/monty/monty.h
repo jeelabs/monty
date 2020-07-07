@@ -243,6 +243,7 @@ struct LookupObj : SeqObj {
 
     LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
 
+    void mark (void (*gc)(const Object&)) const override;
     Value at (Value) const override;
 
 private:
@@ -296,6 +297,8 @@ struct DictObj : MutSeqObj {
     const Object* chain = 0; // TODO hide
 
     DictObj (int size =0) {} // TODO
+
+    void mark (void (*gc)(const Object&)) const override;
 
     Value len () const override { return length() / 2; }
     Value at (Value key) const override;
@@ -550,6 +553,8 @@ struct Context : Object, private VecOfValue {
 
     static bool gcCheck ();     // see gc.c, called from outer vm loop
     static void gcTrigger ();   // see gc.c, called from outer vm loop
+
+    static const ListObj tasks;
 
 protected:
     Context () {}

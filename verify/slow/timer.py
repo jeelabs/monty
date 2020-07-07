@@ -1,10 +1,10 @@
 def loop():
     i = 0
     while True:
-        print(i, getTime())
+        print(i, monty.ticks())
         i += 1
         yield
 
-setTimer(500, loop())
+monty.timer(500, loop())
 
 while True: pass

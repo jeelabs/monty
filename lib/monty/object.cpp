@@ -257,6 +257,13 @@ Value IterObj::next () {
     return Value::nil; // end of iteration
 }
 
+// TODO is this needed, because items might contain GC'd objects?
+void LookupObj::mark (void (*gc)(const Object&)) const {
+    for (size_t i = 0; i < len; ++i)
+        if (vec[i].v != 0)
+            gc(*vec[i].v);
+}
+
 Value LookupObj::at (Value key) const {
     assert(key.isStr());
     auto s = (const char*) key;
@@ -269,6 +276,12 @@ Value LookupObj::at (Value key) const {
 Value DictObj::create (const TypeObj&, int argc, Value argv[]) {
     // arg handling ...
     return new DictObj;
+}
+
+void DictObj::mark (void (*gc)(const Object&)) const {
+    MutSeqObj::mark(gc);
+    if (chain != 0)
+        gc(*chain);
 }
 
 Value DictObj::at (Value key) const {
@@ -318,7 +331,7 @@ Value BytecodeObj::call (int argc, Value argv[]) const {
 }
 
 void ModuleObj::mark (void (*gc)(const Object&)) const {
-    markVec(gc);
+    DictObj::mark(gc);
     if (init != 0)
         gc(*init);
 }
@@ -383,6 +396,7 @@ void FrameObj::leave () {
 volatile uint32_t Context::pending;
 Value Context::handlers [MAX_HANDLERS];
 Context* Context::vm;
+const ListObj Context::tasks (0, 0);
 
 void Context::mark (void (*gc)(const Object&)) const {
     markVec(gc);
