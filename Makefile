@@ -13,12 +13,11 @@ mon: platformio.ini
 	pio run -t upload -t monitor -s
 
 many: native bluepill_f103c8 esp8266 tinypico
+native bluepill_f103c8 esp8266 tinypico:
+	pio run -c configs/$@.ini -s
 
 gen:
 	src/codegen.py lib/monty/
-
-native bluepill_f103c8 esp8266 tinypico:
-	pio run -c configs/$@.ini -s
 
 verify: native
 	@ make -C $@ BOARD=$<
