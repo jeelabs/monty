@@ -60,6 +60,7 @@ struct Interp : Context {
         }
     }
 
+private:
     void exception (Value h) {
         restoreState();
         assert(fp->excTop > 0); // simple exception, no stack unwind
@@ -70,7 +71,6 @@ struct Interp : Context {
         saveState();
     }
 
-private:
     uint32_t fetchVarInt (uint32_t v =0) {
         uint8_t b = 0x80;
         while (b & 0x80) {
