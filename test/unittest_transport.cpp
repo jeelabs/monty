@@ -16,14 +16,16 @@ void unittest_uart_begin () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    wait_ms(500);
+    //wait_ms(100);
 }
 
 void unittest_uart_putchar (char c) {
     console.putc(c);
 }
 
-void unittest_uart_flush () {}
+void unittest_uart_flush () {
+    wait_ms(100);
+}
 
 void unittest_uart_end () {}
 
