@@ -14,13 +14,14 @@
 #include "util.h"
 
 static bool runInterp (const uint8_t* data) {
-    Interp vm;
+    auto vm = new Interp;
+    Context::tasks.append(vm);
 
     ModuleObj* mainMod = 0;
     if (data[0] == 'M' && data[1] == 5) {
         Loader loader;
         mainMod = loader.load (data);
-        vm.qPool = loader.qPool;
+        vm->qPool = loader.qPool;
     }
 
     if (mainMod == 0)
@@ -30,7 +31,7 @@ static bool runInterp (const uint8_t* data) {
     mainMod->atKey("__name__", DictObj::Set) = "__main__";
     mainMod->call(0, 0);
 
-    vm.run();
+    vm->run();
 
     // must be placed here, before the vm destructor is called
     Object::gcStats();

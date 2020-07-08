@@ -44,6 +44,15 @@ struct Interp : Context {
     }
 
     void run () {
+        // TODO assumes ip is set on entry, need to fix after pop()
+        while (tasks.len() > 0) {
+            outer();
+            tasks.pop(0);
+        }
+    }
+
+private:
+    void outer () {
         while (ip != 0) {
             assert(sp != 0 && fp != 0);
 
@@ -52,7 +61,7 @@ struct Interp : Context {
 
             Value h = nextPending();
             if (h.isNil())
-                inner();                // go process some bytecode
+                inner();                // go process lots of bytecodes
             else if (h.isObj())
                 h.obj().next();         // resume the triggered handler
             else
@@ -60,7 +69,6 @@ struct Interp : Context {
         }
     }
 
-private:
     void exception (Value h) {
         restoreState();
         assert(fp->excTop > 0); // simple exception, no stack unwind

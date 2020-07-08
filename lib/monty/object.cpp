@@ -197,7 +197,6 @@ Value SeqObj::max   ()      const { assert(false); }
 Value SeqObj::index (Value) const { assert(false); }
 Value SeqObj::count (Value) const { assert(false); }
 
-Value MutSeqObj::pop     (int)        { assert(false); }
 void  MutSeqObj::remove  (Value)      { assert(false); }
 void  MutSeqObj::reverse ()           { assert(false); }
 
@@ -208,6 +207,15 @@ void MutSeqObj::mark (void (*gc)(const Object&)) const {
 void  MutSeqObj::insert  (int idx, Value val) {
     ins(idx);
     set(idx, val);
+}
+
+Value MutSeqObj::pop (int idx) {
+    assert(len() > 0);
+    if (idx < 0)
+        idx += len();
+    Value v = get(idx);
+    del(idx);
+    return v;
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -396,7 +404,7 @@ void FrameObj::leave () {
 volatile uint32_t Context::pending;
 Value Context::handlers [MAX_HANDLERS];
 Context* Context::vm;
-const ListObj Context::tasks (0, 0);
+ListObj Context::tasks (0, 0);
 
 void Context::mark (void (*gc)(const Object&)) const {
     markVec(gc);

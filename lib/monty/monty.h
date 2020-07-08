@@ -554,7 +554,7 @@ struct Context : Object, private VecOfValue {
     static bool gcCheck ();     // see gc.c, called from outer vm loop
     static void gcTrigger ();   // see gc.c, called from outer vm loop
 
-    static const ListObj tasks;
+    static ListObj tasks;
 
 protected:
     Context () {}
