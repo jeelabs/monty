@@ -30,13 +30,14 @@ extern "C" int debugf (const char* fmt, ...) {
 }
 
 static bool runInterp (const uint8_t* data) {
-    Interp vm;
+    auto vm = new Interp;
+    Context::tasks.append(vm);
 
     ModuleObj* mainMod = 0;
     if (data[0] == 'M' && data[1] == 5) {
         Loader loader;
         mainMod = loader.load (data);
-        vm.qPool = loader.qPool;
+        vm->qPool = loader.qPool;
     }
 
     if (mainMod == 0)
@@ -46,8 +47,8 @@ static bool runInterp (const uint8_t* data) {
     mainMod->atKey("__name__", DictObj::Set) = "__main__";
     mainMod->call(0, 0);
 
-    while (vm.isAlive()) {
-        vm.run();
+    while (vm->isAlive()) {
+        vm->run();
         asm("wfi");
     }
 
@@ -120,16 +121,19 @@ int main () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    wait_ms(100);
+    wait_ms(10);
 
     printf("\xFF" // send out special marker for easier remote output capture
-           "main qstr #%d %db %s\n",
-            (int) qstrNext, (int) sizeof qstrData, VERSION);
+           "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
     //testNet();
     (void) testNet; // suppress unused warning
 
+#if BOARD_discovery_f4
+    auto bcData = (const uint8_t*) 0x2001F000;
+#else
     auto bcData = (const uint8_t*) 0x20004000;
+#endif
     if (!runInterp(bcData))
         printf("can't load bytecode\n");
 

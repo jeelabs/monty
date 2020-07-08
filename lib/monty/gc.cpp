@@ -10,11 +10,11 @@
 #include <string.h>
 
 #if VERBOSE_GC
-extern "C" int printf (const char*, ...);
+extern "C" int debugf (const char*, ...);
 #endif
 
 #if VERBOSE_GC < 2
-#define printf(...)
+#define debugf(...)
 #endif
 
 #define PREFIX "\t\tgc "
@@ -86,7 +86,7 @@ static hdr_t& nextObj (hdr_t* h) {
 // init pool to 1 partial slot, max-1 free slots, 1 allocated header
 static void initMem () {
     constexpr auto slots = MAX / HPS; // aka MEM_BYTES / MEM_ALIGN
-    printf("ma %d hps %d max %d slots %d mem %p\n",
+    debugf("ma %d hps %d max %d slots %d mem %p\n",
             MEM_ALIGN, HPS, MAX, slots, mem);
     mem[HPS-1] = slots - 1;
     mem[MAX-1] = USED; // special end marker: used, but size 0
@@ -111,20 +111,20 @@ static void* allocate (size_t sz) {
         initMem();
 
     auto ns = b2s(sz);
-    printf("  alloc %d slots %d\n", (int) sz, ns);
+    debugf("  alloc %d slots %d\n", (int) sz, ns);
     for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &nextObj(h))
         if (!inUse(*h)) {
-            //printf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
+            //debugf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
             coalesce(h);
             if (*h >= ns) {
                 auto os = *h;
                 *h = ns;
-                //printf("    h %p next h %p end %p\n", h, &nextObj(h), mem + MAX);
+                //debugf("    h %p next h %p end %p\n", h, &nextObj(h), mem + MAX);
                 if (os > ns)
                     nextObj(h) = os - ns;
                 *h |= USED;
                 auto p = h2p(h);
-                printf("    -> %p *h %04x next %04x\n",
+                debugf("    -> %p *h %04x next %04x\n",
                         p, (uint16_t) *h, (uint16_t) nextObj(h));
 
                 if (++totalObjAllocs % GC_REPORTS == 0)
@@ -174,7 +174,7 @@ static size_t roundUp (size_t n, size_t unit) {
 
 // used only to alloc/resize/free variable data vectors
 void Vector::alloc (size_t sz) {
-    printf(PREFIX "resize %5d -> %d   @ %p (u %d) d %p\n",
+    debugf(PREFIX "resize %5d -> %d   @ %p (u %d) d %p\n",
             (int) capacity, (int) sz, this, (int) (vecTop - vecs), data);
 #if USE_MALLOC
     data = (Data*) realloc(data, sizeof (void*) + sz);
@@ -198,7 +198,7 @@ void Vector::alloc (size_t sz) {
     if (sz == 0) {
         if (data != 0) {
             --currVecAllocs;
-            //printf("resize gap %p #%d\n", data, (int) capacity);
+            //debugf("resize gap %p #%d\n", data, (int) capacity);
             assert(data->v == this);
             data->v = 0;
             data->n = capacity;
@@ -217,18 +217,18 @@ void Vector::alloc (size_t sz) {
         data = (Data*) vecTop;
         vecTop += DSZ;
         data->v = this;
-        //printf("new data %p vecTop %p\n", data, vecTop);
+        //debugf("new data %p vecTop %p\n", data, vecTop);
     }
 
     if (nsz == osz)
         return; // it already fits
 
-    //printf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
+    //debugf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
     assert(data->v == this);
     assert((uint8_t*) data->next() <= vecTop);
 
     if ((uint8_t*) data + osz == vecTop) {
-        //printf("    last vector, expanding in-place\n");
+        //debugf("    last vector, expanding in-place\n");
         vecTop = (uint8_t*) data + nsz;
         return;
     }
@@ -247,31 +247,31 @@ void Vector::alloc (size_t sz) {
 
 void* Object::operator new (size_t sz) {
     auto p = allocate(sz);
-    printf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currObjBytes);
+    debugf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currObjBytes);
     return p;
 }
 
 void* Object::operator new (size_t sz, void* p) {
-    printf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currObjBytes);
+    debugf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currObjBytes);
     return p;
 }
 
 void Object::operator delete (void* p) {
     auto& obj = *(const Object*) p;
     (void) obj;
-    printf(PREFIX "delete        : %p %s\n", p, obj.type().name);
+    debugf(PREFIX "delete        : %p %s\n", p, obj.type().name);
     release(p);
 }
 
-#undef printf
+#undef debugf
 
 void Object::gcStats () {
 #if VERBOSE_GC
-    printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
+    debugf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
             totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes);
-    printf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
+    debugf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
             currObjAllocs, currObjBytes, currVecAllocs, currVecBytes);
-    printf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
+    debugf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
             maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes);
 #endif
 }
@@ -299,7 +299,7 @@ static void gcMarker (const Object& obj) {
         if (tagged(off))
             return;
 #if VERBOSE_GC > 1
-        printf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
+        debugf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
 #endif
         setTag(off);
     }
@@ -314,7 +314,7 @@ static void gcSweeper () {
             auto off = ((const hdr_t*) obj - mem) / HPS;
             assert(0 <= off && off < MAX/HPS);
             if (!tagged(off)) {
-                //printf("deleting %p %s\n", obj, obj->type().name);
+                //debugf("deleting %p %s\n", obj, obj->type().name);
                 delete obj;
                 *(void**) obj = 0; // clear vtable to make Object* unusable
             }
@@ -334,13 +334,13 @@ void Vector::gcCompact () {
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
 #if VERBOSE_GC > 1
-        printf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
+        debugf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
                 (int) (p->v != 0 ? p->v->capacity : -1),
                 (int) (n * sizeof (Data)));
 #endif
         if (p->v != 0) {
 #if VERBOSE_GC > 1
-            printf("\tcompact %p -> %p #%d\n",
+            debugf("\tcompact %p -> %p #%d\n",
                     p, newTop, (int) (n * sizeof (Data)));
 #endif
             if (newTop < p->v->data) {
@@ -355,7 +355,7 @@ void Vector::gcCompact () {
 
 void Context::gcTrigger () {
 #if VERBOSE_GC
-    printf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
+    debugf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
             (int) currObjBytes, (int) currVecBytes,
             (int) (vecs + sizeof vecs - vecTop));
 #endif
@@ -365,7 +365,7 @@ void Context::gcTrigger () {
     gcSweeper();
     Vector::gcCompact();
 #if VERBOSE_GC
-    printf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
+    debugf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
             (int) (MEM_BYTES - currObjBytes),
             (int) (sizeof vecs - currVecBytes),
             (int) MEM_BYTES, (int) sizeof vecs);

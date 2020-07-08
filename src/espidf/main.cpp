@@ -3,18 +3,19 @@
 #define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
-#include <jee.h>
+#include <assert.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
-UartBufDev< PinA<2>, PinA<3> > console;         // ESP32 TinyPico
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 
-int printf(const char* fmt, ...) {
+extern "C" int debugf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
-    veprintf(console.putc, fmt, ap); va_end(ap);
+    vprintf(fmt, ap); va_end(ap);
     return 0;
 }
-
-#include <assert.h>
-#include <string.h>
 
 #include "monty.h"
 #include "arch.h"
@@ -67,11 +68,10 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-int main () {
+extern "C" int app_main () {
     int argc = 1;
     const char* argv [] = { "" };
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
-    console.init();
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db %s\n",
             (int) qstrNext, (int) sizeof qstrData, VERSION);

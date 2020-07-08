@@ -4,7 +4,7 @@ ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
 tty = /dev/cu.usbmodemDDD8B7B83
 ram = 0x20004000
-else ifeq ($(BOARD),f4disco)
+else ifeq ($(BOARD),disco_f407vg)
 tty = /dev/cu.usbmodem1461303
 ram = 0x2001F000
 endif
