@@ -8,34 +8,12 @@
 #include <lwip/pbuf.h>
 #include <lwip/stats.h>
 #include <lwip/timeouts.h>
-#include <lwip/sys.h>
 #include <lwip/err.h>
 #include <netif/etharp.h>
 
 extern "C" {
 #include "enchw.h"
 #include "enc28j60.h"
-}
-
-SpiGpio< PinA<7>, PinA<6>, PinA<5>, PinA<4> > spi;
-
-void enchw_setup (enchw_device_t*) {
-    spi.init();
-
-    PinA<3> reset; reset.mode(Pinmode::out);
-    reset = 0; wait_ms(2); reset = 1; wait_ms(10);
-}
-
-void enchw_select (enchw_device_t*) {
-    spi.enable();
-}
-
-void enchw_unselect (enchw_device_t*) {
-    spi.disable();
-}
-
-uint8_t enchw_exchangebyte (enchw_device_t*, uint8_t b) {
-    return spi.transfer(b);
 }
 
 ip4_addr myip_addr = {0x02BCA8C0UL}; /* 192.168.188.2 */
@@ -101,8 +79,4 @@ void mch_net_init () {
 
 void mch_net_poll () {
     mn_poll(&enc_if);
-}
-
-uint32_t sys_now () {
-    return ticks;
 }

@@ -132,6 +132,7 @@ static const LookupObj::Item builtins [] = {
     { "setTimer", &f_setTimer },    // TODO remove
     { "getTime", &f_getTime },      // TODO remove
     { "monty", &m_monty },
+    { "machine", &m_machine },
 };
 
 const LookupObj builtinDict (builtins, sizeof builtins / sizeof *builtins);

@@ -2,7 +2,6 @@
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
 #include <assert.h>
-#include <stdarg.h>
 #include <string.h>
 
 #include "monty.h"
@@ -13,12 +12,6 @@
 #include "interp.h"
 #include "loader.h"
 #include "util.h"
-
-extern "C" int debugf (const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    vprintf(fmt, ap); va_end(ap);
-    return 0;
-}
 
 static bool runInterp (const uint8_t* data) {
     auto vm = new Interp;
@@ -65,7 +58,7 @@ static const uint8_t* loadBytecode (const char* fname) {
 }
 
 int main (int argc, const char* argv []) {
-    setbuf(stdout, 0);
+    archInit();
     printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
     //showAlignment();      // show string address details in flash and ram
@@ -78,14 +71,14 @@ int main (int argc, const char* argv []) {
         return 1;
     }
 
-    if (!runInterp(bcData)) {
+    auto ok = runInterp(bcData);
+    free((void*) bcData);
+
+    if (!ok) {
         printf("can't load module\n");
         return 2;
     }
 
-    free((void*) bcData);
-
     printf("done\n");
-    Object::gcStats();
-    return 0;
+    return archDone();
 }

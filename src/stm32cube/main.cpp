@@ -9,26 +9,6 @@
 #include "interp.h"
 #include "loader.h"
 
-#include <jee.h>
-
-#if BOARD_discovery_f4 || STM32L412xx
-UartBufDev< PinA<2>, PinA<3> > console;
-#else
-UartBufDev< PinA<9>, PinA<10> > console;
-#endif
-
-int printf (const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    veprintf(console.putc, fmt, ap); va_end(ap);
-    return 0;
-}
-
-extern "C" int debugf (const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    veprintf(console.putc, fmt, ap); va_end(ap);
-    return 0;
-}
-
 static bool runInterp (const uint8_t* data) {
     auto vm = new Interp;
     Context::tasks.append(vm);
@@ -115,13 +95,7 @@ static void testNet () {
 }
 
 int main () {
-    console.init();
-#if BOARD_discovery_f4
-    console.baud(115200, fullSpeedClock() / 4);
-#else
-    console.baud(115200, fullSpeedClock());
-#endif
-    wait_ms(10);
+    archInit();
 
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
@@ -138,5 +112,5 @@ int main () {
         printf("can't load bytecode\n");
 
     printf("done\n");
-    while (true) {}
+    return archDone();
 }
