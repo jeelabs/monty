@@ -64,7 +64,7 @@ static void testNet () {
     printf("Setup completed\n");
 
     auto pcb = tcp_new(); assert(pcb != NULL);
-    auto r = tcp_bind(pcb, IP_ADDR_ANY, 1234); assert(r == 0);
+    auto r = tcp_bind(pcb, IP_ADDR_ANY, 1234); (void) r; assert(r == 0);
     pcb = tcp_listen_with_backlog(pcb, 3); assert(pcb != NULL);
     //pcb = tcp_listen(pcb); assert(pcb != NULL);
 
@@ -127,6 +127,7 @@ int main () {
             (int) qstrNext, (int) sizeof qstrData, VERSION);
 
     //testNet();
+    (void) testNet; // suppress unused warning
 
     auto bcData = (const uint8_t*) 0x20004000;
     if (!runInterp(bcData))

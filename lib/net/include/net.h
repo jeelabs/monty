@@ -92,6 +92,7 @@ void mch_net_init () {
 
     auto p = netif_add(&enc_if, &myip_addr, &netmask, &gw_addr, &enc_hw,
                         mn_init, ethernet_input);
+    (void) p;
     assert(p != 0);
 
     netif_set_default(&enc_if);

@@ -47,6 +47,7 @@ struct Interp : Context {
         while (tasks.len() > 0) {
             Value t = tasks.at(0);
             assert(t.isObj() && &t.obj().type() == &Context::info);
+            // fp = (Context&) t.obj(); // FIXME how do I get the frame back?
             restoreState();
             outer();
             tasks.pop(0);
