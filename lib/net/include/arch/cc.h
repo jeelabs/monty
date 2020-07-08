@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <stdlib.h>
 
 typedef uint8_t u8_t;
 typedef int8_t s8_t;
