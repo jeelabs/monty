@@ -31,7 +31,8 @@ static bool runInterp (const uint8_t* data) {
     mainMod->atKey("__name__", DictObj::Set) = "__main__";
     mainMod->call(0, 0);
 
-    vm->run();
+    while (vm->isAlive())
+        vm->run();
 
     // must be placed here, before the vm destructor is called
     Object::gcStats();

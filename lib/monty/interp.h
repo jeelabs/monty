@@ -44,8 +44,10 @@ struct Interp : Context {
     }
 
     void run () {
-        // TODO assumes ip is set on entry, need to fix after pop()
         while (tasks.len() > 0) {
+            Value t = tasks.at(0);
+            assert(t.isObj() && &t.obj().type() == &Context::info);
+            restoreState();
             outer();
             tasks.pop(0);
         }

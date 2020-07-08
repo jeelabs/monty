@@ -558,6 +558,15 @@ void Context::resume (FrameObj* frame) {
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 
+bool Context::isAlive () const {
+    if (tasks.len() > 0)
+        return true;
+    for (size_t i = 1; i < MAX_HANDLERS; ++i) // TODO 1? or 0?
+        if (!handlers[i].isNil())
+            return true;
+    return false;
+}
+
 static const auto mo_count = MethObj::wrap(&SeqObj::count);
 static const MethObj m_count = mo_count;
 

@@ -578,6 +578,7 @@ struct Context : Object, private VecOfValue {
     static void gcTrigger ();   // see gc.c, called from outer vm loop
 
     static ListObj tasks;
+    bool isAlive () const;
 
 protected:
     Context () {}
