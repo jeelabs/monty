@@ -26,3 +26,5 @@ def loop():
 setTimer(10, loop())
 
 while not done: pass
+
+setTimer(0, None) # allow main loop to exit

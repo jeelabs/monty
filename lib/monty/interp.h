@@ -123,17 +123,17 @@ private:
 
     //CG1 op
     void op_LoadConstNone () {
-        *++sp = NoneObj::noneObj;
+        *++sp = Value::nil; // TODO NoneObj::noneObj;
     }
 
     //CG1 op
     void op_LoadConstFalse () {
-        *++sp = BoolObj::falseObj;
+        *++sp = 0; // TODO BoolObj::falseObj;
     }
 
     //CG1 op
     void op_LoadConstTrue () {
-        *++sp = BoolObj::trueObj;
+        *++sp = 1; // TODO BoolObj::trueObj;
     }
 
     //CG1 op
