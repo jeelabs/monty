@@ -100,6 +100,11 @@ SeqObj const SeqObj::dummy;
 
 const SeqObj& Object::asSeq () const { return SeqObj::dummy; }
 
+const NoneObj NoneObj::noneObj;
+
+const BoolObj BoolObj::trueObj;
+const BoolObj BoolObj::falseObj;
+
 Object& ForceObj::operator* () const {
     switch (tag()) {
         case Value::Nil: assert(false); break;

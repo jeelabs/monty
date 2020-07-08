@@ -132,6 +132,29 @@ struct Object {
     static void gcStats ();
 };
 
+//CG3 type <none>
+struct NoneObj : Object {
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    static const NoneObj noneObj;
+
+private:
+    NoneObj () {} // can't construct more instances
+};
+
+//CG3 type <bool>
+struct BoolObj : Object {
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    static const BoolObj trueObj;
+    static const BoolObj falseObj;
+
+private:
+    BoolObj () {} // can't construct more instances
+};
+
 //CG< type int
 struct IntObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);

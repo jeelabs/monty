@@ -7,6 +7,7 @@ TypeObj  Context::info ("<context>");
 TypeObj& Context::type () const { return info; }
 
 //CG< builtin-types lib/monty/monty.h
+TypeObj      BoolObj::info ("<bool>");
 TypeObj BoundMethObj::info ("<bound-meth>");
 TypeObj  BytecodeObj::info ("<bytecode>");
 TypeObj     FrameObj::info ("<frame>");
@@ -16,6 +17,7 @@ TypeObj    LookupObj::info ("<lookup>");
 TypeObj      MethObj::info ("<method>");
 TypeObj    ModuleObj::info ("<module>");
 TypeObj    MutSeqObj::info ("<mut-seq>");
+TypeObj      NoneObj::info ("<none>");
 TypeObj       SeqObj::info ("<sequence>");
 TypeObj      TypeObj::info ("<type>");
 
@@ -26,6 +28,7 @@ TypeObj  ListObj::info ("list", ListObj::create, &ListObj::names);
 TypeObj   StrObj::info ("str", StrObj::create, &StrObj::names);
 TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::names);
 
+TypeObj&      BoolObj::type () const { return info; }
 TypeObj& BoundMethObj::type () const { return info; }
 TypeObj&  BytecodeObj::type () const { return info; }
 TypeObj&     FrameObj::type () const { return info; }
@@ -35,6 +38,7 @@ TypeObj&    LookupObj::type () const { return info; }
 TypeObj&      MethObj::type () const { return info; }
 TypeObj&    ModuleObj::type () const { return info; }
 TypeObj&    MutSeqObj::type () const { return info; }
+TypeObj&      NoneObj::type () const { return info; }
 TypeObj&       SeqObj::type () const { return info; }
 TypeObj&      TypeObj::type () const { return info; }
 TypeObj&     ClassObj::type () const { return info; }
