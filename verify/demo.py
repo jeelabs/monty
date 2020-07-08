@@ -1,4 +1,4 @@
-print(getTime())
+print(machine.ticks())
 
 try:
     str.count

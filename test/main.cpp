@@ -5,7 +5,10 @@
 #include <string.h>
 
 #include "monty.h"
+
+// stubs for arch.h and arch.cpp
 #include "../src/version.h"
+const ModuleObj m_machine;
 
 #include "defs.h"
 #include "qstr.h"

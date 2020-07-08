@@ -6,7 +6,7 @@ async def task(rate):
     i = 0
     while True:
         delay(rate)
-        print('t:', getTime(), '\trate:', rate, ' i:', i)
+        print('t:', machine.ticks(), '\trate:', rate, ' i:', i)
         i += 1
 
 tasks = [task(2), task(3), task(5)]
@@ -23,6 +23,6 @@ def loop():
     done = True
     yield # TODO can't return out of a coro yet
 
-setTimer(10, loop())
+machine.timer(10, loop())
 while not done: pass
-setTimer(0, None) # allow main loop to exit
+machine.timer(0, None) # allow main loop to exit
