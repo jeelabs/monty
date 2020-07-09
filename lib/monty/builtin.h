@@ -3,13 +3,11 @@
 TypeObj  Object::info ("<object>");
 TypeObj& Object::type () const { return info; }
 
-TypeObj  Context::info ("<context>");
-TypeObj& Context::type () const { return info; }
-
 //CG< builtin-types lib/monty/monty.h
 TypeObj      BoolObj::info ("<bool>");
 TypeObj BoundMethObj::info ("<bound-meth>");
 TypeObj  BytecodeObj::info ("<bytecode>");
+TypeObj      Context::info ("<context>");
 TypeObj     FrameObj::info ("<frame>");
 TypeObj       FunObj::info ("<function>");
 TypeObj      IterObj::info ("<iterator>");
@@ -31,6 +29,7 @@ TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 TypeObj&      BoolObj::type () const { return info; }
 TypeObj& BoundMethObj::type () const { return info; }
 TypeObj&  BytecodeObj::type () const { return info; }
+TypeObj&      Context::type () const { return info; }
 TypeObj&     FrameObj::type () const { return info; }
 TypeObj&       FunObj::type () const { return info; }
 TypeObj&      IterObj::type () const { return info; }

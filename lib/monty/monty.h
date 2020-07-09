@@ -554,6 +554,7 @@ private:
     friend Context; // Context::flip() can access savedIp & spOffset
 };
 
+//CG3 type <context>
 struct Context : Object, private VecOfValue {
     static TypeObj info;
     TypeObj& type () const override;
