@@ -27,23 +27,23 @@ extern "C" int debugf (const char* fmt, ...) {
 #include "loader.h"
 
 static bool runInterp (const uint8_t* data) {
-    Interp vm;
+    auto vm = new Interp;
+    Context::tasks.append(vm);
 
     ModuleObj* mainMod = 0;
     if (data[0] == 'M' && data[1] == 5) {
         Loader loader;
         mainMod = loader.load (data);
-        vm.qPool = loader.qPool;
+        vm->qPool = loader.qPool;
     }
 
     if (mainMod == 0)
         return false;
 
-    mainMod->chain = &builtinDict;
-    mainMod->atKey("__name__", DictObj::Set) = "__main__";
-    mainMod->call(0, 0);
+    vm->start(*mainMod, builtinDict);
 
-    vm.run();
+    while (vm->isAlive())
+        vm->run();
 
     // must be placed here, before the vm destructor is called
     Object::gcStats();

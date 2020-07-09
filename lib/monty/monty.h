@@ -565,6 +565,8 @@ struct Context : Object, private VecOfValue {
     int extend (int num);
     void shrink (int num);
 
+    void start (ModuleObj& mod, const LookupObj& builtins);
+
     static void print (Value);
 
     Value nextPending ();
@@ -585,13 +587,12 @@ struct Context : Object, private VecOfValue {
     static ListObj tasks;
     bool isAlive () const;
 
-    FrameObj* fp = 0; // TODO
 protected:
     Context () {}
 
     OpPtrRO ip = 0;
     Value* sp = 0;
-    // FrameObj* fp = 0; // TODO
+    FrameObj* fp = 0;
 
     void popState ();
     void saveState ();

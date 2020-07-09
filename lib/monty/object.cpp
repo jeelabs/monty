@@ -443,6 +443,15 @@ void Context::shrink (int num) {
     restoreState();
 }
 
+void Context::start (ModuleObj& mod, const LookupObj& builtins) {
+    mod.chain = &builtins;
+    mod.atKey("__name__", DictObj::Set) = "__main__";
+    mod.call(0, 0);
+
+    assert(fp != 0);
+    tasks.append(fp);
+}
+
 Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     // TODO yuck, but FrameObj needs a stack (too) early on ...
     //  the problem is argv, which points either lower into this same stack

@@ -26,12 +26,7 @@ static bool runInterp (const uint8_t* data) {
     if (mainMod == 0)
         return false;
 
-    mainMod->chain = &builtinDict;
-    mainMod->atKey("__name__", DictObj::Set) = "__main__";
-    mainMod->call(0, 0);
-
-    assert(vm->fp != 0);
-    Context::tasks.append(vm->fp);
+    vm->start(*mainMod, builtinDict);
 
     while (vm->isAlive()) {
         vm->run();
