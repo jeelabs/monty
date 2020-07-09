@@ -104,7 +104,7 @@ static const FunObj f_suspend (bi_suspend);
 static const StrObj s_version = VERSION;
 
 static Value f_suspendNew (int argc, Value argv[]) {
-    printf("suspnew %d\n", argc);
+    //printf("suspnew %d\n", argc);
     assert(argc == 1 || argc == 2);
     if (argc == 1)
         Context::suspendTask(Context::tasks);

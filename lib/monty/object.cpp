@@ -409,7 +409,7 @@ void FrameObj::leave () {
     Value v = ctx->tasks.at(0);
     assert(v.isObj() && &v.obj().type() == &FrameObj::info);
     if (this == &v.obj()) {
-        printf("return from task\n");
+        //printf("return from task\n");
         ctx->tasks.pop(0);
     }
 
@@ -536,7 +536,7 @@ void Context::restoreState () {
 }
 
 FrameObj* Context::flip (FrameObj* frame) {
-    //assert(vm->fp != frame); // TODO ?
+    assert(vm->fp != frame);
     auto fp = vm->fp;
     if (fp != 0)
         saveState();
@@ -570,6 +570,8 @@ void Context::suspendTask (ListObj& queue) {
     queue.append(v);
     tasks.pop(0);
     raise(Value::nil); // exit inner vm loop
+    //printf("suspended fp %p vm %p vm-fp %p tasks %d\n",
+    //        fp, vm, vm->fp, (int) tasks.len());
 }
 
 void Context::suspend () {
@@ -584,7 +586,7 @@ void Context::suspend () {
 
 void Context::resume (FrameObj* frame) {
     assert(frame != 0);
-    printf("resume %p coro %d\n", frame, frame->isCoro());
+    //printf("resume %p coro %d\n", frame, frame->isCoro());
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 

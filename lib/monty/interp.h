@@ -44,25 +44,21 @@ struct Interp : Context {
     }
 
     void run () {
-        printf("run enter %d\n", (int) tasks.len());
+        //printf("run enter %d\n", (int) tasks.len());
         while (true) {
             outer();
-            printf("run pop %d\n", (int) tasks.len());
+
+            //printf("run tasks %d\n", (int) tasks.len());
             if (tasks.len() == 0)
                 break;
-#if 0
-            tasks.pop(0);
-            if (tasks.len() == 0)
-                break;
-#endif
             Value t = tasks.at(0);
             assert(t.isObj() && &t.obj().type() == &FrameObj::info);
-            fp = (FrameObj*) &t.obj();
-            printf("fp %p\n", fp);
-            restoreState();
-            *++sp = Value::nil;
+            auto fp = (FrameObj*) &t.obj();
+            //printf("fp %p\n", fp);
+            //restoreState();
+            resume(fp);
         }
-        printf("run leave %d\n", (int) tasks.len());
+        //printf("run leave %d\n", (int) tasks.len());
 #ifdef INNER_HOOK
         INNER_HOOK
 #endif
@@ -70,9 +66,9 @@ struct Interp : Context {
 
 private:
     void outer () {
-        printf("outer enter ip %p tasks %d\n", ip, (int) tasks.len());
+        //printf("outer enter ip %p tasks %d\n", ip, (int) tasks.len());
         while (true) {
-            printf("ip %p\n", ip);
+            //printf("ip %p\n", ip);
 
             if (gcCheck())              // collect garbage, if needed
                 gcTrigger();
@@ -90,7 +86,7 @@ private:
             else
                 exception(h);
         }
-        printf("outer leave ip %p\n", ip);
+        //printf("outer leave ip %p\n", ip);
     }
 
     void exception (Value h) {
@@ -301,7 +297,7 @@ private:
         Value v = *sp;
         popState();
         //assert(fp != 0 && sp != 0); // can't yield out of main
-        printf("YieldValue fp %p sp %p\n", fp, sp);
+        //printf("YieldValue fp %p sp %p\n", fp, sp);
         if (!v.isNil()) {
             assert(sp != 0);
             *sp = v;
