@@ -14,11 +14,9 @@ async def task(rate):
 for i in [2, 3, 5]:
     monty.tasks.append(task(i))
 
-async def loop():
+def loop():
     global waiting
-    i = 0
-    while i < 35:
-        i += 1
+    for _ in range(35):
         for w in waiting:
             monty.tasks.append(w)
         waiting = []
