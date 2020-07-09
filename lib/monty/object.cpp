@@ -83,11 +83,9 @@ const Value Value::nil;
 Value Value::invalid;
 
 void VecOfValue::markVec (void (*gc)(const Object&)) const {
-    for (size_t i = 0; i < length(); ++i) {
-        Value v = get(i);
-        if (v.isObj())
-            gc(v.obj());
-    }
+    for (size_t i = 0; i < length(); ++i)
+        if (get(i).isObj())
+            gc(get(i).obj());
 }
 
 Value Object::repr   () const                    { assert(false); }
@@ -236,11 +234,9 @@ TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
 }
 
 void TupleObj::mark (void (*gc)(const Object&)) const {
-    for (int i = 0; i < length; ++i) {
-        Value v = vec[i];
-        if (v.isObj())
-            gc(v.obj());
-    }
+    for (int i = 0; i < length; ++i)
+        if (vec[i].isObj())
+            gc(vec[i].obj());
 }
 
 Value TupleObj::at (Value idx) const {
@@ -380,7 +376,7 @@ FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
 }
 
 void FrameObj::mark (void (*gc)(const Object&)) const {
-    markVec(gc);
+    DictObj::mark(gc);
 
     gc(bcObj);
     gc(*locals);

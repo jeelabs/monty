@@ -39,8 +39,8 @@ struct Interp : Context {
     ~Interp () { vm = 0; delete qPool; }
 
     void mark (void (*gc)(const Object&)) const override {
-        if (qPool != 0) gc(*qPool);
         Context::mark(gc);
+        if (qPool != 0) gc(*qPool);
     }
 
     void run () {

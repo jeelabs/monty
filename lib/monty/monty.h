@@ -116,7 +116,7 @@ struct Object {
     static TypeObj info;
     virtual TypeObj& type () const;
 
-    virtual void mark (void (*gc)(const Object&)) const {};
+    virtual void mark (void (*gc)(const Object&)) const {}
 
     virtual Value repr   () const;
     virtual Value call   (int, Value[]) const;
