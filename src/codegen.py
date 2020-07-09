@@ -44,7 +44,7 @@ def TYPE(block, tag, *_):
     out = [
         'struct %s : %s {' % (name, base),
         '    static Value create (const TypeObj&, int argc, Value argv[]);',
-        '    static const LookupObj names;',
+        '    static const LookupObj attrs;',
         '    static TypeObj info;',
         '    TypeObj& type () const override;',
     ]
@@ -83,7 +83,7 @@ def BUILTIN_TYPES(block, fname):
     info.sort()
     out = []
     fmt1a = 'TypeObj %12s::info ("%s");'
-    fmt1b = 'TypeObj %8s::info ("%s", %s::create, &%s::names);'
+    fmt1b = 'TypeObj %8s::info ("%s", %s::create, &%s::attrs);'
     fmt2 = 'TypeObj& %12s::type () const { return info; }'
     sep = True
     for tag, name, base in info:

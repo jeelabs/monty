@@ -162,7 +162,7 @@ private:
 //CG< type int
 struct IntObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
@@ -212,7 +212,7 @@ protected:
 //CG< type str
 struct StrObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
@@ -245,7 +245,7 @@ ForceObj Value::objPtr () const { return this; }
 //CG< type tuple
 struct TupleObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
@@ -302,7 +302,7 @@ protected:
 //CG< type list
 struct ListObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
@@ -316,7 +316,7 @@ struct ListObj : MutSeqObj {
 //CG< type dict
 struct DictObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>
@@ -355,7 +355,7 @@ private:
 //CG< type class
 struct ClassObj : TypeObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj names;
+    static const LookupObj attrs;
     static TypeObj info;
     TypeObj& type () const override;
 //CG>

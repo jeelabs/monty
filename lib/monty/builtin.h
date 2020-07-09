@@ -21,12 +21,12 @@ TypeObj      NoneObj::info ("<none>");
 TypeObj       SeqObj::info ("<sequence>");
 TypeObj      TypeObj::info ("<type>");
 
-TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::names);
-TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::names);
-TypeObj   IntObj::info ("int", IntObj::create, &IntObj::names);
-TypeObj  ListObj::info ("list", ListObj::create, &ListObj::names);
-TypeObj   StrObj::info ("str", StrObj::create, &StrObj::names);
-TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::names);
+TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::attrs);
+TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::attrs);
+TypeObj   IntObj::info ("int", IntObj::create, &IntObj::attrs);
+TypeObj  ListObj::info ("list", ListObj::create, &ListObj::attrs);
+TypeObj   StrObj::info ("str", StrObj::create, &StrObj::attrs);
+TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 
 TypeObj&      BoolObj::type () const { return info; }
 TypeObj& BoundMethObj::type () const { return info; }

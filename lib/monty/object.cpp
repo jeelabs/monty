@@ -610,10 +610,10 @@ static const LookupObj::Item strMap [] = {
     { "format", &f_str_format },
 };
 
-const LookupObj StrObj::names (strMap, sizeof strMap / sizeof *strMap);
+const LookupObj StrObj::attrs (strMap, sizeof strMap / sizeof *strMap);
 Value StrObj::attr (const char* key, Value& self) const {
     self = Value::nil;
-    return names.at(key);
+    return attrs.at(key);
 }
 
 static const auto mo_append = MethObj::wrap(&MutSeqObj::append);
@@ -623,14 +623,14 @@ static const LookupObj::Item mutSeqMap [] = {
     { "append", &m_append },
 };
 
-const LookupObj ListObj::names (mutSeqMap, sizeof mutSeqMap / sizeof *mutSeqMap);
+const LookupObj ListObj::attrs (mutSeqMap, sizeof mutSeqMap / sizeof *mutSeqMap);
 
 Value ListObj::attr (const char* key, Value& self) const {
     self = Value::nil;
-    return names.at(key);
+    return attrs.at(key);
 }
 
-const LookupObj IntObj::names (0, 0);
-const LookupObj TupleObj::names (0, 0);
-const LookupObj DictObj::names (0, 0);
-const LookupObj ClassObj::names (0, 0);
+const LookupObj IntObj::attrs (0, 0);
+const LookupObj TupleObj::attrs (0, 0);
+const LookupObj DictObj::attrs (0, 0);
+const LookupObj ClassObj::attrs (0, 0);
