@@ -103,9 +103,25 @@ static const FunObj f_suspend (bi_suspend);
 
 static const StrObj s_version = VERSION;
 
+static Value f_suspendNew (int argc, Value argv[]) {
+    printf("suspnew %d\n", argc);
+    assert(argc == 1 || argc == 2);
+    if (argc == 1)
+        Context::suspendTask(Context::tasks);
+    else {
+        assert(argv[1].isObj() && &argv[1].obj().type() == &ListObj::info);
+        auto& queue = (ListObj&) argv[1].obj();
+        Context::suspendTask(queue);
+    }
+    return Value::nil;
+}
+
+static const FunObj fo_suspendNew (f_suspendNew);
+
 static const LookupObj::Item lo_monty [] = {
     { "version", &s_version },
     { "tasks", &Context::tasks },
+    { "suspend", &fo_suspendNew },
 };
 
 static const LookupObj ma_monty (lo_monty, sizeof lo_monty / sizeof *lo_monty);

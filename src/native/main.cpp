@@ -1,4 +1,4 @@
-#define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
+#define SHOW_INSTR_PTR  1 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
 #include <assert.h>
@@ -15,7 +15,6 @@
 
 static bool runInterp (const uint8_t* data) {
     auto vm = new Interp;
-    Context::tasks.append(vm);
 
     ModuleObj* mainMod = 0;
     if (data[0] == 'M' && data[1] == 5) {
@@ -30,6 +29,9 @@ static bool runInterp (const uint8_t* data) {
     mainMod->chain = &builtinDict;
     mainMod->atKey("__name__", DictObj::Set) = "__main__";
     mainMod->call(0, 0);
+
+    assert(vm->fp != 0);
+    Context::tasks.append(vm->fp);
 
     while (vm->isAlive())
         vm->run();

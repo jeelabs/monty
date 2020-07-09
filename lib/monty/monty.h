@@ -569,6 +569,7 @@ struct Context : Object, private VecOfValue {
 
     FrameObj* flip (FrameObj*);
 
+    static void suspendTask (ListObj& queue);
     static void suspend ();
     void resume (FrameObj*);
 
@@ -580,12 +581,13 @@ struct Context : Object, private VecOfValue {
     static ListObj tasks;
     bool isAlive () const;
 
+    FrameObj* fp = 0; // TODO
 protected:
     Context () {}
 
     OpPtrRO ip = 0;
     Value* sp = 0;
-    FrameObj* fp = 0;
+    // FrameObj* fp = 0; // TODO
 
     void popState ();
     void saveState ();

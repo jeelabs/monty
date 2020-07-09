@@ -525,7 +525,7 @@ void Context::restoreState () {
 }
 
 FrameObj* Context::flip (FrameObj* frame) {
-    assert(vm->fp != frame);
+    //assert(vm->fp != frame); // TODO ?
     auto fp = vm->fp;
     if (fp != 0)
         saveState();
@@ -543,6 +543,23 @@ void Context::popState () {
     caller = 0; // cleared to flag as suspended if this is a coro
 }
 
+void Context::suspendTask (ListObj& queue) {
+    assert(vm->fp != 0 && tasks.len() > 0);
+    Value v = tasks.at(0);
+    assert(v.isObj() && &v.obj().type() == &FrameObj::info);
+    auto fp = (FrameObj*) &v.obj();
+
+    auto top = vm->fp;
+    while (top->caller != 0)
+        top = top->caller;
+    assert(fp == top);
+
+    fp->caller = vm->flip(0);
+
+    queue.append(v);
+    raise(Value::nil); // exit inner vm loop
+}
+
 void Context::suspend () {
     assert(vm->fp != 0);
     for (auto top = vm->fp; top != 0; top = top->caller)
@@ -554,12 +571,12 @@ void Context::suspend () {
 }
 
 void Context::resume (FrameObj* frame) {
-    assert(frame != 0 && frame->isCoro());
+    assert(frame != 0);
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 
 bool Context::isAlive () const {
-    if (tasks.len() > 0)
+    if (pending != 0 || tasks.len() > 0)
         return true;
     for (size_t i = 1; i < MAX_HANDLERS; ++i) // TODO 1? or 0?
         if (!handlers[i].isNil())

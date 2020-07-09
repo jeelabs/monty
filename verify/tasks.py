@@ -1,6 +1,9 @@
+waiting = []
+
 def delay(n):
     for _ in range(n):
-        suspend()
+        print('a',monty.tasks[0])
+        monty.suspend(waiting)
 
 async def task(rate):
     i = 0
@@ -9,20 +12,29 @@ async def task(rate):
         print('t:', machine.ticks(), '\trate:', rate, ' i:', i)
         i += 1
 
-tasks = [task(2), task(3), task(5)]
+for i in [2, 3, 5]:
+    t = task(i)
+    print('t', i, t)
+    monty.tasks.append(t)
 done = False
 
-def loop():
+async def loop():
+    global waiting, done
     i = 0
     while i < 35:
         i += 1
-        for t in tasks:
-            next(t)
+        for w in waiting:
+            print('w',w)
+            monty.tasks.append(w)
+        waiting = []
         yield
-    global done
+        print('l',i)
     done = True
     yield # TODO can't return out of a coro yet
 
 machine.timer(10, loop())
-while not done: pass
+while not done:
+    print('ha!', monty.tasks[0])
+    monty.suspend(waiting)
+
 machine.timer(0, None) # allow main loop to exit

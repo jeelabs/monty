@@ -44,32 +44,50 @@ struct Interp : Context {
     }
 
     void run () {
-        while (tasks.len() > 0) {
-            Value t = tasks.at(0);
-            assert(t.isObj() && &t.obj().type() == &Context::info);
-            // fp = (Context&) t.obj(); // FIXME how do I get the frame back?
-            restoreState();
+        printf("run enter %d\n", (int) tasks.len());
+        while (true) {
             outer();
+            printf("run pop %d\n", (int) tasks.len());
+            if (tasks.len() == 0)
+                break;
             tasks.pop(0);
+            if (tasks.len() == 0)
+                break;
+            Value t = tasks.at(0);
+            assert(t.isObj() && &t.obj().type() == &FrameObj::info);
+            fp = (FrameObj*) &t.obj();
+            printf("fp %p\n", fp);
+            restoreState();
         }
+        printf("run leave %d\n", (int) tasks.len());
+#ifdef INNER_HOOK
+        INNER_HOOK
+#endif
     }
 
 private:
     void outer () {
-        while (ip != 0) {
-            assert(sp != 0 && fp != 0);
+        printf("outer enter ip %p\n", ip);
+        while (true) {
+            printf("ip %p\n", ip);
 
             if (gcCheck())              // collect garbage, if needed
                 gcTrigger();
 
             Value h = nextPending();
-            if (h.isNil())
+            if (h.isNil()) {
+                if (ip == 0)
+                    break;
+                assert(sp != 0 && fp != 0);
                 inner();                // go process lots of bytecodes
-            else if (h.isObj())
+                if (ip == 0)
+                    break;
+            } else if (h.isObj())
                 h.obj().next();         // resume the triggered handler
             else
                 exception(h);
         }
+        printf("outer leave ip %p\n", ip);
     }
 
     void exception (Value h) {
@@ -279,8 +297,11 @@ private:
     void op_YieldValue () {
         Value v = *sp;
         popState();
-        assert(fp != 0 && sp != 0); // can't yield out of main
-        if (!v.isNil())
+        //assert(fp != 0 && sp != 0); // can't yield out of main
+        printf("YieldValue fp %p sp %p\n", fp, sp);
+        if (sp == 0)
+            raise(Value::nil); // break out of inner loop
+        else if (!v.isNil())
             *sp = v;
     }
 
