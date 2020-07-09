@@ -1,3 +1,6 @@
+#define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
+#define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
+
 #include <assert.h>
 #include <string.h>
 

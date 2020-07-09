@@ -157,7 +157,7 @@ struct Loader {
         auto npre = dp - savedDp;
 
         // bytecode will be stored in extra bytes allocated after BytecodeObj
-        auto& bc = BytecodeObj::create(modobj, bCount);
+        auto& bc = BytecodeObj::create(modobj, bCount + 1); // FIXME stm32 ???
         bcBuf = bcNext = (uint8_t*) (&bc + 1);
         bcLimit = bcBuf + bCount - npre;
 

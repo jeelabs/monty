@@ -32,6 +32,7 @@ void archInit () {
 }
 
 int archDone () {
+    Object::gcStats();
     while (true) {}
 }
 
@@ -56,7 +57,7 @@ Value f_timer (int argc, Value argv []) {
         start = ticks; // set first timeout relative to now
         last = 0;
         VTableRam().systick = []() {
-            uint32_t t = ticks;
+            uint32_t t = ++ticks;
             if (ms > 0 && (t - start) / ms != last) {
                 last = (t - start) / ms;
                 if (id > 0)
