@@ -33,8 +33,10 @@ static bool runInterp (const uint8_t* data) {
     assert(vm->fp != 0);
     Context::tasks.append(vm->fp);
 
-    while (vm->isAlive())
+    while (vm->isAlive()) {
         vm->run();
+        INNER_HOOK // make sure this runs, even when there is no work to do
+    }
 
     // must be placed here, before the vm destructor is called
     Object::gcStats();

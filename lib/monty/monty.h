@@ -74,6 +74,9 @@ struct Value {
     Object& obj () const { return *(Object*) v; }
     inline ForceObj objPtr () const;
 
+    template< typename T > // type-asserted safe cast via Object::type()
+    T& asType () const { check(T::info); return (T&) obj(); }
+
     enum Tag tag () const {
         return (v & 1) ? Int : // bit 0 set
                 v == 0 ? Nil : // all bits 0
@@ -96,6 +99,7 @@ struct Value {
     static Value invalid; // special value, see DictObj::atKey
 private:
     Value () : v (0) {}
+    void check (const TypeObj& t) const;
 
     uintptr_t v;
 
@@ -571,7 +575,7 @@ struct Context : Object, private VecOfValue {
 
     static void suspendTask (ListObj& queue);
     static void suspend ();
-    void resume (FrameObj*);
+    void resume (FrameObj&);
 
     static Value* prepareStack (FrameObj& fo, Value* av);
 

@@ -97,15 +97,8 @@ static const FunObj f_next (bi_next);
 static const StrObj s_version = VERSION;
 
 static Value f_suspend (int argc, Value argv[]) {
-    //printf("suspnew %d\n", argc);
-    assert(argc == 1 || argc == 2);
-    if (argc == 1)
-        Context::suspendTask(Context::tasks);
-    else {
-        assert(argv[1].isObj() && &argv[1].obj().type() == &ListObj::info);
-        auto& queue = (ListObj&) argv[1].obj();
-        Context::suspendTask(queue);
-    }
+    Context::suspendTask(argc > 1 ? argv[1].asType<ListObj>()
+                                  : Context::tasks);
     return Value::nil;
 }
 

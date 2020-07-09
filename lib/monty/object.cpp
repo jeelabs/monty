@@ -6,6 +6,10 @@
 #include <assert.h>
 #include <string.h>
 
+void Value::check (const TypeObj& t) const {
+    assert(isObj() && &obj().type() == &t);
+}
+
 bool Value::isEq (Value val) const {
     if (v == val.v)
         return true;
@@ -391,7 +395,7 @@ void FrameObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value FrameObj::next () {
-    ctx->resume(this);
+    ctx->resume(*this);
     return Value::nil; // TODO really?
 }
 
@@ -403,9 +407,7 @@ void FrameObj::leave () {
     ctx->shrink(bcObj.frameSize()); // note that the stack could move
 
     assert(ctx->tasks.len() > 0);
-    Value v = ctx->tasks.at(0);
-    assert(v.isObj() && &v.obj().type() == &FrameObj::info);
-    if (this == &v.obj())
+    if (this == &ctx->tasks.at(0).asType<FrameObj>())
         ctx->tasks.pop(0);
 
     if (!isCoro()) // don't delete frame on return, it may have a reference
@@ -545,22 +547,21 @@ void Context::popState () {
     auto& caller = fp->caller; // TODO messy, fp will change in flip
     flip(caller);
     if (caller == 0)
-        raise(Value::nil); // exists the vm loop
+        raise(Value::nil); // exit the vm loop
     caller = 0; // cleared to flag as suspended if this is a coro
 }
 
 void Context::suspendTask (ListObj& queue) {
     assert(vm->fp != 0 && tasks.len() > 0);
     Value v = tasks.at(0);
-    assert(v.isObj() && &v.obj().type() == &FrameObj::info);
-    auto fp = (FrameObj*) &v.obj();
+    auto& fp = v.asType<FrameObj>();
 
     auto top = vm->fp;
     while (top->caller != 0)
         top = top->caller;
-    assert(fp == top);
+    assert(top == &fp);
 
-    fp->caller = vm->flip(0);
+    fp.caller = vm->flip(0);
 
     queue.append(v);
     tasks.pop(0);
@@ -577,9 +578,8 @@ void Context::suspend () {
     assert(false);
 }
 
-void Context::resume (FrameObj* frame) {
-    assert(frame != 0);
-    frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
+void Context::resume (FrameObj& frame) {
+    frame.caller = flip(frame.caller != 0 ? frame.caller : &frame);
 }
 
 bool Context::isAlive () const {

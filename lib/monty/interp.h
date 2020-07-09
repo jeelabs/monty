@@ -44,18 +44,11 @@ struct Interp : Context {
     }
 
     void run () {
-#ifdef INNER_HOOK
-        INNER_HOOK // make sure this runs, even when there is no work to do
-#endif
         while (true) {
             outer();
-
             if (tasks.len() == 0)
                 break;
-
-            Value t = tasks.at(0);
-            assert(t.isObj() && &t.obj().type() == &FrameObj::info);
-            resume((FrameObj*) &t.obj());
+            resume(tasks.at(0).asType<FrameObj>());
         }
     }
 
@@ -210,7 +203,8 @@ private:
     //CG1 op q
     void op_StoreAttr (const char* arg) {
         assert(&sp->obj().type().type() == &ClassObj::info);
-        auto& io = (InstanceObj&) sp->obj(); // TODO yuck
+        auto& io = (InstanceObj&) sp->obj(); // TODO can't use asType<> ?
+
         io.atKey(arg, DictObj::Set) = sp[-1];
         sp -= 2;
     }
@@ -337,8 +331,7 @@ private:
 
     //CG1 op
     void op_StoreSubscr () {
-        assert(&sp[-1].obj().type() == &DictObj::info);
-        auto& d = (DictObj&) sp[-1].obj(); // TODO yuck
+        auto& d = sp[-1].asType<DictObj>();
         d.atKey(sp[0], DictObj::Set) = sp[-2];
         sp -= 3;
     }
