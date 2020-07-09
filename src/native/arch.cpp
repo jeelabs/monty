@@ -26,7 +26,7 @@ static Value bi_blah (int argc, Value argv []) {
 static const FunObj f_blah (bi_blah);
 
 static int ms, id;
-static uint32_t start, begin, last = ~0;
+static uint32_t start, begin, last;
 
 static uint32_t getTime () {
     struct timespec tv;
@@ -46,12 +46,16 @@ void timerHook () {
 // interface exposed to the VM
 
 static Value f_timer (int argc, Value argv []) {
-    if (argc != 3 || !argv[1].isInt())
-        return -1;
-    ms = argv[1];
-    id = Context::setHandler(ms > 0 ? argv[2] : (Value) id);
-    start = getTime(); // set first timeout relative to now
-    last = 0;
+    Value h = id;
+    if (argc > 1) {
+        if (argc != 3 || !argv[1].isInt())
+            return -1;
+        ms = argv[1];
+        h = argv[2];
+        start = getTime(); // set first timeout relative to now
+        last = 0;
+    }
+    id = Context::setHandler(h);
     return id;
 }
 

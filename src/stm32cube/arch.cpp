@@ -42,27 +42,29 @@ static Value bi_blah (int argc, Value argv []) {
 static const FunObj f_blah (bi_blah);
 
 static int ms, id;
-static uint32_t start, begin, last = ~0;
-
-void timerHook () {
-    uint32_t t = ticks;
-    if (ms > 0 && (t - start) / ms != last) {
-        last = (t - start) / ms;
-        if (id > 0)
-            Context::raise(id);
-    }
-}
+static uint32_t start, begin, last;
 
 // interface exposed to the VM
 
 Value f_timer (int argc, Value argv []) {
-    if (argc != 2 || !argv[0].isInt())
-        return -1;
-    ms = argv[0];
-    id = Context::setHandler(ms > 0 ? argv[1] : (Value) id);
-    start = ticks; // set first timeout relative to now
-    last = 0;
-    VTableRam().systick = timerHook;
+    Value h = id;
+    if (argc > 1) {
+        if (argc != 3 || !argv[1].isInt())
+            return -1;
+        ms = argv[1];
+        h = argv[2];
+        start = ticks; // set first timeout relative to now
+        last = 0;
+        VTableRam().systick = []() {
+            uint32_t t = ticks;
+            if (ms > 0 && (t - start) / ms != last) {
+                last = (t - start) / ms;
+                if (id > 0)
+                    Context::raise(id);
+            }
+        };
+    }
+    id = Context::setHandler(h);
     return id;
 }
 
@@ -72,6 +74,7 @@ Value f_ticks (int argc, Value argv []) {
         begin = t;
     return t - begin; // make all runs start out the same way
 }
+
 static const FunObj fo_timer (f_timer);
 static const FunObj fo_ticks (f_ticks);
 
