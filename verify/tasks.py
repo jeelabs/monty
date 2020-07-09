@@ -16,7 +16,6 @@ for i in [2, 3, 5]:
     t = task(i)
     print('t', i, t)
     monty.tasks.append(t)
-done = False
 
 async def loop():
     global waiting, done
@@ -29,12 +28,7 @@ async def loop():
         waiting = []
         yield
         print('l',i)
-    done = True
+    machine.timer(0, None) # allow main loop to exit
     yield # TODO can't return out of a coro yet
 
 machine.timer(10, loop())
-while not done:
-    print('ha!', monty.tasks[0])
-    monty.suspend(waiting)
-
-machine.timer(0, None) # allow main loop to exit

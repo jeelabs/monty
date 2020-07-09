@@ -6,6 +6,8 @@
 #include <assert.h>
 #include <string.h>
 
+extern "C" int printf(const char*, ...); // TODO remove
+
 bool Value::isEq (Value val) const {
     if (v == val.v)
         return true;
@@ -402,6 +404,15 @@ Value* FrameObj::bottom () const {
 
 void FrameObj::leave () {
     ctx->shrink(bcObj.frameSize()); // note that the stack could move
+
+    assert(ctx->tasks.len() > 0);
+    Value v = ctx->tasks.at(0);
+    assert(v.isObj() && &v.obj().type() == &FrameObj::info);
+    if (this == &v.obj()) {
+        printf("return from task\n");
+        ctx->tasks.pop(0);
+    }
+
     if (!isCoro()) // don't delete frame on return, it may have a reference
         delete this;
 }
@@ -557,6 +568,7 @@ void Context::suspendTask (ListObj& queue) {
     fp->caller = vm->flip(0);
 
     queue.append(v);
+    tasks.pop(0);
     raise(Value::nil); // exit inner vm loop
 }
 
@@ -572,6 +584,7 @@ void Context::suspend () {
 
 void Context::resume (FrameObj* frame) {
     assert(frame != 0);
+    printf("resume %p coro %d\n", frame, frame->isCoro());
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 

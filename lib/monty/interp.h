@@ -50,14 +50,17 @@ struct Interp : Context {
             printf("run pop %d\n", (int) tasks.len());
             if (tasks.len() == 0)
                 break;
+#if 0
             tasks.pop(0);
             if (tasks.len() == 0)
                 break;
+#endif
             Value t = tasks.at(0);
             assert(t.isObj() && &t.obj().type() == &FrameObj::info);
             fp = (FrameObj*) &t.obj();
             printf("fp %p\n", fp);
             restoreState();
+            *++sp = Value::nil;
         }
         printf("run leave %d\n", (int) tasks.len());
 #ifdef INNER_HOOK
@@ -67,7 +70,7 @@ struct Interp : Context {
 
 private:
     void outer () {
-        printf("outer enter ip %p\n", ip);
+        printf("outer enter ip %p tasks %d\n", ip, (int) tasks.len());
         while (true) {
             printf("ip %p\n", ip);
 
@@ -299,10 +302,10 @@ private:
         popState();
         //assert(fp != 0 && sp != 0); // can't yield out of main
         printf("YieldValue fp %p sp %p\n", fp, sp);
-        if (sp == 0)
-            raise(Value::nil); // break out of inner loop
-        else if (!v.isNil())
+        if (!v.isNil()) {
+            assert(sp != 0);
             *sp = v;
+        }
     }
 
     //CG1 op
