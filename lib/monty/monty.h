@@ -575,8 +575,7 @@ struct Context : Object, private VecOfValue {
 
     FrameObj* flip (FrameObj*);
 
-    static void suspendTask (ListObj& queue);
-    static void suspend ();
+    static void suspend (ListObj& queue);
     void resume (FrameObj&);
 
     static Value* prepareStack (FrameObj& fo, Value* av);

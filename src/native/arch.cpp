@@ -34,6 +34,9 @@ static uint32_t getTime () {
     return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
 }
 
+// interface exposed to the VM
+
+// simulate in software, see INNER_HOOK in arch.h, main.cpp, and monty/interp.h
 void timerHook () {
     uint32_t t = getTime();
     if (ms > 0 && (t - start) / ms != last) {
@@ -42,8 +45,6 @@ void timerHook () {
             Context::raise(id);
     }
 }
-
-// interface exposed to the VM
 
 static Value f_timer (int argc, Value argv []) {
     Value h = id;

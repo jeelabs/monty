@@ -560,7 +560,7 @@ void Context::popState () {
     caller = 0; // cleared to flag as suspended if this is a coro
 }
 
-void Context::suspendTask (ListObj& queue) {
+void Context::suspend (ListObj& queue) {
     assert(vm->fp != 0 && tasks.len() > 0);
     Value v = tasks.at(0);
     auto& fp = v.asType<FrameObj>();
@@ -575,16 +575,6 @@ void Context::suspendTask (ListObj& queue) {
     queue.append(v);
     tasks.pop(0);
     raise(Value::nil); // exit inner vm loop
-}
-
-void Context::suspend () {
-    assert(vm->fp != 0);
-    for (auto top = vm->fp; top != 0; top = top->caller)
-        if (top->isCoro()) {
-            top->caller = vm->flip(top->caller);
-            return;
-        }
-    assert(false);
 }
 
 void Context::resume (FrameObj& frame) {
