@@ -379,11 +379,6 @@ FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
         caller = ctx->flip(this);
 }
 
-FrameObj::~FrameObj () {
-    if (isCoro())
-        delete ctx;
-}
-
 void FrameObj::mark (void (*gc)(const Object&)) const {
     markVec(gc);
 

@@ -1,7 +1,7 @@
 // Memory allocation, garbage collection of objects, and compaction of vectors.
 
 #define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
-#define USE_MALLOC      1 // use standard allocator, no garbage collection
+#define USE_MALLOC      0 // use standard allocator, no garbage collection
 #define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
 
 #include "monty.h"

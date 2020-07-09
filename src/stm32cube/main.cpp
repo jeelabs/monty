@@ -10,23 +10,22 @@
 #include "loader.h"
 
 static bool runInterp (const uint8_t* data) {
-    auto vm = new Interp;
-    Context::tasks.append(vm);
+    Interp vm;
 
     ModuleObj* mainMod = 0;
     if (data[0] == 'M' && data[1] == 5) {
         Loader loader;
         mainMod = loader.load (data);
-        vm->qPool = loader.qPool;
+        vm.qPool = loader.qPool;
     }
 
     if (mainMod == 0)
         return false;
 
-    vm->start(*mainMod, builtinDict);
+    vm.start(*mainMod, builtinDict);
 
-    while (vm->isAlive()) {
-        vm->run();
+    while (vm.isAlive()) {
+        vm.run();
         asm("wfi");
     }
 

@@ -530,7 +530,6 @@ struct FrameObj : DictObj {
     uint8_t excTop = 0;
 
     FrameObj (const BytecodeObj& bc, int argc, Value argv[], DictObj* dp = 0);
-    ~FrameObj () override;
 
     void mark (void (*gc)(const Object&)) const override;
 
