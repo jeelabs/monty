@@ -44,6 +44,9 @@ struct Interp : Context {
     }
 
     void run () {
+#ifdef INNER_HOOK
+        INNER_HOOK // make sure this runs, even when there is no work to do
+#endif
         while (true) {
             outer();
 
@@ -54,29 +57,24 @@ struct Interp : Context {
             assert(t.isObj() && &t.obj().type() == &FrameObj::info);
             resume((FrameObj*) &t.obj());
         }
-#ifdef INNER_HOOK
-        INNER_HOOK // make sure this runs, even when there is no work to do
-#endif
     }
 
 private:
     void outer () {
         while (true) {
+            Value h = nextPending();
+
+            if (h.isNil() && ip != 0)
+                inner();                // go process lots of bytecodes
+            else if (h.isObj())
+                h.obj().next();         // resume the triggered handler
+            else if (ip != 0)
+                exception(h);           // handle the exception
+            else
+                break;                  // no runnable context left
+
             if (gcCheck())              // collect garbage, if needed
                 gcTrigger();
-
-            Value h = nextPending();
-            if (h.isNil()) {
-                if (ip == 0)
-                    break;
-                assert(sp != 0 && fp != 0);
-                inner();                // go process lots of bytecodes
-                if (ip == 0)
-                    break;
-            } else if (h.isObj())
-                h.obj().next();         // resume the triggered handler
-            else
-                exception(h);
         }
     }
 
