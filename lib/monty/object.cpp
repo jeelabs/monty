@@ -6,8 +6,6 @@
 #include <assert.h>
 #include <string.h>
 
-extern "C" int printf(const char*, ...); // TODO remove
-
 bool Value::isEq (Value val) const {
     if (v == val.v)
         return true;
@@ -81,7 +79,6 @@ const Value Value::nil;
 Value Value::invalid;
 
 void VecOfValue::markVec (void (*gc)(const Object&)) const {
-    //printf("    markVec %p #%d\n", this, length());
     for (size_t i = 0; i < length(); ++i) {
         Value v = get(i);
         if (v.isObj())
@@ -408,10 +405,8 @@ void FrameObj::leave () {
     assert(ctx->tasks.len() > 0);
     Value v = ctx->tasks.at(0);
     assert(v.isObj() && &v.obj().type() == &FrameObj::info);
-    if (this == &v.obj()) {
-        //printf("return from task\n");
+    if (this == &v.obj())
         ctx->tasks.pop(0);
-    }
 
     if (!isCoro()) // don't delete frame on return, it may have a reference
         delete this;
@@ -570,8 +565,6 @@ void Context::suspendTask (ListObj& queue) {
     queue.append(v);
     tasks.pop(0);
     raise(Value::nil); // exit inner vm loop
-    //printf("suspended fp %p vm %p vm-fp %p tasks %d\n",
-    //        fp, vm, vm->fp, (int) tasks.len());
 }
 
 void Context::suspend () {
@@ -586,7 +579,6 @@ void Context::suspend () {
 
 void Context::resume (FrameObj* frame) {
     assert(frame != 0);
-    //printf("resume %p coro %d\n", frame, frame->isCoro());
     frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
 }
 

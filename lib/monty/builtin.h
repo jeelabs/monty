@@ -90,20 +90,13 @@ static Value bi_next (int argc, Value argv[]) {
     return argv[0].objPtr()->next();
 }
 
-//CG1 builtin suspend
-static Value bi_suspend (int argc, Value argv[]) {
-    Context::suspend();
-    return Value::nil;
-}
-
-//CG3 builtin-emit 0
+//CG2 builtin-emit 0
 static const FunObj f_print (bi_print);
 static const FunObj f_next (bi_next);
-static const FunObj f_suspend (bi_suspend);
 
 static const StrObj s_version = VERSION;
 
-static Value f_suspendNew (int argc, Value argv[]) {
+static Value f_suspend (int argc, Value argv[]) {
     //printf("suspnew %d\n", argc);
     assert(argc == 1 || argc == 2);
     if (argc == 1)
@@ -116,12 +109,12 @@ static Value f_suspendNew (int argc, Value argv[]) {
     return Value::nil;
 }
 
-static const FunObj fo_suspendNew (f_suspendNew);
+static const FunObj fo_suspend (f_suspend);
 
 static const LookupObj::Item lo_monty [] = {
     { "version", &s_version },
     { "tasks", &Context::tasks },
-    { "suspend", &fo_suspendNew },
+    { "suspend", &fo_suspend },
 };
 
 static const LookupObj ma_monty (lo_monty, sizeof lo_monty / sizeof *lo_monty);
@@ -137,7 +130,6 @@ static const LookupObj::Item builtins [] = {
     { "tuple", &TupleObj::info },
     { "print", &f_print },
     { "next", &f_next },
-    { "suspend", &f_suspend },
     //CG>
     { "monty", &m_monty },
     { "machine", &m_machine },

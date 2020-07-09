@@ -15,7 +15,7 @@ for i in [2, 3, 5]:
     monty.tasks.append(task(i))
 
 async def loop():
-    global waiting, done
+    global waiting
     i = 0
     while i < 35:
         i += 1

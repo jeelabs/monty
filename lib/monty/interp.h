@@ -44,32 +44,24 @@ struct Interp : Context {
     }
 
     void run () {
-        //printf("run enter %d\n", (int) tasks.len());
         while (true) {
             outer();
 
-            //printf("run tasks %d\n", (int) tasks.len());
             if (tasks.len() == 0)
                 break;
+
             Value t = tasks.at(0);
             assert(t.isObj() && &t.obj().type() == &FrameObj::info);
-            auto fp = (FrameObj*) &t.obj();
-            //printf("fp %p\n", fp);
-            //restoreState();
-            resume(fp);
+            resume((FrameObj*) &t.obj());
         }
-        //printf("run leave %d\n", (int) tasks.len());
 #ifdef INNER_HOOK
-        INNER_HOOK
+        INNER_HOOK // make sure this runs, even when there is no work to do
 #endif
     }
 
 private:
     void outer () {
-        //printf("outer enter ip %p tasks %d\n", ip, (int) tasks.len());
         while (true) {
-            //printf("ip %p\n", ip);
-
             if (gcCheck())              // collect garbage, if needed
                 gcTrigger();
 
@@ -86,7 +78,6 @@ private:
             else
                 exception(h);
         }
-        //printf("outer leave ip %p\n", ip);
     }
 
     void exception (Value h) {
@@ -296,8 +287,6 @@ private:
     void op_YieldValue () {
         Value v = *sp;
         popState();
-        //assert(fp != 0 && sp != 0); // can't yield out of main
-        //printf("YieldValue fp %p sp %p\n", fp, sp);
         if (!v.isNil()) {
             assert(sp != 0);
             *sp = v;
