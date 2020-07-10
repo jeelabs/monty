@@ -25,6 +25,8 @@ extern "C" {
 #include <string.h>
 #include <jee.h>
 
+extern "C" int debugf (const char* fmt, ...); // TODO put this in config.h?
+
 SpiGpio< PINS_NETWORK > spi;
 
 void enchw_setup (enchw_device_t*) {
@@ -98,14 +100,108 @@ static err_t mn_init (netif* netif) {
     return ERR_OK;
 }
 
-static Value f_ifconfig (int argc, Value argv []) {
+static Value f_poll (int argc, Value argv []) {
+    //printf("poll %d\n", argc);
+    assert(argc == 1);
+    mn_poll(&enc_if);
+    sys_check_timeouts();
     return Value::nil;
 }
 
+static Value f_ifconfig (int argc, Value argv []) {
+    static bool inited = false;
+    if (!inited) {
+        inited = true;
+        lwip_init();
+        wait_ms(500); // delay console logging
+    }
+
+    printf("ifconfig %d\n", argc);
+    assert(argc == 5);
+    ip4_addr ifconf [4];
+    for (int i = 0; i < 4; ++i) {
+        assert(argv[i+1].isStr());
+        ipaddr_aton(argv[i+1], ifconf + i);
+    }
+
+    enc_if.hwaddr_len = 6; /* demo mac address */
+    memcpy(enc_if.hwaddr, "\x00\x01\x02\x03\x04\x05", 6);
+
+    auto p = netif_add(&enc_if, ifconf+0, ifconf+1, ifconf+2, &enc_hw,
+                        mn_init, ethernet_input);
+    (void) p;
+    assert(p != 0);
+
+    netif_set_default(&enc_if);
+    netif_set_up(&enc_if);
+
+    return Value::nil;
+}
+
+struct SocketObj : Object {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
+    static TypeObj info;
+    TypeObj& type () const override;
+
+    SocketObj (tcp_pcb* p) : socket (p) {}
+
+    Value attr (const char* key, Value& self) const override;
+
+    tcp_pcb* socket;
+};
+
+Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
+    debugf("socketobj %d\n", argc);
+    assert(argc == 1);
+    auto p = tcp_new();
+    assert(p != 0);
+    return new SocketObj (p);
+}
+
+Value SocketObj::attr (const char* key, Value& self) const {
+    self = Value::nil;
+    return attrs.at(key);
+}
+
+static Value f_bind (int argc, Value argv []) {
+    debugf("bind %d\n", argc);
+    assert(argc == 2 && argv[1].isInt());
+    auto& self = argv[0].asType<SocketObj>();
+    auto r = tcp_bind(self.socket, IP_ADDR_ANY, argv[1]);
+    assert(r == 0);
+    return Value::nil;
+}
+
+static Value f_listen (int argc, Value argv []) {
+    debugf("listen %d\n", argc);
+    assert(argc == 2 && argv[1].isInt());
+    auto& self = argv[0].asType<SocketObj>();
+    self.socket = tcp_listen_with_backlog(self.socket, argv[1]);
+    assert(self.socket != NULL);
+    return Value::nil;
+}
+
+const FunObj fo_bind = f_bind;
+const FunObj fo_listen = f_listen;
+
+static const LookupObj::Item socketMap [] = {
+    { "bind", &fo_bind },
+    { "listen", &fo_listen },
+};
+
+const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);
+
+TypeObj SocketObj::info ("<socket>", SocketObj::create, &SocketObj::attrs);
+TypeObj& SocketObj::type () const { return info; }
+
+const FunObj fo_poll = f_poll;
 const FunObj fo_ifconfig = f_ifconfig;
 
 static const LookupObj::Item lo_network [] = {
     { "ifconfig", &fo_ifconfig },
+    { "poll", &fo_poll },
+    { "socket", &SocketObj::info },
 };
 
 static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);

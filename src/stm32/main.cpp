@@ -45,8 +45,8 @@ int main () {
            "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
 
 #if INCLUDE_NETWORK
-    testNetwork();
-    //(void) testNetwork; // suppress unused warning
+    //testNetwork();
+    (void) testNetwork; // suppress unused warning
 #endif
 
     extern uint8_t _estack [];

@@ -592,6 +592,7 @@ static const LookupObj::Item strMap [] = {
 };
 
 const LookupObj StrObj::attrs (strMap, sizeof strMap / sizeof *strMap);
+
 Value StrObj::attr (const char* key, Value& self) const {
     self = Value::nil;
     return attrs.at(key);

@@ -17,6 +17,15 @@ int debugf (const char* fmt, ...) {
     return 0;
 }
 
+extern "C" void __assert_func (const char *f, int l, const char * n, const char *e) {
+    printf("assert(%s) in %s\n\t%s:%d\n", e, n, f, l);
+    while (true) {}
+}
+
+extern "C" void __assert (const char *f, int l, const char *e) {
+    __assert_func(f, l, "-", e);
+}
+
 void archInit () {
     console.init();
 #if BOARD_discovery_f4
