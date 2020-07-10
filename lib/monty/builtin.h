@@ -126,6 +126,7 @@ static const LookupObj::Item builtins [] = {
     { "machine", &m_machine },
 #if INCLUDE_NETWORK
     { "network", &m_network },
+    { "socket", &m_socket },
 #endif
 };
 

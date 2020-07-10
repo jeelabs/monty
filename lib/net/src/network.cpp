@@ -1,6 +1,8 @@
 #include "monty.h"
 #include "config.h"
 
+#if INCLUDE_NETWORK
+
 #include <lwip/inet.h>
 #include <lwip/tcp.h>
 #include <lwip/netif.h>
@@ -23,17 +25,14 @@ extern "C" {
 #include <string.h>
 #include <jee.h>
 
-#if CONFIG == F103RC_NET
-SpiGpio< PinA<7>, PinA<6>, PinA<5>, PinC<4> > spi;
-#else
-SpiGpio< PinA<7>, PinA<6>, PinA<5>, PinA<4> > spi;
-#endif
+SpiGpio< PINS_NETWORK > spi;
 
 void enchw_setup (enchw_device_t*) {
     spi.init();
-
+#if CONFIG == F103ZE_NET
     PinA<3> reset; reset.mode(Pinmode::out);
     reset = 0; wait_ms(2); reset = 1; wait_ms(10);
+#endif
 }
 
 void enchw_select (enchw_device_t*) {
@@ -52,21 +51,22 @@ uint32_t sys_now () {
     return ticks;
 }
 
-ip4_addr myip_addr = {0x02BCA8C0UL}; /* 192.168.188.2 */
-ip4_addr gw_addr = {0x01BCA8C0UL}; /* 192.168.188.1 */
-ip4_addr netmask = {0x00FFFFFFUL}; /* 255.255.255.0 */
-ip4_addr dns = {0x08080808UL}; /* 8.8.8.8 */
-
 static netif enc_if;
 static enc_device_t enc_hw;
 
-static void mn_poll (netif* netif) {
-    auto dev = (enc_device_t*)netif->state;
+static void linkIsUp (netif* netif, bool up) {
+    static auto linkState = false;
+    if (up == linkState)
+        return;
+    linkState = up;
+    (linkState ? netif_set_link_up : netif_set_link_down)(netif);
+}
 
-    if (enc_MII_read(dev, (enc_register_t) ENC_PHSTAT1) & (1 << 2))
-        netif_set_link_up(netif);
-    else
-        netif_set_link_down(netif);
+static void mn_poll (netif* netif) {
+    auto dev = (enc_device_t*) netif->state;
+
+    auto linkState = enc_MII_read(dev, (enc_register_t) ENC_PHSTAT1) & (1<<2);
+    linkIsUp(netif, linkState != 0);
 
     if (enc_RCR(dev, ENC_EPKTCNT)) {
         pbuf* buf = NULL;
@@ -76,13 +76,13 @@ static void mn_poll (netif* netif) {
 }
 
 static err_t mn_linkoutput (netif* netif, pbuf* p) {
-    enc_device_t* dev = (enc_device_t*)netif->state;
+    auto dev = (enc_device_t*) netif->state;
     enc_transmit_pbuf(dev, p);
     return ERR_OK;
 }
 
-err_t mn_init (netif* netif) {
-    auto dev = (enc_device_t*)netif->state;
+static err_t mn_init (netif* netif) {
+    auto dev = (enc_device_t*) netif->state;
 
     if (enc_setup_basic(dev) != 0 || enc_bist_manual(dev) != 0)
         return ERR_IF;
@@ -98,34 +98,46 @@ err_t mn_init (netif* netif) {
     return ERR_OK;
 }
 
-void mch_net_init () {
+static Value f_ifconfig (int argc, Value argv []) {
+    return Value::nil;
+}
+
+const FunObj fo_ifconfig = f_ifconfig;
+
+static const LookupObj::Item lo_network [] = {
+    { "ifconfig", &fo_ifconfig },
+};
+
+static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);
+const ModuleObj m_network (&ma_network);
+
+static const LookupObj::Item lo_socket [] = {
+};
+
+static const LookupObj ma_socket (lo_socket, sizeof lo_socket / sizeof *lo_socket);
+const ModuleObj m_socket (&ma_socket);
+
+void testNetwork () {
+    ip4_addr ifconf [4];
+    ipaddr_aton("192.168.188.2", ifconf + 0); // my ip
+    ipaddr_aton("255.255.255.0", ifconf + 1); // netmask
+    ipaddr_aton("192.168.188.1", ifconf + 2); // gateway
+    ipaddr_aton("8.8.8.8",       ifconf + 3); // dns
+
     lwip_init();
 
     enc_if.hwaddr_len = 6; /* demo mac address */
     memcpy(enc_if.hwaddr, "\x00\x01\x02\x03\x04\x05", 6);
 
-    auto p = netif_add(&enc_if, &myip_addr, &netmask, &gw_addr, &enc_hw,
+    auto p = netif_add(&enc_if, ifconf+0, ifconf+1, ifconf+2, &enc_hw,
                         mn_init, ethernet_input);
     (void) p;
     assert(p != 0);
 
     netif_set_default(&enc_if);
     netif_set_up(&enc_if);
-}
+    //dns_setserver(0, ifconf+3);
 
-void mch_net_poll () {
-    mn_poll(&enc_if);
-}
-
-static const LookupObj::Item lo_network [] = {
-    // { "blah", &f_blah },
-};
-
-static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);
-const ModuleObj m_network (&ma_network);
-
-void testNetwork () {
-    mch_net_init();
     printf("Setup completed\n");
 
     auto pcb = tcp_new(); assert(pcb != NULL);
@@ -153,7 +165,7 @@ void testNetwork () {
         return ERR_OK;
     });
 
-#if 0
+/*
     auto my_pcb = udp_new();
     assert(my_pcb != NULL);
 
@@ -170,10 +182,12 @@ void testNetwork () {
 	pbuf_free(p);
     }, 0);
     udp_bind(my_pcb, IP_ADDR_ANY, 4321);
-#endif
+*/
 
     while (true) {
-        mch_net_poll();
+        mn_poll(&enc_if);
         sys_check_timeouts();
     }
 }
+
+#endif // INCLUDE_NETWORK

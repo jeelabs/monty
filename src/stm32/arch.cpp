@@ -3,11 +3,7 @@
 
 #include <jee.h>
 
-#if BOARD_discovery_f4 || STM32L412xx
-UartBufDev< PinA<2>, PinA<3> > console;
-#else
-UartBufDev< PinA<9>, PinA<10> > console;
-#endif
+UartBufDev< PINS_CONSOLE > console;
 
 int printf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
