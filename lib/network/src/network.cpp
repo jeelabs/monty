@@ -1,5 +1,6 @@
 #include "monty.h"
 #include "config.h"
+#include "network.h"
 
 #if INCLUDE_NETWORK
 
@@ -121,7 +122,8 @@ static Value f_ifconfig (int argc, Value argv []) {
     ip4_addr ifconf [4];
     for (int i = 0; i < 4; ++i) {
         assert(argv[i+1].isStr());
-        ipaddr_aton(argv[i+1], ifconf + i);
+        auto ok = ip4addr_aton(argv[i+1], ifconf + i);
+        assert(ok == 1);
     }
 
     enc_if.hwaddr_len = 6; /* demo mac address */

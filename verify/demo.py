@@ -7,8 +7,6 @@ print(s)
 s.bind(1234)
 s.listen(3)
 
-print(network.poll)
-
 def loop():
     while True:
         network.poll()

@@ -72,11 +72,11 @@ struct Loader {
             return 0; // incorrect file format
 
         loaderf("version %d\n", dp[0]);
-        loaderf("features 0x%02X\n", dp[1]);
+        loaderf("features 0x%02x\n", dp[1]);
         loaderf("intbits %d\n", dp[2]);
         dp += 3;
         int n = varInt();
-        loaderf("qwin %u\n", n);
+        loaderf("qwin %d\n", (int) n);
         qWin.ins(0, n); // qstr window
 
         qBuf.ins(0, 500); // TODO create space to avoid constant resizing
@@ -169,7 +169,7 @@ struct Loader {
         bc.n_def_pos = prelude.n_def_pos_args;
         bc.hdrSz = prelude.n_info + prelude.n_cell;
         bc.size = bCount;
-        loaderf("raw sc %u np %u hs %u sz %u ns %u nx %u ko %u dp %u\n",
+        loaderf("raw sc %d np %d hs %d sz %d ns %d nx %d ko %d dp %d\n",
                 bc.scope, bc.n_pos, bc.hdrSz, bc.size,
                 bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);
 
@@ -201,8 +201,11 @@ struct Loader {
             assert(type != 'e'); // TODO ellipsis
             auto sz = varInt();
             auto ptr = skip(sz);
-            loaderf("  obj %d = type %c %ub = %s\n", i, type, sz, ptr);
-            bc.constObjs.set(i, (const char*) ptr);
+            auto buf = (char*) malloc(sz+1);
+            memcpy(buf, ptr, sz);
+            buf[sz] = 0;
+            loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
+            bc.constObjs.set(i, buf);
         }
         for (int i = 0; i < bc.nCode; ++i) {
             loaderf("  raw %d:\n", i+bc.nData);
@@ -226,7 +229,7 @@ struct Loader {
             int f = (0x000003A4 >> 2*(op>>4)) & 3;
             switch (f) {
                 case MP_BC_FORMAT_BYTE:
-                    loaderf("  B: 0x%02X\n", op);
+                    loaderf("  B: 0x%02x\n", op);
                     break;
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
@@ -234,13 +237,13 @@ struct Loader {
                     auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1] :
                                         (const char*) qVec.get(n - qstrNext);
                     (void) s;
-                    loaderf("  Q: 0x%02X (%u) %s\n", op, n, s);
+                    loaderf("  Q: 0x%02x (%d) %s\n", op, (int) n, s);
                     break;
                 }
                 case MP_BC_FORMAT_VAR_UINT: {
                     auto savedDp = dp;
                     auto n = varInt();
-                    loaderf("  V: 0x%02X %d\n", op, n);
+                    loaderf("  V: 0x%02x %d\n", op, n);
                     (void) n;
                     while (savedDp < dp)
                         *bcNext++ = *savedDp++;
@@ -249,7 +252,7 @@ struct Loader {
                 case MP_BC_FORMAT_OFFSET: {
                     uint8_t op1 = *dp++;
                     uint8_t op2 = *dp++;
-                    loaderf("  O: 0x%02X %04X\n", op, op1 | (op2 << 8));
+                    loaderf("  O: 0x%02x %04x\n", op, op1 | (op2 << 8));
                     *bcNext++ = op1;
                     *bcNext++ = op2;
                     break;
@@ -258,7 +261,7 @@ struct Loader {
             if (f != MP_BC_FORMAT_QSTR && (op & MP_BC_MASK_EXTRA_BYTE) == 0) {
                 auto n = *dp++;
                 *bcNext++ = n;
-                loaderf("   x 0x%02X\n", n);
+                loaderf("   x 0x%02x\n", n);
                 while (n-- > 0)
                     *bcNext++ = *dp++;
             }
