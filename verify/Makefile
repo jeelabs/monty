@@ -4,6 +4,10 @@ ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
 tty = /dev/cu.usbmodemDDD8B7B83
 ram = 0x20004000
+else ifeq ($(BOARD),genericSTM32F103RC-enc28j60)
+gdb = /dev/cu.usbmodemE2C2B4DF1
+tty = /dev/cu.usbmodemE2C2B4DF3
+ram = 0x2000B000
 else ifeq ($(BOARD),disco_f407vg)
 tty = /dev/cu.usbmodem1461303
 ram = 0x2001F000

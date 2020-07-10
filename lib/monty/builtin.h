@@ -124,6 +124,9 @@ static const LookupObj::Item builtins [] = {
     //CG>
     { "monty", &m_monty },
     { "machine", &m_machine },
+#if INCLUDE_NETWORK
+    { "network", &m_network },
+#endif
 };
 
 const LookupObj builtinDict (builtins, sizeof builtins / sizeof *builtins);

@@ -1,6 +1,7 @@
-#include <stdio.h>
-
+#include "config.h"
 #include "../version.h"
+
+#include <stdio.h>
 
 extern void archInit ();
 extern int archDone ();

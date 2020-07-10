@@ -1,3 +1,4 @@
+#include "config.h"
 #include "../version.h"
 
 extern void archInit ();

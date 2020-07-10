@@ -1,31 +1,40 @@
 // Memory allocation, garbage collection of objects, and compaction of vectors.
 
-#define VERBOSE_GC      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
-#define USE_MALLOC      0 // use standard allocator, no garbage collection
-#define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
-
 #include "monty.h"
+#include "config.h"
 
 #include <assert.h>
 #include <string.h>
 
-#if VERBOSE_GC
+#ifndef GC_VERBOSE
+#define GC_VERBOSE      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
+#endif
+#ifndef GC_MALLOCS
+#define GC_MALLOCS      0 // use standard allocator, no garbage collection
+#endif
+#ifndef GC_REPORTS
+#define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
+#endif
+
+#ifndef GC_MEM_BYTES
+#define GC_MEM_BYTES (20*1024)  // 20 Kb total memory
+#endif
+#ifndef GC_VEC_BYTES
+#define GC_VEC_BYTES (3*1024)   // enough for basic testing on 32-/64-bit arch
+#endif
+#ifndef GC_MEM_ALIGN
+#define GC_MEM_ALIGN 16         // 16-byte slot boundaries
+#endif
+
+#if GC_VERBOSE
 extern "C" int debugf (const char*, ...);
 #endif
 
-#if VERBOSE_GC < 2
+#if GC_VERBOSE < 2
 #define debugf(...)
 #endif
 
 #define PREFIX "\t\tgc "
-
-#if NATIVE
-constexpr int MEM_BYTES = 20 * 1024;    // 20 Kb total memory
-constexpr int MEM_ALIGN = 16;           // 16-byte slot boundaries
-#else
-constexpr int MEM_BYTES = 10 * 1024;    // 10 Kb total memory
-constexpr int MEM_ALIGN = 8;            // 8-byte slot boundaries
-#endif
 
 // use 16- or 32-bit int headers: sign bit set for allocated blocks
 // the remaining 15 or 31 bits are the slot size, in alignment units
@@ -47,15 +56,15 @@ static_assert (HBYT == sizeof (hdr_t), "HBYT does not match hdr_t");
 static_assert (USED < 0,               "USED is not the sign of hdr_t");
 static_assert (MASK == ~USED,          "MASK does not match USED");
 
-constexpr int HPS = MEM_ALIGN / HBYT;   // headers per alignment slot
-constexpr int MAX = MEM_BYTES / HBYT;   // memory size as header count
+constexpr int HPS = GC_MEM_ALIGN / HBYT;   // headers per alignment slot
+constexpr int MAX = GC_MEM_BYTES / HBYT;   // memory size as header count
 
 // use a fixed memory pool for now, indexed as headers and aligned to slots
-static hdr_t mem [MAX] __attribute__ ((aligned (16)));
+static hdr_t mem [MAX] __attribute__ ((aligned (GC_MEM_ALIGN)));
 
 // convert an alloc pointer to the header reference which precedes it
 static hdr_t& p2h (void *p) {
-    assert(((uintptr_t) p) % MEM_ALIGN == 0);
+    assert(((uintptr_t) p) % GC_MEM_ALIGN == 0);
     assert(mem < p && p <= mem + MAX);
     return ((hdr_t*) p)[-1];
 }
@@ -70,12 +79,12 @@ static bool inUse (hdr_t h) { return h < 0; }
 static size_t h2s (hdr_t h) { return h & MASK; }
 
 // header size in bytes
-static size_t h2b (hdr_t h) { return h2s(h) * MEM_ALIGN - HBYT; }
+static size_t h2b (hdr_t h) { return h2s(h) * GC_MEM_ALIGN - HBYT; }
 
 // round bytes upwards to number of slots, leave room for next header
 static int b2s (size_t bytes) {
     // with 8-byte alignment, up to 6 bytes will fit in the first slot
-    return (bytes + HBYT + MEM_ALIGN - 1) / MEM_ALIGN;
+    return (bytes + HBYT + GC_MEM_ALIGN - 1) / GC_MEM_ALIGN;
 }
 
 // return a reference to the next block
@@ -85,9 +94,9 @@ static hdr_t& nextObj (hdr_t* h) {
 
 // init pool to 1 partial slot, max-1 free slots, 1 allocated header
 static void initMem () {
-    constexpr auto slots = MAX / HPS; // aka MEM_BYTES / MEM_ALIGN
+    constexpr auto slots = MAX / HPS; // aka GC_MEM_BYTES / GC_MEM_ALIGN
     debugf("ma %d hps %d max %d slots %d mem %p\n",
-            MEM_ALIGN, HPS, MAX, slots, mem);
+            GC_MEM_ALIGN, HPS, MAX, slots, mem);
     mem[HPS-1] = slots - 1;
     mem[MAX-1] = USED; // special end marker: used, but size 0
 }
@@ -104,7 +113,7 @@ static uint32_t totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes,
                 maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes;
 
 static void* allocate (size_t sz) {
-#if USE_MALLOC
+#if GC_MALLOCS
     return malloc(sz);
 #else
     if (mem[MAX-1] == 0)
@@ -132,8 +141,8 @@ static void* allocate (size_t sz) {
                 if (++currObjAllocs > maxObjAllocs)
                     maxObjAllocs = currObjAllocs;
 
-                totalObjBytes += ns * MEM_ALIGN;
-                currObjBytes += ns * MEM_ALIGN;
+                totalObjBytes += ns * GC_MEM_ALIGN;
+                currObjBytes += ns * GC_MEM_ALIGN;
                 if (currObjBytes > maxObjBytes)
                     maxObjBytes = currObjBytes;
 
@@ -149,7 +158,7 @@ static void* allocate (size_t sz) {
 }
 
 static void release (void* p) {
-#if USE_MALLOC
+#if GC_MALLOCS
     free(p);
 #else
     if (p != 0) {
@@ -157,13 +166,12 @@ static void release (void* p) {
         assert(inUse(h));
         h &= ~USED;
         --currObjAllocs;
-        currObjBytes -= h2s(h) * MEM_ALIGN;
+        currObjBytes -= h2s(h) * GC_MEM_ALIGN;
     }
 #endif
 }
 
-// 3 Kb is enough for current limited tests, on both 32-bit and 64-bit machines
-static uint8_t vecs [3072] __attribute__ ((aligned (16)));
+static uint8_t vecs [GC_VEC_BYTES] __attribute__ ((aligned (GC_MEM_ALIGN)));
 static uint8_t* vecTop = vecs;
 
 static size_t roundUp (size_t n, size_t unit) {
@@ -176,7 +184,7 @@ static size_t roundUp (size_t n, size_t unit) {
 void Vector::alloc (size_t sz) {
     debugf(PREFIX "resize %5d -> %d   @ %p (u %d) d %p\n",
             (int) capacity, (int) sz, this, (int) (vecTop - vecs), data);
-#if USE_MALLOC
+#if GC_MALLOCS
     data = (Data*) realloc(data, sizeof (void*) + sz);
     data->v = this;
 #else
@@ -266,7 +274,7 @@ void Object::operator delete (void* p) {
 #undef debugf
 
 void Object::gcStats () {
-#if VERBOSE_GC
+#if GC_VERBOSE
     debugf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
             totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes);
     debugf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
@@ -277,7 +285,7 @@ void Object::gcStats () {
 }
 
 bool Context::gcCheck () {
-    return vm != 0 && ((MEM_BYTES - currObjBytes) < (MEM_BYTES / 10) ||
+    return vm != 0 && ((GC_MEM_BYTES - currObjBytes) < (GC_MEM_BYTES / 10) ||
             (vecTop - vecs > (int) sizeof vecs - 1000)); // TODO 10? 1000?
 }
 
@@ -298,7 +306,7 @@ static void gcMarker (const Object& obj) {
     if (0 <= off && off < MAX/HPS) {
         if (tagged(off))
             return;
-#if VERBOSE_GC > 1
+#if GC_VERBOSE > 1
         debugf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
 #endif
         setTag(off);
@@ -333,13 +341,13 @@ void Vector::gcCompact () {
     auto newTop = (Data*) vecs;
     for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
         int n = p->next() - p;
-#if VERBOSE_GC > 1
+#if GC_VERBOSE > 1
         debugf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
                 (int) (p->v != 0 ? p->v->capacity : -1),
                 (int) (n * sizeof (Data)));
 #endif
         if (p->v != 0) {
-#if VERBOSE_GC > 1
+#if GC_VERBOSE > 1
             debugf("\tcompact %p -> %p #%d\n",
                     p, newTop, (int) (n * sizeof (Data)));
 #endif
@@ -354,7 +362,7 @@ void Vector::gcCompact () {
 }
 
 void Context::gcTrigger () {
-#if VERBOSE_GC
+#if GC_VERBOSE
     debugf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
             (int) currObjBytes, (int) currVecBytes,
             (int) (vecs + sizeof vecs - vecTop));
@@ -364,10 +372,10 @@ void Context::gcTrigger () {
     gcMarker(*vm);
     gcSweeper();
     Vector::gcCompact();
-#if VERBOSE_GC
+#if GC_VERBOSE
     debugf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
-            (int) (MEM_BYTES - currObjBytes),
+            (int) (GC_MEM_BYTES - currObjBytes),
             (int) (sizeof vecs - currVecBytes),
-            (int) MEM_BYTES, (int) sizeof vecs);
+            MEM_BYTES, (int) sizeof vecs);
 #endif
 }
