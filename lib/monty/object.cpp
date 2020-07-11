@@ -448,12 +448,19 @@ Value* Context::prepareStack (FrameObj& fo, Value* argv) {
     //  the problem is argv, which points either lower into this same stack
     //  (regular calls), or into the parent cor stack (then it won't move)
     auto sv = vm->fp != 0 ? vm->fp->ctx : vm;
-    fo.ctx = fo.isCoro() ? new Context : sv;
 
     // TODO this is the only (?) place where the stack may be reallocated and
     // since argv points into it, it needs to be relocated when this happens
     // note: base() can't be called if there is no stack, i.e. no argv passed
 
+    if (fo.isCoro()) {
+        fo.ctx = new Context;
+        fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
+        assert(fo.spOffset == -1);
+        return argv; // FIXME vectors can't have moved here, right?
+    }
+
+    fo.ctx = sv;
     int off = argv != 0 ? argv - sv->base() : 0; // TODO argc zero? yuck
     fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
     return sv->base() + off;

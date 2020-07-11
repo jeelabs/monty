@@ -144,13 +144,17 @@ struct SocketObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
     static TypeObj info;
+
+    SocketObj (tcp_pcb* p) : socket (p), sess (Value::nil) {}
+
     TypeObj& type () const override;
-
-    SocketObj (tcp_pcb* p) : socket (p) {}
-
+    void mark (void (*gc)(const Object&)) const override;
     Value attr (const char* key, Value& self) const override;
 
     tcp_pcb* socket;
+    BytecodeObj* accepter = 0;
+    Value sess; // TODO new session, but what if another one comes in?
+    ListObj* pending = 0;
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -159,6 +163,15 @@ Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
     auto p = tcp_new();
     assert(p != 0);
     return new SocketObj (p);
+}
+
+void SocketObj::mark (void (*gc)(const Object&)) const {
+    if (accepter != 0)
+        gc(*accepter);
+    if (sess.isObj())
+        gc(sess.obj());
+    if (pending != 0)
+        gc(*pending);
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
@@ -184,12 +197,75 @@ static Value f_listen (int argc, Value argv []) {
     return Value::nil;
 }
 
+static Value f_accept (int argc, Value argv []) {
+    debugf("accept %d\n", argc);
+    assert(argc == 2);
+    auto& self = argv[0].asType<SocketObj>();
+    auto& bco = argv[1].asType<BytecodeObj>();
+    assert((bco.scope & 1) != 0);
+
+    self.accepter = &bco;
+    tcp_arg(self.socket, &self);
+
+    tcp_accept(self.socket, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
+        auto& self = *(SocketObj*) arg;
+        assert(self.accepter != 0);
+
+        auto conn = new SocketObj (newpcb);
+        conn->pending = new ListObj (0, 0);
+        self.sess = conn;
+
+        Value v = self.accepter->call(1, &self.sess);
+        assert(!v.isNil()); // it better be a generator!
+        Context::tasks.append(v);
+
+        return ERR_OK;
+    });
+
+    return Value::nil;
+}
+
+static Value f_read (int argc, Value argv []) {
+    assert(argc == 2 && argv[1].isInt());
+    auto& self = argv[0].asType<SocketObj>();
+    assert(self.pending != 0);
+
+    tcp_arg(self.socket, &self);
+    tcp_recv(self.socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
+        auto& self = *(SocketObj*) arg;
+        assert(self.pending != 0);
+        //printf("\t %p %d\n", p, err);
+        if (p != 0) {
+            if (self.pending->len() > 0) {
+                Value v = self.pending->pop(0);
+                Context::tasks.append(v);
+            }
+            tcp_recved(tpcb, p->tot_len);
+            pbuf_free(p);
+        } else {
+            printf("\t CLOSE!\n");
+            tcp_recv(tpcb, 0);
+            tcp_close(tpcb);
+        }
+        return ERR_OK;
+    });
+
+    printf("suspend on read\n");
+    Context::suspend(*self.pending);
+
+    return Value::nil;
+}
+
 const FunObj fo_bind = f_bind;
 const FunObj fo_listen = f_listen;
+const FunObj fo_accept = f_accept;
+const FunObj fo_read = f_read;
 
 static const LookupObj::Item socketMap [] = {
     { "bind", &fo_bind },
     { "listen", &fo_listen },
+    { "accept", &fo_accept },
+    { "read", &fo_read },
 };
 
 const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);
@@ -214,78 +290,3 @@ static const LookupObj::Item lo_socket [] = {
 
 static const LookupObj ma_socket (lo_socket, sizeof lo_socket / sizeof *lo_socket);
 const ModuleObj m_socket (&ma_socket);
-
-void testNetwork () {
-    ip4_addr ifconf [4];
-    ipaddr_aton("192.168.188.2", ifconf + 0); // my ip
-    ipaddr_aton("255.255.255.0", ifconf + 1); // netmask
-    ipaddr_aton("192.168.188.1", ifconf + 2); // gateway
-    ipaddr_aton("8.8.8.8",       ifconf + 3); // dns
-
-    lwip_init();
-
-    enc_if.hwaddr_len = 6; /* demo mac address */
-    memcpy(enc_if.hwaddr, "\x00\x01\x02\x03\x04\x05", 6);
-
-    auto p = netif_add(&enc_if, ifconf+0, ifconf+1, ifconf+2, &enc_hw,
-                        mn_init, ethernet_input);
-    (void) p;
-    assert(p != 0);
-
-    netif_set_default(&enc_if);
-    netif_set_up(&enc_if);
-    //dns_setserver(0, ifconf+3);
-
-    printf("Setup completed\n");
-
-    auto pcb = tcp_new(); assert(pcb != NULL);
-    auto r = tcp_bind(pcb, IP_ADDR_ANY, 1234); (void) r; assert(r == 0);
-    pcb = tcp_listen_with_backlog(pcb, 3); assert(pcb != NULL);
-    //pcb = tcp_listen(pcb); assert(pcb != NULL);
-
-    tcp_accept(pcb, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
-        printf("\t ACCEPT!\n");
-
-        tcp_recv(newpcb, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
-            //printf("\t %p %d\n", p, err);
-            if (p != 0) {
-                printf("\t RECEIVE! %s\n", p->payload);
-                tcp_recved(tpcb, p->tot_len);
-                pbuf_free(p);
-            } else {
-                printf("\t CLOSE!\n");
-                tcp_recv(tpcb, 0);
-                tcp_close(tpcb);
-            }
-            return ERR_OK;
-        });
-
-        return ERR_OK;
-    });
-
-/*
-    auto my_pcb = udp_new();
-    assert(my_pcb != NULL);
-
-    udp_recv(my_pcb, [](void *arg, udp_pcb *pcb, pbuf *p, const ip_addr_t *addr, uint16_t port) {
-        printf("\t UDP! %s\n", p->payload);
-
-        auto r = pbuf_alloc(PBUF_TRANSPORT, 0, PBUF_RAM);
-        auto m = pbuf_alloc(PBUF_RAW, 5, PBUF_ROM);
-        m->payload = (char*) "hello";
-        pbuf_cat(r, m);
-        udp_sendto(pcb, r, addr, port);
-        pbuf_free(r);
-
-	pbuf_free(p);
-    }, 0);
-    udp_bind(my_pcb, IP_ADDR_ANY, 4321);
-*/
-
-    while (true) {
-        mn_poll(&enc_if);
-        sys_check_timeouts();
-    }
-}
-
-#endif // INCLUDE_NETWORK

@@ -7,6 +7,14 @@ print(s)
 s.bind(1234)
 s.listen(3)
 
+async def onAccept(sess):
+    print('onAccept', sess)
+    while True:
+        sess.read(100)
+        print('read')
+
+s.accept(onAccept)
+
 def loop():
     while True:
         network.poll()
