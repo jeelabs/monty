@@ -202,7 +202,7 @@ Value SocketObj::accept (Value arg) {
 
         Value argv = new SocketObj (newpcb);
         Value v = self.accepter->call(1, &argv);
-        assert(!v.isNil());
+        assert(v.isObj());
         Context::tasks.append(v);
 
         tcp_poll(newpcb, [](void *arg, struct tcp_pcb *tpcb) -> err_t {
@@ -221,14 +221,13 @@ Value SocketObj::read (Value arg) {
 
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
-        //printf("\t %p %d\n", p, err);
+        assert(self.socket == tpcb);
         if (p != 0) {
-            if (self.pending.len() > 0) {
-                Value v = self.pending.pop(0);
-                Context::tasks.append(v);
-            }
+            if (self.pending.len() == 0)
+                return ERR_BUF;
+            // TODO copy incoming data to a buffer, and pass it to task
+            Context::tasks.append(self.pending.pop(0));
             tcp_recved(tpcb, p->tot_len);
-            printf("sndbuf %d\n", tcp_sndbuf(tpcb));
             pbuf_free(p);
         } else {
             printf("\t CLOSE!\n");
