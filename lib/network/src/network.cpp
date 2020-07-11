@@ -148,6 +148,12 @@ struct SocketObj : Object {
     void mark (void (*gc)(const Object&)) const override;
     Value attr (const char* key, Value& self) const override;
 
+    Value bind (Value arg);
+    Value listen (Value arg);
+    Value accept (Value arg);
+    Value read (Value arg);
+    Value write (Value arg);
+
     tcp_pcb* socket;
     BytecodeObj* accepter = 0;
     ListObj pending;
@@ -171,30 +177,26 @@ Value SocketObj::attr (const char* key, Value& self) const {
     return attrs.at(key);
 }
 
-static Value f_bind (int argc, Value argv []) {
-    assert(argc == 2 && argv[1].isInt());
-    auto& self = argv[0].asType<SocketObj>();
-    auto r = tcp_bind(self.socket, IP_ADDR_ANY, argv[1]);
+Value SocketObj::bind (Value arg) {
+    assert(arg.isInt());
+    auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     assert(r == 0);
     return Value::nil;
 }
 
-static Value f_listen (int argc, Value argv []) {
-    assert(argc == 2 && argv[1].isInt());
-    auto& self = argv[0].asType<SocketObj>();
-    self.socket = tcp_listen_with_backlog(self.socket, argv[1]);
-    assert(self.socket != NULL);
+Value SocketObj::listen (Value arg) {
+    assert(arg.isInt());
+    socket = tcp_listen_with_backlog(socket, arg);
+    assert(socket != NULL);
     return Value::nil;
 }
 
-static Value f_accept (int argc, Value argv []) {
-    assert(argc == 2);
-    auto& self = argv[0].asType<SocketObj>();
-    auto& bco = argv[1].asType<BytecodeObj>();
+Value SocketObj::accept (Value arg) {
+    auto& bco = arg.asType<BytecodeObj>();
     assert((bco.scope & 1) != 0); // make sure it's a generator
-    self.accepter = &bco;
+    accepter = &bco;
 
-    tcp_accept(self.socket, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
+    tcp_accept(socket, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.accepter != 0);
 
@@ -203,17 +205,21 @@ static Value f_accept (int argc, Value argv []) {
         assert(!v.isNil());
         Context::tasks.append(v);
 
+        tcp_poll(newpcb, [](void *arg, struct tcp_pcb *tpcb) -> err_t {
+            printf("poll %p\n", arg);
+            auto& self = *(SocketObj*) arg;
+            return ERR_OK;
+        }, 10);
         return ERR_OK;
     });
 
     return Value::nil;
 }
 
-static Value f_read (int argc, Value argv []) {
-    assert(argc == 2 && argv[1].isInt());
-    auto& self = argv[0].asType<SocketObj>();
+Value SocketObj::read (Value arg) {
+    assert(arg.isInt());
 
-    tcp_recv(self.socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
+    tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         //printf("\t %p %d\n", p, err);
         if (p != 0) {
@@ -222,6 +228,7 @@ static Value f_read (int argc, Value argv []) {
                 Context::tasks.append(v);
             }
             tcp_recved(tpcb, p->tot_len);
+            printf("sndbuf %d\n", tcp_sndbuf(tpcb));
             pbuf_free(p);
         } else {
             printf("\t CLOSE!\n");
@@ -231,20 +238,36 @@ static Value f_read (int argc, Value argv []) {
         return ERR_OK;
     });
 
-    Context::suspend(self.pending);
+    Context::suspend(pending);
     return Value::nil;
 }
 
-const FunObj fo_bind = f_bind;
-const FunObj fo_listen = f_listen;
-const FunObj fo_accept = f_accept;
-const FunObj fo_read = f_read;
+Value SocketObj::write (Value arg) {
+    Context::suspend(pending);
+    return Value::nil;
+}
+
+static const auto m_bind = MethObj::wrap(&SocketObj::bind);
+static const MethObj mo_bind = m_bind;
+
+static const auto m_listen = MethObj::wrap(&SocketObj::listen);
+static const MethObj mo_listen = m_listen;
+
+static const auto m_accept = MethObj::wrap(&SocketObj::accept);
+static const MethObj mo_accept = m_accept;
+
+static const auto m_read = MethObj::wrap(&SocketObj::read);
+static const MethObj mo_read = m_read;
+
+static const auto m_write = MethObj::wrap(&SocketObj::write);
+static const MethObj mo_write = m_write;
 
 static const LookupObj::Item socketMap [] = {
-    { "bind", &fo_bind },
-    { "listen", &fo_listen },
-    { "accept", &fo_accept },
-    { "read", &fo_read },
+    { "bind", &mo_bind },
+    { "listen", &mo_listen },
+    { "accept", &mo_accept },
+    { "read", &mo_read },
+    { "write", &mo_write },
 };
 
 const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);

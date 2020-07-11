@@ -407,6 +407,12 @@ struct MethodBase {
     }
 
     template< typename T >
+    static Value argConv (Value (T::*meth)(Value),
+                            Value self, int argc, Value argv[]) {
+        return (((T&) self.obj()).*meth)(argv[1]);
+    }
+
+    template< typename T >
     static Value argConv (Value (T::*meth)(const char *) const,
                             Value self, int argc, Value argv[]) {
         return (((T&) self.obj()).*meth)((const char*) argv[1]);

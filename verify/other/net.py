@@ -9,9 +9,12 @@ s.listen(3)
 
 async def onAccept(sess):
     print('onAccept', sess)
+    sess.read(100)
+    print('read')
     while True:
-        sess.read(100)
-        print('read')
+        sess.read(1000)
+        #sess.write('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n')
+        print('written')
 
 s.accept(onAccept)
 
