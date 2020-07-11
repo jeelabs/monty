@@ -27,7 +27,6 @@ struct FileObj : Object {
 
     Value size ();
     Value read (int arg);
-    Value close ();
 
 private:
     FileMap< decltype (fs), 32 > file;
@@ -56,13 +55,9 @@ Value FileObj::read (int arg) {
         return Value::nil;
     // TODO allocate buffer
     auto ok = file.ioSect (false, pos/512, fs.buf);
-    assert(ok);
+    (void) ok; assert(ok);
     pos += 512;
     return Value::nil; // TODO
-}
-
-Value FileObj::close () {
-    return Value::nil;
 }
 
 static const auto m_size = MethObj::wrap(&FileObj::size);
@@ -71,13 +66,9 @@ static const MethObj mo_size = m_size;
 static const auto m_read = MethObj::wrap(&FileObj::read);
 static const MethObj mo_read = m_read;
 
-static const auto m_close = MethObj::wrap(&FileObj::close);
-static const MethObj mo_close = m_close;
-
 static const LookupObj::Item fileMap [] = {
     { "size", &mo_size },
     { "read", &mo_read },
-    { "close", &mo_close },
 };
 
 const LookupObj FileObj::attrs (fileMap, sizeof fileMap / sizeof *fileMap);
@@ -94,11 +85,29 @@ static Value f_init (int argc, Value argv []) {
     return 1;
 }
 
+static Value f_sdread (int argc, Value argv []) {
+    assert(argc == 2 && argv[1].isInt());
+    sd.read512(argv[1], fs.buf);
+    // TODO return buf as bytes
+    return Value::nil;
+}
+
+static Value f_sdwrite (int argc, Value argv []) {
+    assert(argc == 3 && argv[1].isInt());
+    // TODO copy arggv[2] to fs.buf
+    sd.write512(argv[1], fs.buf);
+    return Value::nil;
+}
+
 static const FunObj fo_init = f_init;
+static const FunObj fo_sdread = f_sdread;
+static const FunObj fo_sdwrite = f_sdwrite;
 
 static const LookupObj::Item lo_sdcard [] = {
     { "init", &fo_init },
     { "open", &FileObj::info },
+    { "sdread", &fo_sdread },
+    { "sdwrite", &fo_sdwrite },
 };
 
 static const LookupObj ma_sdcard (lo_sdcard, sizeof lo_sdcard / sizeof *lo_sdcard);
