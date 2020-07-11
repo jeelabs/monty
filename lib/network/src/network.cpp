@@ -150,6 +150,7 @@ struct SocketObj : Object {
     Value attr (const char* key, Value& self) const override;
 
     Value bind (int arg);
+    Value connect (int argc, Value argv []);
     Value listen (int arg);
     Value accept (Value arg);
     Value read (int arg);
@@ -188,6 +189,24 @@ Value SocketObj::attr (const char* key, Value& self) const {
 Value SocketObj::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     (void) r; assert(r == 0);
+    return Value::nil;
+}
+
+Value SocketObj::connect (int argc, Value argv []) {
+    assert(argc == 2 && argv[0].isStr() && argv[1].isInt());
+    ip4_addr host;
+    auto ok = ip4addr_aton(argv[0], &host);
+    (void) ok; assert(ok == 1);
+
+    auto r = tcp_connect(socket, &host, argv[1], [](void *arg, struct tcp_pcb *tpcb, err_t err) -> err_t {
+        auto& self = *(SocketObj*) arg;
+        assert(self.socket == tpcb);
+        assert(self.readQueue.len() > 0);
+        Context::tasks.append(self.readQueue.pop(0));
+    });
+    (void) r; assert(r == 0);
+
+    Context::suspend(readQueue);
     return Value::nil;
 }
 
@@ -306,6 +325,9 @@ Value SocketObj::close () {
 static const auto m_bind = MethObj::wrap(&SocketObj::bind);
 static const MethObj mo_bind = m_bind;
 
+static const auto m_connect = MethObj::wrap(&SocketObj::connect);
+static const MethObj mo_connect = m_connect;
+
 static const auto m_listen = MethObj::wrap(&SocketObj::listen);
 static const MethObj mo_listen = m_listen;
 
@@ -323,6 +345,7 @@ static const MethObj mo_close = m_close;
 
 static const LookupObj::Item socketMap [] = {
     { "bind", &mo_bind },
+    { "connect", &mo_connect },
     { "listen", &mo_listen },
     { "accept", &mo_accept },
     { "read", &mo_read },
