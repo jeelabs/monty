@@ -395,7 +395,7 @@ struct MethodBase {
     virtual Value call (Value self, int argc, Value argv[]) const =0;
 
     template< typename T >
-    static Value argConv (Value (T::*meth)() const,
+    static Value argConv (Value (T::*meth)(),
                             Value self, int argc, Value argv[]) {
         return (((T&) self.obj()).*meth)();
     }
@@ -413,13 +413,19 @@ struct MethodBase {
     }
 
     template< typename T >
-    static Value argConv (Value (T::*meth)(const char *) const,
+    static Value argConv (Value (T::*meth)(int),
                             Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)((const char*) argv[1]);
+        return (((T&) self.obj()).*meth)(argv[1]);
     }
 
     template< typename T >
-    static Value argConv (Value (T::*meth)(int, Value[]) const,
+    static Value argConv (Value (T::*meth)(const char *),
+                            Value self, int argc, Value argv[]) {
+        return (((T&) self.obj()).*meth)(argv[1]);
+    }
+
+    template< typename T >
+    static Value argConv (Value (T::*meth)(int, Value[]),
                             Value self, int argc, Value argv[]) {
         return (((T&) self.obj()).*meth)(argc, argv);
     }

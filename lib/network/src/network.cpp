@@ -148,10 +148,10 @@ struct SocketObj : Object {
     void mark (void (*gc)(const Object&)) const override;
     Value attr (const char* key, Value& self) const override;
 
-    Value bind (Value arg);
-    Value listen (Value arg);
+    Value bind (int arg);
+    Value listen (int arg);
     Value accept (Value arg);
-    Value read (Value arg);
+    Value read (int arg);
     Value write (Value arg);
 
     tcp_pcb* socket;
@@ -177,15 +177,13 @@ Value SocketObj::attr (const char* key, Value& self) const {
     return attrs.at(key);
 }
 
-Value SocketObj::bind (Value arg) {
-    assert(arg.isInt());
+Value SocketObj::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     assert(r == 0);
     return Value::nil;
 }
 
-Value SocketObj::listen (Value arg) {
-    assert(arg.isInt());
+Value SocketObj::listen (int arg) {
     socket = tcp_listen_with_backlog(socket, arg);
     assert(socket != NULL);
     return Value::nil;
@@ -216,9 +214,7 @@ Value SocketObj::accept (Value arg) {
     return Value::nil;
 }
 
-Value SocketObj::read (Value arg) {
-    assert(arg.isInt());
-
+Value SocketObj::read (int arg) {
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.socket == tpcb);
