@@ -7,15 +7,20 @@
 #include <jee.h>
 #include <jee/spi-sdcard.h>
 
+// the FatFS implementation in JeeH is a bit weird, unfortunately ...
+
 static SpiGpio< PINS_SDCARD > spi;
 static SdCard< decltype (spi) > sd;
+static FatFS< decltype (sd) > fs;
 
 struct FileObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
     static TypeObj info;
 
-    FileObj (const char* s) : readQueue (0, 0) {}
+    FileObj (const char* s) : file (fs), readQueue (0, 0) {
+        limit = file.open(s);
+    }
 
     TypeObj& type () const override;
     Value attr (const char* key, Value& self) const override;
@@ -25,8 +30,10 @@ struct FileObj : Object {
     Value close ();
 
 private:
+    FileMap< decltype (fs), 32 > file;
     ListObj readQueue; // TODO doesn't need to be a queue: fix suspend!
     size_t pos = 0;
+    size_t limit;
 };
 
 Value FileObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -45,8 +52,14 @@ Value FileObj::size () {
 
 Value FileObj::read (int arg) {
     assert(arg == 512);
-    // TODO
-    return Value::nil;
+    if (pos >= limit)
+        return Value::nil;
+    // TODO allocate buffer
+    static uint8_t buf [512];
+    auto ok = file.ioSect (false, pos/512, buf);
+    assert(ok);
+    pos += 512;
+    return Value::nil; // TODO
 }
 
 Value FileObj::close () {
@@ -76,7 +89,10 @@ TypeObj& FileObj::type () const { return info; }
 static Value f_init (int argc, Value argv []) {
     assert(argc == 1);
     spi.init();
-    return sd.init();
+    if (!sd.init())
+        return 0;
+    fs.init();
+    return 1;
 }
 
 static const FunObj fo_init = f_init;
