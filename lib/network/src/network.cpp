@@ -229,11 +229,8 @@ Value SocketObj::read (int arg) {
             Context::tasks.append(self.readQueue.pop(0));
             tcp_recved(tpcb, p->tot_len);
             pbuf_free(p);
-        } else {
-            printf("\t CLOSE!\n");
-            tcp_recv(tpcb, 0);
-            tcp_close(tpcb);
-        }
+        } else
+            self.close();
         return ERR_OK;
     });
 
@@ -254,7 +251,7 @@ bool SocketObj::sendIt (Value arg) {
     auto r = tcp_write(socket, s, n, TCP_WRITE_FLAG_COPY);
     if (r != 0) { // session probably closed by peer
         printf("write err %d sndbuf %d\n", r, tcp_sndbuf(socket));
-        tcp_close(socket);
+        close();
         return false;
     }
 
@@ -273,12 +270,14 @@ Value SocketObj::write (Value arg) {
     tcp_sent(socket, [](void *arg, struct tcp_pcb *tpcb, uint16_t len) -> err_t {
         printf("sent %p %d\n", arg, len);
         auto& self = *(SocketObj*) arg;
-        assert(self.socket == tpcb);
-        if (self.sendIt(self.toSend)) {
-            tcp_sent(tpcb, 0);
-            self.toSend = Value::nil;
-            assert(self.writeQueue.len() > 0);
-            Context::tasks.append(self.writeQueue.pop(0));
+        if (self.socket != 0) {
+            assert(self.socket == tpcb);
+            if (self.sendIt(self.toSend)) {
+                tcp_sent(tpcb, 0);
+                self.toSend = Value::nil;
+                assert(self.writeQueue.len() > 0);
+                Context::tasks.append(self.writeQueue.pop(0));
+            }
         }
         return ERR_OK;
     });
@@ -287,9 +286,20 @@ Value SocketObj::write (Value arg) {
 }
 
 Value SocketObj::close () {
-    assert(socket != 0);
-    tcp_close(socket);
-    socket = 0;
+    printf("\t CLOSE! %p r %d w %d\n",
+            socket, (int) readQueue.len(), (int) writeQueue.len());
+    if (socket != 0) {
+        tcp_recv(socket, 0);
+        tcp_close(socket);
+        socket = 0;
+    }
+    toSend = Value::nil;
+    if (readQueue.len() > 0)
+        readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
+    assert(readQueue.len() == 0);
+    if (writeQueue.len() > 0)
+        writeQueue.pop(0); // TODO throw Context::tasks.append(writeQueue.pop(0));
+    assert(writeQueue.len() == 0);
     return Value::nil;
 }
 
