@@ -1,6 +1,5 @@
 #include "monty.h"
 #include "config.h"
-#include "network.h"
 
 #if INCLUDE_NETWORK
 
@@ -26,7 +25,7 @@ extern "C" {
 #include <string.h>
 #include <jee.h>
 
-SpiGpio< PINS_NETWORK > spi;
+static SpiGpio< PINS_NETWORK > spi;
 
 void enchw_setup (enchw_device_t*) {
     spi.init();
@@ -369,11 +368,5 @@ static const LookupObj::Item lo_network [] = {
 
 static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);
 const ModuleObj m_network (&ma_network);
-
-static const LookupObj::Item lo_socket [] = {
-};
-
-static const LookupObj ma_socket (lo_socket, sizeof lo_socket / sizeof *lo_socket);
-const ModuleObj m_socket (&ma_socket);
 
 #endif // INCLUDE_NETWORK

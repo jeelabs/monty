@@ -5,5 +5,9 @@
 #endif
 
 #if INCLUDE_NETWORK
-#include "network.h"
+extern const ModuleObj m_network;
+#endif
+
+#if INCLUDE_SDCARD
+extern const ModuleObj m_sdcard;
 #endif

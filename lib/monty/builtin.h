@@ -127,6 +127,9 @@ static const LookupObj::Item builtins [] = {
 #if INCLUDE_NETWORK
     { "network", &m_network },
 #endif
+#if INCLUDE_SDCARD
+    { "sdcard", &m_sdcard },
+#endif
 };
 
 const LookupObj builtinDict (builtins, sizeof builtins / sizeof *builtins);
