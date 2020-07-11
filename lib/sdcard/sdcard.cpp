@@ -55,8 +55,7 @@ Value FileObj::read (int arg) {
     if (pos >= limit)
         return Value::nil;
     // TODO allocate buffer
-    static uint8_t buf [512];
-    auto ok = file.ioSect (false, pos/512, buf);
+    auto ok = file.ioSect (false, pos/512, fs.buf);
     assert(ok);
     pos += 512;
     return Value::nil; // TODO
