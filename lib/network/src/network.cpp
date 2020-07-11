@@ -26,8 +26,6 @@ extern "C" {
 #include <string.h>
 #include <jee.h>
 
-extern "C" int debugf (const char* fmt, ...); // TODO put this in config.h?
-
 SpiGpio< PINS_NETWORK > spi;
 
 void enchw_setup (enchw_device_t*) {
@@ -102,7 +100,6 @@ static err_t mn_init (netif* netif) {
 }
 
 static Value f_poll (int argc, Value argv []) {
-    //printf("poll %d\n", argc);
     assert(argc == 1);
     mn_poll(&enc_if);
     sys_check_timeouts();
@@ -114,10 +111,8 @@ static Value f_ifconfig (int argc, Value argv []) {
     if (!inited) {
         inited = true;
         lwip_init();
-        wait_ms(500); // delay console logging
     }
 
-    printf("ifconfig %d\n", argc);
     assert(argc == 5);
     ip4_addr ifconf [4];
     for (int i = 0; i < 4; ++i) {
@@ -159,7 +154,6 @@ struct SocketObj : Object {
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
-    debugf("socketobj %d\n", argc);
     assert(argc == 1);
     auto p = tcp_new();
     assert(p != 0);
@@ -178,7 +172,6 @@ Value SocketObj::attr (const char* key, Value& self) const {
 }
 
 static Value f_bind (int argc, Value argv []) {
-    debugf("bind %d\n", argc);
     assert(argc == 2 && argv[1].isInt());
     auto& self = argv[0].asType<SocketObj>();
     auto r = tcp_bind(self.socket, IP_ADDR_ANY, argv[1]);
@@ -187,7 +180,6 @@ static Value f_bind (int argc, Value argv []) {
 }
 
 static Value f_listen (int argc, Value argv []) {
-    debugf("listen %d\n", argc);
     assert(argc == 2 && argv[1].isInt());
     auto& self = argv[0].asType<SocketObj>();
     self.socket = tcp_listen_with_backlog(self.socket, argv[1]);
@@ -196,7 +188,6 @@ static Value f_listen (int argc, Value argv []) {
 }
 
 static Value f_accept (int argc, Value argv []) {
-    debugf("accept %d\n", argc);
     assert(argc == 2);
     auto& self = argv[0].asType<SocketObj>();
     auto& bco = argv[1].asType<BytecodeObj>();
