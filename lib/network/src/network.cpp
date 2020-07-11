@@ -145,7 +145,9 @@ struct SocketObj : Object {
     static const LookupObj attrs;
     static TypeObj info;
 
-    SocketObj (tcp_pcb* p) : socket (p), sess (Value::nil) {}
+    SocketObj (tcp_pcb* p) : socket (p), pending (0, 0) {
+        tcp_arg(socket, this);
+    }
 
     TypeObj& type () const override;
     void mark (void (*gc)(const Object&)) const override;
@@ -153,8 +155,7 @@ struct SocketObj : Object {
 
     tcp_pcb* socket;
     BytecodeObj* accepter = 0;
-    Value sess; // TODO new session, but what if another one comes in?
-    ListObj* pending = 0;
+    ListObj pending;
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -168,10 +169,7 @@ Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
 void SocketObj::mark (void (*gc)(const Object&)) const {
     if (accepter != 0)
         gc(*accepter);
-    if (sess.isObj())
-        gc(sess.obj());
-    if (pending != 0)
-        gc(*pending);
+    gc(pending);
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
@@ -202,21 +200,16 @@ static Value f_accept (int argc, Value argv []) {
     assert(argc == 2);
     auto& self = argv[0].asType<SocketObj>();
     auto& bco = argv[1].asType<BytecodeObj>();
-    assert((bco.scope & 1) != 0);
-
+    assert((bco.scope & 1) != 0); // make sure it's a generator
     self.accepter = &bco;
-    tcp_arg(self.socket, &self);
 
     tcp_accept(self.socket, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.accepter != 0);
 
-        auto conn = new SocketObj (newpcb);
-        conn->pending = new ListObj (0, 0);
-        self.sess = conn;
-
-        Value v = self.accepter->call(1, &self.sess);
-        assert(!v.isNil()); // it better be a generator!
+        Value argv = new SocketObj (newpcb);
+        Value v = self.accepter->call(1, &argv);
+        assert(!v.isNil());
         Context::tasks.append(v);
 
         return ERR_OK;
@@ -228,16 +221,13 @@ static Value f_accept (int argc, Value argv []) {
 static Value f_read (int argc, Value argv []) {
     assert(argc == 2 && argv[1].isInt());
     auto& self = argv[0].asType<SocketObj>();
-    assert(self.pending != 0);
 
-    tcp_arg(self.socket, &self);
     tcp_recv(self.socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
-        assert(self.pending != 0);
         //printf("\t %p %d\n", p, err);
         if (p != 0) {
-            if (self.pending->len() > 0) {
-                Value v = self.pending->pop(0);
+            if (self.pending.len() > 0) {
+                Value v = self.pending.pop(0);
                 Context::tasks.append(v);
             }
             tcp_recved(tpcb, p->tot_len);
@@ -250,9 +240,7 @@ static Value f_read (int argc, Value argv []) {
         return ERR_OK;
     });
 
-    printf("suspend on read\n");
-    Context::suspend(*self.pending);
-
+    Context::suspend(self.pending);
     return Value::nil;
 }
 
