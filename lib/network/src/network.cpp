@@ -118,7 +118,7 @@ static Value f_ifconfig (int argc, Value argv []) {
     for (int i = 0; i < 4; ++i) {
         assert(argv[i+1].isStr());
         auto ok = ip4addr_aton(argv[i+1], ifconf + i);
-        assert(ok == 1);
+        (void) ok; assert(ok == 1);
     }
 
     enc_if.hwaddr_len = 6; /* demo mac address */
@@ -140,7 +140,8 @@ struct SocketObj : Object {
     static const LookupObj attrs;
     static TypeObj info;
 
-    SocketObj (tcp_pcb* p) : socket (p), pending (0, 0) {
+    SocketObj (tcp_pcb* p) : socket (p), readQueue (0, 0),
+                             writeQueue (0, 0), toSend (Value::nil) {
         tcp_arg(socket, this);
     }
 
@@ -153,10 +154,15 @@ struct SocketObj : Object {
     Value accept (Value arg);
     Value read (int arg);
     Value write (Value arg);
+    Value close ();
+
+private:
+    bool sendIt (Value arg);
 
     tcp_pcb* socket;
     BytecodeObj* accepter = 0;
-    ListObj pending;
+    ListObj readQueue, writeQueue; // TODO don't need to be queues: fix suspend!
+    Value toSend;
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -167,9 +173,11 @@ Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
 }
 
 void SocketObj::mark (void (*gc)(const Object&)) const {
+    gc(readQueue);
+    gc(writeQueue);
     if (accepter != 0)
         gc(*accepter);
-    gc(pending);
+    // TODO toSend always a str for now, no gc needed yet
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
@@ -179,7 +187,7 @@ Value SocketObj::attr (const char* key, Value& self) const {
 
 Value SocketObj::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
-    assert(r == 0);
+    (void) r; assert(r == 0);
     return Value::nil;
 }
 
@@ -202,12 +210,6 @@ Value SocketObj::accept (Value arg) {
         Value v = self.accepter->call(1, &argv);
         assert(v.isObj());
         Context::tasks.append(v);
-
-        tcp_poll(newpcb, [](void *arg, struct tcp_pcb *tpcb) -> err_t {
-            printf("poll %p\n", arg);
-            auto& self = *(SocketObj*) arg;
-            return ERR_OK;
-        }, 10);
         return ERR_OK;
     });
 
@@ -215,30 +217,75 @@ Value SocketObj::accept (Value arg) {
 }
 
 Value SocketObj::read (int arg) {
+    Context::suspend(readQueue);
+
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.socket == tpcb);
         if (p != 0) {
-            if (self.pending.len() == 0)
+            if (self.readQueue.len() == 0)
                 return ERR_BUF;
             // TODO copy incoming data to a buffer, and pass it to task
-            Context::tasks.append(self.pending.pop(0));
+            Context::tasks.append(self.readQueue.pop(0));
             tcp_recved(tpcb, p->tot_len);
             pbuf_free(p);
         } else {
             printf("\t CLOSE!\n");
+            tcp_poll(self.socket, 0, 0);
             tcp_recv(tpcb, 0);
             tcp_close(tpcb);
         }
         return ERR_OK;
     });
 
-    Context::suspend(pending);
     return Value::nil;
 }
 
+bool SocketObj::sendIt (Value arg) {
+#if 0
+    assert(arg.isStr()); // TODO for now ...
+    const char* s = arg;
+#else
+    const char* s = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n";
+#endif
+    auto n = strlen(s);
+    if (n > tcp_sndbuf(socket))
+        return false;
+
+    auto r = tcp_write(socket, s, n, TCP_WRITE_FLAG_COPY);
+    (void) r; assert(r == 0);
+    return true;
+}
+
 Value SocketObj::write (Value arg) {
-    Context::suspend(pending);
+    assert(toSend.isNil()); // don't allow multiple outstanding sends
+    if (sendIt(arg))
+        return Value::nil;
+
+    toSend = arg;
+    printf("suspending write\n");
+    Context::suspend(writeQueue);
+
+    tcp_poll(socket, [](void *arg, struct tcp_pcb *tpcb) -> err_t {
+        printf("poll %p\n", arg);
+        auto& self = *(SocketObj*) arg;
+        assert(self.socket == tpcb);
+        if (self.sendIt(self.toSend)) {
+            tcp_poll(tpcb, 0, 0);
+            self.toSend = Value::nil;
+            assert(self.writeQueue.len() > 0);
+            Context::tasks.append(self.writeQueue.pop(0));
+        }
+        return ERR_OK;
+    }, 2);
+
+    return Value::nil;
+}
+
+Value SocketObj::close () {
+    assert(socket != 0);
+    tcp_close(socket);
+    socket = 0;
     return Value::nil;
 }
 
@@ -257,12 +304,16 @@ static const MethObj mo_read = m_read;
 static const auto m_write = MethObj::wrap(&SocketObj::write);
 static const MethObj mo_write = m_write;
 
+static const auto m_close = MethObj::wrap(&SocketObj::close);
+static const MethObj mo_close = m_close;
+
 static const LookupObj::Item socketMap [] = {
     { "bind", &mo_bind },
     { "listen", &mo_listen },
     { "accept", &mo_accept },
     { "read", &mo_read },
     { "write", &mo_write },
+    { "close", &mo_close },
 };
 
 const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);
