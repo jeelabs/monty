@@ -290,3 +290,5 @@ static const LookupObj::Item lo_socket [] = {
 
 static const LookupObj ma_socket (lo_socket, sizeof lo_socket / sizeof *lo_socket);
 const ModuleObj m_socket (&ma_socket);
+
+#endif // INCLUDE_NETWORK

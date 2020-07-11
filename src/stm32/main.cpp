@@ -40,14 +40,8 @@ static bool runInterp (const uint8_t* data) {
 
 int main () {
     archInit();
-
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
-
-#if INCLUDE_NETWORK
-    //testNetwork();
-    (void) testNetwork; // suppress unused warning
-#endif
 
     extern uint8_t _estack [];
     if (!runInterp(_estack - 0x1000)) // 4 KB below end of RAM
