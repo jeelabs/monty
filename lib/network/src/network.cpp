@@ -231,7 +231,6 @@ Value SocketObj::read (int arg) {
             pbuf_free(p);
         } else {
             printf("\t CLOSE!\n");
-            tcp_poll(self.socket, 0, 0);
             tcp_recv(tpcb, 0);
             tcp_close(tpcb);
         }
@@ -249,11 +248,16 @@ bool SocketObj::sendIt (Value arg) {
     const char* s = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n";
 #endif
     auto n = strlen(s);
-    if (n > tcp_sndbuf(socket))
+    if (n + 50 > tcp_sndbuf(socket)) // check for some spare room, just in case
         return false;
 
     auto r = tcp_write(socket, s, n, TCP_WRITE_FLAG_COPY);
-    (void) r; assert(r == 0);
+    if (r != 0) { // session probably closed by peer
+        printf("write err %d sndbuf %d\n", r, tcp_sndbuf(socket));
+        tcp_close(socket);
+        return false;
+    }
+
     return true;
 }
 
@@ -266,18 +270,18 @@ Value SocketObj::write (Value arg) {
     printf("suspending write\n");
     Context::suspend(writeQueue);
 
-    tcp_poll(socket, [](void *arg, struct tcp_pcb *tpcb) -> err_t {
-        printf("poll %p\n", arg);
+    tcp_sent(socket, [](void *arg, struct tcp_pcb *tpcb, uint16_t len) -> err_t {
+        printf("sent %p %d\n", arg, len);
         auto& self = *(SocketObj*) arg;
         assert(self.socket == tpcb);
         if (self.sendIt(self.toSend)) {
-            tcp_poll(tpcb, 0, 0);
+            tcp_sent(tpcb, 0);
             self.toSend = Value::nil;
             assert(self.writeQueue.len() > 0);
             Context::tasks.append(self.writeQueue.pop(0));
         }
         return ERR_OK;
-    }, 2);
+    });
 
     return Value::nil;
 }
