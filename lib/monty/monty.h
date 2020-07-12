@@ -16,9 +16,9 @@ protected:
     uint16_t fill = 0; // in elements
     size_t capacity = 0; // in bytes
     Data* data = 0;
-public:
 
     Vector (size_t bits);
+public:
     ~Vector ();
 
     size_t length () const { return fill; }
