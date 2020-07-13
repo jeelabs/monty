@@ -59,6 +59,12 @@ static_assert (MASK == ~USED,          "MASK does not match USED");
 constexpr int HPS = GC_MEM_ALIGN / HBYT;   // headers per alignment slot
 constexpr int MAX = GC_MEM_BYTES / HBYT;   // memory size as header count
 
+struct {
+    uint32_t toa, tob, tva, tvb, // totalObjAllocs/Bytes, totalVecAllocs/Bytes
+             coa, cob, cva, cvb, // currObjAllocs/Bytes,  currVecAllocs/Bytes
+             moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
+} stats;
+
 // use a fixed memory pool for now, indexed as headers and aligned to slots
 static hdr_t mem [MAX] __attribute__ ((aligned (GC_MEM_ALIGN)));
 
@@ -108,10 +114,6 @@ static void coalesce (hdr_t* h) {
             *h += nextObj(h); // free headers are positive and can be added
 }
 
-static uint32_t totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes,
-                currObjAllocs, currObjBytes, currVecAllocs, currVecBytes,
-                maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes;
-
 static void* allocate (size_t sz) {
 #if GC_MALLOCS
     return malloc(sz);
@@ -136,15 +138,15 @@ static void* allocate (size_t sz) {
                 debugf("    -> %p *h %04x next %04x\n",
                         p, (uint16_t) *h, (uint16_t) nextObj(h));
 
-                if (++totalObjAllocs % GC_REPORTS == 0)
+                if (++stats.toa % GC_REPORTS == 0)
                     Object::gcStats();
-                if (++currObjAllocs > maxObjAllocs)
-                    maxObjAllocs = currObjAllocs;
+                if (++stats.coa > stats.moa)
+                    stats.moa = stats.coa;
 
-                totalObjBytes += ns * GC_MEM_ALIGN;
-                currObjBytes += ns * GC_MEM_ALIGN;
-                if (currObjBytes > maxObjBytes)
-                    maxObjBytes = currObjBytes;
+                stats.tob += ns * GC_MEM_ALIGN;
+                stats.cob += ns * GC_MEM_ALIGN;
+                if (stats.cob > stats.mob)
+                    stats.mob = stats.cob;
 
                 if (Context::gcCheck())
                     Context::raise(Value::nil); // exit inner loop
@@ -165,8 +167,8 @@ static void release (void* p) {
         auto& h = p2h(p);
         assert(inUse(h));
         h &= ~USED;
-        --currObjAllocs;
-        currObjBytes -= h2s(h) * GC_MEM_ALIGN;
+        --stats.coa;
+        stats.cob -= h2s(h) * GC_MEM_ALIGN;
     }
 #endif
 }
@@ -198,14 +200,14 @@ void Vector::alloc (size_t sz) {
     auto nsz = roundUp(PSZ + sz, DSZ);
 
     if (nsz > osz)
-        totalVecBytes += nsz - osz;
-    currVecBytes += nsz - osz;
-    if (currVecBytes > maxVecBytes)
-        maxVecBytes = currVecBytes;
+        stats.tvb += nsz - osz;
+    stats.cvb += nsz - osz;
+    if (stats.cvb > stats.mvb)
+        stats.mvb = stats.cvb;
 
     if (sz == 0) {
         if (data != 0) {
-            --currVecAllocs;
+            --stats.cva;
             //debugf("resize gap %p #%d\n", data, (int) capacity);
             assert(data->v == this);
             data->v = 0;
@@ -218,9 +220,9 @@ void Vector::alloc (size_t sz) {
     assert(nsz >= osz); // no need to support shrinking, gcCompact will do that
 
     if (data == 0) {
-        ++totalVecAllocs;
-        if (++currVecAllocs > maxVecAllocs)
-            maxVecAllocs = currVecAllocs;
+        ++stats.tva;
+        if (++stats.cva > stats.mva)
+            stats.mva = stats.cva;
         assert(capacity == 0);
         data = (Data*) vecTop;
         vecTop += DSZ;
@@ -255,12 +257,12 @@ void Vector::alloc (size_t sz) {
 
 void* Object::operator new (size_t sz) {
     auto p = allocate(sz);
-    debugf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, currObjBytes);
+    debugf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, stats.cob);
     return p;
 }
 
 void* Object::operator new (size_t sz, void* p) {
-    debugf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, currObjBytes);
+    debugf(PREFIX "new #  %5d  @ %p (used %d)\n", (int) sz, p, stats.cob);
     return p;
 }
 
@@ -276,16 +278,16 @@ void Object::operator delete (void* p) {
 void Object::gcStats () {
 #if GC_VERBOSE
     debugf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
-            totalObjAllocs, totalObjBytes, totalVecAllocs, totalVecBytes);
+            stats.toa., stats.tob, stats.tva, stats.tvb);
     debugf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
-            currObjAllocs, currObjBytes, currVecAllocs, currVecBytes);
+            stats.coa, stats.cob, stats.cva, stats.cvb);
     debugf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
-            maxObjAllocs, maxObjBytes, maxVecAllocs, maxVecBytes);
+            stats.moa, mob, stats.mva, stats.mvb);
 #endif
 }
 
 bool Context::gcCheck () {
-    return vm != 0 && ((GC_MEM_BYTES - currObjBytes) < (GC_MEM_BYTES / 10) ||
+    return vm != 0 && ((GC_MEM_BYTES - stats.cob) < (GC_MEM_BYTES / 10) ||
             (vecTop - vecs > (int) sizeof vecs - 1000)); // TODO 10? 1000?
 }
 
@@ -364,7 +366,7 @@ void Vector::gcCompact () {
 void Context::gcTrigger () {
 #if GC_VERBOSE
     debugf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
-            (int) currObjBytes, (int) currVecBytes,
+            (int) stats.cob, (int) stats.cvb,
             (int) (vecs + sizeof vecs - vecTop));
 #endif
     memset(tagBits, 0, sizeof tagBits);
@@ -374,8 +376,8 @@ void Context::gcTrigger () {
     Vector::gcCompact();
 #if GC_VERBOSE
     debugf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
-            (int) (GC_MEM_BYTES - currObjBytes),
-            (int) (sizeof vecs - currVecBytes),
+            (int) (GC_MEM_BYTES - stats.cob),
+            (int) (sizeof vecs - stats.cvb),
             MEM_BYTES, (int) sizeof vecs);
 #endif
 }
