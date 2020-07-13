@@ -7,7 +7,7 @@
 
 extern void initBoard ();
 
-Vector::Vector (size_t bits) {
+Vector::Vector (size_t bits) : logBits (0), capacity (0) {
     while (bits > (1U << logBits))
         ++logBits;
     assert(logBits >= 3); // TODO

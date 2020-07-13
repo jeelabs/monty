@@ -4,24 +4,9 @@
 #include <stdlib.h>
 
 struct Vector {
-    uint8_t extra = 0; // available for any use
-protected:
-    struct Data {
-        Vector* v;
-        union { uint32_t n; uint8_t d [1]; };
-        Data* next () const;
-    };
-
-    uint8_t logBits = 0;
-    uint16_t fill = 0; // in elements
-    size_t capacity = 0; // in bytes
-    Data* data = 0;
-
-    Vector (size_t bits);
-public:
     ~Vector ();
 
-    size_t length () const { return fill; }
+    uint32_t length () const { return fill; }
     int width () const { auto b = 1<<logBits; return b < 8 ? -b : b/8; }
 
     int getInt (int idx) const;
@@ -35,6 +20,19 @@ public:
     void del (int idx, int num =1);
 
     static void gcCompact ();   // see gc.c
+protected:
+    struct Data {
+        Vector* v;
+        union { uint32_t n; uint8_t d [1]; };
+        Data* next () const;
+    };
+
+    Data* data = 0;
+    uint32_t logBits :8;
+    uint32_t capacity :24; // in bytes
+    uint32_t fill = 0;     // in elements
+
+    Vector (size_t bits);
 private:
     void alloc (size_t sz);     // see gc.c
 };
