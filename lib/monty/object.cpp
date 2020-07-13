@@ -179,17 +179,21 @@ Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
 }
 
 BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
+    const void* ptr;
     if (n <= MAX_NOVEC) {
         // short data *overwrites* the Vector in this struct
         auto& p = noVec();
         p.flag = 1; // never possible in a vector (assuming little-endian!)
         p.size = n;
+        ptr = p.bytes;
+    } else {
+        ins(0, n);
+        ptr = getPtr(0);
     }
-    auto ptr = (void*) (const uint8_t*) *this;
     if (p != 0)
-        memcpy(ptr, p, n);
+        memcpy((void*) ptr, p, n);
     else
-        memset(ptr, 0, n);
+        memset((void*) ptr, 0, n);
 }
 
 BytesObj::~BytesObj () {
@@ -213,13 +217,13 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
         n = strlen((const char*) p);
     } else {
         assert(argv[0].isObj());
-        auto& v = argv[0].obj();
-        if (&v.type().info == &StrObj::info) {
-            auto& o = argv[0].asType<StrObj>();
+        auto& a = argv[0].obj();
+        if (&a.type() == &StrObj::info) {
+            auto& o = (StrObj&) a;
             p = (const char*) o;
             n = o.len();
-        } else if (&v.type().info == &BytesObj::info) {
-            auto& o = argv[0].asType<BytesObj>();
+        } else if (&a.type() == &BytesObj::info) {
+            auto& o = (BytesObj&) a;
             p = (const uint8_t*) o;
             n = o.len();
         } else
@@ -228,7 +232,8 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
     if (n > MAX_NOVEC)
         return new BytesObj (p, n);
     // special case: store data inline, replacing Vector, see BytesObj::BytesObj
-    auto m = operator new (sizeof (SeqObj) + 2 + n);
+    // the size must be large enough to make the dummy Vector constructor happy
+    auto m = operator new (sizeof (SeqObj) + sizeof (NoVec));
     return new (m) BytesObj (p, n);
 }
 

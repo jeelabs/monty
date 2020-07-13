@@ -45,8 +45,8 @@ def TYPE(block, tag, *_):
         'struct %s : %s {' % (name, base),
         '    static Value create (const TypeObj&, int argc, Value argv[]);',
         '    static const LookupObj attrs;',
-        '    static TypeObj info;',
-        '    TypeObj& type () const override;',
+        '    static const TypeObj info;',
+        '    const TypeObj& type () const override;',
     ]
     if tag.startswith('<'):
         del out[1:3] # can't construct from the VM
@@ -82,9 +82,9 @@ def BUILTIN_TYPES(block, fname):
                     info.append([f1[2], f2[1], f2[3]])
     info.sort()
     out = []
-    fmt1a = 'TypeObj %12s::info ("%s");'
-    fmt1b = 'TypeObj %8s::info ("%s", %s::create, &%s::attrs);'
-    fmt2 = 'TypeObj& %12s::type () const { return info; }'
+    fmt1a = 'const TypeObj %12s::info ("%s");'
+    fmt1b = 'const TypeObj %8s::info ("%s", %s::create, &%s::attrs);'
+    fmt2 = 'const TypeObj& %12s::type () const { return info; }'
     sep = True
     for tag, name, base in info:
         if tag.startswith('<'):

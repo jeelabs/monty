@@ -201,11 +201,21 @@ struct Loader {
             assert(type != 'e'); // TODO ellipsis
             auto sz = varInt();
             auto ptr = skip(sz);
-            auto buf = (char*) malloc(sz+1);
-            memcpy(buf, ptr, sz);
-            buf[sz] = 0;
-            loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
-            bc.constObjs.set(i, buf);
+            if (type == 'b') {
+                Value arg = sz; // TODO 4x yuck, create is the wrong interface!
+                Value buf = BytesObj::create(BytesObj::info, 1, &arg);
+                auto& o = buf.asType<BytesObj>();
+                memcpy((void*) (const uint8_t*) o, ptr, sz);
+                loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, &o);
+                bc.constObjs.set(i, buf);
+            } else if (type == 's') {
+                auto buf = (char*) malloc(sz+1);
+                memcpy(buf, ptr, sz);
+                buf[sz] = 0;
+                loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
+                bc.constObjs.set(i, buf);
+            } else
+                assert(false); // TODO
         }
         for (int i = 0; i < bc.nCode; ++i) {
             loaderf("  raw %d:\n", i+bc.nData);

@@ -111,8 +111,8 @@ struct VecOfValue : VecOf<Value> {
 struct Object {
     virtual ~Object () {}
 
-    static TypeObj info;
-    virtual TypeObj& type () const;
+    static const TypeObj info;
+    virtual const TypeObj& type () const;
 
     virtual void mark (void (*gc)(const Object&)) const {}
 
@@ -136,8 +136,8 @@ struct Object {
 
 //CG3 type <none>
 struct NoneObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     static const NoneObj noneObj;
 
@@ -147,8 +147,8 @@ private:
 
 //CG3 type <bool>
 struct BoolObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     static const BoolObj trueObj;
     static const BoolObj falseObj;
@@ -161,8 +161,8 @@ private:
 struct IntObj : Object {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
 
     IntObj (int v) : i (v) {}
@@ -174,8 +174,8 @@ private:
 
 //CG3 type <iterator>
 struct IterObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     IterObj (Value arg) : seq (arg) {}
 
@@ -188,8 +188,8 @@ private:
 
 //CG3 type <sequence>
 struct SeqObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     const SeqObj& asSeq () const override { return *this; }
 
@@ -211,8 +211,8 @@ protected:
 struct BytesObj : SeqObj, protected Vector {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
 
     BytesObj (const void* p, size_t n);
@@ -227,7 +227,9 @@ struct BytesObj : SeqObj, protected Vector {
 
 protected:
     static constexpr int MAX_NOVEC = 16;
-    struct NoVec { uint8_t flag, size; uint8_t bytes []; };
+    struct NoVec { uint8_t flag, size; uint8_t bytes [MAX_NOVEC]; };
+    static_assert (sizeof (NoVec) >= sizeof (Vector), "MAX_NOVEC is too small");
+
     bool hasVec () const { return ((uintptr_t) data & 1) == 0; }
     NoVec& noVec () const { return *(NoVec*) (const Vector*) this; }
 };
@@ -236,8 +238,8 @@ protected:
 struct StrObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
 
     StrObj (const char* v) : s (v) {}
@@ -271,8 +273,8 @@ ForceObj Value::objPtr () const { return this; }
 struct TupleObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
     void mark (void (*gc)(const Object&)) const override;
 
@@ -288,8 +290,8 @@ private:
 
 //CG3 type <lookup>
 struct LookupObj : SeqObj {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     struct Item { const char* k; const Object* v; };
 
@@ -305,8 +307,8 @@ private:
 
 //CG3 type <mut-seq>
 struct MutSeqObj : SeqObj, protected VecOfValue {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     void mark (void (*gc)(const Object&)) const override;
 
@@ -328,8 +330,8 @@ protected:
 struct ListObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
 
     ListObj (int argc, Value argv[]);
@@ -342,8 +344,8 @@ struct ListObj : MutSeqObj {
 struct DictObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
     enum Mode { Get, Set, Del };
     const Object* chain = 0; // TODO hide
@@ -359,8 +361,8 @@ struct DictObj : MutSeqObj {
 
 //CG3 type <type>
 struct TypeObj : DictObj {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     typedef Value (*Factory)(const TypeObj&,int,Value[]);
 
@@ -381,8 +383,8 @@ private:
 struct ClassObj : TypeObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
     static const LookupObj attrs;
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 //CG>
 
     ClassObj (int argc, Value argv[]);
@@ -401,8 +403,8 @@ private:
 
 //CG3 type <function>
 struct FunObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     typedef Value (*Func)(int,Value[]);
 
@@ -483,8 +485,8 @@ private:
 
 //CG3 type <method>
 struct MethObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     MethObj (const MethodBase& m) : meth (m) {}
 
@@ -503,8 +505,8 @@ private:
 
 //CG3 type <bound-meth>
 struct BoundMethObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     BoundMethObj (Value f, Value o) : meth (f), self (o) {}
 
@@ -517,8 +519,8 @@ private:
 
 //CG3 type <bytecode>
 struct BytecodeObj : Object {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     ModuleObj& owner;
 
@@ -547,8 +549,8 @@ struct BytecodeObj : Object {
 
 //CG3 type <module>
 struct ModuleObj : DictObj {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     const BytecodeObj* init = 0;
 
@@ -562,8 +564,8 @@ struct ModuleObj : DictObj {
 
 //CG3 type <frame>
 struct FrameObj : DictObj {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     const BytecodeObj& bcObj;
     FrameObj* caller = 0;
@@ -599,8 +601,8 @@ private:
 
 //CG3 type <context>
 struct Context : Object, private VecOfValue {
-    static TypeObj info;
-    TypeObj& type () const override;
+    static const TypeObj info;
+    const TypeObj& type () const override;
 
     Value* base () const { return &get(0); }
     Value* limit () const { return base() + length(); }
