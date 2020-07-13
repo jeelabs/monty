@@ -61,7 +61,7 @@ void Vector::ins (int idx, int num) {
     if (num <= 0)
         return;
     auto needed = (fill + num) * width();
-    if (needed > (int) capacity) {
+    if (needed > capacity) {
         alloc(needed);
         assert(data != 0);
         capacity = needed;
