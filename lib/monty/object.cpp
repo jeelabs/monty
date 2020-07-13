@@ -687,12 +687,13 @@ Value BytesObj::attr (const char* key, Value& self) const {
 static const auto mo_encode = MethObj::wrap(&StrObj::encode);
 static const MethObj m_encode = mo_encode;
 
-static const FunObj f_format = StrObj::format;
+static const auto mo_format = MethObj::wrap(&StrObj::format);
+static const MethObj m_format = mo_format;
 
 static const LookupObj::Item strMap [] = {
     { "count", &m_count }, // TODO can move to SeqObj lookup, once it chains
     { "encode", &m_encode },
-    { "format", &f_format },
+    { "format", &m_format },
 };
 
 const LookupObj StrObj::attrs (strMap, sizeof strMap / sizeof *strMap);

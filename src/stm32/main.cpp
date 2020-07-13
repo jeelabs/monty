@@ -46,7 +46,7 @@ int main () {
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs
-    showObjSizes();       // show sizeof information for the main classes
+    //showObjSizes();       // show sizeof information for the main classes
 
     extern uint8_t _estack [];
     if (!runInterp(_estack - 0x1000)) // 4 KB below end of RAM

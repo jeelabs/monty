@@ -197,7 +197,7 @@ Value SocketObj::connect (int argc, Value argv []) {
     auto ok = ip4addr_aton(argv[0], &host);
     (void) ok; assert(ok == 1);
 
-    auto r = tcp_connect(socket, &host, argv[1], [](void *arg, struct tcp_pcb *tpcb, err_t err) -> err_t {
+    auto r = tcp_connect(socket, &host, argv[1], [](void *arg, tcp_pcb *tpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.socket == tpcb);
         assert(self.readQueue.len() > 0);
@@ -221,7 +221,7 @@ Value SocketObj::accept (Value arg) {
     assert((bco.scope & 1) != 0); // make sure it's a generator
     accepter = &bco;
 
-    tcp_accept(socket, [](void *arg, struct tcp_pcb *newpcb, err_t err) -> err_t {
+    tcp_accept(socket, [](void *arg, tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.accepter != 0);
 
@@ -286,7 +286,7 @@ Value SocketObj::write (Value arg) {
     printf("suspending write\n");
     Context::suspend(writeQueue);
 
-    tcp_sent(socket, [](void *arg, struct tcp_pcb *tpcb, uint16_t len) -> err_t {
+    tcp_sent(socket, [](void *arg, tcp_pcb *tpcb, uint16_t len) -> err_t {
         printf("sent %p %d\n", arg, len);
         auto& self = *(SocketObj*) arg;
         if (self.socket != 0) {

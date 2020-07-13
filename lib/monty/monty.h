@@ -249,8 +249,7 @@ struct StrObj : SeqObj {
     Value count (Value) const override { return 9; } // TODO
 
     Value encode () const;
-
-    static Value format (int argc, Value argv[]) { return 4; } // TODO
+    Value format (int argc, Value argv[]) { return 4; } // TODO
 
 private:
     const char* s;
