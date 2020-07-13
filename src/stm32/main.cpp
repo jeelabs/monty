@@ -11,6 +11,7 @@
 #include "builtin.h"
 #include "interp.h"
 #include "loader.h"
+#include "util.h"
 
 static bool runInterp (const uint8_t* data) {
     Interp vm;
@@ -42,6 +43,10 @@ int main () {
     archInit();
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+
+    //showAlignment();      // show string address details in flash and ram
+    //showAllocInfo();      // show mem allocator behaviour for small allocs
+    //showObjSizes();       // show sizeof information for the main classes
 
     extern uint8_t _estack [];
     if (!runInterp(_estack - 0x1000)) // 4 KB below end of RAM
