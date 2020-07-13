@@ -207,6 +207,31 @@ protected:
     SeqObj () {} // cannot be instantiated directly
 };
 
+//CG< type bytes
+struct BytesObj : SeqObj, protected Vector {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
+    static TypeObj info;
+    TypeObj& type () const override;
+//CG>
+
+    BytesObj (const void* p, size_t n);
+    ~BytesObj () override;
+    operator const uint8_t* () const;
+
+    Value at (Value) const override;
+    Value attr (const char*, Value&) const override;
+    Value len () const override { return hasVec() ? length() : noVec().size; }
+
+    Value decode () const;
+
+protected:
+    static constexpr int MAX_NOVEC = 0; // TODO bump to 16 when create fixed
+    struct NoVec { uint8_t flag, size; uint8_t bytes []; };
+    bool hasVec () const { return ((uintptr_t) data & 1) == 0; }
+    NoVec& noVec () const { return *(NoVec*) (const Vector*) this; }
+};
+
 //CG< type str
 struct StrObj : SeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
@@ -220,7 +245,10 @@ struct StrObj : SeqObj {
 
     Value at (Value) const override;
     Value attr (const char*, Value&) const override;
+    Value len () const override;
     Value count (Value) const override { return 9; } // TODO
+
+    Value encode () const;
 
     static Value format (int argc, Value argv[]) { return 4; } // TODO
 
@@ -391,6 +419,12 @@ private:
 
 struct MethodBase {
     virtual Value call (Value self, int argc, Value argv[]) const =0;
+
+    template< typename T >
+    static Value argConv (Value (T::*meth)() const,
+                            Value self, int argc, Value argv[]) {
+        return (((T&) self.obj()).*meth)();
+    }
 
     template< typename T >
     static Value argConv (Value (T::*meth)(),

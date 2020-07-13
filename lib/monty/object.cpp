@@ -178,6 +178,77 @@ Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
     return Value::nil;
 }
 
+BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
+    if (n <= MAX_NOVEC) {
+        // short data *overwrites* the Vector in this struct
+        auto& p = noVec();
+        p.flag = 1; // never possible in a vector (assuming little-endian!)
+        p.size = n;
+    }
+    auto ptr = (void*) (const uint8_t*) *this;
+    if (p != 0)
+        memcpy(ptr, p, n);
+    else
+        memset(ptr, 0, n);
+}
+
+BytesObj::~BytesObj () {
+    // make sure ~Vector doesn't get confused
+    if (!hasVec()) {
+        data = 0;
+        logBits = 8;
+        capacity = 0;
+        fill = 0;
+    }
+}
+
+Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
+    assert(argc == 1);
+    const void* p = 0;
+    size_t n = 0;
+    if (argv[0].isInt())
+        n = argv[0];
+    else if (argv[0].isStr()) {
+        p = (const char*) argv[0];
+        n = strlen((const char*) p);
+    } else {
+        assert(argv[0].isObj());
+        auto& v = argv[0].obj();
+        if (&v.type().info == &StrObj::info) {
+            auto& o = argv[0].asType<StrObj>();
+            p = (const char*) o;
+            n = o.len();
+        }
+        if (&v.type().info == &BytesObj::info) {
+            auto& o = argv[0].asType<BytesObj>();
+            p = (const uint8_t*) o;
+            n = o.len();
+        }
+        assert(false); // TODO iterables
+    }
+    if (n > MAX_NOVEC)
+        return new BytesObj (p, n);
+    // special case: store the bytes instead of Vector, see BytesObj::BytesObj
+    auto m = operator new (sizeof (SeqObj) + 2 + n);
+    return new (m) BytesObj (p, n);
+}
+
+BytesObj::operator const uint8_t* () const {
+    return hasVec() ? (const uint8_t*) getPtr(0) : noVec().bytes;
+}
+
+Value BytesObj::at (Value idx) const {
+    assert(idx.isInt());
+    int i = idx;
+    if (i < 0)
+        i += len();
+    return ((const uint8_t*) *this)[i];
+}
+
+Value BytesObj::decode () const {
+    return Value::nil; // TODO
+}
+
 Value StrObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1 && argv[0].isStr());
     return new StrObj (argv[0]);
@@ -192,6 +263,14 @@ Value StrObj::at (Value idx) const {
     buf[0] = s[i];
     buf[1] = 0;
     return buf;
+}
+
+Value StrObj::len () const {
+    return strlen(s);
+}
+
+Value StrObj::encode () const {
+    return Value::nil; // TODO
 }
 
 Value SeqObj::isIn  (Value) const { assert(false); }
@@ -225,8 +304,8 @@ Value MutSeqObj::pop (int idx) {
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
-    auto p = operator new (sizeof (TupleObj) + argc * sizeof (Value));
-    return new (p) TupleObj (argc, argv);
+    auto m = operator new (sizeof (TupleObj) + argc * sizeof (Value));
+    return new (m) TupleObj (argc, argv);
 }
 
 TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
@@ -591,11 +670,30 @@ bool Context::isAlive () const {
 static const auto mo_count = MethObj::wrap(&SeqObj::count);
 static const MethObj m_count = mo_count;
 
-static const FunObj f_str_format = StrObj::format;
+static const auto mo_decode = MethObj::wrap(&BytesObj::decode);
+static const MethObj m_decode = mo_decode;
+
+static const LookupObj::Item bytesMap [] = {
+    { "count", &m_count }, // TODO can move to SeqObj lookup, once it chains
+    { "decode", &m_decode },
+};
+
+const LookupObj BytesObj::attrs (bytesMap, sizeof bytesMap / sizeof *bytesMap);
+
+Value BytesObj::attr (const char* key, Value& self) const {
+    self = Value::nil;
+    return attrs.at(key);
+}
+
+static const auto mo_encode = MethObj::wrap(&StrObj::encode);
+static const MethObj m_encode = mo_encode;
+
+static const FunObj f_format = StrObj::format;
 
 static const LookupObj::Item strMap [] = {
     { "count", &m_count }, // TODO can move to SeqObj lookup, once it chains
-    { "format", &f_str_format },
+    { "encode", &m_encode },
+    { "format", &f_format },
 };
 
 const LookupObj StrObj::attrs (strMap, sizeof strMap / sizeof *strMap);

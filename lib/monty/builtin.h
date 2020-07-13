@@ -19,6 +19,7 @@ TypeObj      NoneObj::info ("<none>");
 TypeObj       SeqObj::info ("<sequence>");
 TypeObj      TypeObj::info ("<type>");
 
+TypeObj BytesObj::info ("bytes", BytesObj::create, &BytesObj::attrs);
 TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::attrs);
 TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::attrs);
 TypeObj   IntObj::info ("int", IntObj::create, &IntObj::attrs);
@@ -40,6 +41,7 @@ TypeObj&    MutSeqObj::type () const { return info; }
 TypeObj&      NoneObj::type () const { return info; }
 TypeObj&       SeqObj::type () const { return info; }
 TypeObj&      TypeObj::type () const { return info; }
+TypeObj&     BytesObj::type () const { return info; }
 TypeObj&     ClassObj::type () const { return info; }
 TypeObj&      DictObj::type () const { return info; }
 TypeObj&       IntObj::type () const { return info; }
@@ -113,6 +115,7 @@ static const ModuleObj m_monty (&ma_monty);
 
 static const LookupObj::Item builtins [] = {
     //CG< builtin-emit 1
+    { "bytes", &BytesObj::info },
     { "class", &ClassObj::info },
     { "dict", &DictObj::info },
     { "int", &IntObj::info },
