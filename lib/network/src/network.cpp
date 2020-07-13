@@ -202,6 +202,7 @@ Value SocketObj::connect (int argc, Value argv []) {
         assert(self.socket == tpcb);
         assert(self.readQueue.len() > 0);
         Context::tasks.append(self.readQueue.pop(0));
+        return ERR_OK;
     });
     (void) r; assert(r == 0);
 

@@ -218,17 +218,16 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
             auto& o = argv[0].asType<StrObj>();
             p = (const char*) o;
             n = o.len();
-        }
-        if (&v.type().info == &BytesObj::info) {
+        } else if (&v.type().info == &BytesObj::info) {
             auto& o = argv[0].asType<BytesObj>();
             p = (const uint8_t*) o;
             n = o.len();
-        }
-        assert(false); // TODO iterables
+        } else
+            assert(false); // TODO iterables
     }
     if (n > MAX_NOVEC)
         return new BytesObj (p, n);
-    // special case: store the bytes instead of Vector, see BytesObj::BytesObj
+    // special case: store data inline, replacing Vector, see BytesObj::BytesObj
     auto m = operator new (sizeof (SeqObj) + 2 + n);
     return new (m) BytesObj (p, n);
 }

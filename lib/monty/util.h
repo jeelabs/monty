@@ -29,6 +29,7 @@ void showObjSizes () {
     printf("%4d = sizeof Object"       "\n", (int) sizeof (Object));
     printf("%4d = sizeof Vector"       "\n", (int) sizeof (Vector));
     printf("%4d = sizeof IntObj"       "\n", (int) sizeof (IntObj));
+    printf("%4d = sizeof BytesObj"     "\n", (int) sizeof (BytesObj));
     printf("%4d = sizeof StrObj"       "\n", (int) sizeof (StrObj));
     printf("%4d = sizeof ForceObj"     "\n", (int) sizeof (ForceObj));
     printf("%4d = sizeof TypeObj"      "\n", (int) sizeof (TypeObj));
