@@ -226,7 +226,7 @@ struct BytesObj : SeqObj, protected Vector {
     Value decode () const;
 
 protected:
-    static constexpr int MAX_NOVEC = 0; // TODO bump to 16 when create fixed
+    static constexpr int MAX_NOVEC = 16;
     struct NoVec { uint8_t flag, size; uint8_t bytes []; };
     bool hasVec () const { return ((uintptr_t) data & 1) == 0; }
     NoVec& noVec () const { return *(NoVec*) (const Vector*) this; }
