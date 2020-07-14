@@ -125,22 +125,10 @@ Value Context::print (Value v) {
     return Value::nil;
 }
 
+//CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
     return new Printer (argc, argv);
 }
-
-#if 0
-//CG1 builtin print
-static Value bi_print (int argc, Value argv[]) {
-    for (int i = 0; i < argc; ++i) {
-        if (i > 0)
-            printf(" ");
-        Context::print(argv[i]);
-    }
-    printf("\n");
-    return Value::nil;
-}
-#endif
 
 //CG1 builtin len
 static Value bi_len (int argc, Value argv[]) {
