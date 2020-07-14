@@ -127,12 +127,12 @@ struct Object {
 
     virtual const SeqObj& asSeq () const;
 
-    static void* allocate (size_t); // see gc.c
     void* operator new (size_t);
-    void* operator new (size_t, size_t);
     void operator delete (void*);
 
     static void gcStats ();
+protected:
+    void* operator new (size_t, size_t);
 };
 
 //CG3 type <none>

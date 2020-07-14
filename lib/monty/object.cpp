@@ -208,9 +208,11 @@ BytesObj::~BytesObj () {
 
 void* BytesObj::operator new (size_t sz, size_t len) {
     // this deals with two ways to store the data, either in a Vector or inline
+    if (len > MAX_NOVEC)
+        return Object::operator new (sz);
     // for storing data inline, i.e. replacing Vector, see BytesObj::BytesObj
     // the size must be large enough to make the dummy Vector constructor happy
-    return allocate(len > MAX_NOVEC ? sz : sizeof (SeqObj) + sizeof (NoVec));
+    return Object::operator new (sz, sizeof (SeqObj) + sizeof (NoVec) - sz);
 }
 
 Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {

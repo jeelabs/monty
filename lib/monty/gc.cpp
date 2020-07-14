@@ -114,7 +114,7 @@ static void coalesce (hdr_t* h) {
             *h += nextObj(h); // free headers are positive and can be added
 }
 
-void* Object::allocate (size_t sz) {
+static void* allocate (size_t sz) {
 #if GC_MALLOCS
     return malloc(sz);
 #else
