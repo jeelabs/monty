@@ -4,6 +4,7 @@ const TypeObj  Object::info ("<object>");
 const TypeObj& Object::type () const { return info; }
 
 //CG< builtin-types lib/monty/monty.h
+const TypeObj     ArrayObj::info ("<array>");
 const TypeObj      BoolObj::info ("<bool>");
 const TypeObj BoundMethObj::info ("<bound-meth>");
 const TypeObj  BytecodeObj::info ("<bytecode>");
@@ -28,6 +29,7 @@ const TypeObj  ListObj::info ("list", ListObj::create, &ListObj::attrs);
 const TypeObj   StrObj::info ("str", StrObj::create, &StrObj::attrs);
 const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 
+const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj& BoundMethObj::type () const { return info; }
 const TypeObj&  BytecodeObj::type () const { return info; }
@@ -102,7 +104,7 @@ Value Context::print (Value v) {
             auto pl = v.asType<ListObj>();
             if (pl != 0) {
                 auto& v = pl->asVec(); // TODO yuck
-                auto p = new Printer (v.length(), &v.get(0));
+                auto p = new Printer (v.length(), (Value*) v.getPtr(0));
                 p->style("[", ", ", "]");
                 return p;
             }

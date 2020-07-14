@@ -41,8 +41,8 @@ template< typename T >
 struct VecOf : Vector {
     VecOf () : Vector (8 * sizeof (T)) {}
 
-    T& get (int idx) const { return *(T*) getPtr(idx); }
-    void set (int idx, const T& val) { Vector::set(idx, &val); }
+    T get (int idx) const { return *(T*) getPtr(idx); }
+    void set (int idx, T val) { Vector::set(idx, &val); }
 };
 
 // defined in defs.h
@@ -328,6 +328,29 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
     static MutSeqObj dummy;
 protected:
     MutSeqObj () {} // cannot be instantiated directly
+};
+
+//CG3 type <array>
+struct ArrayObj : MutSeqObj {
+    static const TypeObj info;
+    const TypeObj& type () const override;
+
+    void mark (void (*gc)(const Object&)) const override;
+
+    ArrayObj (char t);
+
+    Value len () const override { return length(); }
+
+    Value get (int idx) const;
+    void set (int idx, Value val);
+
+    void  insert (int, Value) override;
+    Value pop (int =-1) override;
+    void  remove (Value) override;
+    void  reverse () override;
+
+    char atype;
+    static int typeBits (char typecode);
 };
 
 //CG< type list
@@ -626,7 +649,7 @@ struct Context : Object, private VecOfValue {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    Value* base () const { return &get(0); }
+    Value* base () const { return (Value*) getPtr(0); }
     Value* limit () const { return base() + length(); }
 
     int extend (int num);

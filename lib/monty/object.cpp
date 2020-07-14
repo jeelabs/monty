@@ -290,6 +290,28 @@ Value SeqObj::max   ()      const { assert(false); }
 Value SeqObj::index (Value) const { assert(false); }
 Value SeqObj::count (Value) const { assert(false); }
 
+Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
+    return new (argc * sizeof (Value)) TupleObj (argc, argv);
+}
+
+TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
+    memcpy(vec, argv, length * sizeof (Value));
+}
+
+void TupleObj::mark (void (*gc)(const Object&)) const {
+    for (int i = 0; i < length; ++i)
+        if (vec[i].isObj())
+            gc(vec[i].obj());
+}
+
+Value TupleObj::at (Value idx) const {
+    assert(idx.isInt());
+    int i = idx;
+    if (i < 0)
+        i += length;
+    return vec[i];
+}
+
 void  MutSeqObj::remove  (Value)      { assert(false); }
 void  MutSeqObj::reverse ()           { assert(false); }
 
@@ -311,26 +333,40 @@ Value MutSeqObj::pop (int idx) {
     return v;
 }
 
-Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
-    return new (argc * sizeof (Value)) TupleObj (argc, argv);
+static const char* types = "bBhHiIlLqQ";
+static const uint8_t bits [] = { 3, 3, 4, 4, 4, 4, 5, 5, 6, 6, };
+
+ArrayObj::ArrayObj (char t) : atype (t) {
+    auto p = strchr(types, t);
+    logBits = p != 0 ? bits[p-types] : 3; // overwrites VecOfValue settings
 }
 
-TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
-    memcpy(vec, argv, length * sizeof (Value));
+void ArrayObj::mark (void (*gc)(const Object&)) const {
+    // do NOT call the base class markVec(gc); !
 }
 
-void TupleObj::mark (void (*gc)(const Object&)) const {
-    for (int i = 0; i < length; ++i)
-        if (vec[i].isObj())
-            gc(vec[i].obj());
+Value ArrayObj::get (int idx) const {
+    return Value::invalid; // TODO
 }
 
-Value TupleObj::at (Value idx) const {
-    assert(idx.isInt());
-    int i = idx;
-    if (i < 0)
-        i += length;
-    return vec[i];
+void ArrayObj::set (int idx, Value val) {
+    // TODO
+}
+
+void  ArrayObj::insert (int, Value) {
+    // TODO
+}
+
+Value ArrayObj::pop (int) {
+    return Value::nil; // TODO
+}
+
+void  ArrayObj::remove (Value) {
+    // TODO
+}
+
+void  ArrayObj::reverse () {
+    // TODO
 }
 
 Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -396,12 +432,12 @@ Value& DictObj::atKey (Value key, Mode mode) {
         if (key.isEq(get(i))) {
             if (mode == Del)
                 del(i, 2);
-            return get(i+1);
+            return *(Value*) getPtr(i+1);
         }
     if (mode == Set) {
         ins(n, 2);
         set(n, key);
-        return get(n+1);
+        return *(Value*) getPtr(n+1);
     }
     // result can't be const, but may not be changed
     assert(Value::invalid.isNil());
