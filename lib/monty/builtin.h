@@ -52,10 +52,9 @@ const TypeObj&     TupleObj::type () const { return info; }
 
 void Context::print (Value v) {
     switch (v.tag()) {
-        case Value::Nil: printf("<nil>"); break;
-        case Value::Int: printf("<Int %d>", (int) v); break;
-        case Value::Str: printf("<Str '%s' at %p>",
-                                 (const char*) v, (const char*) v); break;
+        case Value::Nil: printf("Nil"); break;
+        case Value::Int: printf("%d", (int) v); break;
+        case Value::Str: printf("%s", (const char*) v); break;
         case Value::Obj: {
             auto ps = v.asType<StrObj>();
             if (ps != 0) {
@@ -84,13 +83,7 @@ static Value bi_print (int argc, Value argv[]) {
     for (int i = 0; i < argc; ++i) {
         if (i > 0)
             printf(" ");
-        Value v = argv[i];
-        switch (v.tag()) {
-            case Value::Nil: printf("Nil"); break;
-            case Value::Int: printf("%d", (int) v); break;
-            case Value::Str: printf("%s", (const char*) v); break;
-            case Value::Obj: Context::print(v); break;
-        }
+        Context::print(argv[i]);
     }
     printf("\n");
     return Value::nil;
