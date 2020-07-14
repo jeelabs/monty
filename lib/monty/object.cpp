@@ -333,8 +333,8 @@ Value MutSeqObj::pop (int idx) {
     return v;
 }
 
-static const char* types = "bBhHiIlLqQ";
-static const uint8_t bits [] = { 3, 3, 4, 4, 4, 4, 5, 5, 6, 6, };
+static const char* types = "bBhHiIlL";
+static const uint8_t bits [] = { 3, 3, 4, 4, 4, 4, 5, 5, };
 
 ArrayObj::ArrayObj (char t) : atype (t) {
     auto p = strchr(types, t);
@@ -346,11 +346,11 @@ void ArrayObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value ArrayObj::get (int idx) const {
-    return Value::invalid; // TODO
+    return atype & 0x20 ? getInt(idx) : getIntU(idx);
 }
 
 void ArrayObj::set (int idx, Value val) {
-    // TODO
+    Vector::set(idx, (int) val);
 }
 
 void  ArrayObj::insert (int, Value) {

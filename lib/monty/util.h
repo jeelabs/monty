@@ -41,12 +41,15 @@ void showObjSizes () {
     printf("%4d = sizeof TupleObj"     "\n", (int) sizeof (TupleObj));
     printf("%4d = sizeof LookupObj"    "\n", (int) sizeof (LookupObj));
     printf("%4d = sizeof MutSeqObj"    "\n", (int) sizeof (MutSeqObj));
+    printf("%4d = sizeof ArrayObj"     "\n", (int) sizeof (ArrayObj));
     printf("%4d = sizeof ListObj"      "\n", (int) sizeof (ListObj));
     printf("%4d = sizeof DictObj"      "\n", (int) sizeof (DictObj));
     printf("%4d = sizeof ClassObj"     "\n", (int) sizeof (ClassObj));
     printf("%4d = sizeof InstanceObj"  "\n", (int) sizeof (InstanceObj));
     printf("%4d = sizeof ModuleObj"    "\n", (int) sizeof (ModuleObj));
     printf("%4d = sizeof BytecodeObj"  "\n", (int) sizeof (BytecodeObj));
+    printf("%4d = sizeof ResumableObj" "\n", (int) sizeof (ResumableObj));
     printf("%4d = sizeof FrameObj"     "\n", (int) sizeof (FrameObj));
+    printf("%4d = sizeof Context"      "\n", (int) sizeof (Context));
     printf("%4d = sizeof Interp"       "\n", (int) sizeof (Interp));
 }

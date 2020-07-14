@@ -217,9 +217,9 @@ Value SocketObj::listen (int arg) {
 }
 
 Value SocketObj::accept (Value arg) {
-    auto& bco = arg.asType<BytecodeObj>();
-    assert((bco.scope & 1) != 0); // make sure it's a generator
-    accepter = &bco;
+    auto bco = arg.asType<BytecodeObj>();
+    assert(bco != 0 && (bco->scope & 1) != 0); // make sure it's a generator
+    accepter = bco;
 
     tcp_accept(socket, [](void *arg, tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
