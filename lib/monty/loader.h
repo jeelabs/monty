@@ -202,12 +202,9 @@ struct Loader {
             auto sz = varInt();
             auto ptr = skip(sz);
             if (type == 'b') {
-                Value arg = sz; // TODO 4x yuck, create is the wrong interface!
-                Value buf = BytesObj::create(BytesObj::info, 1, &arg);
-                auto& o = buf.asType<BytesObj>();
-                memcpy((void*) (const uint8_t*) o, ptr, sz);
-                loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, &o);
-                bc.constObjs.set(i, buf);
+                auto p = new (sz) BytesObj (ptr, sz);
+                loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
+                bc.constObjs.set(i, p);
             } else if (type == 's') {
                 auto buf = (char*) malloc(sz+1);
                 memcpy(buf, ptr, sz);

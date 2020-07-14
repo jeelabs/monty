@@ -127,8 +127,9 @@ struct Object {
 
     virtual const SeqObj& asSeq () const;
 
+    static void* allocate (size_t); // see gc.c
     void* operator new (size_t);
-    void* operator new (size_t, void*);
+    void* operator new (size_t, size_t);
     void operator delete (void*);
 
     static void gcStats ();
@@ -225,6 +226,7 @@ struct BytesObj : SeqObj, protected Vector {
 
     Value decode () const;
 
+    void* operator new (size_t, size_t);
 protected:
     static constexpr int MAX_NOVEC = 16;
     struct NoVec { uint8_t flag, size; uint8_t bytes [MAX_NOVEC]; };

@@ -8,8 +8,7 @@ struct QstrPool : Object {
 
     static const QstrPool* create (const char* d, int n, int b) {
         static_assert (sizeof *off == 2, "off is not a uint16_t ?");
-        auto p = operator new (sizeof (QstrPool) + 2*(n+1) + b);
-        return new (p) QstrPool (d, n, b);
+        return new (2*(n+1)+b) QstrPool (d, n, b);
     }
 
     QstrPool (const char* data, int num, int bytes) : len (num) {

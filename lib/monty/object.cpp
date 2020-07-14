@@ -206,6 +206,13 @@ BytesObj::~BytesObj () {
     }
 }
 
+void* BytesObj::operator new (size_t sz, size_t len) {
+    // this deals with two ways to store the data, either in a Vector or inline
+    // for storing data inline, i.e. replacing Vector, see BytesObj::BytesObj
+    // the size must be large enough to make the dummy Vector constructor happy
+    return allocate(len > MAX_NOVEC ? sz : sizeof (SeqObj) + sizeof (NoVec));
+}
+
 Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1);
     const void* p = 0;
@@ -229,12 +236,7 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
         } else
             assert(false); // TODO iterables
     }
-    if (n > MAX_NOVEC)
-        return new BytesObj (p, n);
-    // special case: store data inline, replacing Vector, see BytesObj::BytesObj
-    // the size must be large enough to make the dummy Vector constructor happy
-    auto m = operator new (sizeof (SeqObj) + sizeof (NoVec));
-    return new (m) BytesObj (p, n);
+    return new (n) BytesObj (p, n);
 }
 
 BytesObj::operator const uint8_t* () const {
@@ -308,8 +310,7 @@ Value MutSeqObj::pop (int idx) {
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
-    auto m = operator new (sizeof (TupleObj) + argc * sizeof (Value));
-    return new (m) TupleObj (argc, argv);
+    return new (argc * sizeof (Value)) TupleObj (argc, argv);
 }
 
 TupleObj::TupleObj (int argc, Value argv[]) : length (argc) {
@@ -411,8 +412,7 @@ Value BoundMethObj::call (int argc, Value argv[]) const {
 }
 
 BytecodeObj& BytecodeObj::create (ModuleObj& mo, int bytes) {
-    auto p = operator new (sizeof (BytecodeObj) + bytes);
-    return *new (p) BytecodeObj (mo);
+    return *new (bytes) BytecodeObj (mo);
 }
 
 void BytecodeObj::mark (void (*gc)(const Object&)) const {
