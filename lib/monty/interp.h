@@ -47,7 +47,9 @@ struct Interp : Context {
             outer();
             if (tasks.len() == 0)
                 break;
-            resume(tasks.at(0).asType<FrameObj>());
+            auto fp = tasks.at(0).asType<FrameObj>();
+            assert(fp != 0);
+            resume(*fp);
         }
     }
 
@@ -330,8 +332,9 @@ private:
 
     //CG1 op
     void op_StoreSubscr () {
-        auto& d = sp[-1].asType<DictObj>();
-        d.atKey(sp[0], DictObj::Set) = sp[-2];
+        auto dp = sp[-1].asType<DictObj>();
+        assert(dp != 0);
+        dp->atKey(sp[0], DictObj::Set) = sp[-2];
         sp -= 3;
     }
 

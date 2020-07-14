@@ -73,7 +73,7 @@ struct Value {
     inline ForceObj objPtr () const;
 
     template< typename T > // type-asserted safe cast via Object::type()
-    T& asType () const { check(T::info); return (T&) obj(); }
+    T* asType () const { return check(T::info) ? (T*) &obj() : 0; }
 
     enum Tag tag () const {
         return (v & 1) ? Int : // bit 0 set
@@ -97,7 +97,7 @@ struct Value {
     static Value invalid; // special value, see DictObj::atKey
 private:
     Value () : v (0) {}
-    void check (const TypeObj& t) const;
+    bool check (const TypeObj& t) const;
 
     uintptr_t v;
 

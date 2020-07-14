@@ -6,8 +6,9 @@
 #include <assert.h>
 #include <string.h>
 
-void Value::check (const TypeObj& t) const {
-    assert(isObj() && &obj().type() == &t);
+bool Value::check (const TypeObj& t) const {
+    assert(isObj());
+    return &obj().type() == &t;
 }
 
 bool Value::isEq (Value val) const {
@@ -483,7 +484,7 @@ void FrameObj::leave () {
     ctx->shrink(bcObj.frameSize()); // note that the stack could move
 
     assert(ctx->tasks.len() > 0);
-    if (this == &ctx->tasks.at(0).asType<FrameObj>())
+    if (this == ctx->tasks.at(0).asType<FrameObj>())
         ctx->tasks.pop(0);
 
     if (!isCoro()) // don't delete frame on return, it may have a reference
@@ -646,14 +647,15 @@ void Context::popState () {
 void Context::suspend (ListObj& queue) {
     assert(vm->fp != 0 && tasks.len() > 0);
     Value v = tasks.at(0);
-    auto& fp = v.asType<FrameObj>();
+    auto fp = v.asType<FrameObj>();
+    assert(fp != 0);
 
     auto top = vm->fp;
     while (top->caller != 0)
         top = top->caller;
-    assert(top == &fp);
+    assert(top == fp);
 
-    fp.caller = vm->flip(0);
+    fp->caller = vm->flip(0);
 
     queue.append(v);
     tasks.pop(0);

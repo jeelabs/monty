@@ -57,20 +57,23 @@ void Context::print (Value v) {
         case Value::Str: printf("<Str '%s' at %p>",
                                  (const char*) v, (const char*) v); break;
         case Value::Obj: {
-            auto& o = v.obj();
-            auto& t = o.type();
-            if (&t == &StrObj::info)
-                printf("%s", (const char*) (const StrObj&) o);
-            else if (&t == &BytesObj::info) {
-                auto& b = (const BytesObj&) o;
+            auto ps = v.asType<StrObj>();
+            if (ps != 0) {
+                printf("%s", (const char*) *ps);
+                break;
+            }
+            auto pb = v.asType<BytesObj>();
+            if (pb != 0) {
                 printf("b'");
-                int n = b.len();
-                auto p = (const uint8_t*) b;
+                int n = pb->len();
+                auto p = (const uint8_t*) *pb;
                 for (int i = 0; i < n; ++i)
                     printf("%c", p[i]); // TODO yuck, and not complete
                 printf("'");
-            } else
-                printf("<Obj %s at %p>", t.name, &o);
+                break;
+            }
+            auto& o = v.obj();
+            printf("<Obj %s at %p>", o.type().name, &o);
             break;
         }
     }
@@ -121,7 +124,12 @@ static const FunObj f_type (bi_type);
 static const StrObj s_version = VERSION;
 
 static Value f_suspend (int argc, Value argv[]) {
-    Context::suspend(argc > 1 ? argv[1].asType<ListObj>() : Context::tasks);
+    auto qp = &Context::tasks;
+    if (argc > 1) {
+        qp = argv[1].asType<ListObj>();
+        assert(qp != 0);
+    }
+    Context::suspend(*qp);
     return Value::nil;
 }
 
