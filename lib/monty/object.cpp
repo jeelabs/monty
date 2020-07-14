@@ -369,6 +369,25 @@ void  ArrayObj::reverse () {
     // TODO
 }
 
+bool ArrayObj::Strategy::need (int bytes) {
+    if (buffer.fill + bytes > buffer.capacity) {
+        if (buffer.fill > 0 && !flush())
+            return false;
+        auto grow = buffer.fill + bytes - buffer.capacity;
+        if (grow > 0) {
+            buffer.ins(buffer.fill, grow);
+            buffer.del(buffer.fill, grow);
+        }
+    }
+    ptr = (uint8_t*) buffer.getPtr(buffer.fill);
+    return true;
+}
+
+void ArrayObj::Strategy::put (const void* p, size_t n) {
+    memcpy(ptr, p, n);
+    ptr += n;
+}
+
 Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
     return new ListObj (argc, argv);
 }
