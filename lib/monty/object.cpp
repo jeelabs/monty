@@ -336,6 +336,11 @@ Value MutSeqObj::pop (int idx) {
 static const char* types = "bBhHiIlL";
 static const uint8_t bits [] = { 3, 3, 4, 4, 4, 4, 5, 5, };
 
+Value ArrayObj::create (const TypeObj&, int argc, Value argv[]) {
+    assert(argc == 1 && argv[0].isStr() && strlen(argv[0]) == 1);
+    return new ArrayObj (*(const char*) argv[0]);
+}
+
 ArrayObj::ArrayObj (char t) : atype (t) {
     auto p = strchr(types, t);
     logBits = p != 0 ? bits[p-types] : 3; // overwrites VecOfValue settings
@@ -554,3 +559,4 @@ const LookupObj IntObj::attrs (0, 0);
 const LookupObj TupleObj::attrs (0, 0);
 const LookupObj DictObj::attrs (0, 0);
 const LookupObj ClassObj::attrs (0, 0);
+const LookupObj ArrayObj::attrs (0, 0);

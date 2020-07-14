@@ -4,7 +4,6 @@ const TypeObj  Object::info ("<object>");
 const TypeObj& Object::type () const { return info; }
 
 //CG< builtin-types lib/monty/monty.h
-const TypeObj     ArrayObj::info ("<array>");
 const TypeObj      BoolObj::info ("<bool>");
 const TypeObj BoundMethObj::info ("<bound-meth>");
 const TypeObj  BytecodeObj::info ("<bytecode>");
@@ -21,6 +20,7 @@ const TypeObj ResumableObj::info ("<resumable>");
 const TypeObj       SeqObj::info ("<sequence>");
 const TypeObj      TypeObj::info ("<type>");
 
+const TypeObj ArrayObj::info ("array", ArrayObj::create, &ArrayObj::attrs);
 const TypeObj BytesObj::info ("bytes", BytesObj::create, &BytesObj::attrs);
 const TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::attrs);
 const TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::attrs);
@@ -29,7 +29,6 @@ const TypeObj  ListObj::info ("list", ListObj::create, &ListObj::attrs);
 const TypeObj   StrObj::info ("str", StrObj::create, &StrObj::attrs);
 const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 
-const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj& BoundMethObj::type () const { return info; }
 const TypeObj&  BytecodeObj::type () const { return info; }
@@ -45,6 +44,7 @@ const TypeObj&      NoneObj::type () const { return info; }
 const TypeObj& ResumableObj::type () const { return info; }
 const TypeObj&       SeqObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
+const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&     BytesObj::type () const { return info; }
 const TypeObj&     ClassObj::type () const { return info; }
 const TypeObj&      DictObj::type () const { return info; }
@@ -180,6 +180,7 @@ static const ModuleObj m_monty (&ma_monty);
 
 static const LookupObj::Item builtins [] = {
     //CG< builtin-emit 1
+    { "array", &ArrayObj::info },
     { "bytes", &BytesObj::info },
     { "class", &ClassObj::info },
     { "dict", &DictObj::info },

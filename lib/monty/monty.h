@@ -330,10 +330,13 @@ protected:
     MutSeqObj () {} // cannot be instantiated directly
 };
 
-//CG3 type <array>
+//CG< type array
 struct ArrayObj : MutSeqObj {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
     static const TypeObj info;
     const TypeObj& type () const override;
+//CG>
 
     void mark (void (*gc)(const Object&)) const override;
 
