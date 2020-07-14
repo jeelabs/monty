@@ -16,6 +16,7 @@ const TypeObj      MethObj::info ("<method>");
 const TypeObj    ModuleObj::info ("<module>");
 const TypeObj    MutSeqObj::info ("<mut-seq>");
 const TypeObj      NoneObj::info ("<none>");
+const TypeObj ResumableObj::info ("<resumable>");
 const TypeObj       SeqObj::info ("<sequence>");
 const TypeObj      TypeObj::info ("<type>");
 
@@ -39,6 +40,7 @@ const TypeObj&      MethObj::type () const { return info; }
 const TypeObj&    ModuleObj::type () const { return info; }
 const TypeObj&    MutSeqObj::type () const { return info; }
 const TypeObj&      NoneObj::type () const { return info; }
+const TypeObj& ResumableObj::type () const { return info; }
 const TypeObj&       SeqObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
 const TypeObj&     BytesObj::type () const { return info; }
@@ -50,7 +52,33 @@ const TypeObj&       StrObj::type () const { return info; }
 const TypeObj&     TupleObj::type () const { return info; }
 //CG>
 
-void Context::print (Value v) {
+struct Printer : ResumableObj {
+    Printer (int argc, Value argv[]) : ResumableObj (argc, argv) {}
+
+    void style (const char* pre, const char* sep, const char* post) {
+        prefix = pre;
+        separator = sep;
+        postfix = post;
+    }
+
+    bool step (Value v) override {
+        if (pos >= nargs) {
+            printf("%s", postfix);
+            return false;
+        }
+        printf("%s", pos == 0 ? prefix : separator);
+        retVal = Context::print(args[pos++]);
+        return true;
+    }
+
+private:
+    int pos = 0;
+    const char* prefix ="";
+    const char* separator =" ";
+    const char* postfix ="\n";
+};
+
+Value Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("Nil"); break;
         case Value::Int: printf("%d", (int) v); break;
@@ -71,13 +99,35 @@ void Context::print (Value v) {
                 printf("'");
                 break;
             }
+            auto pl = v.asType<ListObj>();
+            if (pl != 0) {
+                auto& v = pl->asVec(); // TODO yuck
+                auto p = new Printer (v.length(), &v.get(0));
+                p->style("[", ", ", "]");
+                return p;
+            }
+#if 0
+            auto pt = v.asType<TupleObj>();
+            if (pt != 0) {
+                auto& v = pt->asVec(); // TODO yuck
+                auto p = new Printer (v.length(), &v.get(0));
+                p->style("[", ", ", "]");
+                return p;
+            }
+#endif
             auto& o = v.obj();
             printf("<Obj %s at %p>", o.type().name, &o);
             break;
         }
     }
+    return Value::nil;
 }
 
+static Value bi_print (int argc, Value argv[]) {
+    return new Printer (argc, argv);
+}
+
+#if 0
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
     for (int i = 0; i < argc; ++i) {
@@ -88,6 +138,7 @@ static Value bi_print (int argc, Value argv[]) {
     printf("\n");
     return Value::nil;
 }
+#endif
 
 //CG1 builtin len
 static Value bi_len (int argc, Value argv[]) {

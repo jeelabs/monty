@@ -323,6 +323,8 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
 
     void append (Value v) { insert(length(), v); }
 
+    const VecOfValue& asVec () const { return *this; } // FIXME Context::print !
+
     static MutSeqObj dummy;
 protected:
     MutSeqObj () {} // cannot be instantiated directly
@@ -564,6 +566,24 @@ struct ModuleObj : DictObj {
     Value attr (const char*, Value&) const override;
 };
 
+//CG3 type <resumable>
+struct ResumableObj : Object {
+    static const TypeObj info;
+    const TypeObj& type () const override;
+
+    void mark (void (*gc)(const Object&)) const override;
+
+    virtual bool step (Value v) =0;
+
+    Value retVal = Value::nil;
+    ResumableObj* chain = 0;
+protected:
+    ResumableObj (int argc, Value argv[]) : nargs (argc), args (argv) {}
+
+    int nargs;
+    Value* args;
+};
+
 //CG3 type <frame>
 struct FrameObj : DictObj {
     static const TypeObj info;
@@ -614,7 +634,7 @@ struct Context : Object, private VecOfValue {
 
     void start (ModuleObj& mod, const LookupObj& builtins);
 
-    static void print (Value);
+    static Value print (Value);
 
     Value nextPending ();
     static void raise (Value);
@@ -625,6 +645,7 @@ struct Context : Object, private VecOfValue {
     static void suspend (ListObj& queue);
     void resume (FrameObj&);
 
+    void doCall (int argc, Value argv[]);
     static Value* prepareStack (FrameObj& fo, Value* av);
 
     static bool gcCheck ();     // see gc.c, called from outer vm loop

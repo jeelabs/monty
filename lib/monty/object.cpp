@@ -7,8 +7,7 @@
 #include <string.h>
 
 bool Value::check (const TypeObj& t) const {
-    assert(isObj());
-    return &obj().type() == &t;
+    return isObj() && &obj().type() == &t;
 }
 
 bool Value::isEq (Value val) const {

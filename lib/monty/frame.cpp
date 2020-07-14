@@ -4,6 +4,12 @@
 
 #include <assert.h>
 
+void ResumableObj::mark (void (*gc)(const Object&)) const {
+    // TODO no need to mark args[], it already belongs to the caller, AFAICT
+    if (chain != 0)
+        gc(*chain);
+}
+
 FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
         : bcObj (bco), locals (dp), savedIp (bco.code) {
     if (locals == 0) {
@@ -86,6 +92,38 @@ void Context::start (ModuleObj& mod, const LookupObj& builtins) {
 
     assert(fp != 0);
     tasks.append(fp);
+}
+
+#include <stdio.h>
+void Context::doCall (int argc, Value argv[]) {
+    Value v = sp->obj().call(argc, argv);
+    if (v.isNil())
+        return;
+    auto p = v.asType<ResumableObj>();
+    if (p == 0)
+        *sp = v;
+    else {
+        //printf("resumable %p\n", p);
+        auto ofp = fp;
+        // TODO also break if pending != 0, inner() may have to step() on entry!
+        while (true)
+            if (p->step(p->retVal)) {
+                auto q = p->retVal.asType<ResumableObj>();
+                if (q != 0) {
+                    q->chain = p;
+                    p = q;
+                } else if (fp != ofp) { // need to leave, prepare to resume later
+                    assert(fp->result == 0);
+                    fp->result = p;
+                    return;
+                }
+            } else if (p-> chain != 0)
+                p = p->chain;
+            else
+                break;
+        assert(fp->result == 0);
+        // TODO if retVal not nil, store in *sp ?
+    }
 }
 
 Value* Context::prepareStack (FrameObj& fo, Value* argv) {

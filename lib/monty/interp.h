@@ -224,9 +224,7 @@ private:
     void op_CallMethod (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
         sp -= nargs + 2 * nkw + 1;
-        Value v = sp->obj().call(nargs + 1, sp + 1);
-        if (!v.isNil())
-            *sp = v;
+        doCall(nargs + 1, sp + 1);
     }
 
     //CG1 op s
@@ -271,9 +269,7 @@ private:
     void op_CallFunction (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-        Value v = sp->obj().call(nargs, sp + 1);
-        if (!v.isNil())
-            *sp = v;
+        doCall(nargs, sp + 1);
     }
 
     //CG1 op
@@ -292,6 +288,9 @@ private:
         Value v = fp->result != 0 ? fp->result : *sp;
         popState();
         ofp->leave();
+        if (v.asType<ResumableObj>() != 0) {
+            printf("resuming!\n");
+        }
         if (sp != 0) // null when returning from main, i.e. top level
             *sp = v;
     }
