@@ -5,7 +5,7 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <strings.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <sys/ioctl.h>
@@ -141,11 +141,10 @@ Value SocketObj::poll (int argc, Value argv []) {
 }
 
 Value SocketObj::bind (int arg) {
-    sockaddr_in addr = {
-        .sin_family = AF_INET,
-        .sin_addr.s_addr = INADDR_ANY,
-        .sin_port = htons(arg),
-    };
+    sockaddr_in addr;
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(arg);
     auto r = ::bind(sock, (sockaddr*) &addr, sizeof addr);
     assert(r == 0);
     return Value::nil;
