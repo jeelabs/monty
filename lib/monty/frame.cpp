@@ -94,7 +94,6 @@ void Context::start (ModuleObj& mod, const LookupObj& builtins) {
     tasks.append(fp);
 }
 
-#include <stdio.h>
 void Context::doCall (int argc, Value argv[]) {
     Value v = sp->obj().call(argc, argv);
     if (v.isNil())
@@ -103,7 +102,6 @@ void Context::doCall (int argc, Value argv[]) {
     if (p == 0)
         *sp = v;
     else {
-        //printf("resumable %p\n", p);
         auto ofp = fp;
         // TODO also break if pending != 0, inner() may have to step() on entry!
         while (true)

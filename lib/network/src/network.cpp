@@ -264,17 +264,22 @@ Value SocketObj::read (Value arg) {
 }
 
 bool SocketObj::sendIt (Value arg) {
-#if 0
-    assert(arg.isStr()); // TODO for now ...
-    const char* s = arg;
-#else
-    const char* s = "mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n";
-#endif
-    auto n = strlen(s);
+    const void* p;
+    int n;
+    if (arg.isStr()) {
+        p = (const char*) arg;
+        n = strlen(arg);
+    } else {
+        auto o = arg.asType<BytesObj>();
+        assert(o != 0);
+        p = (const uint8_t*) *o;
+        n = o->len();
+    }
     if (n + 50 > tcp_sndbuf(socket)) // check for some spare room, just in case
         return false;
+    printf("444\n");
 
-    auto r = tcp_write(socket, s, n, TCP_WRITE_FLAG_COPY);
+    auto r = tcp_write(socket, p, n, TCP_WRITE_FLAG_COPY);
     if (r != 0) { // session probably closed by peer
         printf("write err %d sndbuf %d\n", r, tcp_sndbuf(socket));
         close();

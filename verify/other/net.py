@@ -15,8 +15,8 @@ async def onAccept(sess):
     b = sess.read(100)
     print('read2', b, len(b))
     while True:
-        #sess.read(1000)
-        sess.write('mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n')
+        #sess.write('mmmmmmmm\n')
+        sess.write(b'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n')
         print('written')
 
 s.accept(onAccept)
