@@ -139,8 +139,7 @@ struct SocketObj : Object {
     static const LookupObj attrs;
     static TypeObj info;
 
-    SocketObj (tcp_pcb* p) : socket (p), readQueue (0, 0),
-                             writeQueue (0, 0), toSend (Value::nil) {
+    SocketObj (tcp_pcb* p) : socket (p), readQueue (0, 0), writeQueue (0, 0) {
         tcp_arg(socket, this);
     }
 
@@ -162,7 +161,7 @@ private:
     tcp_pcb* socket;
     BytecodeObj* accepter = 0;
     ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
-    Value toSend;
+    Value toSend = Value::nil;
     ArrayObj* recvBuf = 0;
 };
 
@@ -370,8 +369,8 @@ const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMa
 TypeObj SocketObj::info ("<socket>", SocketObj::create, &SocketObj::attrs);
 TypeObj& SocketObj::type () const { return info; }
 
-const FunObj fo_poll = f_poll;
 const FunObj fo_ifconfig = f_ifconfig;
+const FunObj fo_poll = f_poll;
 
 static const LookupObj::Item lo_network [] = {
     { "ifconfig", &fo_ifconfig },

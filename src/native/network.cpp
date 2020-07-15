@@ -4,33 +4,22 @@
 #if INCLUDE_NETWORK
 
 #include <assert.h>
-#include <sys/socket.h>
+#include <stdio.h>
+#include <strings.h>
+#include <unistd.h>
 
-static Value f_poll (int argc, Value argv []) {
-    assert(argc == 1);
-    // TODO
-    return Value::nil;
-}
+#include <sys/ioctl.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <sys/select.h>
+#include <netinet/in.h>
+
+const int MAX_SOCK = 20;
+
+static struct SocketObj* sockets [MAX_SOCK];
 
 static Value f_ifconfig (int argc, Value argv []) {
-    static bool inited = false;
-    if (!inited) {
-        inited = true;
-        // TODO
-    }
-
-    assert(argc == 5);
-#if 0
-    ip4_addr ifconf [4];
-    for (int i = 0; i < 4; ++i) {
-        assert(argv[i+1].isStr());
-        auto ok = ip4addr_aton(argv[i+1], ifconf + i);
-        (void) ok; assert(ok == 1);
-    }
-#endif
-
-    // TODO
-
+    // nothing to do
     return Value::nil;
 }
 
@@ -39,10 +28,11 @@ struct SocketObj : Object {
     static const LookupObj attrs;
     static TypeObj info;
 
-    SocketObj (void* p) : socket (p), readQueue (0, 0),
-                             writeQueue (0, 0), toSend (Value::nil) {
-        // TODO tcp_arg(socket, this);
+    SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
+        addSock();
     }
+
+    ~SocketObj () override { delSock(); }
 
     TypeObj& type () const override;
     void mark (void (*gc)(const Object&)) const override;
@@ -56,19 +46,34 @@ struct SocketObj : Object {
     Value write (Value arg);
     Value close ();
 
+    static Value poll (int argc, Value argv []);
 private:
-    void* socket;
+    int sock;
     BytecodeObj* accepter = 0;
     ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
-    Value toSend;
+    Value toSend = Value::nil;
     ArrayObj* recvBuf = 0;
+
+    void addSock () {
+        for (auto& s : sockets)
+            if (s == 0) {
+                s = this;
+                break;
+            }
+    }
+
+    void delSock () {
+        for (auto& s : sockets)
+            if (s == this)
+                s = 0;
+    }
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1);
-    void* p = 0; // TODO tcp_new();
-    assert(p != 0);
-    return new SocketObj (p);
+    auto sd = socket(AF_INET, SOCK_STREAM, 0);
+    assert(sd >= 0);
+    return new SocketObj (sd);
 }
 
 void SocketObj::mark (void (*gc)(const Object&)) const {
@@ -87,8 +92,59 @@ Value SocketObj::attr (const char* key, Value& self) const {
     return attrs.at(key);
 }
 
+Value SocketObj::poll (int argc, Value argv []) {
+    assert(argc == 1);
+
+    fd_set fdIn;
+    FD_ZERO(&fdIn);
+    for (auto& s : sockets)
+        if (s != 0 && (s->accepter != 0 || s->readQueue.len() > 0)) {
+            FD_SET(s->sock, &fdIn);
+        }
+
+    static timeval tv; // cleared
+    auto r = select(MAX_SOCK, &fdIn, 0, 0, &tv);
+    assert(r >= 0);
+
+    if (r > 0)
+        for (auto& s : sockets) {
+            if (s == 0 || !FD_ISSET(s->sock, &fdIn))
+                continue;
+            if (s->accepter != 0) {
+                auto newsd = ::accept(s->sock, 0, 0);
+                assert(newsd >= 0);
+                Value argv = new SocketObj (newsd);
+                Value v = s->accepter->call(1, &argv);
+                assert(v.isObj());
+                Context::tasks.append(v);
+                continue;
+            }
+            if (s->readQueue.len() > 0) {
+                uint8_t buf [100];
+                auto len = ::recv(s->sock, buf, sizeof buf, 0);
+                assert(len >= 0);
+                if (len > 0) {
+                    int n = s->recvBuf->write(buf, len);
+                    assert(n == len); // TODO nope, read as much as needed!
+                    Context::wakeUp(s->readQueue.pop(0), s->recvBuf);
+                } else
+                    s->close();
+                continue;
+            }
+            assert(false); // TODO called addSock too soon?
+        }
+
+    return Value::nil;
+}
+
 Value SocketObj::bind (int arg) {
-    // TODO
+    sockaddr_in addr = {
+        .sin_family = AF_INET,
+        .sin_addr.s_addr = INADDR_ANY,
+        .sin_port = htons(arg),
+    };
+    auto r = ::bind(sock, (sockaddr*) &addr, sizeof addr);
+    assert(r == 0);
     return Value::nil;
 }
 
@@ -98,8 +154,13 @@ Value SocketObj::connect (int argc, Value argv []) {
     return Value::nil;
 }
 
+// TODO listen and accept can be combined, no point in having two calls AFAICT
 Value SocketObj::listen (int arg) {
-    // TODO
+    int on = 1;
+    auto r = ioctl(sock, FIONBIO, &on);
+    assert(r == 0);
+    r = ::listen(sock, arg);
+    assert(r == 0);
     return Value::nil;
 }
 
@@ -107,8 +168,6 @@ Value SocketObj::accept (Value arg) {
     auto bco = arg.asType<BytecodeObj>();
     assert(bco != 0 && (bco->scope & 1) != 0); // make sure it's a generator
     accepter = bco;
-
-    // TODO
     return Value::nil;
 }
 
@@ -122,16 +181,27 @@ Value SocketObj::read (Value arg) {
 }
 
 Value SocketObj::write (Value arg) {
-    assert(toSend.isNil()); // don't allow multiple outstanding sends
-    // TODO
+    const void* p;
+    int n;
+    if (arg.isStr()) {
+        p = (const char*) arg;
+        n = strlen(arg);
+    } else {
+        auto o = arg.asType<BytesObj>();
+        assert(o != 0);
+        p = (const uint8_t*) *o;
+        n = o->len();
+    }
+    auto r = send(sock, p, n, 0);
+    assert(r == n);
     return Value::nil;
 }
 
 Value SocketObj::close () {
-    //printf("\t CLOSE! %p r %d w %d\n",
-    //        socket, (int) readQueue.len(), (int) writeQueue.len());
-    // TODO
-    toSend = Value::nil;
+    printf("\t CLOSE! %d r %d w %d\n",
+            sock, (int) readQueue.len(), (int) writeQueue.len());
+    ::close(sock);
+    delSock(); // TODO yuck ...
     if (readQueue.len() > 0)
         readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
@@ -177,8 +247,8 @@ const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMa
 TypeObj SocketObj::info ("<socket>", SocketObj::create, &SocketObj::attrs);
 TypeObj& SocketObj::type () const { return info; }
 
-const FunObj fo_poll = f_poll;
 const FunObj fo_ifconfig = f_ifconfig;
+const FunObj fo_poll = SocketObj::poll;
 
 static const LookupObj::Item lo_network [] = {
     { "ifconfig", &fo_ifconfig },
