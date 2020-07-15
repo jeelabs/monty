@@ -48,8 +48,7 @@ Value* FrameObj::bottom () const {
 void FrameObj::leave () {
     ctx->shrink(bcObj.frameSize()); // note that the stack could move
 
-    assert(ctx->tasks.len() > 0);
-    if (this == ctx->tasks.at(0).asType<FrameObj>())
+    if (ctx->tasks.len() > 0 && this == ctx->tasks.at(0).asType<FrameObj>())
         ctx->tasks.pop(0);
 
     if (!isCoro()) // don't delete frame on return, it may have a reference

@@ -4,7 +4,6 @@ def loop():
         print(i, machine.ticks())
         i += 1
         yield
-    machine.ticker() # allows main loop to exit
-    yield # TODO can't return out of a coro yet
+    machine.ticker()
 
 machine.ticker(10, loop())

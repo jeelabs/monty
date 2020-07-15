@@ -38,7 +38,7 @@ platformio.ini:
 	#     upload_port = /dev/cu.usbmodemDDD8B7B81
 	#     monitor_port = /dev/cu.usbmodemDDD8B7B83
 	#
-	# Make a thin wrapper around PlatformIO, its use is optional.
+	# Make is a thin wrapper around PlatformIO, its use is optional.
 	@exit 1
 
 %.mpy : %.py
