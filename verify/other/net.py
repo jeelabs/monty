@@ -26,4 +26,4 @@ def loop():
         network.poll()
         yield
 
-machine.timer(10, loop())
+machine.ticker(10, loop())

@@ -52,7 +52,7 @@ static uint32_t start, begin, last;
 
 // interface exposed to the VM
 
-Value f_timer (int argc, Value argv []) {
+Value f_ticker (int argc, Value argv []) {
     Value h = id;
     if (argc > 1) {
         if (argc != 3 || !argv[1].isInt())
@@ -81,12 +81,12 @@ Value f_ticks (int argc, Value argv []) {
     return t - begin; // make all runs start out the same way
 }
 
-static const FunObj fo_timer (f_timer);
+static const FunObj fo_ticker (f_ticker);
 static const FunObj fo_ticks (f_ticks);
 
 static const LookupObj::Item lo_machine [] = {
     { "blah", &f_blah },
-    { "timer", &fo_timer },
+    { "ticker", &fo_ticker },
     { "ticks", &fo_ticks },
 };
 

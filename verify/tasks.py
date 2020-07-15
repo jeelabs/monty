@@ -21,7 +21,7 @@ def loop():
             monty.tasks.append(w)
         waiting = []
         yield
-    machine.timer() # allows main loop to exit
+    machine.ticker() # allows main loop to exit
     yield # TODO can't return out of a coro yet
 
-machine.timer(10, loop())
+machine.ticker(10, loop())
