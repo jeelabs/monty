@@ -29,6 +29,10 @@ struct SocketObj : Object {
     static TypeObj info;
 
     SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
+        int on = 1;
+        auto r1 = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, &on, sizeof on);
+        auto r2 = ioctl(sock, FIONBIO, &on);
+        assert(r1 == 0 && r2 == 0);
         addSock();
     }
 
@@ -40,8 +44,7 @@ struct SocketObj : Object {
 
     Value bind (int arg);
     Value connect (int argc, Value argv []);
-    Value listen (int arg);
-    Value accept (Value arg);
+    Value listen (int argc, Value argv []);
     Value read (Value arg);
     Value write (Value arg);
     Value close ();
@@ -154,19 +157,13 @@ Value SocketObj::connect (int argc, Value argv []) {
     return Value::nil;
 }
 
-// TODO listen and accept can be combined, no point in having two calls AFAICT
-Value SocketObj::listen (int arg) {
-    int on = 1;
-    auto r = ioctl(sock, FIONBIO, &on);
-    assert(r == 0);
-    r = ::listen(sock, arg);
-    assert(r == 0);
-    return Value::nil;
-}
-
-Value SocketObj::accept (Value arg) {
-    auto bco = arg.asType<BytecodeObj>();
+Value SocketObj::listen (int argc, Value argv[]) {
+    assert(argc == 3 && argv[2].isInt());
+    auto bco = argv[1].asType<BytecodeObj>();
     assert(bco != 0 && (bco->scope & 1) != 0); // make sure it's a generator
+
+    auto r = ::listen(sock, argv[2]);
+    assert(r == 0);
     accepter = bco;
     return Value::nil;
 }
@@ -175,8 +172,6 @@ Value SocketObj::read (Value arg) {
     recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : arg.asType<ArrayObj>();
     assert(recvBuf != 0 && recvBuf->isBuffer());
     Context::suspend(readQueue);
-
-    // TODO
     return Value::nil;
 }
 
@@ -200,8 +195,8 @@ Value SocketObj::write (Value arg) {
 Value SocketObj::close () {
     printf("\t CLOSE! %d r %d w %d\n",
             sock, (int) readQueue.len(), (int) writeQueue.len());
-    ::close(sock);
     delSock(); // TODO yuck ...
+    ::close(sock);
     if (readQueue.len() > 0)
         readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
@@ -220,9 +215,6 @@ static const MethObj mo_connect = m_connect;
 static const auto m_listen = MethObj::wrap(&SocketObj::listen);
 static const MethObj mo_listen = m_listen;
 
-static const auto m_accept = MethObj::wrap(&SocketObj::accept);
-static const MethObj mo_accept = m_accept;
-
 static const auto m_read = MethObj::wrap(&SocketObj::read);
 static const MethObj mo_read = m_read;
 
@@ -236,7 +228,6 @@ static const LookupObj::Item socketMap [] = {
     { "bind", &mo_bind },
     { "connect", &mo_connect },
     { "listen", &mo_listen },
-    { "accept", &mo_accept },
     { "read", &mo_read },
     { "write", &mo_write },
     { "close", &mo_close },

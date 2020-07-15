@@ -149,8 +149,7 @@ struct SocketObj : Object {
 
     Value bind (int arg);
     Value connect (int argc, Value argv []);
-    Value listen (int arg);
-    Value accept (Value arg);
+    Value listen (int argc, Value argv []);
     Value read (Value arg);
     Value write (Value arg);
     Value close ();
@@ -213,17 +212,15 @@ Value SocketObj::connect (int argc, Value argv []) {
     return Value::nil;
 }
 
-Value SocketObj::listen (int arg) {
-    socket = tcp_listen_with_backlog(socket, arg);
-    assert(socket != NULL);
-    return Value::nil;
-}
-
-Value SocketObj::accept (Value arg) {
-    auto bco = arg.asType<BytecodeObj>();
+Value SocketObj::listen (int argc, Value argv []) {
+    assert(argc == 3 && argv[2].isInt());
+    auto bco = argv[1].asType<BytecodeObj>();
     assert(bco != 0 && (bco->scope & 1) != 0); // make sure it's a generator
-    accepter = bco;
 
+    socket = tcp_listen_with_backlog(socket, argv[2]);
+    assert(socket != NULL);
+
+    accepter = bco;
     tcp_accept(socket, [](void *arg, tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.accepter != 0);
@@ -342,9 +339,6 @@ static const MethObj mo_connect = m_connect;
 static const auto m_listen = MethObj::wrap(&SocketObj::listen);
 static const MethObj mo_listen = m_listen;
 
-static const auto m_accept = MethObj::wrap(&SocketObj::accept);
-static const MethObj mo_accept = m_accept;
-
 static const auto m_read = MethObj::wrap(&SocketObj::read);
 static const MethObj mo_read = m_read;
 
@@ -358,7 +352,6 @@ static const LookupObj::Item socketMap [] = {
     { "bind", &mo_bind },
     { "connect", &mo_connect },
     { "listen", &mo_listen },
-    { "accept", &mo_accept },
     { "read", &mo_read },
     { "write", &mo_write },
     { "close", &mo_close },
