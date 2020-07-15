@@ -152,7 +152,7 @@ struct SocketObj : Object {
     Value connect (int argc, Value argv []);
     Value listen (int arg);
     Value accept (Value arg);
-    Value read (int arg);
+    Value read (Value arg);
     Value write (Value arg);
     Value close ();
 
@@ -161,8 +161,9 @@ private:
 
     tcp_pcb* socket;
     BytecodeObj* accepter = 0;
-    ListObj readQueue, writeQueue; // TODO don't need to be queues: fix suspend!
+    ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
     Value toSend;
+    ArrayObj* recvBuf = 0;
 };
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -177,7 +178,10 @@ void SocketObj::mark (void (*gc)(const Object&)) const {
     gc(writeQueue);
     if (accepter != 0)
         gc(*accepter);
-    // TODO toSend always a str for now, no gc needed yet
+    if (toSend.isObj())
+        gc(toSend.obj());
+    if (recvBuf != 0)
+        gc(*recvBuf);
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
@@ -235,7 +239,9 @@ Value SocketObj::accept (Value arg) {
     return Value::nil;
 }
 
-Value SocketObj::read (int arg) {
+Value SocketObj::read (Value arg) {
+    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : arg.asType<ArrayObj>();
+    assert(recvBuf != 0 && recvBuf->isBuffer());
     Context::suspend(readQueue);
 
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
@@ -244,10 +250,11 @@ Value SocketObj::read (int arg) {
         if (p != 0) {
             if (self.readQueue.len() == 0)
                 return ERR_BUF;
-            // TODO copy incoming data to a buffer, and pass it to task
-            Context::tasks.append(self.readQueue.pop(0));
-            tcp_recved(tpcb, p->tot_len);
+            auto n = self.recvBuf->write(p->payload, p->tot_len);
+            assert(n > 0);
+            tcp_recved(tpcb, n);
             pbuf_free(p);
+            Context::wakeUp(self.readQueue.pop(0), self.recvBuf);
         } else
             self.close();
         return ERR_OK;

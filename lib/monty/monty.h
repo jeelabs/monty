@@ -7,7 +7,7 @@ struct Vector {
     Vector (size_t bits);
     ~Vector ();
 
-    uint32_t length () const { return fill; }
+    size_t length () const { return fill; }
     int width () const { auto b = 1<<logBits; return b < 8 ? -b : b/8; }
 
     int getInt (int idx) const;
@@ -315,10 +315,10 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
 
     Value len () const override { return length(); }
 
-    virtual void  insert (int, Value);
+    virtual void insert (int, Value);
     virtual Value pop (int =-1);
-    virtual void  remove (Value);
-    virtual void  reverse ();
+    virtual void remove (Value);
+    virtual void reverse ();
 
     void append (Value v) { insert(length(), v); }
 
@@ -339,17 +339,21 @@ struct ArrayObj : MutSeqObj {
 
     void mark (void (*gc)(const Object&)) const override;
 
-    ArrayObj (char t);
+    ArrayObj (char t, size_t sz =0);
 
     Value len () const override { return length(); }
+    Value at (Value i) const override { return get(i); }
+
+    bool isBuffer () const { return logBits == 3; }
+    size_t write (const void* p, size_t n);
 
     Value get (int idx) const;
     void set (int idx, Value val);
 
-    void  insert (int, Value) override;
+    void insert (int, Value) override;
     Value pop (int =-1) override;
-    void  remove (Value) override;
-    void  reverse () override;
+    void remove (Value) override;
+    void reverse () override;
 
     char atype;
     static int typeBits (char typecode);
@@ -683,6 +687,7 @@ struct Context : Object, private VecOfValue {
     FrameObj* flip (FrameObj*);
 
     static void suspend (ListObj& queue);
+    static void wakeUp (Value task, Value retVal =Value::nil);
     void resume (FrameObj&);
 
     void doCall (int argc, Value argv[]);

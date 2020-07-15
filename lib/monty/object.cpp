@@ -341,13 +341,26 @@ Value ArrayObj::create (const TypeObj&, int argc, Value argv[]) {
     return new ArrayObj (*(const char*) argv[0]);
 }
 
-ArrayObj::ArrayObj (char t) : atype (t) {
+ArrayObj::ArrayObj (char t, size_t sz) : atype (t) {
     auto p = strchr(types, t);
     logBits = p != 0 ? bits[p-types] : 3; // overwrites VecOfValue settings
+    if (sz > 0) {
+        ins(0, sz);
+        del(0, sz);
+    }
 }
 
 void ArrayObj::mark (void (*gc)(const Object&)) const {
     // do NOT call the base class markVec(gc); !
+}
+
+size_t ArrayObj::write (const void* p, size_t n) {
+    auto w = width();
+    if (n > capacity / w - fill)
+        n = capacity / w - fill;
+    memcpy(getPtr(fill), p, n * w);
+    fill += n;
+    return n;
 }
 
 Value ArrayObj::get (int idx) const {

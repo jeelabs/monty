@@ -259,8 +259,23 @@ void Context::suspend (ListObj& queue) {
     raise(Value::nil); // exit inner vm loop
 }
 
+void Context::wakeUp (Value task, Value retVal) {
+    auto fp = task.asType<FrameObj>();
+    assert(fp != 0);
+    if (!retVal.isNil()) {
+        assert(fp->result == 0 && retVal.isObj());
+        // TODO also deal with ResumableObj's here?
+        fp->result = &retVal.obj();
+    }
+    tasks.append(task);
+}
+
 void Context::resume (FrameObj& frame) {
     frame.caller = flip(frame.caller != 0 ? frame.caller : &frame);
+    if (fp != 0 && fp->result != 0) {
+        *sp = fp->result;
+        fp->result = 0;
+    }
 }
 
 bool Context::isAlive () const {
