@@ -24,5 +24,7 @@ def loop():
     for _ in range(1000):
         network.poll()
         yield
+    machine.ticker() # allows main loop to exit
+    yield # TODO can't return out of a coro yet
 
 machine.ticker(10, loop())
