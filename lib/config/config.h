@@ -1,5 +1,9 @@
 // Application wide configuration
 
+#if NATIVE
+#include "config-native.h"
+#endif
+
 #if STM32F1 || STM32F4
 #include "config-stm32.h"
 #endif
