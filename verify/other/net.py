@@ -21,7 +21,7 @@ async def accept(sess):
 s.listen(accept, 3)
 
 def loop():
-    while True:
+    for _ in range(1000):
         network.poll()
         yield
 
