@@ -197,7 +197,7 @@ private:
         Value self = Value::nil;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
-        if (false && !self.isNil()) // TODO only when it's a method!
+        if (!self.isNil() && sp->asType<BytecodeObj>() != 0)
             *sp = new BoundMethObj (*sp, self);
     }
 
@@ -369,7 +369,7 @@ private:
             assert(ip != 0 && sp != 0 && fp != 0);
             Value* bottom = fp->bottom(); (void) bottom;
 #if SHOW_INSTR_PTR
-            printf("\tip %p 0x%02x sp %d e %d ",
+            printf("\tip %p 0x%02x sp %2d e %d : ",
                     ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
             if (sp >= bottom)
                 print(*sp);

@@ -40,8 +40,7 @@ uint32_t Vector::getIntU (int idx) const {
 void* Vector::getPtr (int idx) const {
     if (idx < 0)
         idx += fill;
-    assert(data != 0);
-    return data->d + idx * width();
+    return data != 0 ? data->d + idx * width() : 0;
 }
 
 void Vector::set (int idx, int val) {

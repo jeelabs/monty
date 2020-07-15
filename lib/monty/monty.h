@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 struct Vector {
+    Vector (size_t bits);
     ~Vector ();
 
     uint32_t length () const { return fill; }
@@ -31,8 +32,6 @@ protected:
     uint32_t logBits :8;
     uint32_t capacity :24; // in bytes
     uint32_t fill = 0;     // in elements
-
-    Vector (size_t bits);
 private:
     void alloc (size_t sz);     // see gc.c
 };
@@ -361,12 +360,13 @@ struct ArrayObj : MutSeqObj {
 
         virtual bool flush () { return true; }
 
-        bool need (int bytes);
-        void put (uint8_t v) { *ptr++ = v; }
+        bool need (size_t bytes);
+        size_t room () const { return buffer.capacity - buffer.fill; }
+        void put (uint8_t v) { base[buffer.fill++] = v; }
         void put (const void* p, size_t n);
 
         ArrayObj& buffer;
-        uint8_t* ptr = 0;
+        uint8_t* base = 0;
     };
 };
 

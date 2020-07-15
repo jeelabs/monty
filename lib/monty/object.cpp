@@ -374,7 +374,7 @@ void  ArrayObj::reverse () {
     // TODO
 }
 
-bool ArrayObj::Strategy::need (int bytes) {
+bool ArrayObj::Strategy::need (size_t bytes) {
     if (buffer.fill + bytes > buffer.capacity) {
         if (buffer.fill > 0 && !flush())
             return false;
@@ -384,13 +384,15 @@ bool ArrayObj::Strategy::need (int bytes) {
             buffer.del(buffer.fill, grow);
         }
     }
-    ptr = (uint8_t*) buffer.getPtr(buffer.fill);
+    base = (uint8_t*) buffer.getPtr(0);
+    assert(room() >= bytes);
     return true;
 }
 
 void ArrayObj::Strategy::put (const void* p, size_t n) {
-    memcpy(ptr, p, n);
-    ptr += n;
+    assert(n <= room());
+    memcpy(base + buffer.fill, p, n);
+    buffer.fill += n;
 }
 
 Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -469,8 +471,10 @@ Value& DictObj::atKey (Value key, Mode mode) {
 }
 
 Value BoundMethObj::call (int argc, Value argv[]) const {
-    assert(false); // TODO
-    return Value::nil;
+    auto m = meth.asType<BytecodeObj>();
+    assert(m != 0);
+    argv[-1] = self; // TODO writes in caller's stack! is this always safe ???
+    return m->call(argc + 1, argv - 1);
 }
 
 BytecodeObj& BytecodeObj::create (ModuleObj& mo, int bytes) {
