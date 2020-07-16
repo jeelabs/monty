@@ -16,7 +16,7 @@ void unittest_uart_begin () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    //wait_ms(100);
+    wait_ms(100);
 }
 
 void unittest_uart_putchar (char c) {

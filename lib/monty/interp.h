@@ -47,9 +47,7 @@ struct Interp : Context {
             outer();
             if (tasks.len() == 0)
                 break;
-            auto fp = tasks.at(0).asType<FrameObj>();
-            assert(fp != 0);
-            resume(*fp);
+            resume(tasks.at(0));
         }
     }
 
@@ -67,8 +65,7 @@ private:
             else
                 break;                  // no runnable context left
 
-            if (gcCheck())              // collect garbage, if needed
-                gcTrigger();
+            gcCheck(true);              // collect garbage, if needed
         }
     }
 

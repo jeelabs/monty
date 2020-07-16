@@ -148,8 +148,7 @@ static void* allocate (size_t sz) {
                 if (stats.cob > stats.mob)
                     stats.mob = stats.cob;
 
-                if (Context::gcCheck())
-                    Context::raise(Value::nil); // exit inner loop
+                Context::gcCheck(); // exit inner loop after each new allocation
                 return p;
             }
         }
@@ -288,9 +287,18 @@ void Object::gcStats () {
 #endif
 }
 
-bool Context::gcCheck () {
-    return vm != 0 && ((GC_MEM_BYTES - stats.cob) < (GC_MEM_BYTES / 10) ||
-            (vecTop - vecs > (int) sizeof vecs - 1000)); // TODO 10? 1000?
+void Context::gcCheck (bool actNow) {
+    if (vm == 0)
+        return;
+    // TODO 10? 1000? magic values ...
+    if ((GC_MEM_BYTES - stats.cob) > (GC_MEM_BYTES / 10) &&
+            (vecTop - vecs < (int) sizeof vecs - 1000))
+        return;
+
+    if (actNow)
+        gcTrigger();
+    else
+        raise(); // exit inner loop
 }
 
 static uint32_t tagBits [MAX/HPS/32];

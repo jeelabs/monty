@@ -696,20 +696,20 @@ struct Context : Object, private VecOfValue {
     static Value print (Value);
 
     Value nextPending ();
-    static void raise (Value);
+    static void raise (Value =Value::nil);
     static int setHandler (Value);
 
     FrameObj* flip (FrameObj*);
 
     static void suspend (ListObj& queue);
     static void wakeUp (Value task, Value retVal =Value::nil);
-    void resume (FrameObj&);
+    void resume (Value);
 
     void doCall (Value func, int argc, Value argv []);
     static Context* prepare (bool coro);
 
-    static bool gcCheck ();     // see gc.c, called from outer vm loop
-    static void gcTrigger ();   // see gc.c, called from outer vm loop
+    static void gcCheck (bool =false); // see gc.c
+    static void gcTrigger ();          // may not be called from inner vm loop
 
     static ListObj tasks;
     bool isAlive () const;

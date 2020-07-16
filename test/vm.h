@@ -13,7 +13,8 @@ static void vmInstance () {
 
 static void vmGcTrigger () {
     Interp vm;
-    TEST_ASSERT(!vm.gcCheck());
+    vm.gcCheck();
+    TEST_ASSERT(vm.nextPending().isNil());
     vm.gcTrigger();
     TEST_ASSERT(true);
 }

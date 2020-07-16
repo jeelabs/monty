@@ -39,7 +39,7 @@ void FrameObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value FrameObj::next () {
-    ctx->resume(*this);
+    ctx->resume(this);
     return Value::nil; // TODO really?
 }
 
@@ -102,10 +102,7 @@ void Context::doCall (Value func, int argc, Value argv[]) {
         return;
 
     auto p = v.asType<ResumableObj>();
-    if (p == 0) {
-        assert(!v.isNil());
-        *sp = v;
-    } else {
+    if (p != 0) {
         auto ofp = fp;
         // TODO also break if pending != 0, inner() may have to step() on entry!
         while (true)
@@ -114,7 +111,7 @@ void Context::doCall (Value func, int argc, Value argv[]) {
                 if (q != 0) {
                     q->chain = p;
                     p = q;
-                } else if (fp != ofp) { // need to leave, prepare to resume later
+                } else if (fp != ofp) { // leave now, prepare to resume later
                     assert(fp->result == 0);
                     fp->result = p;
                     return;
@@ -124,17 +121,21 @@ void Context::doCall (Value func, int argc, Value argv[]) {
             else
                 break;
         assert(fp->result == 0);
-        // TODO if retVal not nil, store in *sp ?
+        v = p->retVal;
+        assert(v.isNil()); // TODO is this just to clear it ???
     }
+
+    if (!v.isNil())
+        *sp = v;
 }
 
 Context* Context::prepare (bool coro) {
     return coro ? new Context : vm->fp != 0 ? vm->fp->ctx : vm;
 }
 
+// raise() quits inner vm loop
 // raise(int n) triggers handler, 1..MAX_HANDLERS-1
 // raise(str|obj) raises an exception, i.e triggers slot 0
-// raise(nil) quits inner vm loop
 void Context::raise (Value e) {
     assert(vm != 0);
 
@@ -220,7 +221,7 @@ void Context::popState () {
     auto& caller = fp->caller; // TODO messy, fp will change in flip
     flip(caller);
     if (caller == 0)
-        raise(Value::nil); // exit the vm loop
+        raise(); // exit the vm loop
     caller = 0; // cleared to flag as suspended if this is a coro
 }
 
@@ -239,7 +240,7 @@ void Context::suspend (ListObj& queue) {
 
     queue.append(v);
     tasks.pop(0);
-    raise(Value::nil); // exit inner vm loop
+    raise(); // exit inner vm loop
 }
 
 void Context::wakeUp (Value task, Value retVal) {
@@ -253,8 +254,10 @@ void Context::wakeUp (Value task, Value retVal) {
     tasks.append(task);
 }
 
-void Context::resume (FrameObj& frame) {
-    frame.caller = flip(frame.caller != 0 ? frame.caller : &frame);
+void Context::resume (Value v) {
+    auto frame = v.asType<FrameObj>();
+    assert(frame != 0);
+    frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
     if (fp != 0 && fp->result != 0) {
         *sp = fp->result;
         fp->result = 0;
