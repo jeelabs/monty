@@ -641,7 +641,7 @@ protected:
     ResumableObj (int argc, Value argv[]) : nargs (argc), args (argv) {}
 
     int nargs;
-    Value* args;
+    Value* args; // TODO how about vector compaction? always len 1 ? use tuple?
 };
 
 //CG3 type <frame>
@@ -710,7 +710,7 @@ struct Context : Object, private VecOfValue {
     static Context* prepare (bool coro);
 
     static void gcCheck (bool =false); // see gc.c
-    static void gcTrigger ();          // may not be called from inner vm loop
+    static void gcTrigger (); // may not be called from inner vm loop
 
     static ListObj tasks;
     bool isAlive () const;

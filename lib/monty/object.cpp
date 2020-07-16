@@ -145,6 +145,7 @@ ClassObj::ClassObj (int argc, Value argv[])
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
+    assert(&type.type() == &ClassObj::info);
     return new InstanceObj ((const ClassObj&) type, argc, argv);
 }
 
@@ -225,16 +226,14 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
         p = (const char*) argv[0];
         n = strlen((const char*) p);
     } else {
-        assert(argv[0].isObj());
-        auto& a = argv[0].obj();
-        if (&a.type() == &StrObj::info) {
-            auto& o = (StrObj&) a;
-            p = (const char*) o;
-            n = o.len();
-        } else if (&a.type() == &BytesObj::info) {
-            auto& o = (BytesObj&) a;
-            p = (const uint8_t*) o;
-            n = o.len();
+        auto ps = argv[0].asType<StrObj>();
+        auto pb = argv[0].asType<BytesObj>();
+        if (ps != 0) {
+            p = (const char*) *ps;
+            n = ps->len();
+        } else if (pb != 0) {
+            p = (const uint8_t*) *pb;
+            n = pb->len();
         } else
             assert(false); // TODO iterables
     }
