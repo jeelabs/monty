@@ -282,7 +282,7 @@ private:
         Value v = *sp;
         popState();
         if (!v.isNil()) {
-            assert(sp != 0);
+            assert(sp != 0 && sp >= fp->bottom());
             *sp = v;
         }
     }
@@ -296,8 +296,10 @@ private:
         if (v.asType<ResumableObj>() != 0) {
             printf("resuming!\n");
         }
-        if (sp != 0) // null when returning from main, i.e. top level
+        if (sp != 0) { // null when returning from main, i.e. top level
+            assert(sp >= fp->bottom());
             *sp = v;
+        }
     }
 
     //CG1 op v
