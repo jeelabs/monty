@@ -485,65 +485,6 @@ Value& DictObj::atKey (Value key, Mode mode) {
     return Value::invalid;
 }
 
-Value BoundMethObj::call (int argc, Value argv[]) const {
-    argv[-1] = self; // TODO writes in caller's stack! is this always safe ???
-    // FIXME no, it isn't: some calls are (0, 0) and some are with a single
-    //  Value arg, passed as &v - need to revisit all lines which do a call()
-    // idea: support a "vcall(fmt, arg1, arg2, ...)" - with in-line conversion
-    //  of all args to Values, and then allowing the fmt arg to be overwritten
-    return meth.obj().call(argc + 1, argv - 1);
-}
-
-BytecodeObj& BytecodeObj::create (ModuleObj& mo, int bytes) {
-    return *new (bytes) BytecodeObj (mo);
-}
-
-void BytecodeObj::mark (void (*gc)(const Object&)) const {
-    gc(owner);
-    constObjs.markVec(gc);
-}
-
-void CallArgsObj::mark (void (*gc)(const Object&)) const {
-    gc(bytecode);
-    if (posArgs != 0)
-        gc(*posArgs);
-    if (kwArgs != 0)
-        gc(*kwArgs);
-}
-
-Value CallArgsObj::call (int argc, Value argv[]) const {
-    return call (argc, argv, 0, 0);
-}
-
-Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retVal) const {
-    auto fp = new FrameObj (bytecode, dp, retVal);
-
-    // TODO more arg cases, i.e. keyword args
-    for (int i = 0; i < bytecode.n_pos; ++i)
-        if (i < argc)
-            fp->fastSlot(i) = argv[i];
-        else if (posArgs != 0 && i < posArgs->len())
-            fp->fastSlot(i) = posArgs->at(i);
-
-    if (bytecode.scope & 0x4) // if arg list has *args
-        fp->fastSlot(bytecode.n_pos + bytecode.n_kwonly) =
-            TupleObj::create(TupleObj::info, argc - bytecode.n_pos,
-                                                argv + bytecode.n_pos);
-
-    return fp->isCoro() ? fp : Value::nil; // no result yet
-}
-
-void ModuleObj::mark (void (*gc)(const Object&)) const {
-    DictObj::mark(gc);
-    if (init != 0)
-        gc(*init);
-}
-
-Value ModuleObj::attr (const char* name, Value& self) const {
-    self = Value::nil;
-    return at(name);
-}
-
 static const auto mo_count = MethObj::wrap(&SeqObj::count);
 static const MethObj m_count = mo_count;
 
