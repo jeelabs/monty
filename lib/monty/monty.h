@@ -225,7 +225,6 @@ struct BytesObj : SeqObj, protected Vector {
     operator const uint8_t* () const;
 
     Value at (Value) const override;
-    Value attr (const char*, Value&) const override;
     Value len () const override { return hasVec() ? length() : noVec().size; }
 
     Value decode () const;
@@ -252,7 +251,6 @@ struct StrObj : SeqObj {
     operator const char* () const { return s; }
 
     Value at (Value) const override;
-    Value attr (const char*, Value&) const override;
     Value len () const override;
     Value count (Value) const override { return 9; } // TODO
 
@@ -390,7 +388,6 @@ struct ListObj : MutSeqObj {
     ListObj (int argc, Value argv[]);
 
     Value at (Value) const override;
-    Value attr (const char*, Value&) const override;
 };
 
 //CG< type dict

@@ -96,10 +96,15 @@ Value Object::repr   () const                    { assert(false); }
 Value Object::call   (int, Value[]) const        { assert(false); }
 Value Object::unop   (UnOp) const                { assert(false); }
 Value Object::binop  (BinOp, Value) const        { assert(false); }
-Value Object::attr   (const char*, Value&) const { assert(false); }
 Value Object::at     (Value) const               { assert(false); }
 Value Object::iter   () const                    { assert(false); }
 Value Object::next   ()                          { assert(false); }
+
+Value Object::attr (const char* name, Value& self) const {
+    self = Value::nil;
+    auto atab = type().chain;
+    return atab != 0 ? atab->at(name) : at(name);
+}
 
 SeqObj const SeqObj::dummy;
 
@@ -254,11 +259,6 @@ Value BytesObj::at (Value idx) const {
     return ((const uint8_t*) *this)[i];
 }
 
-Value BytesObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
-}
-
 Value BytesObj::decode () const {
     return Value::nil; // TODO
 }
@@ -277,11 +277,6 @@ Value StrObj::at (Value idx) const {
     buf[0] = s[i];
     buf[1] = 0;
     return buf;
-}
-
-Value StrObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
 }
 
 Value StrObj::len () const {
@@ -434,11 +429,6 @@ ListObj::ListObj (int argc, Value argv[]) {
 Value ListObj::at (Value idx) const {
     assert(idx.isInt());
     return get(idx);
-}
-
-Value ListObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
 }
 
 Value IterObj::next () {
