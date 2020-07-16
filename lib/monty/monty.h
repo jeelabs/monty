@@ -690,7 +690,7 @@ struct Context : Object, private VecOfValue {
     static void wakeUp (Value task, Value retVal =Value::nil);
     void resume (FrameObj&);
 
-    void doCall (int argc, Value argv[]);
+    void doCall (Value func, int argc, Value argv []);
     static Value* prepareStack (FrameObj& fo, Value* av);
 
     static bool gcCheck ();     // see gc.c, called from outer vm loop

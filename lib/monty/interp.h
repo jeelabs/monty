@@ -224,7 +224,7 @@ private:
     void op_CallMethod (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
         sp -= nargs + 2 * nkw + 1;
-        doCall(nargs + 1, sp + 1);
+        doCall(*sp, nargs + 1, sp + 1);
     }
 
     //CG1 op s
@@ -269,7 +269,7 @@ private:
     void op_CallFunction (uint32_t arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-        doCall(nargs, sp + 1);
+        doCall(*sp, nargs, sp + 1);
     }
 
     //CG1 op

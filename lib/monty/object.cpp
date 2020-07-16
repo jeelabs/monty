@@ -484,14 +484,12 @@ Value& DictObj::atKey (Value key, Mode mode) {
 }
 
 Value BoundMethObj::call (int argc, Value argv[]) const {
-    auto m = meth.asType<BytecodeObj>();
-    assert(m != 0);
     argv[-1] = self; // TODO writes in caller's stack! is this always safe ???
     // FIXME no, it isn't: some calls are (0, 0) and some are with a single
     //  Value arg, passed as &v - need to revisit all lines which do a call()
     // idea: support a "vcall(fmt, arg1, arg2, ...)" - with in-line conversion
     //  of all args to Values, and then allowing the fmt arg to be overwritten
-    return m->call(argc + 1, argv - 1);
+    return meth.obj().call(argc + 1, argv - 1);
 }
 
 BytecodeObj& BytecodeObj::create (ModuleObj& mo, int bytes) {

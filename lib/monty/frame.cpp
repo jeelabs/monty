@@ -93,8 +93,9 @@ void Context::start (ModuleObj& mod, const LookupObj& builtins) {
     tasks.append(fp);
 }
 
-void Context::doCall (int argc, Value argv[]) {
-    Value v = sp->obj().call(argc, argv);
+void Context::doCall (Value func, int argc, Value argv[]) {
+    assert(func.isObj());
+    Value v = func.obj().call(argc, argv);
     if (v.isNil())
         return;
     auto p = v.asType<ResumableObj>();
