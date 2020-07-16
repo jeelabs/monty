@@ -115,6 +115,7 @@ Value BytesObj::repr (Value writer) const {
 }
 
 Value StrObj::repr (Value writer) const {
+    //printf("\"%s\"", (const char*) *this);
     printf("%s", (const char*) *this);
     return Value::nil;
 }
@@ -135,6 +136,7 @@ Value Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("Nil"); break;
         case Value::Int: printf("%d", (int) v); break;
+        //case Value::Str: printf("\"%s\"", (const char*) v); break;
         case Value::Str: printf("%s", (const char*) v); break;
         case Value::Obj: return v.obj().repr(Value::nil); // TODO writer ...
     }
