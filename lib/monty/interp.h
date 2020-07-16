@@ -308,6 +308,12 @@ private:
     }
 
     //CG1 op v
+    void op_BuildSet (uint32_t arg) {
+        sp -= (int) arg - 1; // in case arg is 0
+        *sp = new SetObj (arg, sp);
+    }
+
+    //CG1 op v
     void op_BuildMap (uint32_t arg) {
         *++sp = new DictObj (arg);
     }
@@ -372,7 +378,8 @@ private:
                     ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
             if (sp >= bottom)
                 sp->dump(":");
-            printf("\n");
+            else
+                printf("\n");
 #endif
             assert(bottom - 1 <= sp && sp < bottom + fp->bcObj.stackSz);
             assert(fp->excTop <= fp->bcObj.excDepth);
@@ -445,6 +452,8 @@ private:
                     op_BuildTuple(fetchVarInt()); break;
                 case Op::BuildList:
                     op_BuildList(fetchVarInt()); break;
+                case Op::BuildSet:
+                    op_BuildSet(fetchVarInt()); break;
                 case Op::BuildMap:
                     op_BuildMap(fetchVarInt()); break;
                 case Op::LoadGlobal:

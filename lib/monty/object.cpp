@@ -430,6 +430,10 @@ Value ListObj::at (Value idx) const {
     return get(idx);
 }
 
+Value SetObj::create (const TypeObj&, int argc, Value argv[]) {
+    return new SetObj (argc, argv);
+}
+
 Value IterObj::next () {
     auto& so = seq.obj().asSeq();
     if (pos < so.len())
@@ -531,3 +535,4 @@ const LookupObj TupleObj::attrs (0, 0);
 const LookupObj DictObj::attrs (0, 0);
 const LookupObj ClassObj::attrs (0, 0);
 const LookupObj ArrayObj::attrs (0, 0);
+const LookupObj SetObj::attrs (0, 0);

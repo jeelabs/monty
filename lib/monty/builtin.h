@@ -27,6 +27,7 @@ const TypeObj ClassObj::info ("class", ClassObj::create, &ClassObj::attrs);
 const TypeObj  DictObj::info ("dict", DictObj::create, &DictObj::attrs);
 const TypeObj   IntObj::info ("int", IntObj::create, &IntObj::attrs);
 const TypeObj  ListObj::info ("list", ListObj::create, &ListObj::attrs);
+const TypeObj   SetObj::info ("set", SetObj::create, &SetObj::attrs);
 const TypeObj   StrObj::info ("str", StrObj::create, &StrObj::attrs);
 const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 
@@ -52,6 +53,7 @@ const TypeObj&     ClassObj::type () const { return info; }
 const TypeObj&      DictObj::type () const { return info; }
 const TypeObj&       IntObj::type () const { return info; }
 const TypeObj&      ListObj::type () const { return info; }
+const TypeObj&       SetObj::type () const { return info; }
 const TypeObj&       StrObj::type () const { return info; }
 const TypeObj&     TupleObj::type () const { return info; }
 //CG>
@@ -120,15 +122,21 @@ Value StrObj::repr (Value writer) const {
     return Value::nil;
 }
 
+Value TupleObj::repr (Value writer) const {
+    auto p = new Printer (length, (Value*) vec); // FIXME const!
+    p->style("(", ", ", ")"); // TODO 1-element tuple needs an extra comma
+    return p;
+}
+
 Value ListObj::repr (Value writer) const {
     auto p = new Printer (length(), (Value*) getPtr(0));
     p->style("[", ", ", "]");
     return p;
 }
 
-Value TupleObj::repr (Value writer) const {
-    auto p = new Printer (length, (Value*) vec); // FIXME const!
-    p->style("(", ", ", ")"); // TODO 1-element tuple needs an extra comma
+Value SetObj::repr (Value writer) const {
+    auto p = new Printer (length(), (Value*) getPtr(0));
+    p->style("{", ", ", "}");
     return p;
 }
 
@@ -202,6 +210,7 @@ static const LookupObj::Item builtins [] = {
     { "dict", &DictObj::info },
     { "int", &IntObj::info },
     { "list", &ListObj::info },
+    { "set", &SetObj::info },
     { "str", &StrObj::info },
     { "tuple", &TupleObj::info },
     { "print", &f_print },

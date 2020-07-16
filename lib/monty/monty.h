@@ -392,6 +392,19 @@ struct ListObj : MutSeqObj {
     Value at (Value) const override;
 };
 
+//CG< type set
+struct SetObj : ListObj {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
+    static const TypeObj info;
+    const TypeObj& type () const override;
+//CG>
+
+    SetObj (int argc, Value argv[]) : ListObj (argc, argv) {}
+
+    Value repr (Value) const override; // see builtin.h
+};
+
 //CG< type dict
 struct DictObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
