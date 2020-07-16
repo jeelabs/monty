@@ -92,7 +92,6 @@ void VecOfValue::markVec (void (*gc)(const Object&)) const {
             gc(get(i).obj());
 }
 
-Value Object::repr   () const                    { assert(false); }
 Value Object::call   (int, Value[]) const        { assert(false); }
 Value Object::unop   (UnOp) const                { assert(false); }
 Value Object::binop  (BinOp, Value) const        { assert(false); }

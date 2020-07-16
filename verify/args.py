@@ -1,7 +1,5 @@
 def f(*a):
-    print('f',123, len(a))
-    for i in a:
-        print('\t', i)
+    print('f',123, a)
 
 f()
 f(1)

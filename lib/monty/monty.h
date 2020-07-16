@@ -120,14 +120,14 @@ struct Object {
 
     virtual void mark (void (*gc)(const Object&)) const {}
 
-    virtual Value repr   () const;
-    virtual Value call   (int, Value[]) const;
-    virtual Value unop   (UnOp) const;
-    virtual Value binop  (BinOp, Value) const;
-    virtual Value attr   (const char*, Value&) const;
-    virtual Value at     (Value) const;
-    virtual Value iter   () const;
-    virtual Value next   ();
+    virtual Value repr  (Value) const; // see builtin.h
+    virtual Value call  (int, Value[]) const;
+    virtual Value unop  (UnOp) const;
+    virtual Value binop (BinOp, Value) const;
+    virtual Value attr  (const char*, Value&) const;
+    virtual Value at    (Value) const;
+    virtual Value iter  () const;
+    virtual Value next  ();
 
     virtual const SeqObj& asSeq () const;
 
@@ -224,6 +224,7 @@ struct BytesObj : SeqObj, protected Vector {
     ~BytesObj () override;
     operator const uint8_t* () const;
 
+    Value repr (Value) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override { return hasVec() ? length() : noVec().size; }
 
@@ -250,6 +251,7 @@ struct StrObj : SeqObj {
     StrObj (const char* v) : s (v) {}
     operator const char* () const { return s; }
 
+    Value repr (Value) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override;
     Value count (Value) const override { return 9; } // TODO
@@ -282,6 +284,7 @@ struct TupleObj : SeqObj {
 //CG>
     void mark (void (*gc)(const Object&)) const override;
 
+    Value repr (Value) const override; // see builtin.h
     Value len () const override { return length; }
     Value at (Value) const override;
 
@@ -324,8 +327,6 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
     virtual void reverse ();
 
     void append (Value v) { insert(length(), v); }
-
-    const VecOfValue& asVec () const { return *this; } // FIXME Context::print !
 
     static MutSeqObj dummy;
 protected:
@@ -387,6 +388,7 @@ struct ListObj : MutSeqObj {
 
     ListObj (int argc, Value argv[]);
 
+    Value repr (Value) const override; // see builtin.h
     Value at (Value) const override;
 };
 

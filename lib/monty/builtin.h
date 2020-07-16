@@ -80,11 +80,14 @@ struct Printer : ResumableObj {
     }
 
     bool step (Value v) override {
+        if (pos == 0)
+            printf("%s", prefix);
         if (pos >= nargs) {
             printf("%s", postfix);
             return false;
         }
-        printf("%s", pos == 0 ? prefix : separator);
+        if (pos > 0)
+            printf("%s", separator);
         retVal = Context::print(args[pos++]);
         return true;
     }
@@ -96,47 +99,44 @@ private:
     const char* postfix ="\n";
 };
 
+Value Object::repr (Value writer) const {
+    printf("<Obj %s at %p>", type().name, this);
+    return Value::nil;
+}
+
+Value BytesObj::repr (Value writer) const {
+    int n = len();
+    auto p = (const uint8_t*) *this;
+    printf("b'");
+    for (int i = 0; i < n; ++i)
+        printf("%c", p[i]); // TODO yuck, and not complete
+    printf("'");
+    return Value::nil;
+}
+
+Value StrObj::repr (Value writer) const {
+    printf("%s", (const char*) *this);
+    return Value::nil;
+}
+
+Value ListObj::repr (Value writer) const {
+    auto p = new Printer (length(), (Value*) getPtr(0));
+    p->style("[", ", ", "]");
+    return p;
+}
+
+Value TupleObj::repr (Value writer) const {
+    auto p = new Printer (length, (Value*) vec); // FIXME const!
+    p->style("(", ", ", ")"); // TODO 1-element tuple needs an extra comma
+    return p;
+}
+
 Value Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("Nil"); break;
         case Value::Int: printf("%d", (int) v); break;
         case Value::Str: printf("%s", (const char*) v); break;
-        case Value::Obj: {
-            auto ps = v.ifType<StrObj>();
-            if (ps != 0) {
-                printf("%s", (const char*) *ps);
-                break;
-            }
-            auto pb = v.ifType<BytesObj>();
-            if (pb != 0) {
-                printf("b'");
-                int n = pb->len();
-                auto p = (const uint8_t*) *pb;
-                for (int i = 0; i < n; ++i)
-                    printf("%c", p[i]); // TODO yuck, and not complete
-                printf("'");
-                break;
-            }
-            auto pl = v.ifType<ListObj>();
-            if (pl != 0) {
-                auto& v = pl->asVec(); // TODO yuck
-                auto p = new Printer (v.length(), (Value*) v.getPtr(0));
-                p->style("[", ", ", "]");
-                return p;
-            }
-#if 0
-            auto pt = v.ifType<TupleObj>();
-            if (pt != 0) {
-                auto& v = pt->asVec(); // TODO yuck
-                auto p = new Printer (v.length(), &v.get(0));
-                p->style("[", ", ", "]");
-                return p;
-            }
-#endif
-            auto& o = v.obj();
-            printf("<Obj %s at %p>", o.type().name, &o);
-            break;
-        }
+        case Value::Obj: return v.obj().repr(Value::nil); // TODO writer ...
     }
     return Value::nil;
 }

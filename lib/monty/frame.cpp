@@ -182,7 +182,7 @@ void Context::doCall (Value func, int argc, Value argv[]) {
                 break;
         assert(fp->result == 0);
         v = p->retVal;
-        assert(v.isNil()); // TODO is this just to clear it ???
+        //assert(v.isNil()); // TODO is this just to clear it ???
     }
 
     if (!v.isNil() && sp >= fp->bottom()) // TODO why can sp be below bottom?
