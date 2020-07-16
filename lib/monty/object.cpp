@@ -291,6 +291,8 @@ Value SeqObj::index (Value) const { assert(false); }
 Value SeqObj::count (Value) const { assert(false); }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
+    if (argc < 0)
+        argc = 0; // see CallArgsObj::call()
     return new (argc * sizeof (Value)) TupleObj (argc, argv);
 }
 
@@ -516,12 +518,17 @@ Value CallArgsObj::call (int argc, Value argv[]) const {
 Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retVal) const {
     auto fp = new FrameObj (bytecode, dp, retVal);
 
-    // TODO more arg cases, i.e. *args and keyword args
+    // TODO more arg cases, i.e. keyword args
     for (int i = 0; i < bytecode.n_pos; ++i)
         if (i < argc)
             fp->fastSlot(i) = argv[i];
         else if (posArgs != 0 && i < posArgs->len())
             fp->fastSlot(i) = posArgs->at(i);
+
+    if (bytecode.scope & 0x4) // if arg list has *args
+        fp->fastSlot(bytecode.n_pos + bytecode.n_kwonly) =
+            TupleObj::create(TupleObj::info, argc - bytecode.n_pos,
+                                                argv + bytecode.n_pos);
 
     return fp->isCoro() ? fp : Value::nil; // no result yet
 }
