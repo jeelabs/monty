@@ -1,4 +1,4 @@
-BOARD ?= bluepill_f103c8
+BOARD ?= disco_f407vg
 
 ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
@@ -35,11 +35,11 @@ fresh:
 	@ rm -f $(out)
 
 clean:
-	rm -f $(mpy) $(out)
+	rm -f dog *.mpy *.out
 
-# compare output to expected (show only 10 diff lines), else show word count
+# compare output to expected (show last 10 diff lines), else show word count
 %.exp : %.out %.mpy
-	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | head; else wc $<; fi
+	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | tail; else wc $<; fi
 
 # 1) store bytecode in ram, 2) reset the µC, 3) capture output to file
 %.out : %.mpy
@@ -56,9 +56,8 @@ else
 	  st-flash --reset write $< $(ram) >&/dev/null; \
 	  wait $$pid
 endif
-	@ rm $<
 
 %.mpy : %.py
 	@ mpy-cross $<
 
-.PRECIOUS: $(out)
+.PRECIOUS: $(mpy) $(out)
