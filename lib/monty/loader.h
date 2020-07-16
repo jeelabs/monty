@@ -82,8 +82,8 @@ struct Loader {
         qBuf.ins(0, 500); // TODO create space to avoid constant resizing
         qBuf.del(0, 500);
 
-        auto mo = new ModuleObj;
-        mo->init = &loadRaw(*mo); // circular: Module -> Bytecode -> Module
+        auto mo = new ModuleObj; // circular: Module -> Bytecode -> Module
+        mo->init = &loadRaw(*mo);
 
         loaderf("qUsed #%d %db\n", (int) qVec.length(), qBuf.length());
         qPool = QstrPool::create((const char*) qBuf.getPtr(0), qVec.length(), qBuf.length());

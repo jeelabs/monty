@@ -85,7 +85,10 @@ void Context::shrink (int num) {
 void Context::start (ModuleObj& mod, const LookupObj& builtins) {
     mod.chain = &builtins;
     mod.atKey("__name__", DictObj::Set) = "__main__";
-    mod.call(0, 0);
+
+    assert(mod.init != 0);
+    CallArgsObj cao (*mod.init); // only needed to set up args in call()
+    cao.call(0, 0, &mod, 0);
 
     assert(fp != 0);
     tasks.append(fp);

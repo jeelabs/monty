@@ -137,10 +137,11 @@ Value ClassObj::create (const TypeObj&, int argc, Value argv[]) {
 
 ClassObj::ClassObj (int argc, Value argv[])
         : TypeObj (argv[1], InstanceObj::create) {
+    assert(argc >= 2);
     auto cao = argv[0].asType<CallArgsObj>();
     assert(cao != 0);
     atKey("__name__", DictObj::Set) = argv[1];
-    cao->call (argc, argv, this, this);
+    cao->call (argc - 2, argv + 2, this, this);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -149,7 +150,6 @@ Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
 
 InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
     chain = &parent;
-
     Value self = Value::nil;
     Value init = attr("__init__", self);
     if (!init.isNil()) {
@@ -501,23 +501,6 @@ void BytecodeObj::mark (void (*gc)(const Object&)) const {
     constObjs.markVec(gc);
 }
 
-void ModuleObj::mark (void (*gc)(const Object&)) const {
-    DictObj::mark(gc);
-    if (init != 0)
-        gc(*init);
-}
-
-Value ModuleObj::call (int argc, Value argv[]) const {
-    assert(init != 0);
-    auto cao = new CallArgsObj (*init); // TODO move to call site, i.e. main
-    return cao->call(argc, argv, (DictObj*) this, 0); // FIXME const!
-}
-
-Value ModuleObj::attr (const char* name, Value& self) const {
-    self = Value::nil;
-    return at(name);
-}
-
 void CallArgsObj::mark (void (*gc)(const Object&)) const {
     gc(bytecode);
     if (posArgs != 0)
@@ -541,6 +524,17 @@ Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retV
             fp->fastSlot(i) = posArgs->at(i);
 
     return fp->isCoro() ? fp : Value::nil; // no result yet
+}
+
+void ModuleObj::mark (void (*gc)(const Object&)) const {
+    DictObj::mark(gc);
+    if (init != 0)
+        gc(*init);
+}
+
+Value ModuleObj::attr (const char* name, Value& self) const {
+    self = Value::nil;
+    return at(name);
 }
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);

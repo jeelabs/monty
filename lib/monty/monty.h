@@ -595,21 +595,6 @@ struct BytecodeObj : Object {
     void mark (void (*gc)(const Object&)) const override;
 };
 
-//CG3 type <module>
-struct ModuleObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    const BytecodeObj* init = 0;
-
-    ModuleObj (const LookupObj* lu =0) { chain = lu; }
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    Value call (int argc, Value argv[]) const override;
-    Value attr (const char*, Value&) const override;
-};
-
 //CG3 type <callargs>
 struct CallArgsObj : Object {
     static const TypeObj info;
@@ -625,6 +610,20 @@ struct CallArgsObj : Object {
     const BytecodeObj& bytecode;
     const TupleObj* posArgs = 0; // TODO: better: empty tuple
     const DictObj* kwArgs = 0;   // TODO: better: empty dict
+};
+
+//CG3 type <module>
+struct ModuleObj : DictObj {
+    static const TypeObj info;
+    const TypeObj& type () const override;
+
+    const BytecodeObj* init = 0;
+
+    ModuleObj (const LookupObj* lu =0) { chain = lu; }
+
+    void mark (void (*gc)(const Object&)) const override;
+
+    Value attr (const char*, Value&) const override;
 };
 
 //CG3 type <resumable>
