@@ -253,6 +253,11 @@ Value BytesObj::at (Value idx) const {
     return ((const uint8_t*) *this)[i];
 }
 
+Value BytesObj::attr (const char* key, Value& self) const {
+    self = Value::nil;
+    return attrs.at(key);
+}
+
 Value BytesObj::decode () const {
     return Value::nil; // TODO
 }
@@ -271,6 +276,11 @@ Value StrObj::at (Value idx) const {
     buf[0] = s[i];
     buf[1] = 0;
     return buf;
+}
+
+Value StrObj::attr (const char* key, Value& self) const {
+    self = Value::nil;
+    return attrs.at(key);
 }
 
 Value StrObj::len () const {
@@ -425,6 +435,11 @@ Value ListObj::at (Value idx) const {
     return get(idx);
 }
 
+Value ListObj::attr (const char* key, Value& self) const {
+    self = Value::nil;
+    return attrs.at(key);
+}
+
 Value IterObj::next () {
     auto& so = seq.obj().asSeq();
     if (pos < so.len())
@@ -498,11 +513,6 @@ static const LookupObj::Item bytesMap [] = {
 
 const LookupObj BytesObj::attrs (bytesMap, sizeof bytesMap / sizeof *bytesMap);
 
-Value BytesObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
-}
-
 static const auto mo_encode = MethObj::wrap(&StrObj::encode);
 static const MethObj m_encode = mo_encode;
 
@@ -517,11 +527,6 @@ static const LookupObj::Item strMap [] = {
 
 const LookupObj StrObj::attrs (strMap, sizeof strMap / sizeof *strMap);
 
-Value StrObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
-}
-
 static const auto mo_append = MethObj::wrap(&MutSeqObj::append);
 static const MethObj m_append = mo_append;
 
@@ -530,11 +535,6 @@ static const LookupObj::Item mutSeqMap [] = {
 };
 
 const LookupObj ListObj::attrs (mutSeqMap, sizeof mutSeqMap / sizeof *mutSeqMap);
-
-Value ListObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
-    return attrs.at(key);
-}
 
 const LookupObj IntObj::attrs (0, 0);
 const LookupObj TupleObj::attrs (0, 0);

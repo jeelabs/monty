@@ -37,9 +37,9 @@ fresh:
 clean:
 	rm -f dog *.mpy *.out
 
-# compare output to expected (show last 10 diff lines), else show word count
+# compare output to expected (show first 10 diff lines), else show word count
 %.exp : %.out %.mpy
-	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | tail; else wc $<; fi
+	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | head; else wc $<; fi
 
 # 1) store bytecode in ram, 2) reset the µC, 3) capture output to file
 %.out : %.mpy
