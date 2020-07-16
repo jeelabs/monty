@@ -600,7 +600,8 @@ struct CallArgsObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    CallArgsObj (const BytecodeObj& bco) : bytecode (bco) {}
+    CallArgsObj (const BytecodeObj& bco, TupleObj* pos =0, DictObj* kw =0)
+        : bytecode (bco), posArgs (pos), kwArgs (kw) {}
 
     void mark (void (*gc)(const Object&)) const override;
 
@@ -608,8 +609,9 @@ struct CallArgsObj : Object {
     Value call (int argc, Value argv[], DictObj* dp, const Object* retVal) const;
 
     const BytecodeObj& bytecode;
-    const TupleObj* posArgs = 0; // TODO: better: empty tuple
-    const DictObj* kwArgs = 0;   // TODO: better: empty dict
+private:
+    const TupleObj* posArgs; // TODO: better: empty tuple
+    const DictObj* kwArgs;   // TODO: better: empty dict
 };
 
 //CG3 type <module>

@@ -256,18 +256,16 @@ private:
     void op_MakeFunction (uint32_t arg) {
         auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
         assert(bcp != 0);
-        auto cp = new CallArgsObj (*bcp);
-        *++sp = cp;
+        *++sp = new CallArgsObj (*bcp);
     }
 
     //CG1 op v
     void op_MakeFunctionDefargs (uint32_t arg) {
         auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
         assert(bcp != 0);
-        auto cp = new CallArgsObj (*bcp);
-        cp->kwArgs = sp->asType<DictObj>();
-        cp->posArgs = (--sp)->asType<TupleObj>();
-        *sp = cp;
+        --sp;
+        *sp = new CallArgsObj (*bcp, sp[0].asType<TupleObj>(),
+                                        sp[1].asType<DictObj>());
     }
 
     //CG1 op v
