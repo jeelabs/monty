@@ -91,6 +91,7 @@ struct Value {
     bool isEq (Value) const;
     Value unOp (UnOp op) const;
     Value binOp (BinOp op, Value rhs) const;
+    void dump (const char* msg =0) const; // see builtin.h
 
     static const Value nil;
     static Value invalid; // special value, see DictObj::atKey

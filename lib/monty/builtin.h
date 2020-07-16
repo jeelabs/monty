@@ -54,6 +54,20 @@ const TypeObj&       StrObj::type () const { return info; }
 const TypeObj&     TupleObj::type () const { return info; }
 //CG>
 
+// non-recursive version for debugging, does not affect the VM state
+void Value::dump (const char* msg) const {
+    if (msg != 0)
+        printf("%s ", msg);
+    switch (tag()) {
+        case Value::Nil: printf("<N>"); break;
+        case Value::Int: printf("<I %d>", (int) *this); break;
+        case Value::Str: printf("<S '%s'>", (const char*) *this); break;
+        case Value::Obj: printf("<O %s at %p>", obj().type().name, &obj()); break;
+    }
+    if (msg != 0)
+        printf("\n");
+}
+
 struct Printer : ResumableObj {
     Printer (int argc, Value argv[]) : ResumableObj (argc, argv) {}
 
