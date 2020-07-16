@@ -10,6 +10,10 @@ bool Value::check (const TypeObj& t) const {
     return isObj() && &obj().type() == &t;
 }
 
+void Value::verify (const TypeObj& t) const {
+    assert(check(t));
+}
+
 bool Value::isEq (Value val) const {
     if (v == val.v)
         return true;
@@ -138,10 +142,9 @@ Value ClassObj::create (const TypeObj&, int argc, Value argv[]) {
 ClassObj::ClassObj (int argc, Value argv[])
         : TypeObj (argv[1], InstanceObj::create) {
     assert(argc >= 2);
-    auto cao = argv[0].asType<CallArgsObj>();
-    assert(cao != 0);
     atKey("__name__", DictObj::Set) = argv[1];
-    cao->call (argc - 2, argv + 2, this, this);
+    auto& cao = argv[0].asType<CallArgsObj>();
+    cao.call (argc - 2, argv + 2, this, this);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -155,9 +158,8 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
     Value init = attr("__init__", self);
     if (!init.isNil()) {
         argv[-1] = this; // TODO is this alwats ok ???
-        auto cao = init.asType<CallArgsObj>();
-        assert(cao != 0);
-        cao->call(argc + 1, argv - 1, this, this);
+        auto& cao = init.asType<CallArgsObj>();
+        cao.call(argc + 1, argv - 1, this, this);
     }
 }
 
@@ -180,7 +182,7 @@ Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
 }
 
 BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
-    const void* ptr;
+    void* ptr;
     if (n <= MAX_NOVEC) {
         // short data *overwrites* the Vector in this struct
         auto& p = noVec();
@@ -192,9 +194,9 @@ BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
         ptr = getPtr(0);
     }
     if (p != 0)
-        memcpy((void*) ptr, p, n);
+        memcpy(ptr, p, n);
     else
-        memset((void*) ptr, 0, n);
+        memset(ptr, 0, n);
 }
 
 BytesObj::~BytesObj () {
@@ -226,8 +228,8 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
         p = (const char*) argv[0];
         n = strlen((const char*) p);
     } else {
-        auto ps = argv[0].asType<StrObj>();
-        auto pb = argv[0].asType<BytesObj>();
+        auto ps = argv[0].ifType<StrObj>();
+        auto pb = argv[0].ifType<BytesObj>();
         if (ps != 0) {
             p = (const char*) *ps;
             n = ps->len();

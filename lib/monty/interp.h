@@ -194,7 +194,7 @@ private:
         Value self = Value::nil;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
-        if (!self.isNil() && sp->asType<CallArgsObj>() != 0)
+        if (!self.isNil() && sp->ifType<CallArgsObj>() != 0)
             *sp = new BoundMethObj (*sp, self);
     }
 
@@ -254,18 +254,14 @@ private:
 
     //CG1 op v
     void op_MakeFunction (uint32_t arg) {
-        auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
-        assert(bcp != 0);
-        *++sp = new CallArgsObj (*bcp);
+        *++sp = new CallArgsObj (fp->bcObj.constObjs.get(arg));
     }
 
     //CG1 op v
     void op_MakeFunctionDefargs (uint32_t arg) {
-        auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
-        assert(bcp != 0);
         --sp;
-        *sp = new CallArgsObj (*bcp, sp[0].asType<TupleObj>(),
-                                        sp[1].asType<DictObj>());
+        *sp = new CallArgsObj (fp->bcObj.constObjs.get(arg),
+                        sp[0].ifType<TupleObj>(), sp[1].ifType<DictObj>());
     }
 
     //CG1 op v
@@ -291,9 +287,8 @@ private:
         Value v = fp->result != 0 ? fp->result : *sp;
         popState();
         ofp->leave();
-        if (v.asType<ResumableObj>() != 0) {
+        if (v.ifType<ResumableObj>() != 0)
             printf("resuming!\n");
-        }
         if (sp != 0) { // null when returning from main, i.e. top level
             assert(sp >= fp->bottom());
             *sp = v;
@@ -336,9 +331,8 @@ private:
 
     //CG1 op
     void op_StoreSubscr () {
-        auto dp = sp[-1].asType<DictObj>();
-        assert(dp != 0);
-        dp->atKey(sp[0], DictObj::Set) = sp[-2];
+        auto& dp = sp[-1].asType<DictObj>();
+        dp.atKey(sp[0], DictObj::Set) = sp[-2];
         sp -= 3;
     }
 

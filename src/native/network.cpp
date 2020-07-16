@@ -143,12 +143,12 @@ Value SocketObj::connect (int argc, Value argv []) {
 
 Value SocketObj::listen (int argc, Value argv[]) {
     assert(argc == 3 && argv[2].isInt());
-    auto cao = argv[1].asType<CallArgsObj>();
-    assert(cao != 0 && cao->bytecode.isCoro());
+    auto& cao = argv[1].asType<CallArgsObj>();
+    assert(cao.isCoro());
 
     auto r = ::listen(sock, argv[2]);
     assert(r == 0);
-    accepter = cao;
+    accepter = &cao;
     return Value::nil;
 }
 
@@ -157,13 +157,13 @@ void SocketObj::acceptSession () {
     assert(newsd >= 0);
     Value argv = new SocketObj (newsd);
     Value v = accepter->call(1, &argv);
-    assert(v.isObj());
+    assert(!v.isNil());
     Context::tasks.append(v);
 }
 
 Value SocketObj::read (Value arg) {
-    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : arg.asType<ArrayObj>();
-    assert(recvBuf != 0 && recvBuf->isBuffer());
+    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : &arg.asType<ArrayObj>();
+    assert(recvBuf->isBuffer());
     Context::suspend(readQueue);
     return Value::nil;
 }
@@ -187,10 +187,9 @@ Value SocketObj::write (Value arg) {
         p = (const char*) arg;
         n = strlen(arg);
     } else {
-        auto o = arg.asType<BytesObj>();
-        assert(o != 0);
-        p = (const uint8_t*) *o;
-        n = o->len();
+        auto& o = arg.asType<BytesObj>();
+        p = (const uint8_t*) o;
+        n = o.len();
     }
     auto r = send(sock, p, n, 0);
     assert(r == n);

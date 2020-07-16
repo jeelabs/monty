@@ -163,14 +163,14 @@ struct Loader {
 
         bc.stackSz = prelude.n_state;
         bc.excDepth = prelude.n_exc_stack;
-        bc.scope = prelude.scope_flags;
+        bc.flags = prelude.scope_flags;
         bc.n_pos = prelude.n_pos_args;
         bc.n_kwonly = prelude.n_kwonly_args;
         bc.n_def_pos = prelude.n_def_pos_args;
         bc.hdrSz = prelude.n_info + prelude.n_cell;
         bc.size = bCount;
         loaderf("raw sc %d np %d hs %d sz %d ns %d nx %d ko %d dp %d\n",
-                bc.scope, bc.n_pos, bc.hdrSz, bc.size,
+                bc.flags, bc.n_pos, bc.hdrSz, bc.size,
                 bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);
 
         auto n1 = storeQstr();

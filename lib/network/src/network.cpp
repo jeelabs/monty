@@ -214,13 +214,13 @@ Value SocketObj::connect (int argc, Value argv []) {
 
 Value SocketObj::listen (int argc, Value argv []) {
     assert(argc == 3 && argv[2].isInt());
-    auto cao = argv[1].asType<CallArgsObj>();
-    assert(cao != 0 && cao->bytecode.isCoro());
+    auto& cao = argv[1].asType<CallArgsObj>();
+    assert(cao.isCoro());
 
     socket = tcp_listen_with_backlog(socket, argv[2]);
     assert(socket != NULL);
 
-    accepter = cao;
+    accepter = &cao;
     tcp_accept(socket, [](void *arg, tcp_pcb *newpcb, err_t err) -> err_t {
         auto& self = *(SocketObj*) arg;
         assert(self.accepter != 0);
@@ -236,8 +236,8 @@ Value SocketObj::listen (int argc, Value argv []) {
 }
 
 Value SocketObj::read (Value arg) {
-    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : arg.asType<ArrayObj>();
-    assert(recvBuf != 0 && recvBuf->isBuffer());
+    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : &arg.asType<ArrayObj>();
+    assert(recvBuf->isBuffer());
     Context::suspend(readQueue);
 
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
@@ -266,10 +266,9 @@ bool SocketObj::sendIt (Value arg) {
         p = (const char*) arg;
         n = strlen(arg);
     } else {
-        auto o = arg.asType<BytesObj>();
-        assert(o != 0);
-        p = (const uint8_t*) *o;
-        n = o->len();
+        auto& o = arg.asType<BytesObj>();
+        p = (const uint8_t*) o;
+        n = o.len();
     }
     if (n + 50 > tcp_sndbuf(socket)) // check for some spare room, just in case
         return false;

@@ -102,12 +102,12 @@ Value Context::print (Value v) {
         case Value::Int: printf("%d", (int) v); break;
         case Value::Str: printf("%s", (const char*) v); break;
         case Value::Obj: {
-            auto ps = v.asType<StrObj>();
+            auto ps = v.ifType<StrObj>();
             if (ps != 0) {
                 printf("%s", (const char*) *ps);
                 break;
             }
-            auto pb = v.asType<BytesObj>();
+            auto pb = v.ifType<BytesObj>();
             if (pb != 0) {
                 printf("b'");
                 int n = pb->len();
@@ -117,7 +117,7 @@ Value Context::print (Value v) {
                 printf("'");
                 break;
             }
-            auto pl = v.asType<ListObj>();
+            auto pl = v.ifType<ListObj>();
             if (pl != 0) {
                 auto& v = pl->asVec(); // TODO yuck
                 auto p = new Printer (v.length(), (Value*) v.getPtr(0));
@@ -125,7 +125,7 @@ Value Context::print (Value v) {
                 return p;
             }
 #if 0
-            auto pt = v.asType<TupleObj>();
+            auto pt = v.ifType<TupleObj>();
             if (pt != 0) {
                 auto& v = pt->asVec(); // TODO yuck
                 auto p = new Printer (v.length(), &v.get(0));
@@ -175,10 +175,8 @@ static const StrObj s_version = VERSION;
 
 static Value f_suspend (int argc, Value argv[]) {
     auto qp = &Context::tasks;
-    if (argc > 1) {
-        qp = argv[1].asType<ListObj>();
-        assert(qp != 0);
-    }
+    if (argc > 1)
+        qp = &argv[1].asType<ListObj>();
     Context::suspend(*qp);
     return Value::nil;
 }

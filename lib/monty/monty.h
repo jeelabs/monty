@@ -71,8 +71,11 @@ struct Value {
     Object& obj () const { return *(Object*) v; }
     inline ForceObj objPtr () const;
 
+    template< typename T > // return null pointer if not of required type
+    T* ifType () const { return check(T::info) ? (T*) &obj() : 0; }
+
     template< typename T > // type-asserted safe cast via Object::type()
-    T* asType () const { return check(T::info) ? (T*) &obj() : 0; }
+    T& asType () const { verify(T::info); return *(T*) &obj(); }
 
     enum Tag tag () const {
         return (v & 1) ? Int : // bit 0 set
@@ -98,6 +101,7 @@ struct Value {
 private:
     Value () : v (0) {}
     bool check (const TypeObj& t) const;
+    void verify (const TypeObj& t) const;
 
     uintptr_t v;
 
@@ -576,7 +580,7 @@ struct BytecodeObj : Object {
     OpPtrRO code;
     VecOfValue constObjs;
     int16_t stackSz;
-    int16_t scope;
+    int16_t flags;
     int8_t excDepth;
     int8_t n_pos;
     int8_t n_kwonly;
@@ -589,7 +593,7 @@ struct BytecodeObj : Object {
     static BytecodeObj& create (ModuleObj& mo, int bytes);
     BytecodeObj (ModuleObj& mo) : owner (mo) {}
 
-    bool isCoro () const { return (scope & 1) != 0; } // see runtime0.h:32-35
+    bool isCoro () const { return (flags & 1) != 0; } // TODO see CallArgsObj
     int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
 
     void mark (void (*gc)(const Object&)) const override;
@@ -600,16 +604,19 @@ struct CallArgsObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    CallArgsObj (const BytecodeObj& bco, TupleObj* pos =0, DictObj* kw =0)
-        : bytecode (bco), posArgs (pos), kwArgs (kw) {}
+    CallArgsObj (Value bc, TupleObj* pos =0, DictObj* kw =0)
+        : bytecode (bc.asType<BytecodeObj>()), posArgs (pos), kwArgs (kw) {}
+
+    bool isCoro () const { return (bytecode.flags & 1) != 0; }
+    bool hasVarArgs () const { return (bytecode.flags & 4) != 0; }
 
     void mark (void (*gc)(const Object&)) const override;
 
     Value call (int argc, Value argv[]) const override;
     Value call (int argc, Value argv[], DictObj* dp, const Object* retVal) const;
 
-    const BytecodeObj& bytecode;
 private:
+    const BytecodeObj& bytecode;
     const TupleObj* posArgs; // TODO: better: empty tuple
     const DictObj* kwArgs;   // TODO: better: empty dict
 };

@@ -46,7 +46,7 @@ Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retV
         else if (posArgs != 0 && i < ndp + (int) posArgs->len())
             fp->fastSlot(i) = posArgs->at(i-ndp); // FIXME see verify/args.py !
 
-    if (bytecode.scope & 0x4) // if arg list has *args
+    if (hasVarArgs())
         fp->fastSlot(bytecode.n_pos + bytecode.n_kwonly) =
             TupleObj::create(TupleObj::info, argc - bytecode.n_pos,
                                                 argv + bytecode.n_pos);
@@ -107,7 +107,7 @@ Value* FrameObj::bottom () const {
 void FrameObj::leave () {
     ctx->shrink(bcObj.frameSize()); // note that the stack could move
 
-    if (ctx->tasks.len() > 0 && this == ctx->tasks.at(0).asType<FrameObj>())
+    if (ctx->tasks.len() > 0 && this == &ctx->tasks.at(0).asType<FrameObj>())
         ctx->tasks.pop(0);
 
     if (!isCoro()) // don't delete frame on return, it may have a reference
@@ -161,13 +161,13 @@ void Context::doCall (Value func, int argc, Value argv[]) {
     if (v.isNil())
         return;
 
-    auto p = v.asType<ResumableObj>();
+    auto p = v.ifType<ResumableObj>();
     if (p != 0) {
         auto ofp = fp;
         // TODO also break if pending != 0, inner() may have to step() on entry!
         while (true)
             if (p->step(p->retVal)) {
-                auto q = p->retVal.asType<ResumableObj>();
+                auto q = p->retVal.ifType<ResumableObj>();
                 if (q != 0) {
                     q->chain = p;
                     p = q;
@@ -288,15 +288,14 @@ void Context::popState () {
 void Context::suspend (ListObj& queue) {
     assert(vm->fp != 0 && tasks.len() > 0);
     Value v = tasks.at(0);
-    auto fp = v.asType<FrameObj>();
-    assert(fp != 0);
+    auto& fo = v.asType<FrameObj>();
 
     auto top = vm->fp;
     while (top->caller != 0)
         top = top->caller;
-    assert(top == fp);
+    assert(top == &fo);
 
-    fp->caller = vm->flip(0);
+    fo.caller = vm->flip(0);
 
     queue.append(v);
     tasks.pop(0);
@@ -304,20 +303,18 @@ void Context::suspend (ListObj& queue) {
 }
 
 void Context::wakeUp (Value task, Value retVal) {
-    auto fp = task.asType<FrameObj>();
-    assert(fp != 0);
+    auto& fo = task.asType<FrameObj>();
     if (!retVal.isNil()) {
-        assert(fp->result == 0 && retVal.isObj());
+        assert(fo.result == 0 && retVal.isObj());
         // TODO also deal with ResumableObj's here?
-        fp->result = &retVal.obj();
+        fo.result = &retVal.obj();
     }
     tasks.append(task);
 }
 
 void Context::resume (Value v) {
-    auto frame = v.asType<FrameObj>();
-    assert(frame != 0);
-    frame->caller = flip(frame->caller != 0 ? frame->caller : frame);
+    auto& fo = v.asType<FrameObj>();
+    fo.caller = flip(fo.caller != 0 ? fo.caller : &fo);
     if (fp != 0 && fp->result != 0) {
         assert(sp >= fp->bottom());
         *sp = fp->result;
