@@ -194,7 +194,7 @@ private:
         Value self = Value::nil;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
-        if (!self.isNil() && sp->asType<BytecodeObj>() != 0)
+        if (!self.isNil() && sp->asType<CallArgsObj>() != 0)
             *sp = new BoundMethObj (*sp, self);
     }
 
@@ -254,12 +254,20 @@ private:
 
     //CG1 op v
     void op_MakeFunction (uint32_t arg) {
-        *++sp = fp->bcObj.constObjs.get(arg);
+        auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
+        assert(bcp != 0);
+        auto cp = new CallArgsObj (*bcp);
+        *++sp = cp;
     }
 
     //CG1 op v
     void op_MakeFunctionDefargs (uint32_t arg) {
-        *sp = fp->bcObj.constObjs.get(arg); // TODO need to deal with defargs!
+        auto bcp = fp->bcObj.constObjs.get(arg).asType<BytecodeObj>();
+        assert(bcp != 0);
+        auto cp = new CallArgsObj (*bcp);
+        cp->kwArgs = sp->asType<DictObj>();
+        cp->posArgs = (--sp)->asType<TupleObj>();
+        *sp = cp;
     }
 
     //CG1 op v
@@ -366,10 +374,10 @@ private:
             assert(ip != 0 && sp != 0 && fp != 0);
             Value* bottom = fp->bottom(); (void) bottom;
 #if SHOW_INSTR_PTR
-            printf("\tip %p 0x%02x sp %2d e %d : ",
+            printf("\tip %p 0x%02x sp %2d e %d ",
                     ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
             if (sp >= bottom)
-                sp->dump();
+                sp->dump(":");
             printf("\n");
 #endif
             assert(bottom - 1 <= sp && sp < bottom + fp->bcObj.stackSz);

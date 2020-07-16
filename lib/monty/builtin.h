@@ -7,7 +7,7 @@ const TypeObj& Object::type () const { return info; }
 const TypeObj      BoolObj::info ("<bool>");
 const TypeObj BoundMethObj::info ("<bound-meth>");
 const TypeObj  BytecodeObj::info ("<bytecode>");
-const TypeObj  CallableObj::info ("<callable>");
+const TypeObj  CallArgsObj::info ("<callargs>");
 const TypeObj      Context::info ("<context>");
 const TypeObj     FrameObj::info ("<frame>");
 const TypeObj       FunObj::info ("<function>");
@@ -33,7 +33,7 @@ const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj& BoundMethObj::type () const { return info; }
 const TypeObj&  BytecodeObj::type () const { return info; }
-const TypeObj&  CallableObj::type () const { return info; }
+const TypeObj&  CallArgsObj::type () const { return info; }
 const TypeObj&      Context::type () const { return info; }
 const TypeObj&     FrameObj::type () const { return info; }
 const TypeObj&       FunObj::type () const { return info; }

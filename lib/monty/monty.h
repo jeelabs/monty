@@ -589,11 +589,10 @@ struct BytecodeObj : Object {
     static BytecodeObj& create (ModuleObj& mo, int bytes);
     BytecodeObj (ModuleObj& mo) : owner (mo) {}
 
+    bool isCoro () const { return (scope & 1) != 0; } // see runtime0.h:32-35
     int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
 
     void mark (void (*gc)(const Object&)) const override;
-
-    Value call (int argc, Value argv[]) const override;
 };
 
 //CG3 type <module>
@@ -611,18 +610,21 @@ struct ModuleObj : DictObj {
     Value attr (const char*, Value&) const override;
 };
 
-//CG3 type <callable>
-struct CallableObj : Object {
+//CG3 type <callargs>
+struct CallArgsObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    CallableObj (const BytecodeObj& bco) : bytecode (bco) {}
+    CallArgsObj (const BytecodeObj& bco) : bytecode (bco) {}
 
     void mark (void (*gc)(const Object&)) const override;
 
     Value call (int argc, Value argv[]) const override;
+    Value call (int argc, Value argv[], DictObj* dp, const Object* retVal) const;
 
     const BytecodeObj& bytecode;
+    const TupleObj* posArgs = 0; // TODO: better: empty tuple
+    const DictObj* kwArgs = 0;   // TODO: better: empty dict
 };
 
 //CG3 type <resumable>
@@ -652,10 +654,10 @@ struct FrameObj : DictObj {
     FrameObj* caller = 0;
     Context* ctx = 0;
     DictObj* locals;
-    const Object* result = 0;
+    const Object* result; // module/class init & resumable, TODO Value?
     uint8_t excTop = 0;
 
-    FrameObj (const BytecodeObj& bc, int argc, Value argv[], DictObj* dp = 0);
+    FrameObj (const BytecodeObj& bc, DictObj* dp, const Object* retVal);
 
     void mark (void (*gc)(const Object&)) const override;
 
@@ -665,7 +667,7 @@ struct FrameObj : DictObj {
     Value* bottom () const;
     void leave ();
 
-    bool isCoro () const { return (bcObj.scope & 1) != 0; }
+    bool isCoro () const { return bcObj.isCoro(); }
     Value& fastSlot (int n) const { return bottom()[bcObj.stackSz + ~n]; }
 
     Value* exceptionPushPop (int inc) {

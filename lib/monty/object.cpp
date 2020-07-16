@@ -137,10 +137,10 @@ Value ClassObj::create (const TypeObj&, int argc, Value argv[]) {
 
 ClassObj::ClassObj (int argc, Value argv[])
         : TypeObj (argv[1], InstanceObj::create) {
-    auto& bc = (const BytecodeObj&) argv[0].obj();
+    auto cao = argv[0].asType<CallArgsObj>();
+    assert(cao != 0);
     atKey("__name__", DictObj::Set) = argv[1];
-    auto fp = new FrameObj (bc, argc, argv, this);
-    fp->result = this;
+    cao->call (argc, argv, this, this);
 }
 
 Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
@@ -153,10 +153,10 @@ InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
     Value self = Value::nil;
     Value init = attr("__init__", self);
     if (!init.isNil()) {
-        argv[-1] = this;
-        auto& bc = (const BytecodeObj&) init.obj();
-        auto fp = new FrameObj (bc, argc + 1, argv - 1, this);
-        fp->result = this;
+        argv[-1] = this; // TODO is this alwats ok ???
+        auto cao = init.asType<CallArgsObj>();
+        assert(cao != 0);
+        cao->call(argc + 1, argv - 1, this, this);
     }
 }
 
@@ -501,11 +501,6 @@ void BytecodeObj::mark (void (*gc)(const Object&)) const {
     constObjs.markVec(gc);
 }
 
-Value BytecodeObj::call (int argc, Value argv[]) const {
-    auto fp = new FrameObj (*this, argc, argv);
-    return fp->isCoro() ? fp : Value::nil; // no result yet
-}
-
 void ModuleObj::mark (void (*gc)(const Object&)) const {
     DictObj::mark(gc);
     if (init != 0)
@@ -514,8 +509,8 @@ void ModuleObj::mark (void (*gc)(const Object&)) const {
 
 Value ModuleObj::call (int argc, Value argv[]) const {
     assert(init != 0);
-    new FrameObj (*init, argc, argv, (DictObj*) this); // FIXME loses const
-    return Value::nil; // no result yet, this call has only started
+    auto cao = new CallArgsObj (*init); // TODO move to call site, i.e. main
+    return cao->call(argc, argv, (DictObj*) this, 0); // FIXME const!
 }
 
 Value ModuleObj::attr (const char* name, Value& self) const {
@@ -523,12 +518,28 @@ Value ModuleObj::attr (const char* name, Value& self) const {
     return at(name);
 }
 
-void CallableObj::mark (void (*gc)(const Object&)) const {
+void CallArgsObj::mark (void (*gc)(const Object&)) const {
     gc(bytecode);
+    if (posArgs != 0)
+        gc(*posArgs);
+    if (kwArgs != 0)
+        gc(*kwArgs);
 }
 
-Value CallableObj::call (int argc, Value argv[]) const {
-    auto fp = new FrameObj (bytecode, argc, argv);
+Value CallArgsObj::call (int argc, Value argv[]) const {
+    return call (argc, argv, 0, 0);
+}
+
+Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retVal) const {
+    auto fp = new FrameObj (bytecode, dp, retVal);
+
+    // TODO more arg cases, i.e. *args and keyword args
+    for (int i = 0; i < bytecode.n_pos; ++i)
+        if (i < argc)
+            fp->fastSlot(i) = argv[i];
+        else if (posArgs != 0 && i < posArgs->len())
+            fp->fastSlot(i) = posArgs->at(i);
+
     return fp->isCoro() ? fp : Value::nil; // no result yet
 }
 

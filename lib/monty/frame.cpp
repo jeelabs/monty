@@ -10,8 +10,8 @@ void ResumableObj::mark (void (*gc)(const Object&)) const {
         gc(*chain);
 }
 
-FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
-        : bcObj (bco), locals (dp), savedIp (bco.code) {
+FrameObj::FrameObj (const BytecodeObj& bco, DictObj* dp, const Object* retVal)
+        : bcObj (bco), locals (dp), result (retVal), savedIp (bco.code) {
     if (locals == 0) {
         locals = this;
         chain = &bco.owner;
@@ -19,10 +19,6 @@ FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
 
     ctx = Context::prepare(isCoro());
     spOffset = ctx->extend(bcObj.frameSize()) - 1;
-
-    // TODO many more arg cases, also default args
-    for (int i = 0; i < bcObj.n_pos; ++i)
-        fastSlot(i) = argv[i];
 
     if (!isCoro())
         caller = ctx->flip(this);

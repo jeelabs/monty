@@ -60,7 +60,7 @@ private:
     }
 
     int sock;
-    BytecodeObj* accepter = 0;
+    CallArgsObj* accepter = 0;
     ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
     Value toSend = Value::nil;
     ArrayObj* recvBuf = 0;
@@ -143,12 +143,12 @@ Value SocketObj::connect (int argc, Value argv []) {
 
 Value SocketObj::listen (int argc, Value argv[]) {
     assert(argc == 3 && argv[2].isInt());
-    auto bco = argv[1].asType<BytecodeObj>();
-    assert(bco != 0 && (bco->scope & 1) != 0); // make sure it's a generator
+    auto cao = argv[1].asType<CallArgsObj>();
+    assert(cao != 0 && cao->bytecode.isCoro());
 
     auto r = ::listen(sock, argv[2]);
     assert(r == 0);
-    accepter = bco;
+    accepter = cao;
     return Value::nil;
 }
 
