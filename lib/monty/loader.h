@@ -192,8 +192,9 @@ struct Loader {
         bc.nCode = varInt();
         loaderf("nData %d nCode %d\n", bc.nData, bc.nCode);
 
+        int ct = 0;
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
-            storeQstr();
+            bc.constObjs.set(ct++, loadQstr());
 
         for (int i = 0; i < bc.nData; ++i) {
             auto type = *dp++;
@@ -204,19 +205,19 @@ struct Loader {
             if (type == 'b') {
                 auto p = new (sz) BytesObj (ptr, sz);
                 loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
-                bc.constObjs.set(i, p);
+                bc.constObjs.set(ct++, p);
             } else if (type == 's') {
                 auto buf = (char*) malloc(sz+1);
                 memcpy(buf, ptr, sz);
                 buf[sz] = 0;
                 loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
-                bc.constObjs.set(i, buf);
+                bc.constObjs.set(ct++, buf);
             } else
                 assert(false); // TODO
         }
         for (int i = 0; i < bc.nCode; ++i) {
             loaderf("  raw %d:\n", i+bc.nData);
-            bc.constObjs.set(i+bc.nData, loadRaw(modobj));
+            bc.constObjs.set(ct++, loadRaw(modobj));
         }
 
         return bc;

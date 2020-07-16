@@ -371,8 +371,8 @@ private:
 #if SHOW_INSTR_PTR
             printf("\tip %p 0x%02x sp %2d e %d : ",
                     ip, (uint8_t) *ip, (int) (sp - bottom), fp->excTop);
-            //if (sp >= bottom)
-            //    print(*sp);
+            if (sp >= bottom)
+                sp->dump();
             printf("\n");
 #endif
             assert(bottom - 1 <= sp && sp < bottom + fp->bcObj.stackSz);

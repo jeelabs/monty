@@ -14,7 +14,6 @@ async def accept(sess):
     b = sess.read(100)
     print('read2', b, len(b))
     while True:
-        #sess.write('mmmmmmmm\n')
         sess.write(b'mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\n')
         print('written')
 
