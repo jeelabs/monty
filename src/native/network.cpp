@@ -14,9 +14,7 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 
-const int MAX_SOCK = 20;
-
-static struct SocketObj* sockets [MAX_SOCK];
+static struct SocketObj* sockets [20];
 
 static Value f_ifconfig (int argc, Value argv []) {
     // nothing to do
@@ -28,15 +26,8 @@ struct SocketObj : Object {
     static const LookupObj attrs;
     static TypeObj info;
 
-    SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
-        int on = 1;
-        auto r1 = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, &on, sizeof on);
-        auto r2 = ioctl(sock, FIONBIO, &on);
-        assert(r1 == 0 && r2 == 0);
-        addSock();
-    }
-
-    ~SocketObj () override { delSock(); }
+    SocketObj (int sd);
+    ~SocketObj () override { dropFromPoll(); }
 
     TypeObj& type () const override;
     void mark (void (*gc)(const Object&)) const override;
@@ -51,13 +42,10 @@ struct SocketObj : Object {
 
     static Value poll (int argc, Value argv []);
 private:
-    int sock;
-    BytecodeObj* accepter = 0;
-    ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
-    Value toSend = Value::nil;
-    ArrayObj* recvBuf = 0;
+    void acceptSession ();
+    void readData ();
 
-    void addSock () {
+    void addToPoll () {
         for (auto& s : sockets)
             if (s == 0) {
                 s = this;
@@ -65,12 +53,26 @@ private:
             }
     }
 
-    void delSock () {
+    void dropFromPoll () {
         for (auto& s : sockets)
             if (s == this)
                 s = 0;
     }
+
+    int sock;
+    BytecodeObj* accepter = 0;
+    ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
+    Value toSend = Value::nil;
+    ArrayObj* recvBuf = 0;
 };
+
+SocketObj::SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
+    int on = 1;
+    auto r1 = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, &on, sizeof on);
+    auto r2 = ioctl(sock, FIONBIO, &on);
+    assert(r1 == 0 && r2 == 0);
+    addToPoll();
+}
 
 Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1);
@@ -100,42 +102,25 @@ Value SocketObj::poll (int argc, Value argv []) {
 
     fd_set fdIn;
     FD_ZERO(&fdIn);
+    int maxFd = 0;
     for (auto& s : sockets)
         if (s != 0 && (s->accepter != 0 || s->readQueue.len() > 0)) {
             FD_SET(s->sock, &fdIn);
+            if (maxFd < s->sock)
+                maxFd = s->sock;
         }
 
-    static timeval tv; // cleared
-    auto r = select(MAX_SOCK, &fdIn, 0, 0, &tv);
-    assert(r >= 0);
-
-    if (r > 0)
-        for (auto& s : sockets) {
-            if (s == 0 || !FD_ISSET(s->sock, &fdIn))
-                continue;
-            if (s->accepter != 0) {
-                auto newsd = ::accept(s->sock, 0, 0);
-                assert(newsd >= 0);
-                Value argv = new SocketObj (newsd);
-                Value v = s->accepter->call(1, &argv);
-                assert(v.isObj());
-                Context::tasks.append(v);
-                continue;
+    static timeval tv; // cleared, i.e. immediate return
+    if (select(maxFd + 1, &fdIn, 0, 0, &tv) > 0)
+        for (auto& s : sockets)
+            if (s != 0 && FD_ISSET(s->sock, &fdIn)) {
+                if (s->accepter != 0)
+                    s->acceptSession();
+                else if (s->readQueue.len() > 0)
+                    s->readData();
+                else
+                    assert(false);
             }
-            if (s->readQueue.len() > 0) {
-                uint8_t buf [100];
-                auto len = ::recv(s->sock, buf, sizeof buf, 0);
-                assert(len >= 0);
-                if (len > 0) {
-                    int n = s->recvBuf->write(buf, len);
-                    assert(n == len); // TODO nope, read as much as needed!
-                    Context::wakeUp(s->readQueue.pop(0), s->recvBuf);
-                } else
-                    s->close();
-                continue;
-            }
-            assert(false); // TODO called addSock too soon?
-        }
 
     return Value::nil;
 }
@@ -167,11 +152,32 @@ Value SocketObj::listen (int argc, Value argv[]) {
     return Value::nil;
 }
 
+void SocketObj::acceptSession () {
+    auto newsd = ::accept(sock, 0, 0);
+    assert(newsd >= 0);
+    Value argv = new SocketObj (newsd);
+    Value v = accepter->call(1, &argv);
+    assert(v.isObj());
+    Context::tasks.append(v);
+}
+
 Value SocketObj::read (Value arg) {
     recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : arg.asType<ArrayObj>();
     assert(recvBuf != 0 && recvBuf->isBuffer());
     Context::suspend(readQueue);
     return Value::nil;
+}
+
+void SocketObj::readData () {
+    uint8_t buf [100];
+    auto len = ::recv(sock, buf, sizeof buf, 0);
+    assert(len >= 0);
+    if (len > 0) {
+        int n = recvBuf->write(buf, len);
+        assert(n == len); // TODO nope, read as much as needed!
+        Context::wakeUp(readQueue.pop(0), recvBuf);
+    } else
+        close();
 }
 
 Value SocketObj::write (Value arg) {
@@ -194,7 +200,7 @@ Value SocketObj::write (Value arg) {
 Value SocketObj::close () {
     printf("\t CLOSE! %d r %d w %d\n",
             sock, (int) readQueue.len(), (int) writeQueue.len());
-    delSock(); // TODO yuck ...
+    dropFromPoll(); // TODO yuck ...
     ::close(sock);
     if (readQueue.len() > 0)
         readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
