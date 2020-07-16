@@ -1,4 +1,4 @@
-// Implementation of the main datatypes, i.e. Value, TypeObj, FrameObj, Context.
+// Implementation of stack frame classes, i.e. ResumableObj, FrameObj, Context.
 
 #include "monty.h"
 
@@ -17,8 +17,10 @@ FrameObj::FrameObj (const BytecodeObj& bco, int argc, Value argv[], DictObj* dp)
         chain = &bco.owner;
     }
 
+    ctx = Context::prepare(isCoro());
+    spOffset = ctx->extend(bcObj.frameSize()) - 1;
+
     // TODO many more arg cases, also default args
-    argv = Context::prepareStack (*this, argv);
     for (int i = 0; i < bcObj.n_pos; ++i)
         fastSlot(i) = argv[i];
 
@@ -98,10 +100,12 @@ void Context::doCall (Value func, int argc, Value argv[]) {
     Value v = func.obj().call(argc, argv);
     if (v.isNil())
         return;
+
     auto p = v.asType<ResumableObj>();
-    if (p == 0)
+    if (p == 0) {
+        assert(!v.isNil());
         *sp = v;
-    else {
+    } else {
         auto ofp = fp;
         // TODO also break if pending != 0, inner() may have to step() on entry!
         while (true)
@@ -124,27 +128,8 @@ void Context::doCall (Value func, int argc, Value argv[]) {
     }
 }
 
-Value* Context::prepareStack (FrameObj& fo, Value* argv) {
-    // TODO yuck, but FrameObj needs a stack (too) early on ...
-    //  the problem is argv, which points either lower into this same stack
-    //  (regular calls), or into the parent cor stack (then it won't move)
-    auto sv = vm->fp != 0 ? vm->fp->ctx : vm;
-
-    // TODO this is the only (?) place where the stack may be reallocated and
-    // since argv points into it, it needs to be relocated when this happens
-    // note: base() can't be called if there is no stack, i.e. no argv passed
-
-    if (fo.isCoro()) {
-        fo.ctx = new Context;
-        fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
-        assert(fo.spOffset == -1);
-        return argv; // FIXME vectors can't have moved here, right?
-    }
-
-    fo.ctx = sv;
-    int off = argv != 0 ? argv - sv->base() : 0; // TODO argc zero? yuck
-    fo.spOffset = fo.ctx->extend(fo.bcObj.frameSize()) - 1;
-    return sv->base() + off;
+Context* Context::prepare (bool coro) {
+    return coro ? new Context : vm->fp != 0 ? vm->fp->ctx : vm;
 }
 
 // raise(int n) triggers handler, 1..MAX_HANDLERS-1

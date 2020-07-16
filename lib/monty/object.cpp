@@ -1,4 +1,4 @@
-// Implementation of the main datatypes, i.e. Value, TypeObj, FrameObj, Context.
+// Implementation of the main datatypes, i.e. Value, ArrayObj, DictObj, TypeObj.
 
 #include "monty.h"
 #include "defs.h"
@@ -521,6 +521,15 @@ Value ModuleObj::call (int argc, Value argv[]) const {
 Value ModuleObj::attr (const char* name, Value& self) const {
     self = Value::nil;
     return at(name);
+}
+
+void CallableObj::mark (void (*gc)(const Object&)) const {
+    gc(bytecode);
+}
+
+Value CallableObj::call (int argc, Value argv[]) const {
+    auto fp = new FrameObj (bytecode, argc, argv);
+    return fp->isCoro() ? fp : Value::nil; // no result yet
 }
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);

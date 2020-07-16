@@ -611,6 +611,20 @@ struct ModuleObj : DictObj {
     Value attr (const char*, Value&) const override;
 };
 
+//CG3 type <callable>
+struct CallableObj : Object {
+    static const TypeObj info;
+    const TypeObj& type () const override;
+
+    CallableObj (const BytecodeObj& bco) : bytecode (bco) {}
+
+    void mark (void (*gc)(const Object&)) const override;
+
+    Value call (int argc, Value argv[]) const override;
+
+    const BytecodeObj& bytecode;
+};
+
 //CG3 type <resumable>
 struct ResumableObj : Object {
     static const TypeObj info;
@@ -692,7 +706,7 @@ struct Context : Object, private VecOfValue {
     void resume (FrameObj&);
 
     void doCall (Value func, int argc, Value argv []);
-    static Value* prepareStack (FrameObj& fo, Value* av);
+    static Context* prepare (bool coro);
 
     static bool gcCheck ();     // see gc.c, called from outer vm loop
     static void gcTrigger ();   // see gc.c, called from outer vm loop
