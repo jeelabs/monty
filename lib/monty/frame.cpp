@@ -37,12 +37,14 @@ Value CallArgsObj::call (int argc, Value argv[]) const {
 Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retVal) const {
     auto fp = new FrameObj (bytecode, dp, retVal);
 
+    auto ndp = bytecode.n_def_pos; // shorthand, yuck
+
     // TODO more arg cases, i.e. keyword args
     for (int i = 0; i < bytecode.n_pos; ++i)
         if (i < argc)
             fp->fastSlot(i) = argv[i];
-        else if (posArgs != 0 && i < posArgs->len())
-            fp->fastSlot(i) = posArgs->at(i);
+        else if (posArgs != 0 && i < ndp + (int) posArgs->len())
+            fp->fastSlot(i) = posArgs->at(i-ndp); // FIXME see verify/args.py !
 
     if (bytecode.scope & 0x4) // if arg list has *args
         fp->fastSlot(bytecode.n_pos + bytecode.n_kwonly) =
