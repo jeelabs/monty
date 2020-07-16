@@ -145,7 +145,7 @@ static void* allocate (size_t sz) {
 
                 stats.tob += ns * GC_MEM_ALIGN;
                 stats.cob += ns * GC_MEM_ALIGN;
-                if (stats.cob > stats.mob)
+                if (stats.mob < stats.cob)
                     stats.mob = stats.cob;
 
                 Context::gcCheck(); // exit inner loop after each new allocation
@@ -201,7 +201,7 @@ void Vector::alloc (size_t sz) {
     if (nsz > osz)
         stats.tvb += nsz - osz;
     stats.cvb += nsz - osz;
-    if (stats.cvb > stats.mvb)
+    if (stats.mvb < stats.cvb)
         stats.mvb = stats.cvb;
 
     if (sz == 0) {
@@ -279,11 +279,11 @@ void Object::operator delete (void* p) {
 void Object::gcStats () {
 #if GC_VERBOSE
     debugf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
-            stats.toa., stats.tob, stats.tva, stats.tvb);
+            stats.toa, stats.tob, stats.tva, stats.tvb);
     debugf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
             stats.coa, stats.cob, stats.cva, stats.cvb);
     debugf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
-            stats.moa, mob, stats.mva, stats.mvb);
+            stats.moa, stats.mob, stats.mva, stats.mvb);
 #endif
 }
 
@@ -388,6 +388,6 @@ void Context::gcTrigger () {
     debugf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
             (int) (GC_MEM_BYTES - stats.cob),
             (int) (sizeof vecs - stats.cvb),
-            MEM_BYTES, (int) sizeof vecs);
+            GC_MEM_BYTES, (int) sizeof vecs);
 #endif
 }
