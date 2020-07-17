@@ -142,6 +142,16 @@ Value DictObj::repr (Value writer) const {
     return new Printer (writer, length(), (Value*) getPtr(0), "{:,}");
 }
 
+Value ClassObj::repr (Value writer) const {
+    printf("<class %s>", (const char*) at("__name__"));
+    return Value::nil;
+}
+
+Value InstanceObj::repr (Value writer) const {
+    printf("<%s object at %p>", type().name, this);
+    return Value::nil;
+}
+
 Value Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("Nil"); break;

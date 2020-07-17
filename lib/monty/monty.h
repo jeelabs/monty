@@ -458,6 +458,8 @@ struct ClassObj : TypeObj {
 //CG>
 
     ClassObj (int argc, Value argv[]);
+
+    Value repr (Value) const override; // see builtin.h
 };
 
 // can't be generated, too different
@@ -469,6 +471,8 @@ struct InstanceObj : DictObj {
 
 private:
     InstanceObj (const ClassObj& parent, int argc, Value argv[]);
+
+    Value repr (Value) const override; // see builtin.h
 };
 
 //CG3 type <function>

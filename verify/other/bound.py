@@ -23,18 +23,18 @@ g(1,2,5)
 # Monty:
 #   main qstr #166 1276b
 #   123
-#   <Obj <method> at 0x103762528>
+#   <Obj <method> at 0x10cd26528>
 #   "<method>"
 #   124
-#   <Obj <callargs> at 0x10375d950>
+#   <Obj <callargs> at 0x10cd21950>
 #   "<callargs>"
-#   ({"__name__":"A","__module__":"A","__qualname__":"A","f":<Obj <callargs> at 0x10375d950>},1,2,4)
+#   (<class A>,1,2,4)
 #   (1,2,4)
 #   125
-#   <Obj <bound-meth> at 0x10375d930>
+#   <Obj <bound-meth> at 0x10cd21930>
 #   "<bound-meth>"
-#   ({},1,2,5)
-#   ({},1,2,5)
+#   (<A object at 0x10cd21bd0>,1,2,5)
+#   (<A object at 0x10cd21bd0>,1,2,5)
 #   done
 
 # µPy:
