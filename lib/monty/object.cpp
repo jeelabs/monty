@@ -340,8 +340,8 @@ Value MutSeqObj::pop (int idx) {
     return v;
 }
 
-static const char* types = "bBhHiIlL";
-static const uint8_t bits [] = { 3, 3, 4, 4, 4, 4, 5, 5, };
+static const char* types = "PTNbBhHiIlL";
+static const uint8_t bits [] = { 0, 1, 2, 3, 3, 4, 4, 4, 4, 5, 5, };
 
 Value ArrayObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1 && argv[0].isStr() && strlen(argv[0]) == 1);

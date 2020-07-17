@@ -9,6 +9,7 @@ struct Vector {
 
     size_t length () const { return fill; }
     int width () const { auto b = 1<<logBits; return b < 8 ? -b : b/8; }
+    int widthOf (int num) const { return (num << logBits) >> 3; }
 
     int getInt (int idx) const;
     uint32_t getIntU (int idx) const;
