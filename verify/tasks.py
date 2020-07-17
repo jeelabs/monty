@@ -8,7 +8,7 @@ async def task(rate):
     i = 0
     while True:
         delay(rate)
-        print('t:', machine.ticks(), '\trate:', rate, ' i:', i)
+        print('t', machine.ticks(), 'rate', rate, 'i', i)
         i += 1
 
 for i in [2, 3, 5]:

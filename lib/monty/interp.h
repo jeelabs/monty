@@ -318,6 +318,12 @@ private:
         *++sp = new DictObj (arg);
     }
 
+    //CG1 op
+    void op_StoreMap () {
+        sp -= 2;
+        sp->asType<DictObj>().addPair(sp[2], sp[1]); // no key check
+    }
+
     //CG1 op q
     void op_LoadGlobal (const char* arg) {
         *++sp = fp->bcObj.owner.at(arg);
@@ -456,6 +462,8 @@ private:
                     op_BuildSet(fetchVarInt()); break;
                 case Op::BuildMap:
                     op_BuildMap(fetchVarInt()); break;
+                case Op::StoreMap:
+                    op_StoreMap(); break;
                 case Op::LoadGlobal:
                     op_LoadGlobal(fetchQstr()); break;
                 case Op::StoreGlobal:

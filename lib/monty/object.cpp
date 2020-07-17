@@ -457,6 +457,11 @@ Value LookupObj::at (Value key) const {
     return Value::nil;
 }
 
+DictObj::DictObj (int size) {
+    ins(0, 2 * size);
+    del(0, 2 * size);
+}
+
 Value DictObj::create (const TypeObj&, int argc, Value argv[]) {
     // arg handling ...
     return new DictObj;
@@ -492,6 +497,13 @@ Value& DictObj::atKey (Value key, Mode mode) {
     // result can't be const, but may not be changed
     assert(Value::invalid.isNil());
     return Value::invalid;
+}
+
+void DictObj::addPair (Value k, Value v) {
+    auto n = length();
+    ins(n, 2);
+    set(n, k);
+    set(n+1, v);
 }
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);

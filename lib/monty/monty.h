@@ -415,13 +415,16 @@ struct DictObj : MutSeqObj {
     enum Mode { Get, Set, Del };
     const Object* chain = 0; // TODO hide
 
-    DictObj (int size =0) {} // TODO
+    DictObj (int size =0);
 
     void mark (void (*gc)(const Object&)) const override;
 
+    Value repr (Value) const override; // see builtin.h
     Value len () const override { return length() / 2; }
     Value at (Value key) const override;
     Value& atKey (Value key, Mode =Get);
+
+    void addPair (Value k, Value v);
 };
 
 //CG3 type <type>

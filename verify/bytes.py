@@ -16,7 +16,7 @@ print(b)
 print(c)
 
 print(113)
-print(bytes(100))
+print(bytes(25))
 
 print(114)
 print(bytes(a))

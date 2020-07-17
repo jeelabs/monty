@@ -77,7 +77,7 @@ struct Printer : ResumableObj {
 
     void style (const char* pre, const char* sep, const char* post) {
         prefix = pre;
-        separator = sep;
+        sepOdd = sepEven = sep;
         postfix = post;
     }
 
@@ -89,16 +89,17 @@ struct Printer : ResumableObj {
             return false;
         }
         if (pos > 0)
-            printf("%s", separator);
+            printf("%s", pos & 1 ? sepOdd : sepEven);
         retVal = Context::print(args[pos++]);
         return true;
     }
 
+    const char* prefix ="";
+    const char* sepOdd =" ";
+    const char* sepEven =" ";
+    const char* postfix ="\n";
 private:
     int pos = 0;
-    const char* prefix ="";
-    const char* separator =" ";
-    const char* postfix ="\n";
 };
 
 Value Object::repr (Value writer) const {
@@ -117,26 +118,32 @@ Value BytesObj::repr (Value writer) const {
 }
 
 Value StrObj::repr (Value writer) const {
-    //printf("\"%s\"", (const char*) *this);
-    printf("%s", (const char*) *this);
+    printf("\"%s\"", (const char*) *this);
     return Value::nil;
 }
 
 Value TupleObj::repr (Value writer) const {
     auto p = new Printer (length, (Value*) vec); // FIXME const!
-    p->style("(", ", ", ")"); // TODO 1-element tuple needs an extra comma
+    p->style("(", ",", ")"); // TODO 1-element tuple needs an extra comma
     return p;
 }
 
 Value ListObj::repr (Value writer) const {
     auto p = new Printer (length(), (Value*) getPtr(0));
-    p->style("[", ", ", "]");
+    p->style("[", ",", "]");
     return p;
 }
 
 Value SetObj::repr (Value writer) const {
-    auto p = new Printer (length(), (Value*) getPtr(0));
-    p->style("{", ", ", "}");
+    auto p = new Printer (len(), (Value*) getPtr(0));
+    p->style("{", ",", "}");
+    return p;
+}
+
+Value DictObj::repr (Value writer) const {
+    auto p = new Printer (2 * (int) len(), (Value*) getPtr(0));
+    p->style("{", ",", "}");
+    p->sepOdd = ":";
     return p;
 }
 
@@ -144,8 +151,7 @@ Value Context::print (Value v) {
     switch (v.tag()) {
         case Value::Nil: printf("Nil"); break;
         case Value::Int: printf("%d", (int) v); break;
-        //case Value::Str: printf("\"%s\"", (const char*) v); break;
-        case Value::Str: printf("%s", (const char*) v); break;
+        case Value::Str: printf("\"%s\"", (const char*) v); break;
         case Value::Obj: return v.obj().repr(Value::nil); // TODO writer ...
     }
     return Value::nil;
