@@ -24,6 +24,7 @@ void showAllocInfo () {
 
 void showObjSizes () {
     printf("%4d = sizeof int"          "\n", (int) sizeof (int));
+    printf("%4d = sizeof long"         "\n", (int) sizeof (long));
     printf("%4d = sizeof void*"        "\n", (int) sizeof (void*));
     printf("%4d = sizeof Value"        "\n", (int) sizeof (Value));
     printf("%4d = sizeof Object"       "\n", (int) sizeof (Object));

@@ -63,14 +63,14 @@ void Vector::set (int idx, const void* ptr) {
     auto p = (uint8_t*) getPtr(idx);
     switch (logBits) {
         case 0: *p = (*p & ~(0x1 << (idx&7))) |
-                        ((*(uint8_t*) ptr & 0x1) << (idx&7)); return;
+                        ((*(const uint8_t*) ptr & 0x1) << (idx&7)); return;
         case 1: *p = (*p & ~(0x3 << 2*(idx&3))) |
-                        ((*(uint8_t*) ptr & 0x3) << 2*(idx&3)); return;
+                        ((*(const uint8_t*) ptr & 0x3) << 2*(idx&3)); return;
         case 2: *p = (*p & ~(0xF << 4*(idx&1))) |
-                        ((*(uint8_t*) ptr & 0xF) << 4*(idx&1)); return;
-        case 3: *p = *(uint8_t*) ptr; return;
-        case 4: *(uint16_t*) p = *(uint16_t*) ptr; return;
-        case 5: *(uint32_t*) p = *(uint32_t*) ptr; return;
+                        ((*(const uint8_t*) ptr & 0xF) << 4*(idx&1)); return;
+        case 3: *p = *(const uint8_t*) ptr; return;
+        case 4: *(uint16_t*) p = *(const uint16_t*) ptr; return;
+        case 5: *(uint32_t*) p = *(const uint32_t*) ptr; return;
     }
     memcpy(getPtr(idx), ptr, widthOf(1));
 }
