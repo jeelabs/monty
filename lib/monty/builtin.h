@@ -73,8 +73,8 @@ void Value::dump (const char* msg) const {
 }
 
 struct Printer : ResumableObj {
-    Printer (int argc, Value argv[], const char* style ="\0  \n")
-            : ResumableObj (argc, argv) {
+    Printer (Value w, int argc, Value argv[], const char* style ="\0  \n")
+            : ResumableObj (argc, argv), writer (w) {
         memcpy(fmt, style, 4);
     }
 
@@ -94,6 +94,7 @@ struct Printer : ResumableObj {
 private:
     int pos = 0;
     char fmt [4]; // prefix sepOdd, sepEven, postfix
+    Value writer;
 };
 
 Value Object::repr (Value writer) const {
@@ -117,19 +118,28 @@ Value StrObj::repr (Value writer) const {
 }
 
 Value TupleObj::repr (Value writer) const {
-    return new Printer (length, (Value*) vec, "(,,)"); // FIXME const!
+    return new Printer (writer, length, (Value*) vec, "(,,)"); // FIXME const!
+}
+
+Value ArrayObj::repr (Value writer) const {
+    printf("%d%c", (int) length(), atype);
+    auto p = (const uint8_t*) getPtr(0);
+    auto n = widthOf(length());
+    for (int i = 0; i < n; ++i)
+        printf("%02x", p[i]);
+    return Value::nil;
 }
 
 Value ListObj::repr (Value writer) const {
-    return new Printer (length(), (Value*) getPtr(0), "[,,]");
+    return new Printer (writer, length(), (Value*) getPtr(0), "[,,]");
 }
 
 Value SetObj::repr (Value writer) const {
-    return new Printer (length(), (Value*) getPtr(0), "{,,}");
+    return new Printer (writer, length(), (Value*) getPtr(0), "{,,}");
 }
 
 Value DictObj::repr (Value writer) const {
-    return new Printer (length(), (Value*) getPtr(0), "{:,}");
+    return new Printer (writer, length(), (Value*) getPtr(0), "{:,}");
 }
 
 Value Context::print (Value v) {
@@ -144,7 +154,8 @@ Value Context::print (Value v) {
 
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    return new Printer (argc, argv);
+    auto writer = Value::nil; // TODO
+    return new Printer (writer, argc, argv);
 }
 
 //CG1 builtin len

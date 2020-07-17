@@ -344,17 +344,20 @@ static const char* types = "PTNbBhHiIlL";
 static const uint8_t bits [] = { 0, 1, 2, 3, 3, 4, 4, 4, 4, 5, 5, };
 
 Value ArrayObj::create (const TypeObj&, int argc, Value argv[]) {
-    assert(argc == 1 && argv[0].isStr() && strlen(argv[0]) == 1);
-    return new ArrayObj (*(const char*) argv[0]);
+    assert(argc >= 1 && argv[0].isStr() && strlen(argv[0]) == 1);
+    int sz = 0;
+    if (argc > 1) {
+        assert(argc == 2 && argv[1].isInt());
+        sz = argv[1];
+    }
+    return new ArrayObj (*(const char*) argv[0], sz);
 }
 
 ArrayObj::ArrayObj (char t, size_t sz) : atype (t) {
     auto p = strchr(types, t);
     logBits = p != 0 ? bits[p-types] : 3; // overwrites VecOfValue settings
-    if (sz > 0) {
+    if (sz > 0)
         ins(0, sz);
-        del(0, sz);
-    }
 }
 
 void ArrayObj::mark (void (*gc)(const Object&)) const {

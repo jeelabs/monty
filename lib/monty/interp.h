@@ -343,8 +343,14 @@ private:
 
     //CG1 op
     void op_StoreSubscr () {
-        auto& dp = sp[-1].asType<DictObj>();
-        dp.atKey(sp[0], DictObj::Set) = sp[-2];
+        auto dp = sp[-1].ifType<DictObj>();
+        if (dp != 0)
+            dp->atKey(sp[0], DictObj::Set) = sp[-2];
+        else {
+            assert(sp[0].isInt());
+            auto& ao = sp[-1].asType<ArrayObj>();
+            ao.set(sp[0], sp[-2]);
+        }
         sp -= 3;
     }
 

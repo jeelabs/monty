@@ -346,6 +346,7 @@ struct ArrayObj : MutSeqObj {
 
     ArrayObj (char t, size_t sz =0);
 
+    Value repr (Value) const override; // see builtin.h
     Value len () const override { return length(); }
     Value at (Value i) const override { return get(i); }
 
