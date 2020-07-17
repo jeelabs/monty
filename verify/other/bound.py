@@ -20,6 +20,23 @@ a.f(1,2,5)
 g = a.f
 g(1,2,5)
 
+# Monty:
+#   main qstr #166 1276b
+#   123
+#   <Obj <method> at 0x103762528>
+#   "<method>"
+#   124
+#   <Obj <callargs> at 0x10375d950>
+#   "<callargs>"
+#   ({"__name__":"A","__module__":"A","__qualname__":"A","f":<Obj <callargs> at 0x10375d950>},1,2,4)
+#   (1,2,4)
+#   125
+#   <Obj <bound-meth> at 0x10375d930>
+#   "<bound-meth>"
+#   ({},1,2,5)
+#   ({},1,2,5)
+#   done
+
 # µPy:
 #   123
 #   <function>
@@ -36,9 +53,9 @@ g(1,2,5)
 #   (<A object at 7fcbe2d06180>, 1, 2, 5)
 
 # CPy:
-123
-<method 'count' of 'str' objects>
-<class 'method_descriptor'>
+#   123
+#   <method 'count' of 'str' objects>
+#   <class 'method_descriptor'>
 #   124
 #   <function A.f at 0x1102deee0>
 #   <class 'function'>
