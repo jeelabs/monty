@@ -20,6 +20,7 @@ const TypeObj      NoneObj::info ("<none>");
 const TypeObj ResumableObj::info ("<resumable>");
 const TypeObj       SeqObj::info ("<sequence>");
 const TypeObj      TypeObj::info ("<type>");
+const TypeObj    WriterObj::info ("<writer>");
 
 const TypeObj ArrayObj::info ("array", ArrayObj::create, &ArrayObj::attrs);
 const TypeObj BytesObj::info ("bytes", BytesObj::create, &BytesObj::attrs);
@@ -47,6 +48,7 @@ const TypeObj&      NoneObj::type () const { return info; }
 const TypeObj& ResumableObj::type () const { return info; }
 const TypeObj&       SeqObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
+const TypeObj&    WriterObj::type () const { return info; }
 const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&     BytesObj::type () const { return info; }
 const TypeObj&     ClassObj::type () const { return info; }
@@ -57,6 +59,116 @@ const TypeObj&       SetObj::type () const { return info; }
 const TypeObj&       StrObj::type () const { return info; }
 const TypeObj&     TupleObj::type () const { return info; }
 //CG>
+
+WriterObj::WriterObj (Value wfun) : writer (wfun) {}
+
+void WriterObj::mark (void (*gc)(const Object&)) const {
+    assert(writer.isObj());
+    gc(writer.obj());
+}
+
+void WriterObj::putc (char ch) {
+    ::printf("%c", ch); // TODO for now, pfff
+}
+
+// formatted output, adapted from JeeH
+
+#include <stdarg.h>
+
+int WriterObj::splitInt (uint32_t val, int base, uint8_t* buf) {
+    int i = 0;
+    do {
+        buf[i++] = val % base;
+        val /= base;
+    } while (val != 0);
+    return i;
+}
+
+void WriterObj::putFiller (int n, char fill) {
+    while (--n >= 0)
+        putc(fill);
+}
+
+void WriterObj::putInt (int val, int base, int width, char fill) {
+    uint8_t buf [33];
+    int n;
+    if (val < 0 && base == 10) {
+        n = splitInt(-val, base, buf);
+        if (fill != ' ')
+            putc('-');
+        putFiller(width - n - 1, fill);
+        if (fill == ' ')
+            putc('-');
+    } else {
+        n = splitInt(val, base, buf);
+        putFiller(width - n, fill);
+    }
+    while (n > 0) {
+        uint8_t b = buf[--n];
+        putc("0123456789ABCDEF"[b]);
+    }
+}
+
+void WriterObj::printf(const char* fmt, ...) {
+    va_list ap;
+    va_start(ap, fmt);
+
+    char const* s;
+    while (*fmt) {
+        char c = *fmt++;
+        if (c == '%') {
+            char fill = *fmt == '0' ? '0' : ' ';
+            int width = 0, base = 0;
+            while (base == 0) {
+                c = *fmt++;
+                switch (c) {
+                    case 'b':
+                        base =  2;
+                        break;
+                    case 'o':
+                        base =  8;
+                        break;
+                    case 'd':
+                        base = 10;
+                        break;
+                    case 'p':
+                        fill = '0';
+                        width = 8;
+                        // fall through
+                    case 'x':
+                        base = 16;
+                        break;
+                    case 'c':
+                        putFiller(width - 1, fill);
+                        c = va_arg(ap, int);
+                        // fall through
+                    case '%':
+                        putc(c);
+                        base = 1;
+                        break;
+                    case 's':
+                        s = va_arg(ap, char const*);
+                        width -= strlen(s);
+                        while (*s)
+                            putc(*s++);
+                        putFiller(width, fill);
+                        // fall through
+                    default:
+                        if ('0' <= c && c <= '9')
+                            width = 10 * width + c - '0';
+                        else
+                            base = 1; // stop scanning
+                }
+            }
+            if (base > 1) {
+                int val = va_arg(ap, int);
+                putInt(val, base, width, fill);
+            }
+        } else
+            putc(c);
+    }
+    va_end(ap);
+}
 
 // non-recursive version for debugging, does not affect the VM state
 void Value::dump (const char* msg) const {
@@ -73,20 +185,20 @@ void Value::dump (const char* msg) const {
 }
 
 struct Printer : ResumableObj {
-    Printer (Value w, int argc, Value argv[], const char* style ="\0  \n")
-            : ResumableObj (argc, argv), writer (w) {
+    Printer (Value writer, int argc, Value argv[], const char* style ="\0  \n")
+            : ResumableObj (argc, argv), w (writer.asType<WriterObj>()) {
         memcpy(fmt, style, 4);
     }
 
     bool step (Value v) override {
         if (pos == 0 && fmt[0] != 0)
-            printf("%c", fmt[0]);
+            w.putc(fmt[0]);
         if (pos >= nargs) {
-            printf("%c", fmt[3]);
+            w.putc(fmt[3]);
             return false;
         }
         if (pos > 0)
-            printf("%c", pos & 1 ? fmt[1] : fmt[2]);
+            w.putc(pos & 1 ? fmt[1] : fmt[2]);
         retVal = Context::print(args[pos++]);
         return true;
     }
@@ -94,100 +206,103 @@ struct Printer : ResumableObj {
 private:
     int pos = 0;
     char fmt [4]; // prefix sepOdd, sepEven, postfix
-    Value writer;
+    WriterObj& w;
 };
 
-Value Object::repr (Value writer) const {
-    printf("<Obj %s at %p>", type().name, this);
+Value Object::repr (WriterObj& w) const {
+    w.printf("<Obj %s at %p>", type().name, this);
     return Value::nil;
 }
 
-static void printEscaped (Value writer, const char* fmt, uint8_t ch) {
-    printf("\\");
+static void printEscaped (WriterObj& w, const char* fmt, uint8_t ch) {
+    w.putc('\\');
     switch (ch) {
-        case '\t': printf("t"); break;
-        case '\n': printf("n"); break;
-        case '\r': printf("r"); break;
-        default:   printf(fmt, ch); break;
+        case '\t': w.putc('t'); break;
+        case '\n': w.putc('n'); break;
+        case '\r': w.putc('r'); break;
+        default:   w.printf(fmt, ch); break;
     }
 }
 
-Value BytesObj::repr (Value writer) const {
-    printf("'");
+Value BytesObj::repr (WriterObj& w) const {
+    w.putc('\'');
     int n = len();
-    for (auto p = (const uint8_t*) *this; --n >= 0; ++p)
+    for (auto p = (const uint8_t*) *this; --n >= 0; ++p) {
         if (*p == '\\' || *p == '\'')
-            printf("\\%c", *p);
-        else if (' ' <= *p && *p <= '~')
-            printf("%c", *p);
+            w.putc('\\');
+        if (' ' <= *p && *p <= '~')
+            w.putc(*p);
         else
-            printEscaped(writer, "x%02x", *p);
-    printf("'");
+            printEscaped(w, "x%02x", *p);
+    }
+    w.putc('\'');
     return Value::nil;
 }
 
-Value StrObj::repr (Value writer) const {
-    printf("\"");
-    for (auto p = (const uint8_t*)(const char*) *this; *p != 0; ++p)
+Value StrObj::repr (WriterObj& w) const {
+    w.putc('"');
+    for (auto p = (const uint8_t*)(const char*) *this; *p != 0; ++p) {
         if (*p == '\\' || *p == '"')
-            printf("\\%c", *p);
-        else if (*p >= ' ')
-            printf("%c", *p);
+            w.putc('\\');
+        if (*p >= ' ')
+            w.putc(*p);
         else
-            printEscaped(writer, "u%04x", *p);
-    printf("\"");
+            printEscaped(w, "u%04x", *p);
+    }
+    w.putc('"');
     return Value::nil;
 }
 
-Value TupleObj::repr (Value writer) const {
-    return new Printer (writer, length, (Value*) vec, "(,,)"); // FIXME const!
+Value TupleObj::repr (WriterObj& w) const {
+    return new Printer (w, length, (Value*) vec, "(,,)"); // FIXME const!
 }
 
-Value ArrayObj::repr (Value writer) const {
-    printf("%d%c", (int) length(), atype);
+Value ArrayObj::repr (WriterObj& w) const {
+    w.printf("%d%c", (int) length(), atype);
     auto p = (const uint8_t*) getPtr(0);
     auto n = widthOf(length());
     for (int i = 0; i < n; ++i)
-        printf("%02x", p[i]);
+        w.printf("%02x", p[i]);
     return Value::nil;
 }
 
-Value ListObj::repr (Value writer) const {
-    return new Printer (writer, length(), (Value*) getPtr(0), "[,,]");
+Value ListObj::repr (WriterObj& w) const {
+    return new Printer (w, length(), (Value*) getPtr(0), "[,,]");
 }
 
-Value SetObj::repr (Value writer) const {
-    return new Printer (writer, length(), (Value*) getPtr(0), "{,,}");
+Value SetObj::repr (WriterObj& w) const {
+    return new Printer (w, length(), (Value*) getPtr(0), "{,,}");
 }
 
-Value DictObj::repr (Value writer) const {
-    return new Printer (writer, length(), (Value*) getPtr(0), "{:,}");
+Value DictObj::repr (WriterObj& w) const {
+    return new Printer (w, length(), (Value*) getPtr(0), "{:,}");
 }
 
-Value ClassObj::repr (Value writer) const {
-    printf("<class %s>", (const char*) at("__name__"));
+Value ClassObj::repr (WriterObj& w) const {
+    w.printf("<class %s>", (const char*) at("__name__"));
     return Value::nil;
 }
 
-Value InstanceObj::repr (Value writer) const {
-    printf("<%s object at %p>", type().name, this);
+Value InstanceObj::repr (WriterObj& w) const {
+    w.printf("<%s object at %p>", type().name, this);
     return Value::nil;
 }
 
 Value Context::print (Value v) {
+    auto wp = new WriterObj (Value::nil); // TODO, sys.stdout ?
     switch (v.tag()) {
-        case Value::Nil: printf("Nil"); break;
-        case Value::Int: printf("%d", (int) v); break;
-        case Value::Str: printf("\"%s\"", (const char*) v); break;
-        case Value::Obj: return v.obj().repr(Value::nil); // TODO writer ...
+        case Value::Nil: wp->printf("Nil"); break;
+        case Value::Int: wp->printf("%d", (int) v); break;
+        case Value::Str: wp->printf("\"%s\"", (const char*) v); break;
+        case Value::Obj: return v.obj().repr(*wp); // TODO writer ...
     }
     return Value::nil;
 }
 
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    auto writer = Value::nil; // TODO
-    return new Printer (writer, argc, argv);
+    auto wp = new WriterObj (Value::nil); // TODO
+    return new Printer (*wp, argc, argv);
 }
 
 //CG1 builtin len

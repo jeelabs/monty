@@ -209,10 +209,3 @@ def u49():
 
 
 print(u49())
-
-class A:
-    def f(*a): print(a)
-print(A)
-print(type(A))
-print(A())
-print(type(A()))

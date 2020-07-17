@@ -58,6 +58,7 @@ struct LookupObj; // forward decl
 struct SeqObj;    // forward decl
 struct ForceObj;  // forward decl
 struct Context;   // forward decl
+struct WriterObj; // forward decl
 
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
@@ -121,7 +122,7 @@ struct Object {
 
     virtual void mark (void (*gc)(const Object&)) const {}
 
-    virtual Value repr  (Value) const; // see builtin.h
+    virtual Value repr  (WriterObj&) const; // see builtin.h
     virtual Value call  (int, Value[]) const;
     virtual Value unop  (UnOp) const;
     virtual Value binop (BinOp, Value) const;
@@ -225,7 +226,7 @@ struct BytesObj : SeqObj, protected Vector {
     ~BytesObj () override;
     operator const uint8_t* () const;
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override { return hasVec() ? length() : noVec().size; }
 
@@ -252,7 +253,7 @@ struct StrObj : SeqObj {
     StrObj (const char* v) : s (v) {}
     operator const char* () const { return s; }
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override;
     Value count (Value) const override { return 9; } // TODO
@@ -285,7 +286,7 @@ struct TupleObj : SeqObj {
 //CG>
     void mark (void (*gc)(const Object&)) const override;
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value len () const override { return length; }
     Value at (Value) const override;
 
@@ -346,7 +347,7 @@ struct ArrayObj : MutSeqObj {
 
     ArrayObj (char t, size_t sz =0);
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value len () const override { return length(); }
     Value at (Value i) const override { return get(i); }
 
@@ -380,6 +381,26 @@ struct ArrayObj : MutSeqObj {
     };
 };
 
+//CG3 type <writer>
+struct WriterObj : Object {
+    static const TypeObj info;
+    const TypeObj& type () const override;
+
+    WriterObj (Value wfun);
+
+    void mark (void (*gc)(const Object&)) const override;
+
+    void putc (char ch);
+    void printf(const char* fmt, ...);
+
+private:
+    int splitInt (uint32_t val, int base, uint8_t* buf);
+    void putFiller (int n, char fill);
+    void putInt (int val, int base, int width, char fill);
+
+    Value writer;
+};
+
 //CG< type list
 struct ListObj : MutSeqObj {
     static Value create (const TypeObj&, int argc, Value argv[]);
@@ -390,7 +411,7 @@ struct ListObj : MutSeqObj {
 
     ListObj (int argc, Value argv[]);
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value at (Value) const override;
 };
 
@@ -404,7 +425,7 @@ struct SetObj : ListObj {
 
     SetObj (int argc, Value argv[]) : ListObj (argc, argv) {}
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
 };
 
 //CG< type dict
@@ -421,7 +442,7 @@ struct DictObj : MutSeqObj {
 
     void mark (void (*gc)(const Object&)) const override;
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
     Value len () const override { return length() / 2; }
     Value at (Value key) const override;
     Value& atKey (Value key, Mode =Get);
@@ -459,7 +480,7 @@ struct ClassObj : TypeObj {
 
     ClassObj (int argc, Value argv[]);
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
 };
 
 // can't be generated, too different
@@ -472,7 +493,7 @@ struct InstanceObj : DictObj {
 private:
     InstanceObj (const ClassObj& parent, int argc, Value argv[]);
 
-    Value repr (Value) const override; // see builtin.h
+    Value repr (WriterObj&) const override; // see builtin.h
 };
 
 //CG3 type <function>
