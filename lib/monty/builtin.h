@@ -73,33 +73,27 @@ void Value::dump (const char* msg) const {
 }
 
 struct Printer : ResumableObj {
-    Printer (int argc, Value argv[]) : ResumableObj (argc, argv) {}
-
-    void style (const char* pre, const char* sep, const char* post) {
-        prefix = pre;
-        sepOdd = sepEven = sep;
-        postfix = post;
+    Printer (int argc, Value argv[], const char* style ="\0  \n")
+            : ResumableObj (argc, argv) {
+        memcpy(fmt, style, 4);
     }
 
     bool step (Value v) override {
-        if (pos == 0)
-            printf("%s", prefix);
+        if (pos == 0 && fmt[0] != 0)
+            printf("%c", fmt[0]);
         if (pos >= nargs) {
-            printf("%s", postfix);
+            printf("%c", fmt[3]);
             return false;
         }
         if (pos > 0)
-            printf("%s", pos & 1 ? sepOdd : sepEven);
+            printf("%c", pos & 1 ? fmt[1] : fmt[2]);
         retVal = Context::print(args[pos++]);
         return true;
     }
 
-    const char* prefix ="";
-    const char* sepOdd =" ";
-    const char* sepEven =" ";
-    const char* postfix ="\n";
 private:
     int pos = 0;
+    char fmt [4]; // prefix sepOdd, sepEven, postfix
 };
 
 Value Object::repr (Value writer) const {
@@ -110,41 +104,32 @@ Value Object::repr (Value writer) const {
 Value BytesObj::repr (Value writer) const {
     int n = len();
     auto p = (const uint8_t*) *this;
-    printf("b'");
+    printf("'");
     for (int i = 0; i < n; ++i)
-        printf("%c", p[i]); // TODO yuck, and not complete
+        printf("%c", p[i]); // TODO escapes
     printf("'");
     return Value::nil;
 }
 
 Value StrObj::repr (Value writer) const {
-    printf("\"%s\"", (const char*) *this);
+    printf("\"%s\"", (const char*) *this); // TODO escapes
     return Value::nil;
 }
 
 Value TupleObj::repr (Value writer) const {
-    auto p = new Printer (length, (Value*) vec); // FIXME const!
-    p->style("(", ",", ")"); // TODO 1-element tuple needs an extra comma
-    return p;
+    return new Printer (length, (Value*) vec, "(,,)"); // FIXME const!
 }
 
 Value ListObj::repr (Value writer) const {
-    auto p = new Printer (length(), (Value*) getPtr(0));
-    p->style("[", ",", "]");
-    return p;
+    return new Printer (length(), (Value*) getPtr(0), "[,,]");
 }
 
 Value SetObj::repr (Value writer) const {
-    auto p = new Printer (len(), (Value*) getPtr(0));
-    p->style("{", ",", "}");
-    return p;
+    return new Printer (length(), (Value*) getPtr(0), "{,,}");
 }
 
 Value DictObj::repr (Value writer) const {
-    auto p = new Printer (2 * (int) len(), (Value*) getPtr(0));
-    p->style("{", ",", "}");
-    p->sepOdd = ":";
-    return p;
+    return new Printer (length(), (Value*) getPtr(0), "{:,}");
 }
 
 Value Context::print (Value v) {
