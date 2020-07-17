@@ -102,18 +102,40 @@ Value Object::repr (Value writer) const {
     return Value::nil;
 }
 
+static void printEscaped (Value writer, const char* fmt, uint8_t ch) {
+    printf("\\");
+    switch (ch) {
+        case '\t': printf("t"); break;
+        case '\n': printf("n"); break;
+        case '\r': printf("r"); break;
+        default:   printf(fmt, ch); break;
+    }
+}
+
 Value BytesObj::repr (Value writer) const {
-    int n = len();
-    auto p = (const uint8_t*) *this;
     printf("'");
-    for (int i = 0; i < n; ++i)
-        printf("%c", p[i]); // TODO escapes
+    int n = len();
+    for (auto p = (const uint8_t*) *this; --n >= 0; ++p)
+        if (*p == '\\' || *p == '\'')
+            printf("\\%c", *p);
+        else if (' ' <= *p && *p <= '~')
+            printf("%c", *p);
+        else
+            printEscaped(writer, "x%02x", *p);
     printf("'");
     return Value::nil;
 }
 
 Value StrObj::repr (Value writer) const {
-    printf("\"%s\"", (const char*) *this); // TODO escapes
+    printf("\"");
+    for (auto p = (const uint8_t*)(const char*) *this; *p != 0; ++p)
+        if (*p == '\\' || *p == '"')
+            printf("\\%c", *p);
+        else if (*p >= ' ')
+            printf("%c", *p);
+        else
+            printEscaped(writer, "u%04x", *p);
+    printf("\"");
     return Value::nil;
 }
 
