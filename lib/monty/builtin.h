@@ -66,7 +66,8 @@ BufferObj::BufferObj (Value wfun) : writer (wfun) {
 
 void BufferObj::mark (void (*gc)(const Object&)) const {
     assert(writer.isObj());
-    gc(writer.obj());
+    if (writer.isObj()) // TODO nil right now
+        gc(writer.obj());
 }
 
 bool BufferObj::flush () {

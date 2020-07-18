@@ -9,6 +9,9 @@
 #ifndef GC_VERBOSE
 #define GC_VERBOSE      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
 #endif
+#ifndef GC_ALWAYS
+#define GC_ALWAYS       0 // triggers a gc cycle after each alloc when set
+#endif
 #ifndef GC_MALLOCS
 #define GC_MALLOCS      0 // use standard allocator, no garbage collection
 #endif
@@ -290,11 +293,12 @@ void Object::gcStats () {
 void Context::gcCheck (bool actNow) {
     if (vm == 0)
         return;
+#if !GC_ALWAYS
     // TODO 10? 1000? magic values ...
     if ((GC_MEM_BYTES - stats.cob) > (GC_MEM_BYTES / 10) &&
             (vecTop - vecs < (int) sizeof vecs - 1000))
         return;
-
+#endif
     if (actNow)
         gcTrigger();
     else
