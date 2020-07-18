@@ -361,8 +361,7 @@ Value ArrayObj::create (const TypeObj&, int argc, Value argv[]) {
 ArrayObj::ArrayObj (char t, size_t sz) : atype (t) {
     auto p = strchr(types, t);
     logBits = p != 0 ? bits[p-types] : 3; // overwrites VecOfValue settings
-    if (sz > 0)
-        ins(0, sz);
+    ins(0, sz);
 }
 
 void ArrayObj::mark (void (*gc)(const Object&)) const {

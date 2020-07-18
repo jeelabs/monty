@@ -61,7 +61,7 @@ const TypeObj&     TupleObj::type () const { return info; }
 //CG>
 
 BufferObj::BufferObj (Value wfun) : writer (wfun) {
-    need(200); // TODO may need to suspend
+    need(120); // TODO may need to suspend
 }
 
 void BufferObj::mark (void (*gc)(const Object&)) const {
