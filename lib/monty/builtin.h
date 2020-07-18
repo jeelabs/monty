@@ -6,6 +6,7 @@ const TypeObj& Object::type () const { return info; }
 //CG< builtin-types lib/monty/monty.h
 const TypeObj      BoolObj::info ("<bool>");
 const TypeObj BoundMethObj::info ("<bound-meth>");
+const TypeObj    BufferObj::info ("<buffer>");
 const TypeObj  BytecodeObj::info ("<bytecode>");
 const TypeObj  CallArgsObj::info ("<callargs>");
 const TypeObj      Context::info ("<context>");
@@ -20,7 +21,6 @@ const TypeObj      NoneObj::info ("<none>");
 const TypeObj ResumableObj::info ("<resumable>");
 const TypeObj       SeqObj::info ("<sequence>");
 const TypeObj      TypeObj::info ("<type>");
-const TypeObj    WriterObj::info ("<writer>");
 
 const TypeObj ArrayObj::info ("array", ArrayObj::create, &ArrayObj::attrs);
 const TypeObj BytesObj::info ("bytes", BytesObj::create, &BytesObj::attrs);
@@ -34,6 +34,7 @@ const TypeObj TupleObj::info ("tuple", TupleObj::create, &TupleObj::attrs);
 
 const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj& BoundMethObj::type () const { return info; }
+const TypeObj&    BufferObj::type () const { return info; }
 const TypeObj&  BytecodeObj::type () const { return info; }
 const TypeObj&  CallArgsObj::type () const { return info; }
 const TypeObj&      Context::type () const { return info; }
@@ -48,7 +49,6 @@ const TypeObj&      NoneObj::type () const { return info; }
 const TypeObj& ResumableObj::type () const { return info; }
 const TypeObj&       SeqObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
-const TypeObj&    WriterObj::type () const { return info; }
 const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&     BytesObj::type () const { return info; }
 const TypeObj&     ClassObj::type () const { return info; }
@@ -60,22 +60,57 @@ const TypeObj&       StrObj::type () const { return info; }
 const TypeObj&     TupleObj::type () const { return info; }
 //CG>
 
-WriterObj::WriterObj (Value wfun) : writer (wfun) {}
+BufferObj::BufferObj (Value wfun) : writer (wfun) {
+    need(200); // TODO may need to suspend
+}
 
-void WriterObj::mark (void (*gc)(const Object&)) const {
+void BufferObj::mark (void (*gc)(const Object&)) const {
     assert(writer.isObj());
     gc(writer.obj());
 }
 
-void WriterObj::putc (char ch) {
-    ::printf("%c", ch); // TODO for now, pfff
+bool BufferObj::flush () {
+    //::printf("flush %d %d\n", fill, capacity);
+    for (size_t i = 0; i < fill; ++i)
+        ::printf("%c", get(i)); // TODO for now, pfff
+    fill = 0;
+    return true;
 }
+
+bool BufferObj::need (size_t bytes) {
+    if (bytes == 0 || fill + bytes > capacity) {
+        if (fill > 0 && !flush())
+            return false;
+        auto grow = fill + bytes - capacity;
+        if (grow > 0) {
+            ins(fill, grow);
+            del(fill - grow, grow);
+        }
+    }
+    base = (uint8_t*) getPtr(0);
+    assert(room() >= bytes);
+    return true;
+}
+
+void BufferObj::putc (uint8_t v) {
+    assert(fill < capacity);    // fits
+    assert(base == getPtr(0));  // hasn't moved
+    base[fill++] = v;
+}
+
+#if 0
+void BufferObj::put (const void* p, size_t n) {
+    assert(n <= room());
+    memcpy(base + fill, p, n);
+    fill += n;
+}
+#endif
 
 // formatted output, adapted from JeeH
 
 #include <stdarg.h>
 
-int WriterObj::splitInt (uint32_t val, int base, uint8_t* buf) {
+int BufferObj::splitInt (uint32_t val, int base, uint8_t* buf) {
     int i = 0;
     do {
         buf[i++] = val % base;
@@ -84,12 +119,12 @@ int WriterObj::splitInt (uint32_t val, int base, uint8_t* buf) {
     return i;
 }
 
-void WriterObj::putFiller (int n, char fill) {
+void BufferObj::putFiller (int n, char fill) {
     while (--n >= 0)
         putc(fill);
 }
 
-void WriterObj::putInt (int val, int base, int width, char fill) {
+void BufferObj::putInt (int val, int base, int width, char fill) {
     uint8_t buf [33];
     int n;
     if (val < 0 && base == 10) {
@@ -109,7 +144,7 @@ void WriterObj::putInt (int val, int base, int width, char fill) {
     }
 }
 
-void WriterObj::printf(const char* fmt, ...) {
+void BufferObj::printf(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -186,35 +221,38 @@ void Value::dump (const char* msg) const {
 
 struct Printer : ResumableObj {
     Printer (Value writer, int argc, Value argv[], const char* style ="\0  \n")
-            : ResumableObj (argc, argv), w (writer.asType<WriterObj>()) {
+            : ResumableObj (argc, argv), w (writer.asType<BufferObj>()) {
         memcpy(fmt, style, 4);
     }
 
     bool step (Value v) override {
+        if (!w.need(100))
+            return true; // TODO
         if (pos == 0 && fmt[0] != 0)
             w.putc(fmt[0]);
         if (pos >= nargs) {
             w.putc(fmt[3]);
+            w.need(0); // TODO in the wrong place, but where to put it?
             return false;
         }
         if (pos > 0)
             w.putc(pos & 1 ? fmt[1] : fmt[2]);
-        retVal = Context::print(args[pos++]);
+        retVal = Context::print(w, args[pos++]);
         return true;
     }
 
 private:
     int pos = 0;
     char fmt [4]; // prefix sepOdd, sepEven, postfix
-    WriterObj& w;
+    BufferObj& w;
 };
 
-Value Object::repr (WriterObj& w) const {
+Value Object::repr (BufferObj& w) const {
     w.printf("<Obj %s at %p>", type().name, this);
     return Value::nil;
 }
 
-static void printEscaped (WriterObj& w, const char* fmt, uint8_t ch) {
+static void printEscaped (BufferObj& w, const char* fmt, uint8_t ch) {
     w.putc('\\');
     switch (ch) {
         case '\t': w.putc('t'); break;
@@ -224,7 +262,7 @@ static void printEscaped (WriterObj& w, const char* fmt, uint8_t ch) {
     }
 }
 
-Value BytesObj::repr (WriterObj& w) const {
+Value BytesObj::repr (BufferObj& w) const {
     w.putc('\'');
     int n = len();
     for (auto p = (const uint8_t*) *this; --n >= 0; ++p) {
@@ -239,7 +277,7 @@ Value BytesObj::repr (WriterObj& w) const {
     return Value::nil;
 }
 
-Value StrObj::repr (WriterObj& w) const {
+Value StrObj::repr (BufferObj& w) const {
     w.putc('"');
     for (auto p = (const uint8_t*)(const char*) *this; *p != 0; ++p) {
         if (*p == '\\' || *p == '"')
@@ -253,11 +291,11 @@ Value StrObj::repr (WriterObj& w) const {
     return Value::nil;
 }
 
-Value TupleObj::repr (WriterObj& w) const {
+Value TupleObj::repr (BufferObj& w) const {
     return new Printer (w, length, (Value*) vec, "(,,)"); // FIXME const!
 }
 
-Value ArrayObj::repr (WriterObj& w) const {
+Value ArrayObj::repr (BufferObj& w) const {
     w.printf("%d%c", (int) length(), atype);
     auto p = (const uint8_t*) getPtr(0);
     auto n = widthOf(length());
@@ -266,42 +304,41 @@ Value ArrayObj::repr (WriterObj& w) const {
     return Value::nil;
 }
 
-Value ListObj::repr (WriterObj& w) const {
+Value ListObj::repr (BufferObj& w) const {
     return new Printer (w, length(), (Value*) getPtr(0), "[,,]");
 }
 
-Value SetObj::repr (WriterObj& w) const {
+Value SetObj::repr (BufferObj& w) const {
     return new Printer (w, length(), (Value*) getPtr(0), "{,,}");
 }
 
-Value DictObj::repr (WriterObj& w) const {
+Value DictObj::repr (BufferObj& w) const {
     return new Printer (w, length(), (Value*) getPtr(0), "{:,}");
 }
 
-Value ClassObj::repr (WriterObj& w) const {
+Value ClassObj::repr (BufferObj& w) const {
     w.printf("<class %s>", (const char*) at("__name__"));
     return Value::nil;
 }
 
-Value InstanceObj::repr (WriterObj& w) const {
+Value InstanceObj::repr (BufferObj& w) const {
     w.printf("<%s object at %p>", type().name, this);
     return Value::nil;
 }
 
-Value Context::print (Value v) {
-    auto wp = new WriterObj (Value::nil); // TODO, sys.stdout ?
+Value Context::print (BufferObj& w, Value v) {
     switch (v.tag()) {
-        case Value::Nil: wp->printf("Nil"); break;
-        case Value::Int: wp->printf("%d", (int) v); break;
-        case Value::Str: wp->printf("\"%s\"", (const char*) v); break;
-        case Value::Obj: return v.obj().repr(*wp); // TODO writer ...
+        case Value::Nil: w.printf("Nil"); break;
+        case Value::Int: w.printf("%d", (int) v); break;
+        case Value::Str: return v.objPtr()->repr(w); // conv for escapes
+        case Value::Obj: return v.obj().repr(w); // TODO writer ...
     }
     return Value::nil;
 }
 
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    auto wp = new WriterObj (Value::nil); // TODO
+    static auto wp = new BufferObj (Value::nil); // TODO
     return new Printer (*wp, argc, argv);
 }
 

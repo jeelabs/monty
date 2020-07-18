@@ -58,7 +58,7 @@ struct LookupObj; // forward decl
 struct SeqObj;    // forward decl
 struct ForceObj;  // forward decl
 struct Context;   // forward decl
-struct WriterObj; // forward decl
+struct BufferObj; // forward decl
 
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
@@ -122,7 +122,7 @@ struct Object {
 
     virtual void mark (void (*gc)(const Object&)) const {}
 
-    virtual Value repr  (WriterObj&) const; // see builtin.h
+    virtual Value repr  (BufferObj&) const; // see builtin.h
     virtual Value call  (int, Value[]) const;
     virtual Value unop  (UnOp) const;
     virtual Value binop (BinOp, Value) const;
@@ -226,7 +226,7 @@ struct BytesObj : SeqObj, protected Vector {
     ~BytesObj () override;
     operator const uint8_t* () const;
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override { return hasVec() ? length() : noVec().size; }
 
@@ -253,7 +253,7 @@ struct StrObj : SeqObj {
     StrObj (const char* v) : s (v) {}
     operator const char* () const { return s; }
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value at (Value) const override;
     Value len () const override;
     Value count (Value) const override { return 9; } // TODO
@@ -286,7 +286,7 @@ struct TupleObj : SeqObj {
 //CG>
     void mark (void (*gc)(const Object&)) const override;
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value len () const override { return length; }
     Value at (Value) const override;
 
@@ -347,7 +347,7 @@ struct ArrayObj : MutSeqObj {
 
     ArrayObj (char t, size_t sz =0);
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value len () const override { return length(); }
     Value at (Value i) const override { return get(i); }
 
@@ -381,16 +381,19 @@ struct ArrayObj : MutSeqObj {
     };
 };
 
-//CG3 type <writer>
-struct WriterObj : Object {
+//CG3 type <buffer>
+struct BufferObj : Object, private VecOf<uint8_t> {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    WriterObj (Value wfun);
+    BufferObj (Value wfun);
 
     void mark (void (*gc)(const Object&)) const override;
 
-    void putc (char ch);
+    bool need (size_t bytes);
+    void putc (uint8_t v) ;// TODO { base[fill++] = v; }
+    //void put (const void* p, size_t n);
+
     void printf(const char* fmt, ...);
 
 private:
@@ -398,7 +401,11 @@ private:
     void putFiller (int n, char fill);
     void putInt (int val, int base, int width, char fill);
 
+    size_t room () const { return capacity - fill; }
+    bool flush ();
+
     Value writer;
+    uint8_t* base = 0;
 };
 
 //CG< type list
@@ -411,7 +418,7 @@ struct ListObj : MutSeqObj {
 
     ListObj (int argc, Value argv[]);
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value at (Value) const override;
 };
 
@@ -425,7 +432,7 @@ struct SetObj : ListObj {
 
     SetObj (int argc, Value argv[]) : ListObj (argc, argv) {}
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
 };
 
 //CG< type dict
@@ -442,7 +449,7 @@ struct DictObj : MutSeqObj {
 
     void mark (void (*gc)(const Object&)) const override;
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
     Value len () const override { return length() / 2; }
     Value at (Value key) const override;
     Value& atKey (Value key, Mode =Get);
@@ -480,7 +487,7 @@ struct ClassObj : TypeObj {
 
     ClassObj (int argc, Value argv[]);
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
 };
 
 // can't be generated, too different
@@ -493,7 +500,7 @@ struct InstanceObj : DictObj {
 private:
     InstanceObj (const ClassObj& parent, int argc, Value argv[]);
 
-    Value repr (WriterObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
 };
 
 //CG3 type <function>
@@ -745,7 +752,7 @@ struct Context : Object, private VecOfValue {
 
     void start (ModuleObj& mod, const LookupObj& builtins);
 
-    static Value print (Value);
+    static Value print (BufferObj&, Value);
 
     Value nextPending ();
     static void raise (Value =Value::nil);
