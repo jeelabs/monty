@@ -174,7 +174,7 @@ void SocketObj::readData () {
     assert(len >= 0);
     if (len > 0) {
         int n = recvBuf->write(buf, len);
-        printf("n %d len %d\n", n, len);
+        //printf("n %d len %d\n", n, (int) len);
         assert(n == len); // TODO nope, read as much as needed!
         Context::wakeUp(readQueue.pop(0), recvBuf);
     } else

@@ -15,6 +15,7 @@ void archInit () {
 }
 
 int archDone () {
+    Context::gcTrigger();
     Object::gcStats();
     return 0;
 }

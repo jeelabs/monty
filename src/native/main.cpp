@@ -33,9 +33,6 @@ static bool runInterp (const uint8_t* data) {
         INNER_HOOK // make sure this runs, even when there is no work to do
     }
 
-    // must be placed here, before the vm destructor is called
-    Object::gcStats();
-    Context::gcTrigger();
     return true;
 }
 

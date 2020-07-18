@@ -384,9 +384,10 @@ void Context::gcTrigger () {
             (int) (vecs + sizeof vecs - vecTop));
 #endif
     memset(tagBits, 0, sizeof tagBits);
-    assert(vm != 0);
-    gcMarker(*vm);
-    gcMarker(modules);
+    if (vm != 0) {
+        gcMarker(*vm);
+        gcMarker(modules);
+    }
     gcSweeper();
     Vector::gcCompact();
 #if GC_VERBOSE

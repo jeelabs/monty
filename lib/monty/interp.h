@@ -34,8 +34,16 @@ struct QstrPool : Object {
 struct Interp : Context {
     const QstrPool* qPool = 0;
 
-    Interp () { vm = this; }
-    ~Interp () { vm = 0; delete qPool; }
+    Interp () {
+        vm = this;
+    }
+
+    ~Interp () {
+        Object::gcStats();
+        delete qPool;
+        gcCheck(true);
+        vm = 0;
+    }
 
     void mark (void (*gc)(const Object&)) const override {
         Context::mark(gc);

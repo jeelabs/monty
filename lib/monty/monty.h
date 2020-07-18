@@ -31,8 +31,8 @@ protected:
 
     Data* data = 0;
     uint32_t logBits :8;
-    uint32_t capacity :24; // in bytes
-    uint32_t fill = 0;     // in elements
+    uint32_t capacity :24;      // in bytes
+    uint32_t fill = 0;          // in elements
 private:
     void alloc (size_t sz);     // see gc.c
 };
