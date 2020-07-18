@@ -44,7 +44,10 @@ platformio.ini:
 %.mpy : %.py
 	mpy-cross $<
 
+tags:
+	ctags -R src/ lib/monty/
+
 clean:
 	rm -rf .pio
 
-.PHONY: verify
+.PHONY: tags verify

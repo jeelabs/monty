@@ -364,21 +364,6 @@ struct ArrayObj : MutSeqObj {
 
     char atype;
     static int typeBits (char typecode);
-
-    struct Strategy {
-        Strategy (ArrayObj& array) : buffer (array) {}
-        virtual ~Strategy () {}
-
-        virtual bool flush () { return true; }
-
-        bool need (size_t bytes);
-        size_t room () const { return buffer.capacity - buffer.fill; }
-        void put (uint8_t v) { base[buffer.fill++] = v; }
-        void put (const void* p, size_t n);
-
-        ArrayObj& buffer;
-        uint8_t* base = 0;
-    };
 };
 
 //CG3 type <buffer>
