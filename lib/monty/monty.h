@@ -5,7 +5,7 @@
 
 struct Vector {
     Vector (size_t bits);
-    ~Vector ();
+    ~Vector () { alloc(0); }
 
     size_t length () const { return fill; }
     int width () const { auto b = 1<<logBits; return b < 8 ? -b : b/8; }
