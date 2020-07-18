@@ -357,11 +357,6 @@ struct ArrayObj : MutSeqObj {
     Value get (int idx) const;
     void set (int idx, Value val);
 
-    void insert (int, Value) override;
-    Value pop (int =-1) override;
-    void remove (Value) override;
-    void reverse () override;
-
     char atype;
     static int typeBits (char typecode);
 };
@@ -758,6 +753,7 @@ struct Context : Object, private VecOfValue {
     static ListObj tasks;
     bool isAlive () const;
 
+    static DictObj modules; // see builtin.h
 protected:
     Context () {}
 

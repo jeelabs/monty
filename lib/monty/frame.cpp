@@ -114,6 +114,7 @@ void FrameObj::leave () {
         delete this;
 }
 
+DictObj Context::modules;
 volatile uint32_t Context::pending;
 Value Context::handlers [MAX_HANDLERS];
 Context* Context::vm;
@@ -146,6 +147,7 @@ void Context::shrink (int num) {
 void Context::start (ModuleObj& mod, const LookupObj& builtins) {
     mod.chain = &builtins;
     mod.atKey("__name__", DictObj::Set) = "__main__";
+    modules.atKey("__main__", DictObj::Set) = mod;
 
     assert(mod.init != 0);
     CallArgsObj cao (*mod.init); // only needed to set up args in call()

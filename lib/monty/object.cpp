@@ -319,14 +319,11 @@ Value TupleObj::at (Value idx) const {
     return vec[i];
 }
 
-void  MutSeqObj::remove  (Value)      { assert(false); }
-void  MutSeqObj::reverse ()           { assert(false); }
-
 void MutSeqObj::mark (void (*gc)(const Object&)) const {
     markVec(gc);
 }
 
-void  MutSeqObj::insert  (int idx, Value val) {
+void MutSeqObj::insert  (int idx, Value val) {
     ins(idx);
     set(idx, val);
 }
@@ -338,6 +335,14 @@ Value MutSeqObj::pop (int idx) {
     Value v = get(idx);
     del(idx);
     return v;
+}
+
+void MutSeqObj::remove  (Value) {
+    assert(false); // TODO
+}
+
+void MutSeqObj::reverse () {
+    assert(false); // TODO
 }
 
 static const char* types = "PTNbBhHiIlL";
@@ -361,7 +366,7 @@ ArrayObj::ArrayObj (char t, size_t sz) : atype (t) {
 }
 
 void ArrayObj::mark (void (*gc)(const Object&)) const {
-    // do NOT call the base class markVec(gc); !
+    // do NOT call the base class markVec(gc) !
 }
 
 size_t ArrayObj::write (const void* p, size_t n) {
@@ -381,30 +386,15 @@ void ArrayObj::set (int idx, Value val) {
     Vector::set(idx, (int) val);
 }
 
-void  ArrayObj::insert (int, Value) {
-    // TODO
-}
-
-Value ArrayObj::pop (int) {
-    return Value::nil; // TODO
-}
-
-void  ArrayObj::remove (Value) {
-    // TODO
-}
-
-void  ArrayObj::reverse () {
-    // TODO
-}
-
 Value ListObj::create (const TypeObj&, int argc, Value argv[]) {
     return new ListObj (argc, argv);
 }
 
 ListObj::ListObj (int argc, Value argv[]) {
-    ins(0, argc);
-    if (argc > 0)
+    if (argc > 0) {
+        ins(0, argc);
         memcpy(getPtr(0), argv, argc * sizeof *argv);
+    }
 }
 
 Value ListObj::at (Value idx) const {

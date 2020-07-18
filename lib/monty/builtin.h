@@ -387,8 +387,9 @@ static const FunObj fo_suspend (f_suspend);
 
 static const LookupObj::Item lo_monty [] = {
     { "version", &s_version },
-    { "tasks", &Context::tasks },
     { "suspend", &fo_suspend },
+    { "tasks", &Context::tasks },
+    { "modules", &Context::modules },
 };
 
 static const LookupObj ma_monty (lo_monty, sizeof lo_monty / sizeof *lo_monty);
