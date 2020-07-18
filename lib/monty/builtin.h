@@ -225,6 +225,11 @@ struct Printer : ResumableObj {
         memcpy(fmt, style, 4);
     }
 
+    void mark (void (*gc)(const Object&)) const override {
+        ResumableObj::mark(gc);
+        gc(w);
+    }
+
     bool step (Value v) override {
         if (!w.need(100))
             return true; // TODO
@@ -338,8 +343,8 @@ Value Context::print (BufferObj& w, Value v) {
 
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    static auto wp = new BufferObj (Value::nil); // TODO
-    return new Printer (*wp, argc, argv);
+    static BufferObj w (Value::nil); // TODO
+    return new Printer (w, argc, argv);
 }
 
 //CG1 builtin len

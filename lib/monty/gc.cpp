@@ -20,7 +20,7 @@
 #define GC_MEM_BYTES (20*1024)  // 20 Kb total memory
 #endif
 #ifndef GC_VEC_BYTES
-#define GC_VEC_BYTES (30*1024)   // enough for basic testing on 32-/64-bit arch
+#define GC_VEC_BYTES (3*1024)   // enough for basic testing on 32-/64-bit arch
 #endif
 #ifndef GC_MEM_ALIGN
 #define GC_MEM_ALIGN 16         // 16-byte slot boundaries
