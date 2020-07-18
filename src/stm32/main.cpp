@@ -33,9 +33,6 @@ static bool runInterp (const uint8_t* data) {
         asm("wfi");
     }
 
-    // must be placed here, before the vm destructor is called
-    Object::gcStats();
-    Context::gcTrigger();
     return true;
 }
 
