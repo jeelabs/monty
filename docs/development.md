@@ -57,8 +57,8 @@ e.g.
     [platformio]
     extra_configs = configs/bluepill_f103c8.ini
 
-This allows further streamlining by also defining the serial port names for
-`platformio.ini`:
+Serial ports can now also be configured in `platformio.ini`, with a separate
+section for each setup:
 
     [env:bluepill_f103c8]
     upload_port = /dev/cu.usbmodemDDD8B7B81
@@ -108,4 +108,4 @@ example of how networking is enabled for this particular STM32F103 board.
 This approach was chosen to fit into PIO's way of doing things, and to keep the
 PIO `.ini` files very straightforward: just some _choices_, not the
 actual details of _how_ these configuration choices are realised. Those belong
-in the `lib/config/` area (which might become quite complex over time).
+in the `lib/config/` area (this could become quite complex over time).
