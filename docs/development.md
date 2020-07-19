@@ -139,10 +139,10 @@ else the first 10 lines of their `diff` are shown.
 
 Running Python tests on embedded boards is (again) rather tricky, and there's
 obviously no support in PIO for this very Monty-specific task . The basic idea
-is that the VM looks in a predefined RAM location for `.mty` data, which is
+is that the VM looks in a predefined RAM location for `.mpy` data, which is
 placed there by `gdb` or by `stlink`, followed by a board reset to restart the
-VM (for STM32 boards). There is a small `verify/dog.c` utility to capture all
-output (similar to "cat", but not quite).
+VM (for STM32 boards). There is a small `verify/dog.c` utility to capture
+output (similar, but not identical, to "cat").
 
 For a quick manual sequence to run a series of tests natively and embedded, try:
 
@@ -153,4 +153,5 @@ For a quick manual sequence to run a series of tests natively and embedded, try:
 5. `cd test; make` - with the VM loaded in 4), run & compare all Python tests
 
 Currently, a quick way to check something or try a new feature, is to add some
-Python code to the end of `verify/demy.py` and use `make run` to see its result.
+Python code to the end of `verify/demo.py` and use `make run` to see the
+results.

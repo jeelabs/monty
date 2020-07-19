@@ -142,7 +142,7 @@ From a Python perspective, coro's are functions which contain the keyword
 `yield` somewhere in their body (or `async` / `await` nowadays). These functions
 are specially marked, and cause the VM to make one small but very significant
 change: when called, instead of executing the corresponding bytecode, the VM
-creates a new stack, set things up so it will _eventually_ start running that
+creates a new stack, sets things up so it will _eventually_ start running that
 bytecode, and returns the stack _itself_ as result. Python calls this a
 "generator object". It's only the _start_ of a new run context. It hasn't done
 anything meaningful yet, but now you can pass it around, using `next()` to make
@@ -163,8 +163,9 @@ calls.
 
 A coro can call normal functions which in turn can nest to any depth. These
 function will grow the coro's stack as needed. Since `yield` by its very
-presence implies being a coro, that can only happen once the normal functions
-calls have ended.
+presence implies being a coro, such yields can only happen once all normal
+functions calls have ended. Standard coro yields do not need to deal with
+nesting.
 
 A **task** is a coro _plus all the nested functions currently running._ Since
 these all share the coro's stack, it's still a simple data structure which looks
@@ -174,7 +175,7 @@ one big swoop: the complete stack state, nested functions and all, is put on
 hold by the VM.
 
 This has the effect of blocking an entire thread of execution. E.g. perhaps that
-most deeply nested function just did a `read` call, and that wants to block
+most deeply nested function just did a `read` call, which wants to block
 until the requested data is ready. This creates two problems:
 
 1. what to do with this "stack + nested call frames" data structure so it
@@ -182,15 +183,15 @@ until the requested data is ready. This creates two problems:
 2. what should the VM do next, given that it can't continue executing this
    bytecode?
 
-Problem #1 is addressed by giving `monty.suspend()` a list. The suspended stack
+Problem #1 is addressed by giving `monty.suspend()` a list. The suspended task
 is appended to that list. In the case of a read, this list must be managed by
 the read I/O handler, to resume it when the data arrives.
 
-Problem #2 is handled in the third of the four loops mentioned in the previous
-section: the "run loop" pops the first item off the `monty.tasks` list, and
-re-enters the outer and inner VM loops to resume that task. If `monty.tasks` is
-empty, then there's no work at the moment, the run loop returns back to the main
-loop.
+Problem #2 is handled in the third of the loops mentioned in the [Stackless
+VM](#stackless-vm) section: the "run loop" pops the first item off the
+`monty.tasks` list, and re-enters the outer and inner VM loops to resume that
+task. If `monty.tasks` is empty, then there's no work at the moment, the run
+loop returns back to the main loop.
 
 To summarise: when a coro yields, it takes itself (and the stack frame it owns)
 out of the VM loop to let its caller continue. When a coro (or task, same thing,
