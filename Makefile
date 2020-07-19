@@ -44,10 +44,11 @@ platformio.ini:
 %.mpy : %.py
 	mpy-cross $<
 
+docs:
+	rsync -av --delete docs/ ~/Nextcloud/monty-docs/
 tags:
 	ctags -R src/ lib/monty/
-
 clean:
 	rm -rf .pio
 
-.PHONY: tags verify
+.PHONY: docs tags verify
