@@ -76,7 +76,7 @@ libraries as a `lib_deps = ...` setting.
 As shorthand, the makefile includes some convenience targets:
 
 * `make run` compiles and runs a native build, i.e. for macOS or Linux
-* `make up` conpiles and uploads the configuration defined in `platformio.ini`
+* `make up` compiles and uploads the configuration defined in `platformio.ini`
 * `make mon` is like `make up`, and then launches PIO's built-in serial console
 
 ## Architecture specifics
