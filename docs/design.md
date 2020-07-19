@@ -133,7 +133,7 @@ waiting queue of an I/O driver, for example. Note that Python's `yield` can take
 and/or return a value.
 
 Generators and coroutines are nearly the same thing. They just differ in which
-direction a value is used: as input parameter, or as result. From now on, I will
+direction a value is used: as input parameter, or as result. From now on, let's
 use the term **coro** for both, simply because it's shorter.
 
 ## Coro's and tasks
@@ -152,8 +152,8 @@ This is a "continuation": all the info needed to do some work, as an _object_
 which can be passed around.
 
 A "normal" function takes arguments, needs some stack space, does its thing,
-returns a result, and frees its stack space. Monty will handle this by expanding
-and shrinking the caller's stack (a resizable vector).
+returns a result, and frees its stack space. Monty will handle this case by
+expanding and shrinking the caller's stack (a resizable vector).
 
 A coro on the other hand, once called, carries its current state with it, i.e.
 it "owns" a stack frame which it can use and alter as often and as long as it
@@ -190,7 +190,7 @@ the read I/O handler, to resume it when the data arrives.
 Problem #2 is handled in the third of the loops mentioned in the [Stackless
 VM](#stackless-vm) section: the "run loop" pops the first item off the
 `monty.tasks` list, and re-enters the outer and inner VM loops to resume that
-task. If `monty.tasks` is empty, then there's no work at the moment, the run
+task. If `monty.tasks` is empty, then there's no work at the moment, so the run
 loop returns back to the main loop.
 
 To summarise: when a coro yields, it takes itself (and the stack frame it owns)
@@ -204,7 +204,7 @@ code calling it will not be marked as "asynchronous" or "a generator". Normal
 functions can call what looks like yet another normal function, and ... get
 suspended and resumed without noticing. Like a goroutine or POSIX process.
 
-## Troublespots
+## A troublespot
 
 The big problem with Monty's approach, is that C++ code cannot call the VM.
 There is no way C++ can loop over something which _might_ need to run a bit of
@@ -224,7 +224,7 @@ continuations in C/C++.
 There is a way to work around this problem in Monty, using `ResumableObj` as a
 base class to make state explicit. Finite state machine coding also offers a way
 around this problem (this is used in the LwIP network library, for example). But
-either way, such explicit coding techniques can require a lot of extra effort.
+either way, such explicit coding techniques may require a lot of extra effort.
 
 Another approach is to put more of the logic in Python, so that the required C++
 calls only do fairly basic stuff and can be broken into smaller atomic steps.
