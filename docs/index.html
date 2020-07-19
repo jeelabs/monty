@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Document</title>
+  <title>Monty VM</title>
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
-  <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <link rel="stylesheet" href="//unpkg.com/docsify/lib/themes/buble.css">
 </head>
@@ -13,11 +12,11 @@
   <script>
     window.$docsify = {
         name: 'Monty',
-        repo: '',
         loadSidebar: true,
         autoHeader: true,
         subMaxLevel: 2,
         noEmoji: true,
+        auto2top: true,
         logo: '/img/logo.png',
         externalLinkTarget: '_self'
     }
@@ -27,5 +26,8 @@
   <script src="//unpkg.com/prismjs/components/prism-c.min.js"></script>
   <script src="//unpkg.com/prismjs/components/prism-cpp.min.js"></script>
   <script src="//unpkg.com/prismjs/components/prism-python.min.js"></script>
+  if (typeof navigator.serviceWorker !== 'undefined') {
+    navigator.serviceWorker.register('sw.js')
+  }
 </body>
 </html>
