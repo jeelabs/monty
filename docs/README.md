@@ -1,6 +1,6 @@
 # Monty: a stackless VM
 
-**Monty** is a Virtual Machine which executes bytecode produced by [MicroPython][MPY].<br>
+Monty is a Virtual Machine which executes bytecode produced by [MicroPython][MPY].<br>
 It's grossly incomplete and totally unfit for general use, but ... it _does_ work.  
 There is no compiler, this VM requires an `.mpy` file from `mpy-cross` to run.  
 

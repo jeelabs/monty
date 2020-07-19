@@ -1,4 +1,4 @@
-Some notes about how the Monty development tree is set up and meant to be used.
+This is how the Monty repository is currently set up and used for development.
 
 ## Requirements
 
