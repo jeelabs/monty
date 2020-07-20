@@ -1,4 +1,4 @@
-?> Monty was started in mid-June, 2020 - it's as young and temperamental as a
+?> Monty was started in mid-June, 2020 - it's as young and capricious as a
 puppy. Everything in the following notes should be viewed as no more than a
 snapshot of an evolving experimental design.
 
