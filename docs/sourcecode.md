@@ -4,7 +4,7 @@ not always in the same order as the source code.
 
 This is C++ code, even though most types are defined as `struct`, not `class`.
 The distinction is minimal: members are public by default in structs, but
-private in classes. That's really the only difference!
+private in classes. That's really their only difference!
 
 The implementation for most of these data types can be found in
 `lib/monty/object.cpp`.
@@ -13,7 +13,7 @@ The implementation for most of these data types can be found in
 
 A `Value` encodes some very frequently-used, eh, _values_ in a single efficient
 machine word (32- or 64-bit, depending on architecture). It represents one of
-four C types:
+four types:
 
 ```cpp
 struct Value {
@@ -55,19 +55,19 @@ and as return type.
 ## `struct Vector`
 
 The `Vector` is Monty's way of managing variable-sized indexable data. They hold
-a variable number of N-bit items (N being anything from 1 to at least 64).
-Vectors have a `length()` (the number of items) and a `capacity` (the size in
-bytes to which a vector can grow without reallocation).
+a variable number of N-bit items (N being any power of two from 1 to at least
+128).  Vectors have a `length()` (the number of items) and a `capacity` (the
+size in bytes to which a vector can grow without reallocation).
 
 Vector items can be fetched (via `getXXX()` methods), and stored (via `set()`).
-For items of at least 8 bits, there is `ins()` and `del()` to insert or remove
+For items of at least 8 bits, there are `ins()` and `del()` to insert or remove
 items, moving other items up or down as needed. If insertion needs more space
 than the vector's capacity allows, the vector will be re-allocated.
 
 ## `struct VecOf<T>`
 
 This is a convenience wrapper based on C++ templates, to simplify fetching and
-storing with type-specifici `get()` and `set()` methods. It can be used for
+storing with type-specific `get()` and `set()` methods. It can be used for
 vectors of characters, small ints of a specific size, etc.
 
 The most frequent use for this is a `VecOf<Value>`, which is so common that it
@@ -109,9 +109,9 @@ lookup table which defines the built-in attributes of each type.
 <!-- *** this line just clears Vim's confused Markdown rendering state -->
 
 This is the core of the garbage collector. For each object type, it knows how to
-mark all reachable objects from that instance. I.e. for an `IntObj`, there is
+mark all objects reachable from that instance. I.e. for an `IntObj`, there is
 nothing to mark, whereas `ListObj::mark` will mark all objects currently stored
-in the instance's list (which is, perhaps confusingly ... managed via a Vector).
+in the instance's list (which is, perhaps confusingly, stored in a ... Vector).
 
 Also defined in the `Vector` class are these two (implied static) functions:
 
@@ -122,11 +122,11 @@ void operator delete (void*);
 
 These take over all heap allocations for `Object` instances and all derived
 classes. With a few exceptions (notably `BytesObj` and `TupleObj`), this is all
-that's needed in C++ to make sure objects end up in a memory area managed by the
-garbage collector.
+that's needed in C++ to make sure objects end up in a memory pool managed by the
+garbage collector (which can be found at `lib/monty/gc.cpp`).
 
 ?> Not **all** objects are allocated on the heap. Objects _can_ be declared as
-local variables on the C stack. They will be cleaned up in C's usual way: when
+local variables on the C stack. These will be cleaned up in C's usual way: when
 the stack frame is left, i.e. when "local scope" ends.
 
 ## `struct NoneObj`, etc ...
@@ -166,7 +166,7 @@ unlike `ListObj` instances, these sequences are not managed as vectors.
 
 A "lookup object" is like a `DictObj`, i.e. a map, but the associated table is
 stored is constant (i.e. `const`) so it can be stored in flash memory. These
-objects are used to store predefine type attributes.
+objects are used to store predefined type attributes.
 
 ## `struct MutSeqObj`
 
@@ -221,8 +221,8 @@ struct MethObj : Object { ... };
 
 ## `struct BytecodeObj`
 
-This class represent bytecode objects and everything they carry with them, i.e.
-stack frame and argument details, constants, and additional bytecode objects.
+This class represents bytecode objects and everything they carry with them, i.e.
+frame size and argument details, constants, and additional bytecode objects.
 Bytecode objects only consist of constant data. They are constructed by the
 `.mpy` file loader on import (see `lib/monty/loader.h`).
 
@@ -278,7 +278,7 @@ Generators, coroutines, and tasks (all to be called "coro" from now on) are
 implemented as stack frames pointing to the context each of them owns. As
 described in the [Design overview](design.md#stackless-vm), coros _own_ a stack
 (i.e. the context they point to), whereas normal functions _borrow_ (and expand
-/ shrink their caller's stack.
+/ shrink) their caller's stack.
 
 There are as many `Context` instances at any given point in time, as there are
 active coros (i.e. generators which have been started by calling them). There is
@@ -301,4 +301,4 @@ be included anywhere else than in the `main.cpp` application. The `Interp`
 object contains the actual implementation of the bytecode interpreter. It
 defines `run()`, `outer()`, and `inner()` methods, matching three of the four VM
 loops, as described in the [Design overview](design.md#loops-all-the-way-down).
-The "main" loop is architecture-specific and part of the main application.
+The fourth loop is architecture-specific and part of the main application.
