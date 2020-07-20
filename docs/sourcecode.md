@@ -54,7 +54,7 @@ and as return type.
 
 ## `struct Vector`
 
-The `Vector` is Monty's way of managing variable-sized indexable data. They hold
+The `Vector` is Monty's way of managing variable-sized indexable data. It holds
 a variable number of N-bit items (N being any power of two from 1 to at least
 128).  Vectors have a `length()` (the number of items) and a `capacity` (the
 size in bytes to which a vector can grow without reallocation).
@@ -150,7 +150,7 @@ Vector instance is _overwritten_ with the bytes themselves (and a length).
 
 Strings are UTF-8 aware in Python and Monty. They are derived from `BytesObj`,
 but with additional logic to deal with UTF-8's variable-length encoding for
-Unicode charcter 0x0080 and above.
+Unicode characters 0x0080 and above.
 
 > As of mid-July, there's only a crude non-bytes implementation, but it's on the
 > TODO list ...
@@ -176,10 +176,11 @@ ways for lists, sets, dicts, arrays, classes, and more.
 
 Several classes are derived from `MutSeqObj`:
 
-* `ArrayObj` - stores compact arrays of elements, all of the same scalar type
-* `ListObj` - stores Python lists, i.e. arrays of arbitrary other objects
-* `SetObj` - a collection of unique values (these must be hashable)
-* `DictOb` - to store a mapping from unique keys to arbitrary objects
+* `struct ArrayObj` - stores compact arrays of elements, all of the same scalar
+  type
+* `struct ListObj` - stores Python lists, i.e. arrays of arbitrary other objects
+* `struct SetObj` - a collection of unique values (these must be hashable)
+* `struct DictOb` - to store a mapping from unique keys to arbitrary objects
 
 > Hashing is not yet implemented in the Monty VM (and "unique" is not
 > well-defined).
@@ -245,16 +246,16 @@ is derived from `DictObj`).
 
 Instances of type `FrameObj` represent stack frames to hold arguments, locals,
 and temporary values during bytecode execution by the VM. The top of the stack
-is pointed to by `sp`, a pointer into the stack, but in stack frames, stack
-pointers are saved as _offsets_ into the stack. This allows stacks to move and
-resize without disturbing all the inactive stack frame objects.
+is pointed to by `sp`, a pointer into the stack, but in stack frames, these
+pointers are saved as _offsets_ into the stack. This allows stack vectors to
+move and resize without disturbing all the inactive stack frame objects.
 
-The _currently active_ stack pointer is not stored in `FrameObj` instances, only
-stack pointers of callers (and their callers) which are waiting for nested calls
-and stack frames to return. In other words: when a call pushes the current
-instruction pointer and current stack pointer to prepare for this new call,
-those values are stored in the caller's stack frame object, as `spOffset` and
-`savedIp`, respectively.
+The _currently active_ stack pointer is not stored in a `FrameObj` instance,
+only stack pointers of callers (and their callers) which are waiting for nested
+calls and stack frames to return. In other words: when a call wants to push the
+current instruction pointer and current stack pointer to prepare for this new
+call, those values are stored in the caller's stack frame object (as `spOffset`
+and `savedIp`, respectively).
 
 Frame objects don't _own_ a stack, they merely point into the stack owned by the
 current `Context` instance.
