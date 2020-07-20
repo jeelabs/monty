@@ -113,7 +113,7 @@ mark all objects reachable from that instance. I.e. for an `IntObj`, there is
 nothing to mark, whereas `ListObj::mark` will mark all objects currently stored
 in the instance's list (which is, perhaps confusingly, stored in a ... Vector).
 
-Also defined in the `Vector` class are these two (implied static) functions:
+Also defined in the `Object` class are these two (implied static) functions:
 
 ```cpp
 void* operator new (size_t);
@@ -246,9 +246,9 @@ is derived from `DictObj`).
 
 Instances of type `FrameObj` represent stack frames to hold arguments, locals,
 and temporary values during bytecode execution by the VM. The top of the stack
-is pointed to by `sp`, a pointer into the stack, but in stack frames, these
+is pointed to by `sp`, a pointer into the stack, but in frame objects, these
 pointers are saved as _offsets_ into the stack. This allows stack vectors to
-move and resize without disturbing all the inactive stack frame objects.
+move and resize without disturbing all the inactive frame objects.
 
 The _currently active_ stack pointer is not stored in a `FrameObj` instance,
 only stack pointers of callers (and their callers) which are waiting for nested
