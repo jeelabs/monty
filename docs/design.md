@@ -1,5 +1,5 @@
 ?> Monty was started in mid-June, 2020 - it's as young and capricious as a
-puppy. Everything in the following notes should be viewed as no more than a
+puppy. Everything in the following notes should be treated as no more than a
 snapshot of an evolving experimental design.
 
 ## Data structures
@@ -106,7 +106,7 @@ mentioned above.
 This is a far-reaching design choice, with major implications. Including some
 inconvenient ones ...
 
-The main benefit is that the that VM, i.e. bytecode execution, can be suspended
+The main benefit is that the that VM, i.e. bytecode, execution can be suspended
 at any point between opcodes. The VM can call whatever C++ code it wants, but it
 will only proceed to the next bytecode instruction when that code returns, i.e.
 when the C stack is back to the state at the start of the call.
@@ -122,7 +122,7 @@ For a quick intro into this approach, see Rob Pike's
 
 The reason this works in Monty, is that everything happens in a purely stacking
 LIFO fashion: main calls VM, VM calls C++ functions, they return, the VM
-continues where it left off, and when it has nothing to do _right now_, it
+continues where it left off, and if it has nothing to do _right now_, it
 returns to main.
 
 The magic happens in the VM's (and hence Python's) _generators_. In Monty a
@@ -136,9 +136,9 @@ Generators and coroutines are nearly the same thing. They just differ in which
 direction a value is used: as input parameter, or as result. From now on, let's
 use the term **coro** for both, simply because it's shorter.
 
-## Coro's and tasks
+## Coros and tasks
 
-From a Python perspective, coro's are functions which contain the keyword
+From a Python perspective, coros are functions which contain the keyword
 `yield` somewhere in their body (or `async` / `await` nowadays). These functions
 are specially marked, and cause the VM to make one small but very significant
 change: when called, instead of executing the corresponding bytecode, the VM
@@ -158,8 +158,8 @@ expanding and shrinking the caller's stack (a resizable vector).
 A coro on the other hand, once called, carries its current state with it, i.e.
 it "owns" a stack frame which it can use and alter as often and as long as it
 wants. The local variables in a coro don't get lost when it yields, but only
-when it returns. Such a return is final, it also prohibits any further `next()`
-calls.
+when it returns. Such a return is final, in that it also prohibits any further
+`next()` calls.
 
 A coro can call normal functions which in turn can nest to any depth. These
 function will grow the coro's stack as needed. Since `yield` by its very
@@ -184,8 +184,8 @@ until the requested data is ready. This creates two problems:
    bytecode?
 
 Problem #1 is addressed by giving `monty.suspend()` a list. The suspended task
-is appended to that list. In the case of a read, this list must be managed by
-the read I/O handler, to resume it when the data arrives.
+is appended to that list. In the case of a read, this list will be managed by
+the read I/O handler, to resume the task once data arrives.
 
 Problem #2 is handled in the third of the loops mentioned in the [Stackless
 VM](#stackless-vm) section: the "run loop" pops the first item off the
@@ -226,8 +226,9 @@ base class to make state explicit. Finite state machine coding also offers a way
 around this problem (this is used in the LwIP network library, for example). But
 either way, such explicit coding techniques may require a lot of extra effort.
 
-Another approach is to put more of the logic in Python, so that the required C++
-calls only do fairly basic stuff and can be broken into smaller atomic steps.
+Another approach is to move more of the potentially-blocking logic to Python, so
+that the remaining C++ calls only deal with fairly basic stuff and can do their
+job in smaller atomic steps.
 
 Right now, it all doesn't look like a show-stopper for Monty. But "taming the
-beast" will take more work ...
+beast" will take more work.
