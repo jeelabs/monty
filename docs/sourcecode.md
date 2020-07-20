@@ -6,6 +6,9 @@ This is C++ code, even though most types are defined as `struct`, not `class`.
 The distinction is minimal: members are public by default in structs, but
 private in classes. That's really the only difference!
 
+The implementation for most of these data types can be found in
+`lib/monty/object.cpp`.
+
 ## `struct Value`
 
 A `Value` encodes some very frequently-used, eh, _values_ in a single efficient
@@ -77,7 +80,7 @@ than small integers and constant C-strings. The class hierarchy derived from
 this class is presented in the [Design Overview](design.md#object-hierarchy).
 
 Objects have a number of virtual function members, which means that _every_
-objects has some common methods. The most obvious ones are really just C++
+object has a few common methods. The most obvious ones are really just C++
 "dispatchers" for some standard Python methods:
 
 ```cpp
@@ -108,7 +111,7 @@ lookup table which defines the built-in attributes of each type.
 This is the core of the garbage collector. For each object type, it knows how to
 mark all reachable objects from that instance. I.e. for an `IntObj`, there is
 nothing to mark, whereas `ListObj::mark` will mark all objects currently stored
-in the instance's list (which is, perhaps confusingly ... managed in a Vector).
+in the instance's list (which is, perhaps confusingly ... managed via a Vector).
 
 Also defined in the `Vector` class are these two (implied static) functions:
 
@@ -123,8 +126,8 @@ that's needed in C++ to make sure objects end up in a memory area managed by the
 garbage collector.
 
 ?> Not **all** objects are allocated on the heap. Objects _can_ be declared as
-local variables, on the C stack. They are cleaned up in C's usual way: when the
-stack frame is left, i.e. when "local scope" ends.
+local variables on the C stack. They will be cleaned up in C's usual way: when
+the stack frame is left, i.e. when "local scope" ends.
 
 ## struct NoneObj, etc ...
 
@@ -157,12 +160,13 @@ Unicode charcter 0x0080 and above.
 A tuple is an immutable object in Python. To efficiently deal with small tuples,
 Monty will allocate the values of the tuple _right after_ the memory occupied by
 `TupleObj` itself. So tuples are _sequences_ (and support indexed access), but
-unlike `ListObj` instances, these sequences are not managed as a `VecOfValue`.
+unlike `ListObj` instances, these sequences are not managed as vectors.
 
 ## struct LookupObj
 
 A "lookup object" is like a `DictObj`, i.e. a map, but the associated table is
-stored is constant (i.e. `const`) so it can be stored in flash memory.
+stored is constant (i.e. `const`) so it can be stored in flash memory. These
+objects are used to store predefine type attributes.
 
 ## struct MutSeqObj
 
@@ -172,7 +176,7 @@ ways for lists, sets, dicts, arrays, classes, and more.
 
 Several classes are derived from `MutSeqObj`:
 
-* `ArrayObj` - stores compact arrays of elements of the same scalar type
+* `ArrayObj` - stores compact arrays of elements, all of the same scalar type
 * `ListObj` - stores Python lists, i.e. arrays of arbitrary other objects
 * `SetObj` - a collection of unique values (these must be hashable)
 * `DictOb` - to store a mapping from unique keys to arbitrary objects
@@ -192,11 +196,11 @@ in there ...
 
 ## struct FunObj
 
-This is object type wraps a C or C++ function (_not_ a Python fuction, which is
-a `BytecodeObj`).
+This simple object type wraps a C or C++ function (_not_ a Python fuction, which
+is a `BytecodeObj`).
 
 There are three additional classes which can wrap a C++ _method_, which comes
-surprisingly close to what a Python method is. These require quite a bit of
+surprisingly close to what a Python method is. But these require quite a bit of
 template magic to make it all work properly from C++:
 
 ```cpp
@@ -218,21 +222,22 @@ struct MethObj : Object { ... };
 ## struct BytecodeObj
 
 This class represent bytecode objects and everything they carry with them, i.e.
-call details, constants, and additional bytecode objects. Bytecode objects only
-consist of constant data. They are constructed by the `.mpy` file loader on
-import (see `lib/monty/loader.h`).
+stack frame and argument details, constants, and additional bytecode objects.
+Bytecode objects only consist of constant data. They are constructed by the
+`.mpy` file loader on import (see `lib/monty/loader.h`).
 
 ## struct CallArgsObj
 
-Bytecode can not be called as is. It is always part of a context, i.e. the
-module or the class where it is defined. This is also where default arguments
-are specified. The `CallArgsObj` class represents a "declared" function, i.e.
-with the current context and default arguments prepared for use.
+Bytecode can not be called as is. It must always be used in-context, i.e. the
+module or the class where it is defined. This is also the time when default
+arguments are specified. The `CallArgsObj` class represents a "declared"
+function, i.e.  with the current context and default arguments prepared for
+actual use.
 
 ## struct ModuleObj
 
 A module owns some bytecode, which needs to be executed when the module is
-imported. Most often, this bytecode will then define some variables and
+imported. Most often, this bytecode will then define new variables and
 functions, which end up getting stored in the module's dictionary (`ModuleObj`
 is derived from `DictObj`).
 
@@ -242,18 +247,19 @@ Instances of type `FrameObj` represent stack frames to hold arguments, locals,
 and temporary values during bytecode execution by the VM. The top of the stack
 is pointed to by `sp`, a pointer into the stack, but in stack frames, stack
 pointers are saved as _offsets_ into the stack. This allows stacks to move and
-resize without disturbing the stored stack of a stack frame.
+resize without disturbing all the inactive stack frame objects.
 
 The _currently active_ stack pointer is not stored in `FrameObj` instances, only
 stack pointers of callers (and their callers) which are waiting for nested calls
 and stack frames to return. In other words: when a call pushes the current
 instruction pointer and current stack pointer to prepare for this new call,
-those values are stored in the caller's `spOffset` and `savedIp`, respectively.
+those values are stored in the caller's stack frame object, as `spOffset` and
+`savedIp`, respectively.
 
 Frame objects don't _own_ a stack, they merely point into the stack owned by the
 current `Context` instance.
 
-Frame objects also contain pointer to the caller's frame, and a pointer to the
+Frame objects also contain pointer to their caller's frame, and a pointer to the
 local dictionary used to store additional locals. In the case of class
 instances, this dictionary contains the instance attributes. In the case of
 modules, the frame points to the module's dictionary.
@@ -281,14 +287,14 @@ one additional context: the VM interpreter. This context is used to start the
 
 A context is the equivalent of a "generator object" in standard Python.
 
-Frame objects and contexts are at the heart of Monty's VM execution model. The
-code is in `frame.cpp`.
+Frame objects and contexts are the heart of Monty's VM. The implementation is in
+`lib/monty/frame.cpp`.
 
 ## struct Interp
 
 There is one special context: the Virtual Machine interpreter. Class `Interp` is
 a subclass of `Context`, and therefore it's a "context-plus". There is a single
-`Interp` instance, it's created by the main application.
+`Interp` instance, which is created by the main application.
 
 This datatype is not defined in `monty.h` but in `interp.h`, and is not meant to
 be included anywhere else than in the `main.cpp` application. The `Interp`
