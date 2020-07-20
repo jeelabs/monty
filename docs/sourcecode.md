@@ -129,7 +129,7 @@ garbage collector.
 local variables on the C stack. They will be cleaned up in C's usual way: when
 the stack frame is left, i.e. when "local scope" ends.
 
-## struct NoneObj, etc ...
+## `struct NoneObj`, etc ...
 
 There is only a single NoneObj instance, it's available as `Value::None`.
 Similarly, there are only two `BoolObj` instances: `Value::True` and
@@ -138,7 +138,7 @@ Similarly, there are only two `BoolObj` instances: `Value::True` and
 A few other subclasses of `Object` are fairly obvious, e.g. `IntObj`, `IterObj`.
 Only classes which deserve special mention are listed after this point.
 
-## struct BytesObj
+## `struct BytesObj`
 
 In Python, `bytes` are constant arrays of, eh, "bytes" (`uint8_t` in C).  To
 efficiently deal with short byte sequences, the `BytesObj` plays some tricks
@@ -146,7 +146,7 @@ with its memory representation. For "large" byte sequences, a `Vector` is used,
 but below a certain threshold (currently 16), the memory occupied but that
 Vector instance is _overwritten_ with the bytes themselves (and a length).
 
-## struct StrObj
+## `struct StrObj`
 
 Strings are UTF-8 aware in Python and Monty. They are derived from `BytesObj`,
 but with additional logic to deal with UTF-8's variable-length encoding for
@@ -155,20 +155,20 @@ Unicode charcter 0x0080 and above.
 > As of mid-July, there's only a crude non-bytes implementation, but it's on the
 > TODO list ...
 
-## struct TupleObj
+## `struct TupleObj`
 
 A tuple is an immutable object in Python. To efficiently deal with small tuples,
 Monty will allocate the values of the tuple _right after_ the memory occupied by
 `TupleObj` itself. So tuples are _sequences_ (and support indexed access), but
 unlike `ListObj` instances, these sequences are not managed as vectors.
 
-## struct LookupObj
+## `struct LookupObj`
 
 A "lookup object" is like a `DictObj`, i.e. a map, but the associated table is
 stored is constant (i.e. `const`) so it can be stored in flash memory. These
 objects are used to store predefine type attributes.
 
-## struct MutSeqObj
+## `struct MutSeqObj`
 
 This is an abstract base class for all objects which hold variable amounts of
 mutable data. The base class includes a `VecOfValue`, which is used in different
@@ -184,7 +184,7 @@ Several classes are derived from `MutSeqObj`:
 > Hashing is not yet implemented in the Monty VM (and "unique" is not
 > well-defined).
 
-## struct ClassObj
+## `struct ClassObj`
 
 This type is used for Python classes. _Instances_ of these classes are of type
 `InstanceObj`, with a `type()` which points back to the corresponding `ClassObj`
@@ -194,7 +194,7 @@ mind-twisting terminology (or mind-expanding, depending on your perspective).
 > Base classes are not yet implemented in Monty. There may be some snakes hiding
 in there ...
 
-## struct FunObj
+## `struct FunObj`
 
 This simple object type wraps a C or C++ function (_not_ a Python fuction, which
 is a `BytecodeObj`).
@@ -219,14 +219,14 @@ struct Method : MethodBase { ... };
 struct MethObj : Object { ... };
 ```
 
-## struct BytecodeObj
+## `struct BytecodeObj`
 
 This class represent bytecode objects and everything they carry with them, i.e.
 stack frame and argument details, constants, and additional bytecode objects.
 Bytecode objects only consist of constant data. They are constructed by the
 `.mpy` file loader on import (see `lib/monty/loader.h`).
 
-## struct CallArgsObj
+## `struct CallArgsObj`
 
 Bytecode can not be called as is. It must always be used in-context, i.e. the
 module or the class where it is defined. This is also the time when default
@@ -234,14 +234,14 @@ arguments are specified. The `CallArgsObj` class represents a "declared"
 function, i.e.  with the current context and default arguments prepared for
 actual use.
 
-## struct ModuleObj
+## `struct ModuleObj`
 
 A module owns some bytecode, which needs to be executed when the module is
 imported. Most often, this bytecode will then define new variables and
 functions, which end up getting stored in the module's dictionary (`ModuleObj`
 is derived from `DictObj`).
 
-## struct FrameObj
+## `struct FrameObj`
 
 Instances of type `FrameObj` represent stack frames to hold arguments, locals,
 and temporary values during bytecode execution by the VM. The top of the stack
@@ -267,7 +267,7 @@ modules, the frame points to the module's dictionary.
 ?> Some of these details are inaccurate and even incorrect. Please consider them
 "still in flux".
 
-## struct Context
+## `struct Context`
 
 The `Context` represents the VM's _current execution state_. It includes a
 vector (of type `VecOfValue`) which is used as stack, expanded and shrunk as
@@ -290,7 +290,7 @@ A context is the equivalent of a "generator object" in standard Python.
 Frame objects and contexts are the heart of Monty's VM. The implementation is in
 `lib/monty/frame.cpp`.
 
-## struct Interp
+## `struct Interp`
 
 There is one special context: the Virtual Machine interpreter. Class `Interp` is
 a subclass of `Context`, and therefore it's a "context-plus". There is a single
