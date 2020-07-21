@@ -189,7 +189,7 @@ SliceObj::SliceObj (Value a, Value b, Value c) {
     assert(a.isInt() && b.isInt());
     off = a;
     num = b;
-    cap = c.isInt() ? (int) c : b;
+    cap = c.isInt() ? c : b;
 }
 
 Value SliceObj::create (const TypeObj&, int argc, Value argv[]) {
