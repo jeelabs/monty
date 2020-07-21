@@ -1,6 +1,6 @@
 // Main interpreter loop. Only run() is public, it cannot be called recursively.
 
-//CG: off op:print # set to "on" to enable per-opcode debug output
+//CG: on op:print # set to "on" to enable per-opcode debug output
 
 struct QstrPool : Object {
     int len;
@@ -111,74 +111,88 @@ private:
 
     //CG: op-init
 
-    //CG1 op q
+    //CG2 op q
     void op_LoadConstString (const char* arg) {
+        printf("LoadConstString %s\n", arg);
         *++sp = arg;
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_LoadName (const char* arg) {
+        printf("LoadName %s\n", arg);
         *++sp = fp->locals->at(arg);
         assert(!sp->isNil());
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_StoreName (const char* arg) {
+        printf("StoreName %s\n", arg);
         fp->locals->atKey(arg, DictObj::Set) = *sp--;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadConstNone () {
+        printf("LoadConstNone\n");
         *++sp = Value::nil; // TODO NoneObj::noneObj;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadConstFalse () {
+        printf("LoadConstFalse\n");
         *++sp = 0; // TODO BoolObj::falseObj;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadConstTrue () {
+        printf("LoadConstTrue\n");
         *++sp = 1; // TODO BoolObj::trueObj;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadConstSmallInt () {
+        printf("LoadConstSmallInt\n");
         *++sp = fetchVarInt(((uint8_t) *ip & 0x40) ? ~0 : 0);
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadNull () {
+        printf("LoadNull\n");
         *++sp = Value::nil; // TODO wrong
     }
 
-    //CG1 op
+    //CG2 op
     void op_DupTop () {
+        printf("DupTop\n");
         ++sp; sp[0] = sp[-1];
     }
 
-    //CG1 op
+    //CG2 op
     void op_DupTopTwo () {
+        printf("DupTopTwo\n");
         sp += 2; sp[0] = sp[-2]; sp[-1] = sp[-3];
     }
 
-    //CG1 op
+    //CG2 op
     void op_PopTop () {
+        printf("PopTop\n");
         --sp;
     }
 
-    //CG1 op
+    //CG2 op
     void op_RotTwo () {
+        printf("RotTwo\n");
         auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = v;
     }
 
-    //CG1 op
+    //CG2 op
     void op_RotThree () {
+        printf("RotThree\n");
         auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = sp[-2]; sp[-2] = v;
     }
 
-    //CG1 op o
+    //CG2 op o
     void op_SetupExcept (int arg) {
+        printf("SetupExcept %d\n", arg);
         auto exc = fp->exceptionPushPop(1);
         exc[0] = (ip - fp->bcObj.code) + arg; // int offset iso pointer
         exc[1] = sp - fp->bottom(); // again as offset, as sp is not a Value
@@ -186,19 +200,22 @@ private:
         assert(exc[0].isInt() && exc[1].isInt());
     }
 
-    //CG1 op o
+    //CG2 op o
     void op_PopExceptJump (int arg) {
+        printf("PopExceptJump %d\n", arg);
         (void) fp->exceptionPushPop(-1);
         ip += arg;
     }
 
-    //CG1 op
+    //CG2 op
     void op_RaiseLast () {
+        printf("RaiseLast\n");
         raise(""); // TODO
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_LoadAttr (const char* arg) {
+        printf("LoadAttr %s\n", arg);
         Value self = Value::nil;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
@@ -206,8 +223,9 @@ private:
             *sp = new BoundMethObj (*sp, self);
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_StoreAttr (const char* arg) {
+        printf("StoreAttr %s\n", arg);
         assert(&sp->obj().type().type() == &ClassObj::info);
         auto& io = (InstanceObj&) sp->obj(); // TODO can't use asType<> ?
 
@@ -215,8 +233,9 @@ private:
         sp -= 2;
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_LoadMethod (const char* arg) {
+        printf("LoadMethod %s\n", arg);
         Value self = *sp;
         *sp = self.objPtr()->attr(arg, sp[1]);
         ++sp;
@@ -225,62 +244,72 @@ private:
         assert(!sp->isNil());
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_CallMethod (uint32_t arg) {
+        printf("CallMethod %u\n", arg);
         uint8_t nargs = arg, nkw = arg >> 8; // TODO kwargs
         sp -= nargs + 2 * nkw + 1;
         doCall(*sp, nargs + 1, sp + 1);
     }
 
-    //CG1 op s
+    //CG2 op s
     void op_Jump (int arg) {
+        printf("Jump %d\n", arg);
         ip += arg;
     }
 
-    //CG1 op s
+    //CG2 op s
     void op_UnwindJump (int arg) {
+        printf("UnwindJump %d\n", arg);
         fp->excTop -= (uint8_t) *ip; // TODO hardwired for simplest case
         ip += arg;
     }
 
-    //CG1 op s
+    //CG2 op s
     void op_PopJumpIfFalse (int arg) {
+        printf("PopJumpIfFalse %d\n", arg);
         if (*sp-- == 0)
             ip += arg;
     }
 
-    //CG1 op s
+    //CG2 op s
     void op_PopJumpIfTrue (int arg) {
+        printf("PopJumpIfTrue %d\n", arg);
         if (*sp-- != 0)
             ip += arg;
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_LoadConstObj (uint32_t arg) {
+        printf("LoadConstObj %u\n", arg);
         *++sp = fp->bcObj.constObjs.get(arg);
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_MakeFunction (uint32_t arg) {
+        printf("MakeFunction %u\n", arg);
         *++sp = new CallArgsObj (fp->bcObj.constObjs.get(arg));
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_MakeFunctionDefargs (uint32_t arg) {
+        printf("MakeFunctionDefargs %u\n", arg);
         --sp;
         *sp = new CallArgsObj (fp->bcObj.constObjs.get(arg),
                         sp[0].ifType<TupleObj>(), sp[1].ifType<DictObj>());
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_CallFunction (uint32_t arg) {
+        printf("CallFunction %u\n", arg);
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         doCall(*sp, nargs, sp + 1);
     }
 
-    //CG1 op
+    //CG2 op
     void op_YieldValue () {
+        printf("YieldValue\n");
         Value v = *sp;
         popState();
         if (!v.isNil()) {
@@ -289,8 +318,9 @@ private:
         }
     }
 
-    //CG1 op
+    //CG2 op
     void op_ReturnValue () {
+        printf("ReturnValue\n");
         auto ofp = fp; // fp may become invalid
         Value v = fp->result != 0 ? fp->result : *sp;
         popState();
@@ -303,54 +333,71 @@ private:
         }
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_BuildTuple (uint32_t arg) {
+        printf("BuildTuple %u\n", arg);
         sp -= (int) arg - 1; // in case arg is 0
         *sp = TupleObj::create(TupleObj::info, arg, sp);
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_BuildList (uint32_t arg) {
+        printf("BuildList %u\n", arg);
         sp -= (int) arg - 1; // in case arg is 0
         *sp = new ListObj (arg, sp);
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_BuildSet (uint32_t arg) {
+        printf("BuildSet %u\n", arg);
         sp -= (int) arg - 1; // in case arg is 0
         *sp = new SetObj (arg, sp);
     }
 
-    //CG1 op v
+    //CG2 op v
     void op_BuildMap (uint32_t arg) {
+        printf("BuildMap %u\n", arg);
         *++sp = new DictObj (arg);
     }
 
-    //CG1 op
+    //CG2 op v
+    void op_BuildSlice (uint32_t arg) {
+        printf("BuildSlice %u\n", arg);
+        Value v = arg > 2 ? *sp : Value::nil;
+        sp -= arg - 1; // arg is 2 or 3
+        *sp = new SliceObj (sp[0], sp[1], v);
+    }
+
+    //CG2 op
     void op_StoreMap () {
+        printf("StoreMap\n");
         sp -= 2;
         sp->asType<DictObj>().addPair(sp[2], sp[1]); // no key check
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_LoadGlobal (const char* arg) {
+        printf("LoadGlobal %s\n", arg);
         *++sp = fp->bcObj.owner.at(arg);
         assert(!sp->isNil());
     }
 
-    //CG1 op q
+    //CG2 op q
     void op_StoreGlobal (const char* arg) {
+        printf("StoreGlobal %s\n", arg);
         fp->bcObj.owner.atKey(arg, DictObj::Set) = *sp--;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadSubscr () {
+        printf("LoadSubscr\n");
         Value index = *sp--;
         *sp = sp->objPtr()->at(index);
     }
 
-    //CG1 op
+    //CG2 op
     void op_StoreSubscr () {
+        printf("StoreSubscr\n");
         auto dp = sp[-1].ifType<DictObj>();
         if (dp != 0)
             dp->atKey(sp[0], DictObj::Set) = sp[-2];
@@ -362,20 +409,23 @@ private:
         sp -= 3;
     }
 
-    //CG1 op
+    //CG2 op
     void op_LoadBuildClass () {
+        printf("LoadBuildClass\n");
         *++sp = ClassObj::info;
     }
 
-    //CG1 op
+    //CG2 op
     void op_GetIterStack () {
+        printf("GetIterStack\n");
         Value seq = *sp;
         sp += 3; // TODO yuck, the compiler assumes 4 stack entries are used!
         *sp = new IterObj (seq);
     }
 
-    //CG1 op o
+    //CG2 op o
     void op_ForIter (int arg) {
+        printf("ForIter %d\n", arg);
         Value v = sp->obj().next();
         if (v.isNil()) {
             delete &sp->obj(); // IterObj
@@ -476,6 +526,8 @@ private:
                     op_BuildSet(fetchVarInt()); break;
                 case Op::BuildMap:
                     op_BuildMap(fetchVarInt()); break;
+                case Op::BuildSlice:
+                    op_BuildSlice(fetchVarInt()); break;
                 case Op::StoreMap:
                     op_StoreMap(); break;
                 case Op::LoadGlobal:

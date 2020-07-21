@@ -179,6 +179,20 @@ private:
     int64_t i;
 };
 
+//CG< type slice
+struct SliceObj : Object {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
+    static const TypeObj info;
+    const TypeObj& type () const override;
+//CG>
+
+    SliceObj (Value a, Value b, Value c);
+
+private:
+    int32_t off, num, cap;
+};
+
 //CG3 type <iterator>
 struct IterObj : Object {
     static const TypeObj info;

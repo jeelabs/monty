@@ -185,6 +185,21 @@ Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
     return Value::nil;
 }
 
+SliceObj::SliceObj (Value a, Value b, Value c) {
+    assert(a.isInt() && b.isInt());
+    off = a;
+    num = b;
+    cap = c.isInt() ? (int) c : b;
+}
+
+Value SliceObj::create (const TypeObj&, int argc, Value argv[]) {
+    assert(1 <= argc && argc <= 3);
+    Value a = argc > 1 ? argv[0] : Value (0);
+    Value b = argc == 1 ? argv[0] : argv[1];
+    Value c = argc > 2 ? argv[2] : b;
+    return new SliceObj (a, b, c);
+}
+
 BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
     void* ptr;
     if (n <= MAX_NOVEC) {
@@ -519,3 +534,4 @@ const LookupObj DictObj::attrs (0, 0);
 const LookupObj ClassObj::attrs (0, 0);
 const LookupObj ArrayObj::attrs (0, 0);
 const LookupObj SetObj::attrs (0, 0);
+const LookupObj SliceObj::attrs (0, 0);
