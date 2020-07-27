@@ -33,7 +33,7 @@ void archInit () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    wait_ms(10);
+    wait_ms(100);
 }
 
 int archDone () {
