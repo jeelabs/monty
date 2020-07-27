@@ -4,7 +4,7 @@
 #include "config-native.h"
 #endif
 
-#if STM32F1 || STM32F4
+#if STM32F1 || STM32F4 || STM32L4
 #include "config-stm32.h"
 #endif
 
