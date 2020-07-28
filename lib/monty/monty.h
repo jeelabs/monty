@@ -98,6 +98,8 @@ struct Value {
     inline bool isTrue  () const;
            bool isBool  () const { return isFalse() || isTrue(); }
 
+    bool truthy () const;
+
     bool isEq (Value) const;
     Value unOp (UnOp op) const;
     Value binOp (BinOp op, Value rhs) const;
@@ -174,7 +176,8 @@ struct BoolObj : Object {
     const TypeObj& type () const override;
 //CG>
 
-    Value repr  (BufferObj&) const override; // see builtin.h
+    Value repr (BufferObj&) const override; // see builtin.h
+    Value unop (UnOp) const override;
 
     static const BoolObj trueObj;
     static const BoolObj falseObj;

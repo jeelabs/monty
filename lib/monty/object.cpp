@@ -22,7 +22,7 @@ bool Value::isEq (Value val) const {
             case Nil: assert(false); // handled above
             case Int: return false;  // handled above
             case Str: return strcmp(*this, val) == 0;
-            case Obj: break;
+            case Obj: return obj().binop(BinOp::Equal, val);
         }
     return binOp(BinOp::Equal, val);
 }
@@ -110,6 +110,15 @@ Value Value::binOp (BinOp op, Value rhs) const {
     return objPtr()->binop(op, rhs);
 }
 
+bool Value::truthy () const {
+    switch (tag()) {
+        case Value::Nil: return false;
+        case Value::Int: return (int) *this != 0;
+        case Value::Str: return *(const char*) *this != 0;
+        case Value::Obj: return obj().unop(UnOp::Bool);
+    }
+}
+
 const Value Value::None =  NoneObj::noneObj;
 const Value Value::False = BoolObj::falseObj;
 const Value Value::True  = BoolObj::trueObj;
@@ -150,6 +159,16 @@ Value BoolObj::create (const TypeObj&, int argc, Value argv[]) {
         return argv[0].unOp(UnOp::Bool);
     assert(argc == 0);
     return Value::False;
+}
+
+Value BoolObj::unop (UnOp op) const {
+    switch (op) {
+        case UnOp::Int:  // fall through
+        case UnOp::Hash: return this == &trueObj;
+        case UnOp::Bool: return *this;
+        default:         break;
+    }
+    return Object::unop(op);
 }
 
 Object& ForceObj::operator* () const {
@@ -216,9 +235,10 @@ Value InstanceObj::attr (const char* key, Value& self) const {
 Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
     assert(argc == 1);
     switch (argv[0].tag()) {
+        case Value::Nil: assert(false);
         case Value::Int: return argv[0];
         case Value::Str: return atoi(argv[0]);
-        default: assert(false);
+        case Value::Obj: return argv[0].unOp(UnOp::Int);
     }
     return Value::nil;
 }
@@ -237,6 +257,15 @@ Value SliceObj::create (const TypeObj&, int argc, Value argv[]) {
     Value c = argc > 2 ? argv[2] : b;
     return new SliceObj (a, b, c);
 }
+
+Value  SeqObj::isIn  (Value) const { assert(false); }
+Value  SeqObj::plus  (Value) const { assert(false); }
+Value  SeqObj::times (Value) const { assert(false); }
+size_t SeqObj::len   ()      const { assert(false); }
+Value  SeqObj::min   ()      const { assert(false); }
+Value  SeqObj::max   ()      const { assert(false); }
+Value  SeqObj::index (Value) const { assert(false); }
+Value  SeqObj::count (Value) const { assert(false); }
 
 BytesObj::BytesObj (const void* p, size_t n) : Vector (8) {
     void* ptr;
@@ -355,15 +384,6 @@ size_t StrObj::len () const {
 Value StrObj::encode () const {
     return Value::nil; // TODO
 }
-
-Value  SeqObj::isIn  (Value) const { assert(false); }
-Value  SeqObj::plus  (Value) const { assert(false); }
-Value  SeqObj::times (Value) const { assert(false); }
-size_t SeqObj::len   ()      const { assert(false); }
-Value  SeqObj::min   ()      const { assert(false); }
-Value  SeqObj::max   ()      const { assert(false); }
-Value  SeqObj::index (Value) const { assert(false); }
-Value  SeqObj::count (Value) const { assert(false); }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
     if (argc < 0)
