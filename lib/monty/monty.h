@@ -262,12 +262,15 @@ struct BytesObj : SeqObj, protected Vector {
     operator const uint8_t* () const;
 
     Value repr (BufferObj&) const override; // see builtin.h
+    Value unop (UnOp) const override;
     Value at (Value) const override;
     Value len () const override { return hasVec() ? length() : noVec().size; }
 
     Value decode () const;
 
     void* operator new (size_t, size_t);
+
+    static uint32_t hash (const uint8_t* p, size_t n);
 protected:
     static constexpr int MAX_NOVEC = 16;
     struct NoVec { uint8_t flag, size; uint8_t bytes [MAX_NOVEC]; };

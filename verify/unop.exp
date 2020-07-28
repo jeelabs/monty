@@ -1,20 +1,43 @@
 main qstr #166 1276b
+111
 -123 -123
 123 123
 -124 -124
 true true
 false false
 123 123
+123 123
+123 123
+112
 0 0
 0 0
 -1 -1
 false false
 true true
 0 0
+0 0
+0 0
+113
 234 234
 -234 -234
 233 233
 true true
 false false
 -234 -234
+234 234
+-234 -234
+114
+false
+true
+true
+5381
+193409669
+-511103042
+115
+false
+true
+true
+5381
+193409669
+-511103042
 done

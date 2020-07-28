@@ -366,6 +366,18 @@ static Value bi_len (int argc, Value argv[]) {
     return argv[0].objPtr()->asSeq().len();
 }
 
+//CG1 builtin abs
+static Value bi_abs (int argc, Value argv[]) {
+    assert(argc == 1);
+    return argv[0].unOp(UnOp::Abs);
+}
+
+//CG1 builtin hash
+static Value bi_hash (int argc, Value argv[]) {
+    assert(argc == 1);
+    return argv[0].unOp(UnOp::Hash);
+}
+
 //CG1 builtin next
 static Value bi_next (int argc, Value argv[]) {
     assert(argc == 1);
@@ -381,6 +393,8 @@ static Value bi_type (int argc, Value argv[]) {
 //CG< builtin-emit 0
 static const FunObj f_print (bi_print);
 static const FunObj f_len (bi_len);
+static const FunObj f_abs (bi_abs);
+static const FunObj f_hash (bi_hash);
 static const FunObj f_next (bi_next);
 static const FunObj f_type (bi_type);
 //CG>
@@ -422,6 +436,8 @@ static const LookupObj::Item builtins [] = {
     { "tuple", &TupleObj::info },
     { "print", &f_print },
     { "len", &f_len },
+    { "abs", &f_abs },
+    { "hash", &f_hash },
     { "next", &f_next },
     { "type", &f_type },
     //CG>

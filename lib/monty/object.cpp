@@ -28,19 +28,33 @@ bool Value::isEq (Value val) const {
 }
 
 Value Value::unOp (UnOp op) const {
-    if (isInt()) {
-        int n = *this;
-        switch (op) {
-            case UnOp::Int:  // fall through
-            case UnOp::Pos:  // fall through
-            case UnOp::Hash: return *this;
-            case UnOp::Abs:  if (n > 0) return *this; // else fall through
-            case UnOp::Neg:  return -n; // TODO overflow
-            case UnOp::Inv:  return ~n;
-            case UnOp::Not:  return Value::asBool(!n);
-            case UnOp::Bool: return Value::asBool(n);
-            default:         break;
+    switch (tag()) {
+        case Int: {
+            int n = *this;
+            switch (op) {
+                case UnOp::Int:  // fall through
+                case UnOp::Pos:  // fall through
+                case UnOp::Hash: return *this;
+                case UnOp::Abs:  if (n > 0) return *this; // else fall through
+                case UnOp::Neg:  return -n; // TODO overflow
+                case UnOp::Inv:  return ~n;
+                case UnOp::Not:  return Value::asBool(!n);
+                case UnOp::Bool: return Value::asBool(n);
+                default:         break;
+            }
+            break;
         }
+        case Str: {
+            const char* s = *this;
+            switch (op) {
+                case UnOp::Bool: return Value::asBool(*s);
+                case UnOp::Hash: return BytesObj::hash((const uint8_t*) s,
+                                                                    strlen(s));
+                default:         break;
+            }
+            break;
+        }
+        default: break;
     }
     return objPtr()->unop(op);
 }
@@ -133,8 +147,10 @@ const BoolObj BoolObj::trueObj;
 const BoolObj BoolObj::falseObj;
 
 Value BoolObj::create (const TypeObj&, int argc, Value argv[]) {
-    assert(argc == 1 && argv[0].isInt()); // TODO for now
-    return Value::asBool(argv[0]);
+    if (argc == 1)
+        return argv[0].unOp(UnOp::Bool);
+    assert(argc == 0);
+    return Value::False;
 }
 
 Object& ForceObj::operator* () const {
@@ -284,8 +300,25 @@ Value BytesObj::create (const TypeObj&, int argc, Value argv[]) {
     return new (n) BytesObj (p, n);
 }
 
+uint32_t BytesObj::hash (const uint8_t* p, size_t n) {
+    // see http://www.cse.yorku.ca/~oz/hash.html
+    uint32_t h = 5381;
+    for (size_t i = 0; i < n; ++i)
+        h = ((h<<5) + h) ^ p[i];
+    return h;
+}
+
 BytesObj::operator const uint8_t* () const {
     return hasVec() ? (const uint8_t*) getPtr(0) : noVec().bytes;
+}
+
+Value BytesObj::unop (UnOp op) const {
+    switch (op) {
+        case UnOp::Bool: return Value::asBool(len());
+        case UnOp::Hash: return hash(*this, len());
+        default:         break;
+    }
+    return SeqObj::unop(op);
 }
 
 Value BytesObj::at (Value idx) const {
