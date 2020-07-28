@@ -105,7 +105,8 @@ struct Value {
     Value binOp (BinOp op, Value rhs) const;
     void dump (const char* msg =0) const; // see builtin.h
 
-    static const Value asBool (int f) { return f ? True : False; }
+    static Value asBool (int f) { return f ? True : False; }
+    Value invert () const { return asBool(!truthy()); }
 
     static const Value None;
     static const Value False;

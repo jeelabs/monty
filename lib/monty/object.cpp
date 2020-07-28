@@ -59,36 +59,30 @@ Value Value::unOp (UnOp op) const {
 }
 
 Value Value::binOp (BinOp op, Value rhs) const {
-    // TODO reduce more comparison cases, this could be expanded if there is a
-    //  way to mark the inverse as well, but this requires special logic when
-    //  the binary op is bytecoded, i.e. when a ResumableObj is involved.
-    // Ideally, this optimisation step would have been done at compile time ...
-    BinOp origOp = op;
+    // TODO the inverted optimisations will fail if a ResumableObj is involved
     switch (op) {
-        case BinOp::More:      op = BinOp::Less; break;
-        case BinOp::MoreEqual: op = BinOp::LessEqual; break;
+        case BinOp::More:      return rhs.binOp(BinOp::Less, *this);
+        case BinOp::LessEqual: return rhs.binOp(BinOp::Less, *this).invert();
+        case BinOp::MoreEqual: return binOp(BinOp::Less, rhs).invert();
+        case BinOp::NotEqual:  return binOp(BinOp::Equal, rhs).invert();
         default:               break;
     }
-    Value lhs = *this;
-    if (op != origOp) {
-        lhs = rhs;
-        rhs = *this;
-    }
-    if (lhs.tag() == rhs.tag())
+    if (tag() == rhs.tag())
         switch (tag()) {
+            case Nil:
+                assert(false);
+                break;
             case Int: {
-                auto l = (int) lhs, r = (int) rhs;
+                auto l = (int) *this, r = (int) rhs;
                 switch (op) {
                     case BinOp::Less:            return Value::asBool(l < r);
-                    case BinOp::LessEqual:       return Value::asBool(l <= r);
+                    case BinOp::Equal:           return Value::asBool(l == r);
                     case BinOp::Add:
                     case BinOp::InplaceAdd:      return l + r;
                     case BinOp::Subtract:
                     case BinOp::InplaceSubtract: return l - r;
                     case BinOp::Multiply:
                     case BinOp::InplaceMultiply: return l * r;
-                    case BinOp::Equal:           return Value::asBool(l == r);
-                    case BinOp::NotEqual:        return Value::asBool(l != r);
                     case BinOp::FloorDivide:
                         if (r == 0) {
                             Context::raise("blah"); // TODO
@@ -100,7 +94,7 @@ Value Value::binOp (BinOp op, Value rhs) const {
                 break;
             }
             case Str: {
-                auto l = (const char*) lhs, r = (const char*) rhs;
+                auto l = (const char*) *this, r = (const char*) rhs;
                 switch (op) {
                     case BinOp::Add: {
                         auto buf = (char*) malloc(strlen(l) + strlen(r) + 1);
@@ -113,7 +107,7 @@ Value Value::binOp (BinOp op, Value rhs) const {
                 }
                 break;
             }
-            default:
+            case Obj:
                 switch (op) {
                     case BinOp::Equal:
                         if (ifType<NoneObj>() != 0) // FIXME special-cased!
@@ -124,8 +118,6 @@ Value Value::binOp (BinOp op, Value rhs) const {
                 }
                 break;
         }
-    if (op == BinOp::NotEqual)
-        return True; // FIXME, None != True - hardwired for features.py 45
     return objPtr()->binop(op, rhs);
 }
 
