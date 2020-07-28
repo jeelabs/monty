@@ -271,12 +271,12 @@ static void printEscaped (BufferObj& w, const char* fmt, uint8_t ch) {
 }
 
 Value NoneObj::repr (BufferObj& w) const {
-    w.printf("None");
+    w.printf("null"); // JSON
     return Value::nil;
 }
 
 Value BoolObj::repr (BufferObj& w) const {
-    w.printf("%s", this == &falseObj ? "False" : "True");
+    w.printf("%s", this == &falseObj ? "false" : "true"); // JSON
     return Value::nil;
 }
 
