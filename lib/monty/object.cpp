@@ -83,6 +83,10 @@ Value Value::binOp (BinOp op, Value rhs) const {
     return objPtr()->binop(op, rhs);
 }
 
+const Value Value::None =  NoneObj::noneObj;
+const Value Value::False = BoolObj::falseObj;
+const Value Value::True  = BoolObj::trueObj;
+
 const Value Value::nil;
 Value Value::invalid;
 

@@ -129,17 +129,17 @@ private:
 
     //CG1 op
     void op_LoadConstNone () {
-        *++sp = Value::nil; // TODO NoneObj::noneObj;
+        *++sp = Value::None;
     }
 
     //CG1 op
     void op_LoadConstFalse () {
-        *++sp = 0; // TODO BoolObj::falseObj;
+        *++sp = Value::False;
     }
 
     //CG1 op
     void op_LoadConstTrue () {
-        *++sp = 1; // TODO BoolObj::trueObj;
+        *++sp = Value::True;
     }
 
     //CG1 op
@@ -283,7 +283,7 @@ private:
     void op_YieldValue () {
         Value v = *sp;
         popState();
-        if (!v.isNil()) {
+        if (!v.isNil() && !v.isNone()) { // TODO None is a valid yield result!
             assert(sp != 0 && sp >= fp->bottom());
             *sp = v;
         }

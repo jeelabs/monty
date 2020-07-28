@@ -270,6 +270,16 @@ static void printEscaped (BufferObj& w, const char* fmt, uint8_t ch) {
     }
 }
 
+Value NoneObj::repr (BufferObj& w) const {
+    w.printf("None");
+    return Value::nil;
+}
+
+Value BoolObj::repr (BufferObj& w) const {
+    w.printf("%s", this == &falseObj ? "False" : "True");
+    return Value::nil;
+}
+
 Value BytesObj::repr (BufferObj& w) const {
     w.putc('\'');
     int n = len();

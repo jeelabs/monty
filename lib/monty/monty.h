@@ -93,10 +93,19 @@ struct Value {
     bool isStr () const { return (v & 3) == 2; }
     bool isObj () const { return (v & 3) == 0 && v != 0; }
 
+    inline bool isNone  () const;
+    inline bool isFalse () const;
+    inline bool isTrue  () const;
+           bool isBool  () const { return isFalse() || isTrue(); }
+
     bool isEq (Value) const;
     Value unOp (UnOp op) const;
     Value binOp (BinOp op, Value rhs) const;
     void dump (const char* msg =0) const; // see builtin.h
+
+    static const Value None;
+    static const Value False;
+    static const Value True;
 
     static const Value nil;
     static Value invalid; // special value, see DictObj::atKey
@@ -146,23 +155,30 @@ struct NoneObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    static const NoneObj noneObj;
+    Value repr  (BufferObj&) const override; // see builtin.h
 
+    static const NoneObj noneObj;
 private:
     NoneObj () {} // can't construct more instances
 };
+
+bool Value::isNone  () const { return &obj() == &NoneObj::noneObj; }
 
 //CG3 type <bool>
 struct BoolObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
+    Value repr  (BufferObj&) const override; // see builtin.h
+
     static const BoolObj trueObj;
     static const BoolObj falseObj;
-
 private:
     BoolObj () {} // can't construct more instances
 };
+
+bool Value::isFalse () const { return &obj() == &BoolObj::falseObj; }
+bool Value::isTrue  () const { return &obj() == &BoolObj::trueObj; }
 
 //CG< type int
 struct IntObj : Object {
