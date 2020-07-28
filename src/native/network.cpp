@@ -18,7 +18,7 @@ static struct SocketObj* sockets [20];
 
 static Value f_ifconfig (int argc, Value argv []) {
     // nothing to do
-    return Value::nil;
+    return Value ();
 }
 
 struct SocketObj : Object {
@@ -62,7 +62,7 @@ private:
     int sock;
     CallArgsObj* accepter = 0;
     ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
-    Value toSend = Value::nil;
+    Value toSend;
     ArrayObj* recvBuf = 0;
 };
 
@@ -93,7 +93,7 @@ void SocketObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     return attrs.at(key);
 }
 
@@ -122,7 +122,7 @@ Value SocketObj::poll (int argc, Value argv []) {
                     assert(false);
             }
 
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::bind (int arg) {
@@ -132,13 +132,13 @@ Value SocketObj::bind (int arg) {
     addr.sin_port = htons(arg);
     auto r = ::bind(sock, (sockaddr*) &addr, sizeof addr);
     assert(r == 0);
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::connect (int argc, Value argv []) {
     assert(argc == 2 && argv[0].isStr() && argv[1].isInt());
     // TODO
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::listen (int argc, Value argv[]) {
@@ -149,7 +149,7 @@ Value SocketObj::listen (int argc, Value argv[]) {
     auto r = ::listen(sock, argv[2]);
     assert(r == 0);
     accepter = &cao;
-    return Value::nil;
+    return Value ();
 }
 
 void SocketObj::acceptSession () {
@@ -165,7 +165,7 @@ Value SocketObj::read (Value arg) {
     recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : &arg.asType<ArrayObj>();
     assert(recvBuf->isBuffer());
     Context::suspend(readQueue);
-    return Value::nil;
+    return Value ();
 }
 
 void SocketObj::readData () {
@@ -194,7 +194,7 @@ Value SocketObj::write (Value arg) {
     }
     auto r = send(sock, p, n, 0);
     assert(r == n);
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::close () {
@@ -208,7 +208,7 @@ Value SocketObj::close () {
     if (writeQueue.len() > 0)
         writeQueue.pop(0); // TODO throw Context::tasks.append(writeQueue.pop(0));
     assert(writeQueue.len() == 0);
-    return Value::nil;
+    return Value ();
 }
 
 static const auto m_bind = MethObj::wrap(&SocketObj::bind);

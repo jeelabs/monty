@@ -22,8 +22,7 @@ struct Value {
 };
 ```
 
-* **Value::Nil** is a "non-value" (available as `Value::nil`, but never visible
-  in Python)
+* **Value::Nil** is a "non-value", never visible in Python
 * **Value::Int** is a small signed integer with approx. ±1,000,000,000 range on
   32-bit
 * **Value::Str** is a pointer to a null-terminated C string, i.e. a `const

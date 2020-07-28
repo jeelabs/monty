@@ -69,9 +69,6 @@ Value Value::binOp (BinOp op, Value rhs) const {
     }
     if (tag() == rhs.tag())
         switch (tag()) {
-            case Nil:
-                assert(false);
-                break;
             case Int: {
                 auto l = (int) *this, r = (int) rhs;
                 switch (op) {
@@ -107,7 +104,8 @@ Value Value::binOp (BinOp op, Value rhs) const {
                 }
                 break;
             }
-            case Obj:
+            default:
+                assert(isObj());
                 switch (op) {
                     case BinOp::Equal:
                         if (ifType<NoneObj>() != 0) // FIXME special-cased!
@@ -128,13 +126,13 @@ bool Value::truthy () const {
         case Value::Str: return *(const char*) *this != 0;
         case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
     }
+    assert(false);
 }
 
 const Value Value::None =  NoneObj::noneObj;
 const Value Value::False = BoolObj::falseObj;
 const Value Value::True  = BoolObj::trueObj;
 
-const Value Value::nil;
 Value Value::invalid;
 
 void VecOfValue::markVec (void (*gc)(const Object&)) const {
@@ -151,7 +149,7 @@ Value Object::iter   () const                    { assert(false); }
 Value Object::next   ()                          { assert(false); }
 
 Value Object::attr (const char* name, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     auto atab = type().chain;
     return atab != 0 ? atab->at(name) : at(name);
 }
@@ -194,7 +192,7 @@ Object& ForceObj::operator* () const {
 
 Value TypeObj::noFactory (const TypeObj&, int, Value[]) {
     assert(false);
-    return Value::nil;
+    return Value ();
 }
 
 Value TypeObj::call (int argc, Value argv[]) const {
@@ -202,7 +200,7 @@ Value TypeObj::call (int argc, Value argv[]) const {
 }
 
 Value TypeObj::attr (const char* name, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     return at(name);
 }
 
@@ -226,7 +224,7 @@ Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
 
 InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
     chain = &parent;
-    Value self = Value::nil;
+    Value self;
     Value init = attr("__init__", self);
     if (!init.isNil()) {
         argv[-1] = this; // TODO is this alwats ok ???
@@ -251,7 +249,7 @@ Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
         case Value::Str: return atoi(argv[0]);
         case Value::Obj: return argv[0].unOp(UnOp::Int);
     }
-    return Value::nil;
+    return Value ();
 }
 
 SliceObj::SliceObj (Value a, Value b, Value c) {
@@ -383,7 +381,7 @@ Value BytesObj::at (Value idx) const {
 }
 
 Value BytesObj::decode () const {
-    return Value::nil; // TODO
+    return Value (); // TODO
 }
 
 Value StrObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -407,7 +405,7 @@ size_t StrObj::len () const {
 }
 
 Value StrObj::encode () const {
-    return Value::nil; // TODO
+    return Value (); // TODO
 }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -524,7 +522,7 @@ Value IterObj::next () {
     auto& so = seq.obj().asSeq();
     if (pos < (int) so.len())
         return seq.obj().at(pos++);
-    return Value::nil; // end of iteration
+    return Value (); // end of iteration
 }
 
 // TODO is this needed, because items might contain GC'd objects?
@@ -540,7 +538,7 @@ Value LookupObj::at (Value key) const {
     for (size_t i = 0; i < len; ++i)
         if (strcmp(s, vec[i].k) == 0)
             return vec[i].v;
-    return Value::nil;
+    return Value ();
 }
 
 DictObj::DictObj (int size) {

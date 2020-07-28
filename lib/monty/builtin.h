@@ -257,7 +257,7 @@ private:
 
 Value Object::repr (BufferObj& w) const {
     w.printf("<Obj %s at %p>", type().name, this);
-    return Value::nil;
+    return Value ();
 }
 
 static void printEscaped (BufferObj& w, const char* fmt, uint8_t ch) {
@@ -272,12 +272,12 @@ static void printEscaped (BufferObj& w, const char* fmt, uint8_t ch) {
 
 Value NoneObj::repr (BufferObj& w) const {
     w.printf("null"); // JSON
-    return Value::nil;
+    return Value ();
 }
 
 Value BoolObj::repr (BufferObj& w) const {
     w.printf("%s", this == &falseObj ? "false" : "true"); // JSON
-    return Value::nil;
+    return Value ();
 }
 
 Value BytesObj::repr (BufferObj& w) const {
@@ -292,7 +292,7 @@ Value BytesObj::repr (BufferObj& w) const {
             printEscaped(w, "x%02x", *p);
     }
     w.putc('\'');
-    return Value::nil;
+    return Value ();
 }
 
 Value StrObj::repr (BufferObj& w) const {
@@ -306,7 +306,7 @@ Value StrObj::repr (BufferObj& w) const {
             printEscaped(w, "u%04x", *p);
     }
     w.putc('"');
-    return Value::nil;
+    return Value ();
 }
 
 Value TupleObj::repr (BufferObj& w) const {
@@ -319,7 +319,7 @@ Value ArrayObj::repr (BufferObj& w) const {
     auto n = widthOf(length());
     for (int i = 0; i < n; ++i)
         w.printf("%02x", p[i]);
-    return Value::nil;
+    return Value ();
 }
 
 Value ListObj::repr (BufferObj& w) const {
@@ -336,12 +336,12 @@ Value DictObj::repr (BufferObj& w) const {
 
 Value ClassObj::repr (BufferObj& w) const {
     w.printf("<class %s>", (const char*) at("__name__"));
-    return Value::nil;
+    return Value ();
 }
 
 Value InstanceObj::repr (BufferObj& w) const {
     w.printf("<%s object at %p>", type().name, this);
-    return Value::nil;
+    return Value ();
 }
 
 Value Context::print (BufferObj& w, Value v) {
@@ -351,12 +351,12 @@ Value Context::print (BufferObj& w, Value v) {
         case Value::Str: return v.objPtr()->repr(w); // conv for escapes
         case Value::Obj: return v.obj().repr(w); // TODO writer ...
     }
-    return Value::nil;
+    return Value ();
 }
 
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    static BufferObj w (Value::nil); // TODO
+    static BufferObj w = Value (); // TODO
     return new Printer (w, argc, argv);
 }
 
@@ -406,7 +406,7 @@ static Value f_suspend (int argc, Value argv[]) {
     if (argc > 1)
         qp = &argv[1].asType<ListObj>();
     Context::suspend(*qp);
-    return Value::nil;
+    return Value ();
 }
 
 static const FunObj fo_suspend (f_suspend);

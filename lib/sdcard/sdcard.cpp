@@ -41,23 +41,23 @@ Value FileObj::create (const TypeObj&, int argc, Value argv[]) {
 }
 
 Value FileObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     return attrs.at(key);
 }
 
 Value FileObj::size () {
-    return Value::nil;
+    return Value ();
 }
 
 Value FileObj::read (int arg) {
     assert(arg == 512);
     if (pos >= limit)
-        return Value::nil;
+        return Value ();
     // TODO allocate buffer
     auto ok = file.ioSect (false, pos/512, fs.buf);
     (void) ok; assert(ok);
     pos += 512;
-    return Value::nil; // TODO
+    return Value (); // TODO
 }
 
 static const auto m_size = MethObj::wrap(&FileObj::size);
@@ -89,14 +89,14 @@ static Value f_sdread (int argc, Value argv []) {
     assert(argc == 2 && argv[1].isInt());
     sd.read512(argv[1], fs.buf);
     // TODO return buf as bytes
-    return Value::nil;
+    return Value ();
 }
 
 static Value f_sdwrite (int argc, Value argv []) {
     assert(argc == 3 && argv[1].isInt());
     // TODO copy arggv[2] to fs.buf
     sd.write512(argv[1], fs.buf);
-    return Value::nil;
+    return Value ();
 }
 
 static const FunObj fo_init = f_init;

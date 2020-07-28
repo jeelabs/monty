@@ -63,6 +63,7 @@ struct BufferObj; // forward decl
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
 
+    Value ()                  : v (0) {}
     Value (int arg)           : v ((arg << 1) | 1) {}
     Value (const char* arg)   : v (((uintptr_t) arg << 2) | 2) {}
     Value (const Object* arg) : v ((uintptr_t) arg) {}
@@ -112,10 +113,8 @@ struct Value {
     static const Value False;
     static const Value True;
 
-    static const Value nil;
     static Value invalid; // special value, see DictObj::atKey
 private:
-    Value () : v (0) {}
     bool check (const TypeObj& t) const;
     void verify (const TypeObj& t) const;
 
@@ -592,7 +591,7 @@ struct MethodBase {
     static Value argConv (void (T::*meth)(Value),
                             Value self, int argc, Value argv[]) {
         (((T&) self.obj()).*meth)(argv[1]);
-        return Value::nil;
+        return Value ();
     }
 };
 
@@ -716,7 +715,7 @@ struct ResumableObj : Object {
 
     virtual bool step (Value v) =0;
 
-    Value retVal = Value::nil;
+    Value retVal;
     ResumableObj* chain = 0;
 protected:
     ResumableObj (int argc, Value argv[]) : nargs (argc), args (argv) {}
@@ -778,13 +777,13 @@ struct Context : Object, private VecOfValue {
     static Value print (BufferObj&, Value);
 
     Value nextPending ();
-    static void raise (Value =Value::nil);
+    static void raise (Value =Value ());
     static int setHandler (Value);
 
     FrameObj* flip (FrameObj*);
 
     static void suspend (ListObj& queue);
-    static void wakeUp (Value task, Value retVal =Value::nil);
+    static void wakeUp (Value task, Value retVal =Value ());
     void resume (Value);
 
     void doCall (Value func, int argc, Value argv []);

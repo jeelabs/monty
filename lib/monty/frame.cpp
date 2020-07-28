@@ -51,7 +51,7 @@ Value CallArgsObj::call (int argc, Value argv[], DictObj* dp, const Object* retV
             TupleObj::create(TupleObj::info, argc - bytecode.n_pos,
                                                 argv + bytecode.n_pos);
 
-    return fp->isCoro() ? fp : Value::nil; // no result yet
+    return fp->isCoro() ? fp : Value (); // no result yet
 }
 
 void ModuleObj::mark (void (*gc)(const Object&)) const {
@@ -61,7 +61,7 @@ void ModuleObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value ModuleObj::attr (const char* name, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     return at(name);
 }
 
@@ -97,7 +97,7 @@ void FrameObj::mark (void (*gc)(const Object&)) const {
 
 Value FrameObj::next () {
     ctx->resume(this);
-    return Value::nil; // TODO really?
+    return Value (); // TODO really?
 }
 
 Value* FrameObj::bottom () const {
@@ -224,14 +224,14 @@ Value Context::nextPending () {
             return handlers[slot];
         }
 
-    return Value::nil;
+    return Value ();
 }
 
 int Context::setHandler (Value h) {
     if (h.isInt()) {
         int i = h;
         if (1 <= i && i < (int) MAX_HANDLERS)
-            handlers[i] = Value::nil;
+            handlers[i] = Value ();
         return 0;
     }
 

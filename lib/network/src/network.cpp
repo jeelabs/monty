@@ -102,7 +102,7 @@ static Value f_poll (int argc, Value argv []) {
     assert(argc == 1);
     mn_poll(&enc_if);
     sys_check_timeouts();
-    return Value::nil;
+    return Value ();
 }
 
 static Value f_ifconfig (int argc, Value argv []) {
@@ -131,7 +131,7 @@ static Value f_ifconfig (int argc, Value argv []) {
     netif_set_default(&enc_if);
     netif_set_up(&enc_if);
 
-    return Value::nil;
+    return Value ();
 }
 
 struct SocketObj : Object {
@@ -160,7 +160,7 @@ private:
     tcp_pcb* socket;
     CallArgsObj* accepter = 0;
     ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
-    Value toSend = Value::nil;
+    Value toSend;
     ArrayObj* recvBuf = 0;
 };
 
@@ -183,14 +183,14 @@ void SocketObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value SocketObj::attr (const char* key, Value& self) const {
-    self = Value::nil;
+    self = Value ();
     return attrs.at(key);
 }
 
 Value SocketObj::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     (void) r; assert(r == 0);
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::connect (int argc, Value argv []) {
@@ -209,7 +209,7 @@ Value SocketObj::connect (int argc, Value argv []) {
     (void) r; assert(r == 0);
 
     Context::suspend(readQueue);
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::listen (int argc, Value argv []) {
@@ -232,7 +232,7 @@ Value SocketObj::listen (int argc, Value argv []) {
         return ERR_OK;
     });
 
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::read (Value arg) {
@@ -256,7 +256,7 @@ Value SocketObj::read (Value arg) {
         return ERR_OK;
     });
 
-    return Value::nil;
+    return Value ();
 }
 
 bool SocketObj::sendIt (Value arg) {
@@ -287,7 +287,7 @@ bool SocketObj::sendIt (Value arg) {
 Value SocketObj::write (Value arg) {
     assert(toSend.isNil()); // don't allow multiple outstanding sends
     if (sendIt(arg))
-        return Value::nil;
+        return Value ();
 
     toSend = arg;
     printf("suspending write\n");
@@ -300,7 +300,7 @@ Value SocketObj::write (Value arg) {
             assert(self.socket == tpcb);
             if (self.sendIt(self.toSend)) {
                 tcp_sent(tpcb, 0);
-                self.toSend = Value::nil;
+                self.toSend = Value ();
                 assert(self.writeQueue.len() > 0);
                 Context::tasks.append(self.writeQueue.pop(0));
             }
@@ -308,7 +308,7 @@ Value SocketObj::write (Value arg) {
         return ERR_OK;
     });
 
-    return Value::nil;
+    return Value ();
 }
 
 Value SocketObj::close () {
@@ -319,14 +319,14 @@ Value SocketObj::close () {
         tcp_close(socket);
         socket = 0;
     }
-    toSend = Value::nil;
+    toSend = Value ();
     if (readQueue.len() > 0)
         readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
     if (writeQueue.len() > 0)
         writeQueue.pop(0); // TODO throw Context::tasks.append(writeQueue.pop(0));
     assert(writeQueue.len() == 0);
-    return Value::nil;
+    return Value ();
 }
 
 static const auto m_bind = MethObj::wrap(&SocketObj::bind);

@@ -149,7 +149,7 @@ private:
 
     //CG1 op
     void op_LoadNull () {
-        *++sp = Value::nil; // TODO wrong
+        *++sp = Value (); // TODO wrong
     }
 
     //CG1 op
@@ -182,7 +182,7 @@ private:
         auto exc = fp->exceptionPushPop(1);
         exc[0] = (ip - fp->bcObj.code) + arg; // int offset iso pointer
         exc[1] = sp - fp->bottom(); // again as offset, as sp is not a Value
-        exc[2] = Value::nil; // no previous exception
+        exc[2] = Value (); // no previous exception
         assert(exc[0].isInt() && exc[1].isInt());
     }
 
@@ -199,7 +199,7 @@ private:
 
     //CG1 op q
     void op_LoadAttr (const char* arg) {
-        Value self = Value::nil;
+        Value self;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
         if (!self.isNil() && sp->ifType<CallArgsObj>() != 0)
@@ -328,7 +328,7 @@ private:
 
     //CG1 op v
     void op_BuildSlice (uint32_t arg) {
-        Value v = arg > 2 ? *sp : Value::nil;
+        Value v = arg > 2 ? *sp : Value ();
         sp -= arg - 1; // arg is 2 or 3
         *sp = new SliceObj (sp[0], sp[1], v);
     }
