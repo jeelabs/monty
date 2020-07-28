@@ -245,13 +245,13 @@ private:
 
     //CG1 op s
     void op_PopJumpIfFalse (int arg) {
-        if (*sp-- == 0)
+        if (!(sp--)->truthy())
             ip += arg;
     }
 
     //CG1 op s
     void op_PopJumpIfTrue (int arg) {
-        if (*sp-- != 0)
+        if ((sp--)->truthy())
             ip += arg;
     }
 

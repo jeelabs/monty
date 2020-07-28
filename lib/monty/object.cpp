@@ -59,19 +59,36 @@ Value Value::unOp (UnOp op) const {
 }
 
 Value Value::binOp (BinOp op, Value rhs) const {
-    // fast path for common operations, TODO: is this really worth it?
-    if (tag() == rhs.tag())
+    // TODO reduce more comparison cases, this could be expanded if there is a
+    //  way to mark the inverse as well, but this requires special logic when
+    //  the binary op is bytecoded, i.e. when a ResumableObj is involved.
+    // Ideally, this optimisation step would have been done at compile time ...
+    BinOp origOp = op;
+    switch (op) {
+        case BinOp::More:      op = BinOp::Less; break;
+        case BinOp::MoreEqual: op = BinOp::LessEqual; break;
+        default:               break;
+    }
+    Value lhs = *this;
+    if (op != origOp) {
+        lhs = rhs;
+        rhs = *this;
+    }
+    if (lhs.tag() == rhs.tag())
         switch (tag()) {
             case Int: {
-                auto l = (int) *this, r = (int) rhs;
+                auto l = (int) lhs, r = (int) rhs;
                 switch (op) {
-                    case BinOp::Less: return l < r;
-                    case BinOp::More: return l > r;
+                    case BinOp::Less:            return Value::asBool(l < r);
+                    case BinOp::LessEqual:       return Value::asBool(l <= r);
                     case BinOp::Add:
-                    case BinOp::InplaceAdd: return l + r;
-                    case BinOp::Subtract: return l - r;
-                    case BinOp::Multiply: return l * r;
-                    case BinOp::Equal: return l == r;
+                    case BinOp::InplaceAdd:      return l + r;
+                    case BinOp::Subtract:
+                    case BinOp::InplaceSubtract: return l - r;
+                    case BinOp::Multiply:
+                    case BinOp::InplaceMultiply: return l * r;
+                    case BinOp::Equal:           return Value::asBool(l == r);
+                    case BinOp::NotEqual:        return Value::asBool(l != r);
                     case BinOp::FloorDivide:
                         if (r == 0) {
                             Context::raise("blah"); // TODO
@@ -83,7 +100,7 @@ Value Value::binOp (BinOp op, Value rhs) const {
                 break;
             }
             case Str: {
-                auto l = (const char*) *this, r = (const char*) rhs;
+                auto l = (const char*) lhs, r = (const char*) rhs;
                 switch (op) {
                     case BinOp::Add: {
                         auto buf = (char*) malloc(strlen(l) + strlen(r) + 1);
@@ -99,14 +116,16 @@ Value Value::binOp (BinOp op, Value rhs) const {
             default:
                 switch (op) {
                     case BinOp::Equal:
-                        return id() == rhs.id(); // TODO too strict!
+                        if (ifType<NoneObj>() != 0) // FIXME special-cased!
+                            return Value::asBool(id() == rhs.id());
+                        // fall through
                     default:
                         break;
                 }
                 break;
         }
     if (op == BinOp::NotEqual)
-        return 1; // FIXME, None != True - hardwired for features.py 45
+        return True; // FIXME, None != True - hardwired for features.py 45
     return objPtr()->binop(op, rhs);
 }
 
@@ -115,7 +134,7 @@ bool Value::truthy () const {
         case Value::Nil: return false;
         case Value::Int: return (int) *this != 0;
         case Value::Str: return *(const char*) *this != 0;
-        case Value::Obj: return obj().unop(UnOp::Bool);
+        case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
     }
 }
 
@@ -347,6 +366,20 @@ Value BytesObj::unop (UnOp op) const {
         default:         break;
     }
     return SeqObj::unop(op);
+}
+
+Value BytesObj::binop (BinOp op, Value val) const {
+    auto& rhs = val.asType<BytesObj>();
+    assert(len() == rhs.len());
+    switch (op) {
+        // FIXME this is wrong when lengths differ
+        case BinOp::Equal:
+            return Value::asBool(memcmp((const uint8_t*) *this,
+                                         (const uint8_t*) rhs, len()) == 0);
+        default:
+            break;
+    }
+    return Object::binop(op, rhs);
 }
 
 Value BytesObj::at (Value idx) const {

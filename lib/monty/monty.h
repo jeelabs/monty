@@ -266,6 +266,7 @@ struct BytesObj : SeqObj, protected Vector {
 
     Value repr (BufferObj&) const override; // see builtin.h
     Value unop (UnOp) const override;
+    Value binop (BinOp, Value) const override;
     Value at (Value) const override;
     size_t len () const override { return hasVec() ? length() : noVec().size; }
 
