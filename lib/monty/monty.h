@@ -235,14 +235,14 @@ struct SeqObj : Object {
 
     const SeqObj& asSeq () const override { return *this; }
 
-    virtual Value isIn  (Value) const;
-    virtual Value plus  (Value) const;
-    virtual Value times (Value) const;
-    virtual Value len   ()      const;
-    virtual Value min   ()      const;
-    virtual Value max   ()      const;
-    virtual Value index (Value) const;
-    virtual Value count (Value) const;
+    virtual Value  isIn  (Value) const;
+    virtual Value  plus  (Value) const;
+    virtual Value  times (Value) const;
+    virtual size_t len   ()      const;
+    virtual Value  min   ()      const;
+    virtual Value  max   ()      const;
+    virtual Value  index (Value) const;
+    virtual Value  count (Value) const;
 
     static const SeqObj dummy;
 protected:
@@ -264,7 +264,7 @@ struct BytesObj : SeqObj, protected Vector {
     Value repr (BufferObj&) const override; // see builtin.h
     Value unop (UnOp) const override;
     Value at (Value) const override;
-    Value len () const override { return hasVec() ? length() : noVec().size; }
+    size_t len () const override { return hasVec() ? length() : noVec().size; }
 
     Value decode () const;
 
@@ -293,7 +293,7 @@ struct StrObj : SeqObj {
 
     Value repr (BufferObj&) const override; // see builtin.h
     Value at (Value) const override;
-    Value len () const override;
+    size_t len () const override;
     Value count (Value) const override { return 9; } // TODO
 
     Value encode () const;
@@ -325,7 +325,7 @@ struct TupleObj : SeqObj {
     void mark (void (*gc)(const Object&)) const override;
 
     Value repr (BufferObj&) const override; // see builtin.h
-    Value len () const override { return length; }
+    size_t len () const override { return length; }
     Value at (Value) const override;
 
 private:
@@ -359,7 +359,7 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
 
     void mark (void (*gc)(const Object&)) const override;
 
-    Value len () const override { return length(); }
+    size_t len () const override { return length(); }
 
     virtual void insert (int, Value);
     virtual Value pop (int =-1);
@@ -386,7 +386,7 @@ struct ArrayObj : MutSeqObj {
     ArrayObj (char t, size_t sz =0);
 
     Value repr (BufferObj&) const override; // see builtin.h
-    Value len () const override { return length(); }
+    size_t len () const override { return length(); }
     Value at (Value i) const override { return get(i); }
 
     bool isBuffer () const { return logBits == 3; }
@@ -468,7 +468,7 @@ struct DictObj : MutSeqObj {
     void mark (void (*gc)(const Object&)) const override;
 
     Value repr (BufferObj&) const override; // see builtin.h
-    Value len () const override { return length() / 2; }
+    size_t len () const override { return length() / 2; }
     Value at (Value key) const override;
     Value& atKey (Value key, Mode =Get);
 

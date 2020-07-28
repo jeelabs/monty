@@ -40,7 +40,6 @@ Value Value::unOp (UnOp op) const {
                 case UnOp::Inv:  return ~n;
                 case UnOp::Not:  return Value::asBool(!n);
                 case UnOp::Bool: return Value::asBool(n);
-                default:         break;
             }
             break;
         }
@@ -349,7 +348,7 @@ Value StrObj::at (Value idx) const {
     return buf;
 }
 
-Value StrObj::len () const {
+size_t StrObj::len () const {
     return strlen(s);
 }
 
@@ -357,14 +356,14 @@ Value StrObj::encode () const {
     return Value::nil; // TODO
 }
 
-Value SeqObj::isIn  (Value) const { assert(false); }
-Value SeqObj::plus  (Value) const { assert(false); }
-Value SeqObj::times (Value) const { assert(false); }
-Value SeqObj::len   ()      const { assert(false); }
-Value SeqObj::min   ()      const { assert(false); }
-Value SeqObj::max   ()      const { assert(false); }
-Value SeqObj::index (Value) const { assert(false); }
-Value SeqObj::count (Value) const { assert(false); }
+Value  SeqObj::isIn  (Value) const { assert(false); }
+Value  SeqObj::plus  (Value) const { assert(false); }
+Value  SeqObj::times (Value) const { assert(false); }
+size_t SeqObj::len   ()      const { assert(false); }
+Value  SeqObj::min   ()      const { assert(false); }
+Value  SeqObj::max   ()      const { assert(false); }
+Value  SeqObj::index (Value) const { assert(false); }
+Value  SeqObj::count (Value) const { assert(false); }
 
 Value TupleObj::create (const TypeObj&, int argc, Value argv[]) {
     if (argc < 0)
@@ -478,7 +477,7 @@ Value SetObj::create (const TypeObj&, int argc, Value argv[]) {
 
 Value IterObj::next () {
     auto& so = seq.obj().asSeq();
-    if (pos < so.len())
+    if (pos < (int) so.len())
         return seq.obj().at(pos++);
     return Value::nil; // end of iteration
 }
