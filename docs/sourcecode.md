@@ -22,7 +22,8 @@ struct Value {
 };
 ```
 
-* **Value::Nil** is a "non-value", it's never visible in Python
+* **Value::Nil** is a "non-value" (available as `Value::nil`, but never visible
+  in Python)
 * **Value::Int** is a small signed integer with approx. ±1,000,000,000 range on
   32-bit
 * **Value::Str** is a pointer to a null-terminated C string, i.e. a `const
@@ -39,6 +40,11 @@ C-string, C++'s automatic casting again makes things easy.
 
 Values can be checked with `v.isNil()`, `v.isInt()`, `v.isStr()`, and
 `v.isObj()`, which return a `bool`.
+
+There are a few unique constant objects: `Value::{None,False,True}`, which can
+be checked quickly with `v.isNone()`, `v.isFalse()`, `v.isTrue()`, and
+`v.isBool()`. These print as `null`, `false`, and `true`, respectively, matching
+_JSON_ conventions i.s.o. Python, as this is more useful with Monty (and newer).
 
 With `v.ifType<ListObj>()` (a template function, hence the `<>`'s), you get a
 pointer of the requested object type back (or a null pointer if there's a type
