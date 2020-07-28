@@ -28,6 +28,20 @@ bool Value::isEq (Value val) const {
 }
 
 Value Value::unOp (UnOp op) const {
+    if (isInt()) {
+        int n = *this;
+        switch (op) {
+            case UnOp::Int:  // fall through
+            case UnOp::Pos:  // fall through
+            case UnOp::Hash: return *this;
+            case UnOp::Abs:  if (n > 0) return *this; // else fall through
+            case UnOp::Neg:  return -n; // TODO overflow
+            case UnOp::Inv:  return ~n;
+            case UnOp::Not:  return Value::asBool(!n);
+            case UnOp::Bool: return Value::asBool(n);
+            default:         break;
+        }
+    }
     return objPtr()->unop(op);
 }
 
@@ -117,6 +131,11 @@ const NoneObj NoneObj::noneObj;
 
 const BoolObj BoolObj::trueObj;
 const BoolObj BoolObj::falseObj;
+
+Value BoolObj::create (const TypeObj&, int argc, Value argv[]) {
+    assert(argc == 1 && argv[0].isInt()); // TODO for now
+    return Value::asBool(argv[0]);
+}
 
 Object& ForceObj::operator* () const {
     switch (tag()) {
@@ -539,3 +558,4 @@ const LookupObj ClassObj::attrs (0, 0);
 const LookupObj ArrayObj::attrs (0, 0);
 const LookupObj SetObj::attrs (0, 0);
 const LookupObj SliceObj::attrs (0, 0);
+const LookupObj BoolObj::attrs (0, 0);

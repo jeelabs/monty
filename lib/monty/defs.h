@@ -85,7 +85,8 @@ enum class Op : uint8_t {
 typedef const Op* OpPtrRO;
 
 enum class UnOp : uint8_t {
-    Pos, Neg, Inv, Int
+    Pos, Neg, Inv, Not,
+    Bool, Len, Hash, Abs, Int,
 };
 
 enum class BinOp : uint8_t {

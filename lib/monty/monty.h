@@ -103,6 +103,8 @@ struct Value {
     Value binOp (BinOp op, Value rhs) const;
     void dump (const char* msg =0) const; // see builtin.h
 
+    static const Value asBool (int f) { return f ? True : False; }
+
     static const Value None;
     static const Value False;
     static const Value True;
@@ -164,10 +166,13 @@ private:
 
 bool Value::isNone  () const { return &obj() == &NoneObj::noneObj; }
 
-//CG3 type <bool>
+//CG< type bool
 struct BoolObj : Object {
+    static Value create (const TypeObj&, int argc, Value argv[]);
+    static const LookupObj attrs;
     static const TypeObj info;
     const TypeObj& type () const override;
+//CG>
 
     Value repr  (BufferObj&) const override; // see builtin.h
 
