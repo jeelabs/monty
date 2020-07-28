@@ -28,7 +28,7 @@ extern "C" void __assert (const char *f, int l, const char *e) {
 
 void archInit () {
     console.init();
-#if BOARD_discovery_f4
+#if BOARD_discovery_f4 || STM32H743xx // nucleo
     console.baud(115200, fullSpeedClock() / 4);
 #else
     console.baud(115200, fullSpeedClock());

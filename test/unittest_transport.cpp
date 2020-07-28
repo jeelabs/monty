@@ -5,13 +5,15 @@
 
 #if BOARD_discovery_f4 || STM32L412xx
 UartBufDev< PinA<2>, PinA<3> > console;
-#else
-UartBufDev< PinA<9>, PinA<10> > console; // Blue Pill
+#elif STM32H743xx // nucleo
+UartBufDev< PinD<8>, PinD<9> > console;
+#else // Blue Pill, etc
+UartBufDev< PinA<9>, PinA<10> > console;
 #endif
 
 void unittest_uart_begin () {
     console.init();
-#if BOARD_discovery_f4
+#if BOARD_discovery_f4 || STM32H743xx
     console.baud(115200, fullSpeedClock()/4);
 #else
     console.baud(115200, fullSpeedClock());

@@ -13,6 +13,8 @@
 
 #if BOARD_discovery_f4 || STM32L412xx
     #define PINS_CONSOLE PinA<2>, PinA<3>
+#elif STM32H743xx // nucleo-144
+    #define PINS_CONSOLE PinD<8>, PinD<9>
 #else
     #define PINS_CONSOLE PinA<9>, PinA<10>
 #endif
