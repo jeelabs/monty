@@ -123,9 +123,9 @@ the board to be attached and properly set up.
 The C++ tests are very limited at the momend. See `test/main.cpp`, which
 includes a number of `.h` files where the actual tests are grouped by category.
 For an example, see `test/vec.h` which runs some basic tests for the `Vector`
-data type in Monty. There is a `pio test` command which will build the test
-suite for the selected embedded platform, upload and run it, and report the test
-results. A powerful mechanism.
+data type in Monty. There is a `make test` command to run the tests natively,
+and a `pio test` command which will build the test suite for the selected
+embedded platform, upload and run it, and report the test results.
 
 The other kind of test loads each `.py` test script (after compiling to `.mpy`
 by `mpy-cross`) into the Monty VM and compares the output with the expected
@@ -147,10 +147,11 @@ output (similar, but not identical, to "cat").
 For a quick manual sequence to run a series of tests natively and embedded, try:
 
 1. `make run` - this builds and runs native with `verify/demo.py` as test script
-2. `make -k verify` - this runs all native tests, without stopping at errors
-3. `pio test` - upload and run the C++ test suite to the attached board
-4. `make up` - build and upload a standard Monty VM build to the board
-5. `cd test; make` - with the VM loaded in 4), run & compare all Python tests
+2. `make test` - build and run the native C++ tests from the `test/` area
+3. `make -k verify` - this runs all native tests, without stopping at errors
+4. `pio test` - upload and run the C++ test suite to the attached board
+5. `make up` - build and upload a standard Monty VM build to the board
+6. `cd test; make` - with the VM loaded in 4), run & compare all Python tests
 
 Currently, a quick way to check something or try a new feature, is to add some
 Python code to the end of `verify/demo.py` and use `make run` to see the

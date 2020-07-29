@@ -1,10 +1,14 @@
 help:
 	# make run   - build and run a native (macos/linux) version
+	# make test  - build and run the native (macos/linux) C++ tests
 	# make up    - build and upload to an attached board
 	# make mon   - build, upload, and view output of an attached board
 
 run: gen native verify/demo.mpy
 	.pio/build/native/program verify/demo.mpy
+
+test: platformio.ini
+	pio test -e native
 
 up: platformio.ini
 	pio run -t upload -s
@@ -51,4 +55,4 @@ tags:
 clean:
 	rm -rf .pio
 
-.PHONY: docs tags verify
+.PHONY: docs tags test verify
