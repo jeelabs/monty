@@ -61,7 +61,6 @@ void ModuleObj::mark (void (*gc)(const Object&)) const {
 }
 
 Value ModuleObj::attr (const char* name, Value& self) const {
-    self = Value ();
     return at(name);
 }
 

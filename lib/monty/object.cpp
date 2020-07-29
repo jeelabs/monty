@@ -149,7 +149,6 @@ Value Object::iter   () const                    { assert(false); }
 Value Object::next   ()                          { assert(false); }
 
 Value Object::attr (const char* name, Value& self) const {
-    self = Value ();
     auto atab = type().chain;
     return atab != 0 ? atab->at(name) : at(name);
 }
@@ -188,57 +187,6 @@ Object& ForceObj::operator* () const {
         case Value::Obj: break;
     }
     return obj();
-}
-
-Value TypeObj::noFactory (const TypeObj&, int, Value[]) {
-    assert(false);
-    return Value ();
-}
-
-Value TypeObj::call (int argc, Value argv[]) const {
-    return factory(*this, argc, argv);
-}
-
-Value TypeObj::attr (const char* name, Value& self) const {
-    self = Value ();
-    return at(name);
-}
-
-Value ClassObj::create (const TypeObj&, int argc, Value argv[]) {
-    assert(argc >= 2 && argv[0].isObj() && argv[1].isStr());
-    return new ClassObj (argc, argv);
-}
-
-ClassObj::ClassObj (int argc, Value argv[])
-        : TypeObj (argv[1], InstanceObj::create) {
-    assert(argc >= 2);
-    atKey("__name__", DictObj::Set) = argv[1];
-    auto& cao = argv[0].asType<CallArgsObj>();
-    cao.call (argc - 2, argv + 2, this, this);
-}
-
-Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
-    assert(&type.type() == &ClassObj::info);
-    return new InstanceObj ((const ClassObj&) type, argc, argv);
-}
-
-InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
-    chain = &parent;
-    Value self;
-    Value init = attr("__init__", self);
-    if (!init.isNil()) {
-        argv[-1] = this; // TODO is this alwats ok ???
-        auto& cao = init.asType<CallArgsObj>();
-        cao.call(argc + 1, argv - 1, this, this);
-    }
-}
-
-Value InstanceObj::attr (const char* key, Value& self) const {
-    self = this;
-    Value v = at(key);
-    if (v.isNil())
-        v = chain->attr(key, self);
-    return v;
 }
 
 Value IntObj::create (const TypeObj&, int argc, Value argv[]) {
@@ -588,6 +536,56 @@ void DictObj::addPair (Value k, Value v) {
     ins(n, 2);
     set(n, k);
     set(n+1, v);
+}
+
+Value TypeObj::noFactory (const TypeObj&, int, Value[]) {
+    assert(false);
+    return Value ();
+}
+
+Value TypeObj::call (int argc, Value argv[]) const {
+    return factory(*this, argc, argv);
+}
+
+Value TypeObj::attr (const char* name, Value& self) const {
+    return at(name);
+}
+
+Value ClassObj::create (const TypeObj&, int argc, Value argv[]) {
+    assert(argc >= 2 && argv[0].isObj() && argv[1].isStr());
+    return new ClassObj (argc, argv);
+}
+
+ClassObj::ClassObj (int argc, Value argv[])
+        : TypeObj (argv[1], InstanceObj::create) {
+    assert(argc >= 2);
+    atKey("__name__", DictObj::Set) = argv[1];
+    auto& cao = argv[0].asType<CallArgsObj>();
+    cao.call (argc - 2, argv + 2, this, this);
+}
+
+Value InstanceObj::create (const TypeObj& type, int argc, Value argv[]) {
+    assert(&type.type() == &ClassObj::info);
+    return new InstanceObj ((const ClassObj&) type, argc, argv);
+}
+
+InstanceObj::InstanceObj (const ClassObj& parent, int argc, Value argv[]) {
+    chain = &parent;
+    Value self;
+    Value init = attr("__init__", self);
+    if (!init.isNil()) {
+        argv[-1] = this; // TODO is this alwats ok ???
+        auto& cao = init.asType<CallArgsObj>();
+        cao.call(argc + 1, argv - 1, this, this);
+    }
+}
+
+Value InstanceObj::attr (const char* key, Value& self) const {
+    self = this;
+    Value v = at(key);
+    if (v.isNil())
+        v = chain->attr(key, self);
+    return v;
 }
 
 static const auto mo_count = MethObj::wrap(&SeqObj::count);

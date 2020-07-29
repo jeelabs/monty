@@ -209,19 +209,16 @@ private:
     //CG1 op q
     void op_StoreAttr (const char* arg) {
         assert(&sp->obj().type().type() == &ClassObj::info);
-        auto& io = (InstanceObj&) sp->obj(); // TODO can't use asType<> ?
-
+        auto& io = (InstanceObj&) sp->obj(); // can't use asType<>
         io.atKey(arg, DictObj::Set) = sp[-1];
         sp -= 2;
     }
 
     //CG1 op q
     void op_LoadMethod (const char* arg) {
-        Value self = *sp;
-        *sp = self.objPtr()->attr(arg, sp[1]);
+        sp[1] = *sp;
+        *sp = sp->objPtr()->attr(arg, sp[1]);
         ++sp;
-        if (sp->isNil())
-            *sp = self;
         assert(!sp->isNil());
     }
 
@@ -245,13 +242,13 @@ private:
 
     //CG1 op s
     void op_PopJumpIfFalse (int arg) {
-        if (!(sp--)->truthy())
+        if (!(*sp--).truthy())
             ip += arg;
     }
 
     //CG1 op s
     void op_PopJumpIfTrue (int arg) {
-        if ((sp--)->truthy())
+        if ((*sp--).truthy())
             ip += arg;
     }
 
