@@ -487,7 +487,7 @@ struct TypeObj : DictObj {
     typedef Value (*Factory)(const TypeObj&,int,Value[]);
 
     const char* name;
-    Factory factory;
+    const Factory factory;
 
     TypeObj (const char* s, Factory f =noFactory, const LookupObj* a =0)
         : name (s), factory (f) { chain = a; }
