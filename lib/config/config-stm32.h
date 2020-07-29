@@ -19,6 +19,12 @@
     #define PINS_CONSOLE PinA<9>, PinA<10>
 #endif
 
+#if BOARD_discovery_f4 || STM32H743xx
+    #define UART_BUSDIV 4
+#else
+    #define UART_BUSDIV 1
+#endif
+
 // see monty/gc.cpp
 #ifndef GC_MEM_BYTES
 #define GC_MEM_BYTES (10*1024)  // 10 Kb total memory

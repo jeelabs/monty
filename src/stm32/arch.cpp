@@ -28,16 +28,13 @@ extern "C" void __assert (const char *f, int l, const char *e) {
 
 void archInit () {
     console.init();
-#if BOARD_discovery_f4 || STM32H743xx // nucleo
-    console.baud(115200, fullSpeedClock() / 4);
-#else
-    console.baud(115200, fullSpeedClock());
-#endif
+    console.baud(115200, fullSpeedClock() / UART_BUSDIV);
     wait_ms(100);
 }
 
 int archDone () {
     Object::gcStats();
+    //while (!console.xmit.empty()) {}
     while (true) {}
 }
 

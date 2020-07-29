@@ -1,23 +1,15 @@
 #if !NATIVE
 
+#include "config.h"
+
 #include "unittest_transport.h"
 #include <jee.h>
 
-#if BOARD_discovery_f4 || STM32L412xx
-UartBufDev< PinA<2>, PinA<3> > console;
-#elif STM32H743xx // nucleo
-UartBufDev< PinD<8>, PinD<9> > console;
-#else // Blue Pill, etc
-UartBufDev< PinA<9>, PinA<10> > console;
-#endif
+UartBufDev< PINS_CONSOLE > console;
 
 void unittest_uart_begin () {
     console.init();
-#if BOARD_discovery_f4 || STM32H743xx
-    console.baud(115200, fullSpeedClock()/4);
-#else
-    console.baud(115200, fullSpeedClock());
-#endif
+    console.baud(115200, fullSpeedClock() / UART_BUSDIV);
     wait_ms(100);
 }
 
