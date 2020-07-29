@@ -26,7 +26,7 @@ void unittest_uart_putchar (char c) {
 }
 
 void unittest_uart_flush () {
-    wait_ms(100);
+    while (!console.xmit.empty()) {}
 }
 
 void unittest_uart_end () {}
