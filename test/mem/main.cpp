@@ -9,7 +9,7 @@ struct MarkObj : Mem::Obj {
     MarkObj (MarkObj* o =0) : other (o) { ++created; }
     ~MarkObj () override { ++destroyed; }
 
-    void mark () const override { ++marked; marker(other); }
+    void mark () const override { ++marked; Mem::mark(other); }
 
     MarkObj* other;
 };
@@ -75,16 +75,16 @@ void markObj () {
     auto p2 = new MarkObj (p1);
     TEST_ASSERT_EQUAL(2, created);
 
-    MarkObj::marker(p2);
+    Mem::mark(p2);
     TEST_ASSERT_EQUAL(2, marked);
 
-    MarkObj::marker(p2);
+    Mem::mark(p2);
     TEST_ASSERT_EQUAL(2, marked);
 
     Mem::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
 
-    MarkObj::marker(p2);
+    Mem::mark(p2);
     TEST_ASSERT_EQUAL(4, marked); // now everything is marked again
 
     Mem::sweep();
@@ -99,10 +99,10 @@ void markThrough () {
     auto p2 = new MarkObj (&o1);
     TEST_ASSERT_EQUAL(3, created);
 
-    MarkObj::marker(p2);
+    Mem::mark(p2);
     TEST_ASSERT_EQUAL(3, marked);
 
-    MarkObj::marker(p2);
+    Mem::mark(p2);
     TEST_ASSERT_EQUAL(3, marked);
 
     Mem::sweep();
