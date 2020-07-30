@@ -8,9 +8,7 @@ struct Obj {
     bool isAllocated () const;
 
     void* operator new (size_t sz);
-    void* operator new (size_t sz, size_t extra) {
-        return operator new (sz + extra);
-    }
+    void* operator new (size_t sz, size_t n) { return operator new (sz+n); }
     void operator delete (void* p);
 protected:
     virtual void mark () const {}

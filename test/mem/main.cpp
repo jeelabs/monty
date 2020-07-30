@@ -111,6 +111,37 @@ void markThrough () {
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
+void reuseMem () {
+    auto avail1 = Mem::avail();
+    auto p1 = new MarkObj;          // (low, p1, top)
+    delete p1;                      // (low, top)
+    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+
+    auto p2 = new MarkObj;          // (low, p2, top)
+    /* p3: */ new MarkObj;          // (low, p3, p2, top)
+    delete p2;                      // (low, p3, gap, top)
+    TEST_ASSERT_EQUAL_PTR(p1, p2);
+    TEST_ASSERT_LESS_THAN_size_t(avail1, Mem::avail());
+
+    auto p4 = new MarkObj;          // (low, p3, p4, top)
+    TEST_ASSERT_EQUAL_PTR(p1, p4);
+
+    Mem::sweep();                   // (low, top)
+    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+}
+
+void mergeNext () {
+    auto p1 = new MarkObj;
+    auto p2 = new MarkObj;
+    /* p3: */ new MarkObj;          // (low, p3, p2, p1, top)
+
+    delete p1;
+    delete p2;                      // (low, p3, gap, top)
+
+    auto p4 = new (1) MarkObj;      // (low, p4, top)
+    TEST_ASSERT_EQUAL_PTR(p2, p4);
+}
+
 int main (int argc, char **argv) {
     UNITY_BEGIN();
 
@@ -119,6 +150,8 @@ int main (int argc, char **argv) {
     RUN_TEST(newObj);
     RUN_TEST(markObj);
     RUN_TEST(markThrough);
+    RUN_TEST(reuseMem);
+    RUN_TEST(mergeNext);
 
     UNITY_END();
     return 0;
