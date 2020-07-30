@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <unistd.h>
 #include "mem.h"
 #include <unity.h>
@@ -26,8 +27,8 @@ void smokeTest () {
 }
 
 void initMem () {
-    TEST_ASSERT_LESS_THAN_size_t(sizeof memory, Mem::avail());
-    TEST_ASSERT_GREATER_THAN_size_t(sizeof memory - 50, Mem::avail());
+    TEST_ASSERT_LESS_THAN(sizeof memory, Mem::avail());
+    TEST_ASSERT_GREATER_THAN(sizeof memory - 50, Mem::avail());
 }
 
 void newObj () {
@@ -43,29 +44,29 @@ void newObj () {
     TEST_ASSERT(p1->inObjPool());
 
     auto avail2 = Mem::avail();
-    TEST_ASSERT_LESS_THAN_size_t(avail1, avail2);
+    TEST_ASSERT_LESS_THAN(avail1, avail2);
 
     auto p2 = new Mem::Obj; // second object in pool
     TEST_ASSERT(p2->inObjPool());
     TEST_ASSERT_NOT_EQUAL(p1, p2);
 
     auto avail3 = Mem::avail();
-    TEST_ASSERT_LESS_THAN_size_t(avail2, avail3);
+    TEST_ASSERT_LESS_THAN(avail2, avail3);
     TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
 
     auto p3 = new (0) Mem::Obj; // same as without the extra size
     TEST_ASSERT(p3->inObjPool());
 
     auto avail4 = Mem::avail();
-    TEST_ASSERT_LESS_THAN_size_t(avail3, avail4);
+    TEST_ASSERT_LESS_THAN(avail3, avail4);
     TEST_ASSERT_EQUAL(avail2 - avail3, avail3 - avail4);
 
     auto p4 = new (1) Mem::Obj; // extra space at end of object
     TEST_ASSERT(p4->inObjPool());
 
     auto avail5 = Mem::avail();
-    TEST_ASSERT_LESS_THAN_size_t(avail4, avail5);
-    TEST_ASSERT_GREATER_THAN_size_t(avail2 - avail3, avail4 - avail5);
+    TEST_ASSERT_LESS_THAN(avail4, avail5);
+    TEST_ASSERT_GREATER_THAN(avail2 - avail3, avail4 - avail5);
 }
 
 void markObj () {
@@ -115,19 +116,19 @@ void reuseMem () {
     auto avail1 = Mem::avail();
     auto p1 = new MarkObj;          // [ p1 ]
     delete p1;                      // [ ]
-    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+    TEST_ASSERT_EQUAL(avail1, Mem::avail());
 
     auto p2 = new MarkObj;          // [ p2 ]
     /* p3: */ new MarkObj;          // [ p3 p2 ]
     delete p2;                      // [ p3 gap ]
     TEST_ASSERT_EQUAL_PTR(p1, p2);
-    TEST_ASSERT_LESS_THAN_size_t(avail1, Mem::avail());
+    TEST_ASSERT_LESS_THAN(avail1, Mem::avail());
 
     auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
     Mem::sweep();                   // [ ]
-    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+    TEST_ASSERT_EQUAL(avail1, Mem::avail());
 }
 
 void mergeNext () {
@@ -156,7 +157,7 @@ void mergePrevious () {
 
     delete p4;                      // [ p3 gap ]
     delete p3;                      // [ ]
-    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+    TEST_ASSERT_EQUAL(avail1, Mem::avail());
 }
 
 void mergeMulti () {
@@ -173,6 +174,18 @@ void mergeMulti () {
     TEST_ASSERT_EQUAL_PTR(p3, p5);
 }
 
+void newVec () {
+    auto avail1 = Mem::avail();
+    {
+        Mem::Vec v1; // on the stack
+        TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof v1);
+        TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
+        TEST_ASSERT_EQUAL(0, v1.cap());
+        TEST_ASSERT_EQUAL(avail1, Mem::avail());
+    }
+    Mem::compact();
+    TEST_ASSERT_EQUAL(avail1, Mem::avail());
+}
 int main (int argc, char **argv) {
     UNITY_BEGIN();
 
@@ -185,6 +198,8 @@ int main (int argc, char **argv) {
     RUN_TEST(mergeNext);
     RUN_TEST(mergePrevious);
     RUN_TEST(mergeMulti);
+
+    RUN_TEST(newVec);
 
     UNITY_END();
     return 0;

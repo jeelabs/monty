@@ -1,3 +1,5 @@
+// Objects and vectors with garbage collection, implementation.
+
 #include <assert.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -23,10 +25,19 @@ struct ObjSlot {
     };
 };
 
+struct VecSlot {
+    Mem::Vec* vec;
+    VecSlot* next;
+};
+
+static_assert (sizeof (ObjSlot) == 2 * sizeof (void*), "wrong ObjSlot size");
+static_assert (sizeof (VecSlot) == 2 * sizeof (void*), "wrong VecSlot size");
+
 static uintptr_t* start;
 static uintptr_t* limit;
 
 static ObjSlot* objLow;
+static VecSlot* vecHigh;
 
 template< typename T >
 static size_t roundUp (size_t n) {
@@ -35,51 +46,12 @@ static size_t roundUp (size_t n) {
     return (n + mask) & ~mask;
 }
 
-static ObjSlot* obj2slot (const Mem::Obj* p) {
-    assert(p != 0);
-    return p->inObjPool() ? (ObjSlot*) ((uintptr_t) p - sizeof (void*)) : 0;
+static ObjSlot* obj2slot (const Mem::Obj& o) {
+    return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - sizeof (void*)) : 0;
 }
 
-void Mem::init (uintptr_t* base, size_t size) {
-    assert((uintptr_t) base % sizeof (void*) == 0);
-    assert(size % sizeof (void*) == 0);
-
-    start = base;
-    limit = base + size / sizeof *base;
-
-    objLow = (ObjSlot*) limit - 1;
-    objLow->chain = 0;
-    objLow->vt = 0;
-}
-
-size_t Mem::avail () {
-    return (uintptr_t) objLow - (uintptr_t) start;
-}
-
-void Mem::mark (const Obj& obj) {
-    auto p = obj2slot(&obj);
-    if (p != 0) {
-        if (p->isMarked())
-            return;
-        p->setMark();
-    }
-    obj.mark();
-}
-
-void Mem::sweep () {
-    for (auto slot = objLow; slot != 0; slot = slot->chain)
-        if (slot->isMarked())
-            slot->clearMark();
-        else if (!slot->isFree()) {
-            auto q = &slot->obj;
-            delete q; // weird: must be a ptr *variable* for stm32 builds
-            assert(slot->isFree());
-        }
-}
-
-bool Mem::Obj::inObjPool () const {
-    auto p = (const void*) this;
-    return objLow <= p && p < limit;
+static VecSlot* vec2slot (const Mem::Vec& v) {
+    return v.ptr() != 0 ? (VecSlot*) ((uintptr_t) v.ptr() - sizeof (void*)) : 0;
 }
 
 static void mergeFreeSlots (ObjSlot* slot) {
@@ -92,35 +64,119 @@ static void mergeFreeSlots (ObjSlot* slot) {
     }
 }
 
-void* Mem::Obj::operator new (size_t sz) {
-    auto need = roundUp<void*>(sz + sizeof (ObjSlot::chain));
+namespace Mem {
 
-    for (auto slot = objLow; !slot->isLast(); slot = slot->next())
-        if (slot->isFree()) {
-            mergeFreeSlots(slot);
-            auto space = (uintptr_t) slot->chain - (uintptr_t) slot;
-            if (space >= need)
-                return &slot->obj;
+    bool Obj::inObjPool () const {
+        auto p = (const void*) this;
+        return objLow <= p && p < limit;
+    }
+
+    void* Obj::operator new (size_t sz) {
+        auto need = roundUp<void*>(sz + sizeof (ObjSlot::chain));
+
+        for (auto slot = objLow; !slot->isLast(); slot = slot->next())
+            if (slot->isFree()) {
+                mergeFreeSlots(slot);
+                auto space = (uintptr_t) slot->chain - (uintptr_t) slot;
+                if (space >= need)
+                    return &slot->obj;
+            }
+
+        auto prev = objLow;
+        objLow = (ObjSlot*) ((uintptr_t) prev - need);
+        objLow->chain = prev;
+
+        // new objects are always at least pointer-aligned
+        assert((uintptr_t) &objLow->obj % sizeof (void*) == 0);
+        return &objLow->obj;
+    }
+
+    void Obj::operator delete (void* p) {
+        assert(p != 0);
+        auto slot = obj2slot(*(Obj*) p);
+        assert(slot != 0);
+
+        slot->vt = 0; // mark this object as free and make it unusable
+
+        mergeFreeSlots(slot);
+
+        // try to raise objLow, this will cascade when freeing during a sweep
+        if (slot == objLow)
+            objLow = objLow->chain;
+    }
+
+    void Vec::resize (size_t sz) {
+        auto slot = vec2slot(*this);
+        if (slot == 0) {            // new alloc
+            if (sz == 0)
+                return;
+            // TODO
+        } else if (sz != 0) {       // resize
+            // TODO
+        } else {                    // delete
+            slot->vec = 0;
+            slot->next = slot + capa;
+            if (vecHigh == slot->next)
+                vecHigh = slot;
+            data = 0;
+            capa = 0;
         }
+    }
 
-    auto prev = objLow;
-    objLow = (ObjSlot*) ((uintptr_t) prev - need);
-    objLow->chain = prev;
+    void init (uintptr_t* base, size_t size) {
+        assert((uintptr_t) base % sizeof (void*) == 0);
+        assert(size % sizeof (void*) == 0);
 
-    // new objects are always at least pointer-aligned
-    assert((uintptr_t) &objLow->obj % sizeof (void*) == 0);
-    return &objLow->obj;
-}
+        start = base;
+        limit = base + size / sizeof *base;
 
-void Mem::Obj::operator delete (void* p) {
-    auto slot = obj2slot((Mem::Obj*) p);
-    assert(slot != 0);
+        // start & limit must be multiples of the ObjSlot and VecSlot sizes
+        // when they aren't, simply increase start and/or decrease limit a bit
+        // this way no extra alignment is needed when setting up a memory pool
+        static_assert (sizeof (VecSlot) == sizeof (ObjSlot), "bad slot sizes");
+        if ((uintptr_t) start % sizeof (VecSlot) != 0)
+            ++start;
+        if ((uintptr_t) limit % sizeof (VecSlot) != 0)
+            --limit;
 
-    slot->vt = 0; // mark this object as free and make it unusable
+        vecHigh = (VecSlot*) start;
 
-    mergeFreeSlots(slot);
+        objLow = (ObjSlot*) limit - 1;
+        objLow->chain = 0;
+        objLow->vt = 0;
+    }
 
-    // try to raise objLow, this will cascade when freeing during a sweep
-    if (slot == objLow)
-        objLow = objLow->chain;
-}
+    size_t avail () {
+        return (uintptr_t) objLow - (uintptr_t) vecHigh;
+    }
+
+    void mark (const Obj& obj) {
+        auto p = obj2slot(obj);
+        if (p != 0) {
+            if (p->isMarked())
+                return;
+            p->setMark();
+        }
+        obj.mark();
+    }
+
+    void sweep () {
+        for (auto slot = objLow; slot != 0; slot = slot->chain)
+            if (slot->isMarked())
+                slot->clearMark();
+            else if (!slot->isFree()) {
+                auto q = &slot->obj;
+                delete q; // weird: must be a ptr *variable* for stm32 builds
+                assert(slot->isFree());
+            }
+    }
+
+    void compact () {
+        auto slot = (VecSlot*) start;
+        while (slot < vecHigh) {
+            // TODO
+            ++slot; // wrong
+        }
+    }
+
+} // namespace Mem
