@@ -5,7 +5,7 @@ namespace Mem {
 struct Obj {
     virtual ~Obj () {}
 
-    bool isAllocated () const;
+    bool inObjPool () const;
 
     void* operator new (size_t sz);
     void* operator new (size_t sz, size_t n) { return operator new (sz+n); }

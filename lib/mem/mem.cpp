@@ -37,7 +37,7 @@ static size_t roundUp (size_t n) {
 
 static ObjSlot* obj2slot (const Mem::Obj* p) {
     assert(p != 0);
-    return p->isAllocated() ? (ObjSlot*) ((uintptr_t) p - sizeof (void*)) : 0;
+    return p->inObjPool() ? (ObjSlot*) ((uintptr_t) p - sizeof (void*)) : 0;
 }
 
 void Mem::init (uintptr_t* base, size_t size) {
@@ -75,6 +75,11 @@ void Mem::sweep () {
             delete q; // weird: must be a ptr *variable* for stm32 builds
             assert(slot->isFree());
         }
+}
+
+bool Mem::Obj::inObjPool () const {
+    auto p = (const void*) this;
+    return objLow <= p && p < limit;
 }
 
 static void mergeFreeSlots (ObjSlot* slot) {
@@ -118,9 +123,4 @@ void Mem::Obj::operator delete (void* p) {
     // try to raise objLow, this will cascade when freeing during a sweep
     if (slot == objLow)
         objLow = objLow->chain;
-}
-
-bool Mem::Obj::isAllocated () const {
-    auto p = (const void*) this;
-    return objLow <= p && p < limit;
 }

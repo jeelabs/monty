@@ -34,19 +34,19 @@ void newObj () {
     auto avail1 = Mem::avail();
 
     Mem::Obj o1; // on the stack
-    TEST_ASSERT(!o1.isAllocated());
+    TEST_ASSERT(!o1.inObjPool());
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof o1);
     TEST_ASSERT_EQUAL(avail1, Mem::avail());
 
     auto p1 = new Mem::Obj; // allocated in pool
     TEST_ASSERT_NOT_NULL(p1);
-    TEST_ASSERT(p1->isAllocated());
+    TEST_ASSERT(p1->inObjPool());
 
     auto avail2 = Mem::avail();
     TEST_ASSERT_LESS_THAN_size_t(avail1, avail2);
 
     auto p2 = new Mem::Obj; // second object in pool
-    TEST_ASSERT(p2->isAllocated());
+    TEST_ASSERT(p2->inObjPool());
     TEST_ASSERT_NOT_EQUAL(p1, p2);
 
     auto avail3 = Mem::avail();
@@ -54,14 +54,14 @@ void newObj () {
     TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
 
     auto p3 = new (0) Mem::Obj; // same as without the extra size
-    TEST_ASSERT(p3->isAllocated());
+    TEST_ASSERT(p3->inObjPool());
 
     auto avail4 = Mem::avail();
     TEST_ASSERT_LESS_THAN_size_t(avail3, avail4);
     TEST_ASSERT_EQUAL(avail2 - avail3, avail3 - avail4);
 
     auto p4 = new (1) Mem::Obj; // extra space at end of object
-    TEST_ASSERT(p4->isAllocated());
+    TEST_ASSERT(p4->inObjPool());
 
     auto avail5 = Mem::avail();
     TEST_ASSERT_LESS_THAN_size_t(avail4, avail5);
