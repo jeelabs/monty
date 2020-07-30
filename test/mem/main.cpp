@@ -113,33 +113,64 @@ void markThrough () {
 
 void reuseMem () {
     auto avail1 = Mem::avail();
-    auto p1 = new MarkObj;          // (low, p1, top)
-    delete p1;                      // (low, top)
+    auto p1 = new MarkObj;          // [ p1 ]
+    delete p1;                      // [ ]
     TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
 
-    auto p2 = new MarkObj;          // (low, p2, top)
-    /* p3: */ new MarkObj;          // (low, p3, p2, top)
-    delete p2;                      // (low, p3, gap, top)
+    auto p2 = new MarkObj;          // [ p2 ]
+    /* p3: */ new MarkObj;          // [ p3 p2 ]
+    delete p2;                      // [ p3 gap ]
     TEST_ASSERT_EQUAL_PTR(p1, p2);
     TEST_ASSERT_LESS_THAN_size_t(avail1, Mem::avail());
 
-    auto p4 = new MarkObj;          // (low, p3, p4, top)
+    auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
-    Mem::sweep();                   // (low, top)
+    Mem::sweep();                   // [ ]
     TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
 }
 
 void mergeNext () {
     auto p1 = new MarkObj;
     auto p2 = new MarkObj;
-    /* p3: */ new MarkObj;          // (low, p3, p2, p1, top)
+    /* p3: */ new MarkObj;          // [ p3 p2 p1 ]
 
     delete p1;
-    delete p2;                      // (low, p3, gap, top)
+    delete p2;                      // [ p3 gap ]
 
-    auto p4 = new (1) MarkObj;      // (low, p4, top)
+    auto p4 = new (1) MarkObj;      // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p2, p4);
+}
+
+void mergePrevious () {
+    auto avail1 = Mem::avail();
+    auto p1 = new MarkObj;
+    auto p2 = new MarkObj;
+    auto p3 = new MarkObj;          // [ p3 p2 p1 ]
+
+    delete p2;                      // [ p3 gap p1 ]
+    delete p1;                      // [ p3 gap gap ]
+
+    auto p4 = new (1) MarkObj;      // [ p3 p4 ]
+    TEST_ASSERT_EQUAL_PTR(p2, p4);
+
+    delete p4;                      // [ p3 gap ]
+    delete p3;                      // [ ]
+    TEST_ASSERT_EQUAL_size_t(avail1, Mem::avail());
+}
+
+void mergeMulti () {
+    auto p1 = new (100) MarkObj;
+    auto p2 = new (100) MarkObj;
+    auto p3 = new (100) MarkObj;
+    /* p4: */ new (100) MarkObj;    // [ p4 p3 p2 p1 ]
+
+    delete p3;                      // [ p4 gap p2 p1 ]
+    delete p2;                      // [ p4 gap gap p1 ]
+    delete p1;                      // [ p4 gap gap gap ]
+
+    auto p5 = new (300) MarkObj;    // [ p4 p5 ]
+    TEST_ASSERT_EQUAL_PTR(p3, p5);
 }
 
 int main (int argc, char **argv) {
@@ -152,6 +183,8 @@ int main (int argc, char **argv) {
     RUN_TEST(markThrough);
     RUN_TEST(reuseMem);
     RUN_TEST(mergeNext);
+    RUN_TEST(mergePrevious);
+    RUN_TEST(mergeMulti);
 
     UNITY_END();
     return 0;

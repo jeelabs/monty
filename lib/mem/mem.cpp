@@ -7,6 +7,7 @@
 struct ObjSlot {
     ObjSlot* next () const { return (ObjSlot*) (flag & ~1); }
     bool isFree () const { return vt == 0; }
+    bool isLast () const { return chain == 0; }
     bool isMarked () const { return (flag & 1) != 0; }
     void setMark () { flag |= 1; }
     void clearMark () { flag &= ~1; }
@@ -66,24 +67,35 @@ void Mem::mark (const Obj& obj) {
 }
 
 void Mem::sweep () {
-    for (auto p = objLow; p != 0; p = p->chain)
-        if (p->isMarked())
-            p->clearMark();
-        else if (!p->isFree()) {
-            auto q = &p->obj;
+    for (auto slot = objLow; slot != 0; slot = slot->chain)
+        if (slot->isMarked())
+            slot->clearMark();
+        else if (!slot->isFree()) {
+            auto q = &slot->obj;
             delete q; // weird: must be a ptr *variable* for stm32 builds
-            assert(p->isFree());
+            assert(slot->isFree());
         }
+}
+
+static void mergeFreeSlots (ObjSlot* slot) {
+    while (true) {
+        auto nextSlot = slot->chain;
+        assert(nextSlot != 0);
+        if (!nextSlot->isFree() || nextSlot->isLast())
+            break;
+        slot->chain = nextSlot->chain;
+    }
 }
 
 void* Mem::Obj::operator new (size_t sz) {
     auto need = roundUp<void*>(sz + sizeof (ObjSlot::chain));
 
-    for (auto p = objLow; p->chain != 0; p = p->next())
-        if (p->isFree()) {
-            auto space = (uintptr_t) p->chain - (uintptr_t) p;
+    for (auto slot = objLow; !slot->isLast(); slot = slot->next())
+        if (slot->isFree()) {
+            mergeFreeSlots(slot);
+            auto space = (uintptr_t) slot->chain - (uintptr_t) slot;
             if (space >= need)
-                return &p->obj;
+                return &slot->obj;
         }
 
     auto prev = objLow;
@@ -96,20 +108,15 @@ void* Mem::Obj::operator new (size_t sz) {
 }
 
 void Mem::Obj::operator delete (void* p) {
-    // merge with next if also free
-    auto mySlot = obj2slot((Mem::Obj*) p);
-    assert(mySlot != 0 && mySlot->chain != 0);
-    auto nextSlot = mySlot->chain;
+    auto slot = obj2slot((Mem::Obj*) p);
+    assert(slot != 0);
 
-    mySlot->vt = 0; // mark this object as free and make it unusable
+    slot->vt = 0; // mark this object as free and make it unusable
 
-#if 1
-    if (nextSlot->isFree() && nextSlot->chain != 0)
-        mySlot->chain = nextSlot->chain;
-#endif
+    mergeFreeSlots(slot);
 
     // try to raise objLow, this will cascade when freeing during a sweep
-    if (mySlot == objLow)
+    if (slot == objLow)
         objLow = objLow->chain;
 }
 
