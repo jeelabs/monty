@@ -52,13 +52,23 @@ size_t Mem::avail () {
     return (uintptr_t) objLow - (uintptr_t) start;
 }
 
+void Mem::mark (const Obj& obj) {
+    auto p = obj2slot(obj);
+    if (p != 0) {
+        if (p->isMarked())
+            return;
+        p->setMark();
+    }
+    obj.mark();
+}
+
 void Mem::sweep () {
     for (auto p = objLow; p != 0; p = p->next)
         if (p->isMarked())
             p->clearMark();
         else if (p->vt != 0) {
             auto q = &p->obj;
-            delete q; // weird: needs a ptr *variable* with stm32 builds
+            delete q; // weird: must be a ptr *variable* for stm32 builds
         }
 }
 
@@ -79,14 +89,4 @@ void Mem::Obj::operator delete (void* p) {
 bool Mem::Obj::isAllocated () const {
     auto p = (const void*) this;
     return objLow <= p && p < limit;
-}
-
-void Mem::Obj::marker (const Obj& obj) {
-    auto p = obj2slot(obj);
-    if (p != 0) {
-        if (p->isMarked())
-            return;
-        p->setMark();
-    }
-    obj.mark();
 }

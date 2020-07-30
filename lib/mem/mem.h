@@ -2,10 +2,6 @@
 
 namespace Mem {
 
-void init (uintptr_t* base, size_t size);
-size_t avail ();
-void sweep();
-
 struct Obj {
     virtual ~Obj () {}
 
@@ -16,11 +12,16 @@ struct Obj {
         return operator new (sz + extra);
     }
     void operator delete (void* p);
-
-    static void marker (const Obj* p) { if (p != 0) marker(*p); }
-    static void marker (const Obj& obj);
 protected:
     virtual void mark () const {}
+    friend void mark (const Obj&); // i.e. Mem::mark
 };
+
+void init (uintptr_t* base, size_t size);
+size_t avail ();
+
+inline void mark (const Obj* p) { if (p != 0) mark(*p); }
+void mark (const Obj& obj);
+void sweep();
 
 } // namespace Mem
