@@ -23,7 +23,7 @@ namespace Monty {
             return capa > 0 ? (2 * capa - 1) * sizeof (void*) : 0;
         }
 
-        void resize (size_t sz);
+        bool resize (size_t sz);
 
         protected:
         uint8_t* data;
@@ -38,5 +38,7 @@ namespace Monty {
     void mark (const Obj& obj);
     void sweep();
     void compact();
+
+    extern void (*outOfMemory)();
 
 } // namespace Monty

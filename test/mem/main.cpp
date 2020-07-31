@@ -6,7 +6,7 @@
 using namespace Monty;
 
 uintptr_t memory [1024];
-int created, destroyed, marked;
+int created, destroyed, marked, failed;
 
 struct MarkObj : Obj {
     MarkObj (MarkObj* o =0) : other (o) { ++created; }
@@ -19,7 +19,8 @@ struct MarkObj : Obj {
 
 void setUp () {
     init(memory, sizeof memory);
-    created = destroyed = marked = 0;
+    created = destroyed = marked = failed = 0;
+    Monty::outOfMemory = []() { ++failed; };
 }
 
 // void tearDown () {}
@@ -176,10 +177,19 @@ void mergeMulti () {
     TEST_ASSERT_EQUAL_PTR(p3, p5);
 }
 
+void outOfObjMem () {
+    constexpr auto N = 100 * sizeof (uintptr_t);
+    for (int i = 0; i < 12; ++i)
+        new (N) MarkObj;
+    TEST_ASSERT_LESS_THAN(N, avail());
+    TEST_ASSERT_EQUAL_PTR(12, created);
+    TEST_ASSERT_GREATER_THAN(0, failed);
+}
+
 void newVec () {
     auto avail1 = avail();
     {
-        Vec v1; // on the stack
+        Vec v1;
         TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof v1);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
@@ -191,7 +201,7 @@ void newVec () {
 void resizeVec () {
     auto avail1 = avail();
     {
-        Vec v1; // on the stack
+        Vec v1;
         v1.resize(0);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
@@ -214,6 +224,29 @@ void resizeVec () {
     TEST_ASSERT_EQUAL(avail1, avail());
 }
 
+void outOfVecMem () {
+    auto avail1 = avail();
+
+    Vec v1;
+    v1.resize(999);
+    TEST_ASSERT_EQUAL(0, failed);
+
+    auto p = v1.ptr();
+    auto n = v1.cap();
+    auto a = avail();
+    TEST_ASSERT_NOT_EQUAL(0, p);
+    TEST_ASSERT_GREATER_THAN(999, n);
+    TEST_ASSERT_LESS_THAN(avail1, a);
+
+    auto f = v1.resize(sizeof memory); // fail, vector should be the old one
+
+    TEST_ASSERT_FALSE(f);
+    TEST_ASSERT_GREATER_THAN(0, failed);
+    TEST_ASSERT_EQUAL_PTR(p, v1.ptr());
+    TEST_ASSERT_EQUAL(n, v1.cap());
+    TEST_ASSERT_EQUAL(a, avail());
+}
+
 int main (int argc, char **argv) {
     UNITY_BEGIN();
 
@@ -226,9 +259,11 @@ int main (int argc, char **argv) {
     RUN_TEST(mergeNext);
     RUN_TEST(mergePrevious);
     RUN_TEST(mergeMulti);
+    RUN_TEST(outOfObjMem);
 
     RUN_TEST(newVec);
     RUN_TEST(resizeVec);
+    RUN_TEST(outOfVecMem);
 
     UNITY_END();
     return 0;
