@@ -58,11 +58,7 @@ static ObjSlot* obj2slot (const Obj& o) {
     return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - sizeof (void*)) : 0;
 }
 
-static VecSlot* vec2slot (uint8_t* p) {
-    return p != 0 ? (VecSlot*) (p - sizeof (void*)) : 0;
-}
-
-static void mergeFreeSlots (ObjSlot* slot) {
+static void mergeFreeObjs (ObjSlot* slot) {
     while (true) {
         auto nextSlot = slot->chain;
         assert(nextSlot != 0);
@@ -84,7 +80,7 @@ namespace Monty {
 
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
             if (slot->isFree()) {
-                mergeFreeSlots(slot);
+                mergeFreeObjs(slot);
                 auto space = (uintptr_t) slot->chain - (uintptr_t) slot;
                 if (space >= need)
                     return &slot->obj;
@@ -106,7 +102,7 @@ namespace Monty {
 
         slot->vt = 0; // mark this object as free and make it unusable
 
-        mergeFreeSlots(slot);
+        mergeFreeObjs(slot);
 
         // try to raise objLow, this will cascade when freeing during a sweep
         if (slot == objLow)
@@ -116,7 +112,7 @@ namespace Monty {
     void Vec::resize (size_t sz) {
         auto numSlots = sz > 0 ? multipleOf<VecSlot>(sz + sizeof (void*)) : 0;
         if (capa != numSlots) {
-            auto slot = vec2slot(data);
+            auto slot = data != 0 ? (VecSlot*) (data - sizeof (void*)) : 0;
             if (slot == 0) {                        // new alloc
                 if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
                     assert(false); // TODO handle out-of-memory properly
@@ -133,17 +129,22 @@ namespace Monty {
                 if ((uintptr_t) (slot + numSlots) > (uintptr_t) objLow)
                     assert(false); // TODO handle out-of-memory properly
                 vecHigh += numSlots - capa;
-            } else if (numSlots > capa) {           // grow, i.e. del + new
-                if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
-                    assert(false); // TODO handle out-of-memory properly
-                slot->vec = 0;
-                slot->next = slot + capa;
-                vecHigh->vec = this;
-                data = (uint8_t*) &vecHigh->next;
-                vecHigh += numSlots;
-            } else {                                // shrink
-                // TODO
+            } else {
+                // TODO merge all free slots after this one
+                //  ... then a "grow" might become a "shrink"
+                if (numSlots > capa) {           // grow, i.e. del + new
+                    if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
+                        assert(false); // TODO handle out-of-memory properly
+                    slot->vec = 0;
+                    slot->next = slot + capa;
+                    vecHigh->vec = this;
+                    data = (uint8_t*) &vecHigh->next;
+                    vecHigh += numSlots;
+                } else {                                // shrink
+                    // TODO
+                }
             }
+            // TODO clear new memory
             capa = numSlots;
         }
         assert((uintptr_t) data % sizeof (VecSlot) == 0);
