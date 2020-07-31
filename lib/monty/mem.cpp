@@ -141,6 +141,10 @@ namespace Monty {
             objLow = objLow->chain;
     }
 
+    auto Vec::cap () const -> size_t {
+        return caps > 0 ? (2 * caps - 1) * sizeof (void*) : 0;
+    }
+
     auto Vec::findSpace (size_t needs) -> void* {
         auto slot = (VecSlot*) start;               // scan all vectors
         while (slot < vecHigh)

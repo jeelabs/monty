@@ -21,19 +21,16 @@ namespace Monty {
         ~Vec () { resize(0); }
 
         auto ptr () const -> uint8_t* { return data; }
-        auto cap () const -> size_t {
-            return caps > 0 ? (2 * caps - 1) * sizeof (void*) : 0;
-        }
-
+        auto cap () const -> size_t;
         auto resize (size_t sz) -> bool;
 
     protected:
         uint32_t info :8;   // for use in derived classes
     private:
-        uint32_t caps :24;  // capacity, in slots, see cap()
+        uint32_t caps :24;  // capacity in slots, see cap()
         uint8_t* data;
 
-        auto findSpace (size_t needs) -> void*; // hide VecSlot* type
+        auto findSpace (size_t needs) -> void*; // hide private type
     };
 
     void init (uintptr_t* base, size_t size);
