@@ -6,6 +6,8 @@
 
 #include "mem.h"
 
+using namespace Monty;
+
 struct ObjSlot {
     ObjSlot* next () const { return (ObjSlot*) (flag & ~1); }
     bool isFree () const { return vt == 0; }
@@ -20,13 +22,13 @@ struct ObjSlot {
         uintptr_t flag; // bit 0 set for marked objects
     };
     union {
-        Mem::Obj obj;
+        Obj obj;
         void* vt; // null for deleted objects
     };
 };
 
 struct VecSlot {
-    Mem::Vec* vec;
+    Vec* vec;
     VecSlot* next;
 };
 
@@ -46,11 +48,11 @@ static size_t roundUp (size_t n) {
     return (n + mask) & ~mask;
 }
 
-static ObjSlot* obj2slot (const Mem::Obj& o) {
+static ObjSlot* obj2slot (const Obj& o) {
     return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - sizeof (void*)) : 0;
 }
 
-static VecSlot* vec2slot (const Mem::Vec& v) {
+static VecSlot* vec2slot (const Vec& v) {
     return v.ptr() != 0 ? (VecSlot*) ((uintptr_t) v.ptr() - sizeof (void*)) : 0;
 }
 
@@ -64,7 +66,7 @@ static void mergeFreeSlots (ObjSlot* slot) {
     }
 }
 
-namespace Mem {
+namespace Monty {
 
     bool Obj::inObjPool () const {
         auto p = (const void*) this;
@@ -179,4 +181,4 @@ namespace Mem {
         }
     }
 
-} // namespace Mem
+} // namespace Monty

@@ -1,6 +1,5 @@
 // Objects and vectors with garbage collection, public header.
-
-namespace Mem {
+namespace Monty {
 
     struct Obj {
         virtual ~Obj () {}
@@ -12,7 +11,7 @@ namespace Mem {
         void operator delete (void* p);
         protected:
         virtual void mark () const {}
-        friend void mark (const Obj&); // i.e. Mem::mark
+        friend void mark (const Obj&); // i.e. Monty::mark
     };
 
     struct Vec {
@@ -38,4 +37,4 @@ namespace Mem {
     void sweep();
     void compact();
 
-} // namespace Mem
+} // namespace Monty
