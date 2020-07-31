@@ -19,7 +19,9 @@ namespace Monty {
         ~Vec () { resize(0); }
 
         uint8_t* ptr () const { return data; }
-        size_t cap () const { return capa; }
+        size_t cap () const {
+            return capa > 0 ? (2 * capa - 1) * sizeof (void*) : 0;
+        }
 
         void resize (size_t sz);
 

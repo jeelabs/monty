@@ -185,21 +185,35 @@ void newVec () {
         TEST_ASSERT_EQUAL(0, v1.cap());
         TEST_ASSERT_EQUAL(avail1, avail());
     }
-TEST_IGNORE();
     TEST_ASSERT_EQUAL(avail1, avail());
+}
+
+void resizeVec () {
+    auto avail1 = avail();
     {
-        Vec v2; // on the stack
-        v2.resize(0);
-        TEST_ASSERT_EQUAL_PTR(0, v2.ptr());
-        TEST_ASSERT_EQUAL(0, v2.cap());
+        Vec v1; // on the stack
+        v1.resize(0);
+        TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
+        TEST_ASSERT_EQUAL(0, v1.cap());
         TEST_ASSERT_EQUAL(avail1, avail());
-        v2.resize(1);
-        TEST_ASSERT_NOT_EQUAL(0, v2.ptr());
-        TEST_ASSERT_GREATER_THAN(0, v2.cap());
+
+        v1.resize(1);
+        TEST_ASSERT_NOT_EQUAL(0, v1.ptr());
+        TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
         TEST_ASSERT_LESS_THAN(avail1, avail());
+
+        v1.resize(sizeof (void*));
+        TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
+
+        v1.resize(sizeof (void*) + 1);
+        TEST_ASSERT_EQUAL(3 * sizeof (void*), v1.cap());
+
+        v1.resize(1);
+        TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
     }
     TEST_ASSERT_EQUAL(avail1, avail());
 }
+
 int main (int argc, char **argv) {
     UNITY_BEGIN();
 
@@ -214,6 +228,7 @@ int main (int argc, char **argv) {
     RUN_TEST(mergeMulti);
 
     RUN_TEST(newVec);
+    RUN_TEST(resizeVec);
 
     UNITY_END();
     return 0;

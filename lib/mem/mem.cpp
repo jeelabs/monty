@@ -49,12 +49,17 @@ static size_t roundUp (size_t n) {
     return (n + mask) & ~mask;
 }
 
+template< typename T >
+static size_t multipleOf (size_t n) {
+    return roundUp<T>(n) / sizeof (T);
+}
+
 static ObjSlot* obj2slot (const Obj& o) {
     return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - sizeof (void*)) : 0;
 }
 
-static VecSlot* vec2slot (const Vec& v) {
-    return v.ptr() != 0 ? (VecSlot*) ((uintptr_t) v.ptr() - sizeof (void*)) : 0;
+static VecSlot* vec2slot (uint8_t* p) {
+    return p != 0 ? (VecSlot*) (p - sizeof (void*)) : 0;
 }
 
 static void mergeFreeSlots (ObjSlot* slot) {
@@ -107,23 +112,41 @@ namespace Monty {
         if (slot == objLow)
             objLow = objLow->chain;
     }
-
+    
     void Vec::resize (size_t sz) {
-        auto slot = vec2slot(*this);
-        if (slot == 0) {            // new alloc
-            if (sz == 0)
-                return;
-            // TODO
-        } else if (sz != 0) {       // resize
-            // TODO
-        } else {                    // delete
-            slot->vec = 0;
-            slot->next = slot + capa;
-            if (vecHigh == slot->next)
-                vecHigh = slot;
-            data = 0;
-            capa = 0;
+        auto numSlots = sz > 0 ? multipleOf<VecSlot>(sz + sizeof (void*)) : 0;
+        if (capa != numSlots) {
+            auto slot = vec2slot(data);
+            if (slot == 0) {                        // new alloc
+                if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
+                    assert(false); // TODO handle out-of-memory properly
+                vecHigh->vec = this;
+                data = (uint8_t*) &vecHigh->next;
+                vecHigh += numSlots;
+            } else if (numSlots == 0) {                   // delete
+                slot->vec = 0;
+                slot->next = slot + capa;
+                if (vecHigh == slot->next)
+                    vecHigh = slot;
+                data = 0;
+            } else if (slot + capa == vecHigh) {    // easy resize
+                if ((uintptr_t) (slot + numSlots) > (uintptr_t) objLow)
+                    assert(false); // TODO handle out-of-memory properly
+                vecHigh += numSlots - capa;
+            } else if (numSlots > capa) {           // grow, i.e. del + new
+                if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
+                    assert(false); // TODO handle out-of-memory properly
+                slot->vec = 0;
+                slot->next = slot + capa;
+                vecHigh->vec = this;
+                data = (uint8_t*) &vecHigh->next;
+                vecHigh += numSlots;
+            } else {                                // shrink
+                // TODO
+            }
+            capa = numSlots;
         }
+        assert((uintptr_t) data % sizeof (VecSlot) == 0);
     }
 
     void init (uintptr_t* base, size_t size) {
