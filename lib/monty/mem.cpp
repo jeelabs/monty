@@ -88,23 +88,22 @@ namespace Monty {
     }
 
     auto Obj::operator new (size_t sz) -> void* {
-        auto need = roundUp<ObjSlot>(sz + PTR_SZ);
+        auto numSlots = multipleOf<ObjSlot>(sz + PTR_SZ);
 
         // traverse object pool, merge free slots, loop until first fit
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
             if (slot->isFree()) {
                 mergeFreeObjs(*slot);
-                auto space = (uintptr_t) slot->chain - (uintptr_t) slot;
-                if (space >= need)
+                auto space = slot->chain - slot;
+                if (space >= (int) numSlots)
                     return &slot->obj;
             }
 
-        if ((uintptr_t) objLow - need < (uintptr_t) vecHigh)
+        if (objLow - numSlots < (void*) vecHigh)
             return panicOutOfMemory(), malloc(sz); // give up, last resort
 
-        auto prev = objLow;
-        objLow = (ObjSlot*) ((uintptr_t) prev - need);
-        objLow->chain = prev;
+        objLow -= numSlots;
+        objLow->chain = objLow + numSlots;
 
         // new objects are always at least ObjSlot-aligned, i.e. 8-/16-byte
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
