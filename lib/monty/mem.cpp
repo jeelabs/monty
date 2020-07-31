@@ -30,8 +30,13 @@ struct ObjSlot {
 };
 
 struct VecSlot {
+    auto isFree () const -> bool { return vec == 0; }
+
     Vec* vec;
-    VecSlot* next;
+    union {
+        VecSlot* next;
+        uint8_t buf [];
+    };
 };
 
 constexpr auto PTR_SZ = sizeof (void*);
@@ -88,22 +93,22 @@ namespace Monty {
     }
 
     auto Obj::operator new (size_t sz) -> void* {
-        auto numSlots = multipleOf<ObjSlot>(sz + PTR_SZ);
+        auto needs = multipleOf<ObjSlot>(sz + PTR_SZ);
 
         // traverse object pool, merge free slots, loop until first fit
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
             if (slot->isFree()) {
                 mergeFreeObjs(*slot);
                 auto space = slot->chain - slot;
-                if (space >= (int) numSlots)
+                if (space >= (int) needs)
                     return &slot->obj;
             }
 
-        if (objLow - numSlots < (void*) vecHigh)
+        if (objLow - needs < (void*) vecHigh)
             return panicOutOfMemory(), malloc(sz); // give up, last resort
 
-        objLow -= numSlots;
-        objLow->chain = objLow + numSlots;
+        objLow -= needs;
+        objLow->chain = objLow + needs;
 
         // new objects are always at least ObjSlot-aligned, i.e. 8-/16-byte
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
@@ -123,49 +128,79 @@ namespace Monty {
         if (slot == objLow)
             objLow = objLow->chain;
     }
+
+    // combine this free vec with all following free vecs
+    // return true if vecHigh has been lowered, i.e. this free vec is now gone
+    static auto mergeVecs (VecSlot& slot) -> bool {
+        assert(slot.isFree());
+        auto& tail = slot.next;
+        while (tail < vecHigh && tail->isFree())
+            tail = tail->next;
+        if (tail < vecHigh)
+            return false;
+        vecHigh = &slot;
+        return true;
+    }
     
     auto Vec::resize (size_t sz) -> bool {
-        auto numSlots = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
-        if (caps != numSlots) {
+        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
+        if (caps != needs) {
             auto slot = data != 0 ? (VecSlot*) (data - PTR_SZ) : 0;
             if (slot == 0) {                        // new alloc
-                if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
-                    return panicOutOfMemory(), false;
-                vecHigh->vec = this;
-                data = (uint8_t*) &vecHigh->next;
-                vecHigh += numSlots;
-            } else if (numSlots == 0) {             // delete
+                slot = (VecSlot*) start;
+                while (slot < vecHigh)
+                    if (!slot->isFree())
+                        slot += slot->vec->caps;
+                    else if (mergeVecs(*slot))
+                        break;
+                    else if (slot + needs > slot->next)
+                        slot = slot->next;
+                    else {
+                        slot->vec = this;
+                        if (slot + needs < slot->next) { // split, free at end
+                            slot[needs].vec = 0;
+                            slot[needs].next = slot->next;
+                        }
+                        break;
+                    }
+                if (slot == vecHigh) {
+                    if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow)
+                        return panicOutOfMemory(), false;
+                    vecHigh += needs;
+                    slot->vec = this;
+                }
+                data = slot->buf;
+            } else if (needs == 0) {             // delete
                 slot->vec = 0;
                 slot->next = slot + caps;
-                if (vecHigh == slot->next)
-                    vecHigh = slot;
+                mergeVecs(*slot);
                 data = 0;
             } else if (slot + caps == vecHigh) {    // easy resize
-                if ((uintptr_t) (slot + numSlots) > (uintptr_t) objLow)
+                if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                     return panicOutOfMemory(), false;
-                vecHigh += numSlots - caps;
+                vecHigh += needs - caps;
             } else {
                 // TODO merge all free slots after this one
                 //  ... then a "grow" might become a "shrink"
-                if (numSlots > caps) {              // grow, i.e. del + new
-                    if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
+                if (needs > caps) {              // grow, i.e. del + new
+                    if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
                     slot->vec = 0;
                     slot->next = slot + caps;
                     vecHigh->vec = this;
                     data = (uint8_t*) &vecHigh->next;
-                    vecHigh += numSlots;
+                    vecHigh += needs;
                 } else {                            // shrink
                     // TODO
                 }
             }
-            if (numSlots > caps) {
-                auto bytes = (numSlots - caps) * VS_SZ;
+            if (needs > caps) {
+                auto bytes = (needs - caps) * VS_SZ;
                 if (caps == 0) // vector sizes are 4,12,20,28,... for 32b arch
                     bytes -= PTR_SZ;
-                memset(data + numSlots * VS_SZ - bytes, 0, bytes);
+                memset(data - PTR_SZ + needs * VS_SZ - bytes, 0, bytes);
             }
-            caps = numSlots;
+            caps = needs;
         }
         assert((uintptr_t) data % VS_SZ == 0);
         return true;

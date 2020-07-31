@@ -115,7 +115,7 @@ void markThrough () {
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
-void reuseMem () {
+void reuseObjMem () {
     auto avail1 = avail();
     auto p1 = new MarkObj;          // [ p1 ]
     delete p1;                      // [ ]
@@ -224,6 +224,51 @@ void resizeVec () {
     TEST_ASSERT_EQUAL(avail1, avail());
 }
 
+void reuseVecMem () {
+    auto avail1 = avail();
+
+    Vec v1;
+    v1.resize(100);                 // [ v1 ]
+    Vec v2;
+    v2.resize(10);                  // [ v1 v2 ]
+
+    auto a = avail();
+    TEST_ASSERT_LESS_THAN(avail1, a);
+    TEST_ASSERT_GREATER_THAN(v1.ptr(), v2.ptr());
+
+    v1.resize(0);                   // [ gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    Vec v3;
+    v3.resize(10);                  // [ v3 gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    Vec v4;
+    v4.resize(10);                  // [ v3 v4 gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v3.resize(0);                   // [ gap v4 gap v2 ]
+    v4.resize(0);                   // [ gap gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    Vec v5;
+    v5.resize(100);                 // [ v5 v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v5.resize(0);                   // [ gap v2 ]
+
+    v2.resize(0);                   // [ gap ]
+    auto b = avail();
+    TEST_ASSERT_GREATER_THAN(a, b);
+    TEST_ASSERT_LESS_THAN(avail1, b);
+
+    v1.resize(1);                   // [ v1 ]
+    TEST_ASSERT_GREATER_THAN(b, avail());
+
+    v1.resize(0);                   // [ ]
+    TEST_ASSERT_EQUAL(avail1, avail());
+}
+
 void outOfVecMem () {
     auto avail1 = avail();
 
@@ -247,7 +292,7 @@ void outOfVecMem () {
     TEST_ASSERT_EQUAL(a, avail());
 }
 
-int main (int argc, char **argv) {
+int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
@@ -255,7 +300,7 @@ int main (int argc, char **argv) {
     RUN_TEST(newObj);
     RUN_TEST(markObj);
     RUN_TEST(markThrough);
-    RUN_TEST(reuseMem);
+    RUN_TEST(reuseObjMem);
     RUN_TEST(mergeNext);
     RUN_TEST(mergePrevious);
     RUN_TEST(mergeMulti);
@@ -263,6 +308,7 @@ int main (int argc, char **argv) {
 
     RUN_TEST(newVec);
     RUN_TEST(resizeVec);
+    RUN_TEST(reuseVecMem);
     RUN_TEST(outOfVecMem);
 
     UNITY_END();
