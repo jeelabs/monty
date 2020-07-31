@@ -32,6 +32,7 @@ struct VecSlot {
     VecSlot* next;
 };
 
+static_assert (sizeof (VecSlot) == sizeof (ObjSlot), "incorrect slot sizes");
 static_assert (sizeof (ObjSlot) == 2 * sizeof (void*), "wrong ObjSlot size");
 static_assert (sizeof (VecSlot) == 2 * sizeof (void*), "wrong VecSlot size");
 
@@ -74,7 +75,7 @@ namespace Monty {
     }
 
     void* Obj::operator new (size_t sz) {
-        auto need = roundUp<void*>(sz + sizeof (ObjSlot::chain));
+        auto need = roundUp<ObjSlot>(sz + sizeof (ObjSlot::chain));
 
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
             if (slot->isFree()) {
@@ -88,8 +89,8 @@ namespace Monty {
         objLow = (ObjSlot*) ((uintptr_t) prev - need);
         objLow->chain = prev;
 
-        // new objects are always at least pointer-aligned
-        assert((uintptr_t) &objLow->obj % sizeof (void*) == 0);
+        // new objects are always at least ObjSlot-aligned, i.e. 8-/16-byte
+        assert((uintptr_t) &objLow->obj % sizeof (ObjSlot) == 0);
         return &objLow->obj;
     }
 
@@ -132,13 +133,13 @@ namespace Monty {
         start = base;
         limit = base + size / sizeof *base;
 
-        // start & limit must be multiples of the ObjSlot and VecSlot sizes
-        // when they aren't, simply increase start and/or decrease limit a bit
+        // start & limit must not be exact multiples of ObjSlot/VecSlot sizes
+        // when they are, simply increase start and/or decrease limit a bit
+        // as a result, the allocated data itself sits on an xxxSlot boundary
         // this way no extra alignment is needed when setting up a memory pool
-        static_assert (sizeof (VecSlot) == sizeof (ObjSlot), "bad slot sizes");
-        if ((uintptr_t) start % sizeof (VecSlot) != 0)
+        if ((uintptr_t) start % sizeof (VecSlot) == 0)
             ++start;
-        if ((uintptr_t) limit % sizeof (VecSlot) != 0)
+        if ((uintptr_t) limit % sizeof (VecSlot) == 0)
             --limit;
 
         vecHigh = (VecSlot*) start;
@@ -146,6 +147,9 @@ namespace Monty {
         objLow = (ObjSlot*) limit - 1;
         objLow->chain = 0;
         objLow->vt = 0;
+
+        assert((uintptr_t) &vecHigh->next % sizeof (VecSlot) == 0);
+        assert((uintptr_t) &objLow->obj % sizeof (ObjSlot) == 0);
     }
 
     size_t avail () {

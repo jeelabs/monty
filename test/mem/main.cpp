@@ -185,7 +185,19 @@ void newVec () {
         TEST_ASSERT_EQUAL(0, v1.cap());
         TEST_ASSERT_EQUAL(avail1, avail());
     }
-    compact();
+TEST_IGNORE();
+    TEST_ASSERT_EQUAL(avail1, avail());
+    {
+        Vec v2; // on the stack
+        v2.resize(0);
+        TEST_ASSERT_EQUAL_PTR(0, v2.ptr());
+        TEST_ASSERT_EQUAL(0, v2.cap());
+        TEST_ASSERT_EQUAL(avail1, avail());
+        v2.resize(1);
+        TEST_ASSERT_NOT_EQUAL(0, v2.ptr());
+        TEST_ASSERT_GREATER_THAN(0, v2.cap());
+        TEST_ASSERT_LESS_THAN(avail1, avail());
+    }
     TEST_ASSERT_EQUAL(avail1, avail());
 }
 int main (int argc, char **argv) {
