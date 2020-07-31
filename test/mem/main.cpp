@@ -66,7 +66,7 @@ void newObj () {
     TEST_ASSERT_LESS_THAN(avail3, avail4);
     TEST_ASSERT_EQUAL(avail2 - avail3, avail3 - avail4);
 
-    auto p4 = new (10) MarkObj; // extra space at end of object
+    auto p4 = new (20) MarkObj; // extra space at end of object
     TEST_ASSERT(p4->isCollectable());
 
     auto avail5 = avail();
@@ -232,7 +232,7 @@ void reuseVecMem () {
     Vec v1;
     v1.resize(100);                 // [ v1 ]
     Vec v2;
-    v2.resize(10);                  // [ v1 v2 ]
+    v2.resize(20);                  // [ v1 v2 ]
 
     auto a = avail();
     TEST_ASSERT_LESS_THAN(avail1, a);
@@ -242,11 +242,11 @@ void reuseVecMem () {
     TEST_ASSERT_EQUAL(a, avail());
 
     Vec v3;
-    v3.resize(10);                  // [ v3 gap v2 ]
+    v3.resize(20);                  // [ v3 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
     Vec v4;
-    v4.resize(10);                  // [ v3 v4 gap v2 ]
+    v4.resize(20);                  // [ v3 v4 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
     v3.resize(0);                   // [ gap v4 gap v2 ]
@@ -257,7 +257,16 @@ void reuseVecMem () {
     v5.resize(100);                 // [ v5 v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v5.resize(10);                  // [ v5 gap v2 ]
+    v5.resize(40);                  // [ v5 gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v5.resize(80);                  // [ v5 gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v5.resize(100);                 // [ v5 v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v5.resize(20);                  // [ v5 gap v2 ]
     v1.resize(1);                   // [ v5 v1 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 

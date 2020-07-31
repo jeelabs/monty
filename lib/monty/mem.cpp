@@ -92,7 +92,16 @@ static auto mergeVecs (VecSlot& slot) -> bool {
     return true;
 }
 
+// turn a vec slot into a free slot, ending at tail->next
+static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
+    if (tail->next <= &slot)
+        return; // no room for a free slot
+    slot.vec = 0;
+    slot.next = tail->next;
+}
+
 // don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
+// (hmmm, perhaps the assert macro is trying to obtain a function name ...)
 //void (*panicOutOfMemory)() = []() { assert(false); };
 static void defaultOutOfMemoryHandler () { assert(false); }
 
@@ -156,10 +165,7 @@ namespace Monty {
             else if (slot + needs > slot->next)     // won't fit
                 slot = slot->next;
             else {                                  // fits, may need to split
-                if (slot + needs < slot->next) {    // split, free at end
-                    slot[needs].vec = 0;
-                    slot[needs].next = slot->next;
-                }
+                splitFreeVec(slot[needs], slot);
                 break;                              // found existing space
             }
         if (slot == vecHigh) {
@@ -172,7 +178,8 @@ namespace Monty {
         slot->vec = this;
         return slot;
     }
-    
+
+    // many tricky cases, to try and merge/reuse free slots where possible
     auto Vec::resize (size_t sz) -> bool {
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (caps != needs) {
@@ -191,11 +198,14 @@ namespace Monty {
                 auto tail = slot + caps;
                 if (tail < vecHigh && tail->isFree())
                     mergeVecs(*tail);
-                if (slot + caps == vecHigh) {       // easy resize
+                if (tail == vecHigh) {              // easy resize
                     if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
                     vecHigh += needs - caps;
-                } else if (needs > caps) {          // realloc, i.e. del + new
+                } else if (needs < caps)            // split, free at end
+                    splitFreeVec(slot[needs], slot);
+                else if (!tail->isFree() || slot + needs > tail->next) {
+                    // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
                     if (nslot == 0)                 // no room
                         return false;
@@ -203,10 +213,8 @@ namespace Monty {
                     data = nslot->buf;
                     slot->vec = 0;
                     slot->next = slot + caps;
-                } else {                            // split, free at end
-                    slot[needs].vec = 0;
-                    slot[needs].next = slot->next;
-                }
+                } else                              // use (part of) next free
+                    splitFreeVec(slot[needs], tail);
             }
             // FIXME wrong, and besides, this is too messy!
             if (0 && needs > caps) {                     // clear added bytes
