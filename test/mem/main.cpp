@@ -1,6 +1,7 @@
-#include <stdint.h>
-#include <unistd.h>
+#include <cstdlib>
+
 #include "xmonty.h"
+
 #include <unity.h>
 
 using namespace Monty;
@@ -255,6 +256,11 @@ void reuseVecMem () {
     v5.resize(100);                 // [ v5 v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
+    v5.resize(10);                  // [ v5 gap v2 ]
+    v1.resize(1);                   // [ v5 v1 gap v2 ]
+    TEST_ASSERT_EQUAL(a, avail());
+
+    v1.resize(0);                   // [ v5 gap v2 ]
     v5.resize(0);                   // [ gap v2 ]
 
     v2.resize(0);                   // [ gap ]

@@ -32,6 +32,8 @@ namespace Monty {
     private:
         uint32_t caps :24;  // capacity, in slots, see cap()
         uint8_t* data;
+
+        auto findSpace (size_t needs) -> void*; // hide VecSlot* type
     };
 
     void init (uintptr_t* base, size_t size);

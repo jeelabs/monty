@@ -1,10 +1,8 @@
 // Objects and vectors with garbage collection, implementation.
 
 #include <cassert>
-#include <stdint.h>
-#include <stdlib.h>
+#include <cstdlib>
 #include <cstring>
-#include <unistd.h>
 
 #include "xmonty.h"
 
@@ -79,6 +77,20 @@ static void mergeFreeObjs (ObjSlot& slot) {
     }
 }
 
+// combine this free vec with all following free vecs
+// return true if vecHigh has been lowered, i.e. this free vec is now gone
+static auto mergeVecs (VecSlot& slot) -> bool {
+    assert(slot.isFree());
+    auto& tail = slot.next;
+    while (tail < vecHigh && tail->isFree())
+        tail = tail->next;
+    if (tail < vecHigh)
+        return false;
+    assert(tail == vecHigh);
+    vecHigh = &slot;
+    return true;
+}
+
 // don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
 //void (*panicOutOfMemory)() = []() { assert(false); };
 static void defaultOutOfMemoryHandler () { assert(false); }
@@ -129,17 +141,31 @@ namespace Monty {
             objLow = objLow->chain;
     }
 
-    // combine this free vec with all following free vecs
-    // return true if vecHigh has been lowered, i.e. this free vec is now gone
-    static auto mergeVecs (VecSlot& slot) -> bool {
-        assert(slot.isFree());
-        auto& tail = slot.next;
-        while (tail < vecHigh && tail->isFree())
-            tail = tail->next;
-        if (tail < vecHigh)
-            return false;
-        vecHigh = &slot;
-        return true;
+    auto Vec::findSpace (size_t needs) -> void* {
+        auto slot = (VecSlot*) start;               // scan all vectors
+        while (slot < vecHigh)
+            if (!slot->isFree())                    // skip used slots
+                slot += slot->vec->caps;
+            else if (mergeVecs(*slot))              // no more free slots
+                break;
+            else if (slot + needs > slot->next)     // won't fit
+                slot = slot->next;
+            else {                                  // fits, may need to split
+                if (slot + needs < slot->next) {    // split, free at end
+                    slot[needs].vec = 0;
+                    slot[needs].next = slot->next;
+                }
+                break;                              // found existing space
+            }
+        if (slot == vecHigh) {
+            if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow) {
+                panicOutOfMemory();
+                return 0; // no space found, and no room to expand
+            }
+            vecHigh += needs;
+        }
+        slot->vec = this;
+        return slot;
     }
     
     auto Vec::resize (size_t sz) -> bool {
@@ -147,56 +173,40 @@ namespace Monty {
         if (caps != needs) {
             auto slot = data != 0 ? (VecSlot*) (data - PTR_SZ) : 0;
             if (slot == 0) {                        // new alloc
-                slot = (VecSlot*) start;
-                while (slot < vecHigh)
-                    if (!slot->isFree())
-                        slot += slot->vec->caps;
-                    else if (mergeVecs(*slot))
-                        break;
-                    else if (slot + needs > slot->next)
-                        slot = slot->next;
-                    else {
-                        slot->vec = this;
-                        if (slot + needs < slot->next) { // split, free at end
-                            slot[needs].vec = 0;
-                            slot[needs].next = slot->next;
-                        }
-                        break;
-                    }
-                if (slot == vecHigh) {
-                    if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow)
-                        return panicOutOfMemory(), false;
-                    vecHigh += needs;
-                    slot->vec = this;
-                }
+                slot = (VecSlot*) findSpace(needs);
+                if (slot == 0)                      // no room
+                    return false;
                 data = slot->buf;
-            } else if (needs == 0) {             // delete
+            } else if (needs == 0) {                // delete
                 slot->vec = 0;
                 slot->next = slot + caps;
                 mergeVecs(*slot);
                 data = 0;
-            } else if (slot + caps == vecHigh) {    // easy resize
-                if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
-                    return panicOutOfMemory(), false;
-                vecHigh += needs - caps;
-            } else {
-                // TODO merge all free slots after this one
-                //  ... then a "grow" might become a "shrink"
-                if (needs > caps) {              // grow, i.e. del + new
-                    if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow)
+            } else {                                // resize
+                auto tail = slot + caps;
+                if (tail < vecHigh && tail->isFree())
+                    mergeVecs(*tail);
+                if (slot + caps == vecHigh) {       // easy resize
+                    if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
+                    vecHigh += needs - caps;
+                } else if (needs > caps) {          // realloc, i.e. del + new
+                    auto nslot = (VecSlot*) findSpace(needs);
+                    if (nslot == 0)                 // no room
+                        return false;
+                    // TODO copy data over!
+                    data = nslot->buf;
                     slot->vec = 0;
                     slot->next = slot + caps;
-                    vecHigh->vec = this;
-                    data = (uint8_t*) &vecHigh->next;
-                    vecHigh += needs;
-                } else {                            // shrink
-                    // TODO
+                } else {                            // split, free at end
+                    slot[needs].vec = 0;
+                    slot[needs].next = slot->next;
                 }
             }
-            if (needs > caps) {
+            // FIXME wrong, and besides, this is too messy!
+            if (0 && needs > caps) {                     // clear added bytes
                 auto bytes = (needs - caps) * VS_SZ;
-                if (caps == 0) // vector sizes are 4,12,20,28,... for 32b arch
+                if (caps == 0) // vector sizes are 0,4,12,20,... for 32b arch
                     bytes -= PTR_SZ;
                 memset(data - PTR_SZ + needs * VS_SZ - bytes, 0, bytes);
             }
