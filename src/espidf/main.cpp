@@ -79,7 +79,8 @@ extern "C" int app_main () {
     //showAllocInfo();      // show mem allocator behaviour for small allocs
     //showObjSizes();       // show sizeof information for the main classes
 
-    auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
+    //auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
+    auto bcData = loadBytecode("demo.mpy");
     if (bcData == 0) {
         printf("can't load bytecode\n");
         return 1;

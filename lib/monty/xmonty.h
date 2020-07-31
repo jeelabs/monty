@@ -4,38 +4,41 @@ namespace Monty {
     struct Obj {
         virtual ~Obj () {}
 
-        bool inObjPool () const;
+        auto inObjPool () const -> bool;
 
-        void* operator new (size_t sz);
-        void* operator new (size_t sz, size_t n) { return operator new (sz+n); }
+        auto operator new (size_t sz) -> void*;
+        auto operator new (size_t sz, size_t extra) -> void* {
+            return operator new (sz + extra);
+        }
         void operator delete (void* p);
-        protected:
+    protected:
         virtual void mark () const {}
-        friend void mark (const Obj&); // i.e. Monty::mark
+        friend void mark (Obj const&); // i.e. Monty::mark
     };
 
     struct Vec {
-        Vec (int i =0) : data (0), info (i), capa (0) {}
+        Vec () : info (0), caps (0), data (0) {}
         ~Vec () { resize(0); }
 
-        uint8_t* ptr () const { return data; }
-        size_t cap () const {
-            return capa > 0 ? (2 * capa - 1) * sizeof (void*) : 0;
+        auto ptr () const -> uint8_t* { return data; }
+        auto cap () const -> size_t {
+            return caps > 0 ? (2 * caps - 1) * sizeof (void*) : 0;
         }
 
-        bool resize (size_t sz);
+        auto resize (size_t sz) -> bool;
 
-        protected:
+    protected:
+        uint32_t info :8;   // for use in derived classes
+    private:
+        uint32_t caps :24;  // capacity, in slots, see cap()
         uint8_t* data;
-        uint32_t info :8;
-        uint32_t capa :24;
     };
 
     void init (uintptr_t* base, size_t size);
-    size_t avail ();
+    auto avail () -> size_t;
 
-    inline void mark (const Obj* p) { if (p != 0) mark(*p); }
-    void mark (const Obj& obj);
+    inline void mark (Obj const* p) { if (p != 0) mark(*p); }
+    void mark (Obj const& obj);
     void sweep();
     void compact();
 

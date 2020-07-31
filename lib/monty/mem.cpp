@@ -1,9 +1,9 @@
 // Objects and vectors with garbage collection, implementation.
 
-#include <assert.h>
+#include <cassert>
 #include <stdint.h>
 #include <stdlib.h>
-#include <string.h>
+#include <cstring>
 #include <unistd.h>
 
 #include "xmonty.h"
@@ -11,12 +11,12 @@
 using namespace Monty;
 
 struct ObjSlot {
-    ObjSlot* next () const { return (ObjSlot*) (flag & ~1); }
-    bool isFree () const { return vt == 0; }
-    bool isLast () const { return chain == 0; }
-    bool isMarked () const { return (flag & 1) != 0; }
-    void setMark () { flag |= 1; }
-    void clearMark () { flag &= ~1; }
+    auto next () const -> ObjSlot* { return (ObjSlot*) (flag & ~1); }
+    auto isFree () const -> bool   { return vt == 0; }
+    auto isLast () const -> bool   { return chain == 0; }
+    auto isMarked () const -> bool { return (flag & 1) != 0; }
+    void setMark ()                { flag |= 1; }
+    void clearMark ()              { flag &= ~1; }
 
     // field order is essential, obj must be last
     union {
@@ -48,17 +48,19 @@ static uintptr_t* limit;    // limit of memory pool, aligned to OS_SZ-PTR_SZ
 static ObjSlot* objLow;     // low water mark of object memory pool
 static VecSlot* vecHigh;    // high water mark of vector memory pool
 
-template< typename T > static size_t roundUp (size_t n) {
+template< typename T >
+static auto roundUp (size_t n) -> size_t {
     constexpr auto mask = sizeof (T) - 1;
     static_assert ((sizeof (T) & mask) == 0, "must be power of 2");
     return (n + mask) & ~mask;
 }
 
-template< typename T > static size_t multipleOf (size_t n) {
+template< typename T >
+static auto multipleOf (size_t n) -> size_t {
     return roundUp<T>(n) / sizeof (T);
 }
 
-static ObjSlot* obj2slot (const Obj& o) {
+static auto obj2slot (Obj const& o) -> ObjSlot* {
     return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - PTR_SZ) : 0;
 }
 
@@ -80,12 +82,12 @@ namespace Monty {
 
     void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
-    bool Obj::inObjPool () const {
-        auto p = (const void*) this;
+    auto Obj::inObjPool () const -> bool {
+        auto p = (void const*) this;
         return objLow <= p && p < limit;
     }
 
-    void* Obj::operator new (size_t sz) {
+    auto Obj::operator new (size_t sz) -> void* {
         auto need = roundUp<ObjSlot>(sz + PTR_SZ);
 
         // traverse object pool, merge free slots, loop until first fit
@@ -123,9 +125,9 @@ namespace Monty {
             objLow = objLow->chain;
     }
     
-    bool Vec::resize (size_t sz) {
+    auto Vec::resize (size_t sz) -> bool {
         auto numSlots = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
-        if (capa != numSlots) {
+        if (caps != numSlots) {
             auto slot = data != 0 ? (VecSlot*) (data - PTR_SZ) : 0;
             if (slot == 0) {                        // new alloc
                 if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
@@ -135,22 +137,22 @@ namespace Monty {
                 vecHigh += numSlots;
             } else if (numSlots == 0) {             // delete
                 slot->vec = 0;
-                slot->next = slot + capa;
+                slot->next = slot + caps;
                 if (vecHigh == slot->next)
                     vecHigh = slot;
                 data = 0;
-            } else if (slot + capa == vecHigh) {    // easy resize
+            } else if (slot + caps == vecHigh) {    // easy resize
                 if ((uintptr_t) (slot + numSlots) > (uintptr_t) objLow)
                     return panicOutOfMemory(), false;
-                vecHigh += numSlots - capa;
+                vecHigh += numSlots - caps;
             } else {
                 // TODO merge all free slots after this one
                 //  ... then a "grow" might become a "shrink"
-                if (numSlots > capa) {              // grow, i.e. del + new
+                if (numSlots > caps) {              // grow, i.e. del + new
                     if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
                     slot->vec = 0;
-                    slot->next = slot + capa;
+                    slot->next = slot + caps;
                     vecHigh->vec = this;
                     data = (uint8_t*) &vecHigh->next;
                     vecHigh += numSlots;
@@ -158,13 +160,13 @@ namespace Monty {
                     // TODO
                 }
             }
-            if (numSlots > capa) {
-                auto bytes = (numSlots - capa) * VS_SZ;
-                if (capa == 0) // vector sizes are 4,12,20,28,... for 32b arch
+            if (numSlots > caps) {
+                auto bytes = (numSlots - caps) * VS_SZ;
+                if (caps == 0) // vector sizes are 4,12,20,28,... for 32b arch
                     bytes -= PTR_SZ;
                 memset(data + numSlots * VS_SZ - bytes, 0, bytes);
             }
-            capa = numSlots;
+            caps = numSlots;
         }
         assert((uintptr_t) data % VS_SZ == 0);
         return true;
@@ -196,11 +198,11 @@ namespace Monty {
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
     }
 
-    size_t avail () {
+    auto avail () -> size_t {
         return (uintptr_t) objLow - (uintptr_t) vecHigh;
     }
 
-    void mark (const Obj& obj) {
+    void mark (Obj const& obj) {
         auto p = obj2slot(obj);
         if (p != 0) {
             if (p->isMarked())
