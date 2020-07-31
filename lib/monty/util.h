@@ -3,10 +3,10 @@
 void showAlignment () {
     static char a[1] = {'a'};
     static char b[1] = {'b'};
-    printf("a %p b %p b-a %d\n", a, b, (int) (b-a));
+    printf("a %p b %p b-a %d\n", a, b, (int) ((uintptr_t) b -(uintptr_t) a));
     static const char c[1] = {'c'};
     static const char d[1] = {'d'};
-    printf("c %p d %p c-d %d\n", c, d, (int) (d-c));
+    printf("c %p d %p c-d %d\n", c, d, (int) ((uintptr_t) d -(uintptr_t) c));
 }
 
 void showAllocInfo () {
