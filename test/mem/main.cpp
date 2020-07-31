@@ -1,3 +1,4 @@
+#include <cstdint>
 #include <cstdlib>
 
 #include "xmonty.h"
@@ -13,15 +14,15 @@ struct MarkObj : Obj {
     MarkObj (MarkObj* o =0) : other (o) { ++created; }
     ~MarkObj () override { ++destroyed; }
 
-    void mark () const override { ++marked; Monty::mark(other); }
+    void marker () const override { ++marked; mark(other); }
 
     MarkObj* other;
 };
 
 void setUp () {
-    init(memory, sizeof memory);
+    setup(memory, sizeof memory);
     created = destroyed = marked = failed = 0;
-    Monty::panicOutOfMemory = []() { ++failed; };
+    panicOutOfMemory = []() { ++failed; };
 }
 
 // void tearDown () {}
@@ -38,35 +39,35 @@ void initMem () {
 void newObj () {
     auto avail1 = avail();
 
-    Obj o1; // on the stack
-    TEST_ASSERT(!o1.inObjPool());
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof o1);
+    MarkObj o1; // on the stack
+    TEST_ASSERT(!o1.isCollectable());
+    TEST_ASSERT_EQUAL(sizeof (MarkObj), sizeof o1);
     TEST_ASSERT_EQUAL(avail1, avail());
 
-    auto p1 = new Obj; // allocated in pool
+    auto p1 = new MarkObj; // allocated in pool
     TEST_ASSERT_NOT_NULL(p1);
-    TEST_ASSERT(p1->inObjPool());
+    TEST_ASSERT(p1->isCollectable());
 
     auto avail2 = avail();
     TEST_ASSERT_LESS_THAN(avail1, avail2);
 
-    auto p2 = new Obj; // second object in pool
-    TEST_ASSERT(p2->inObjPool());
+    auto p2 = new MarkObj; // second object in pool
+    TEST_ASSERT(p2->isCollectable());
     TEST_ASSERT_NOT_EQUAL(p1, p2);
 
     auto avail3 = avail();
     TEST_ASSERT_LESS_THAN(avail2, avail3);
     TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
 
-    auto p3 = new (0) Obj; // same as without the extra size
-    TEST_ASSERT(p3->inObjPool());
+    auto p3 = new (0) MarkObj; // same as without the extra size
+    TEST_ASSERT(p3->isCollectable());
 
     auto avail4 = avail();
     TEST_ASSERT_LESS_THAN(avail3, avail4);
     TEST_ASSERT_EQUAL(avail2 - avail3, avail3 - avail4);
 
-    auto p4 = new (1) Obj; // extra space at end of object
-    TEST_ASSERT(p4->inObjPool());
+    auto p4 = new (10) MarkObj; // extra space at end of object
+    TEST_ASSERT(p4->isCollectable());
 
     auto avail5 = avail();
     TEST_ASSERT_LESS_THAN(avail4, avail5);

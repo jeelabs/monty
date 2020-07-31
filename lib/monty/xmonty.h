@@ -4,16 +4,18 @@ namespace Monty {
     struct Obj {
         virtual ~Obj () {}
 
-        auto inObjPool () const -> bool;
+        auto isCollectable () const -> bool;
 
-        auto operator new (size_t sz) -> void*;
-        auto operator new (size_t sz, size_t extra) -> void* {
-            return operator new (sz + extra);
+        auto operator new (size_t size) -> void*;
+        auto operator new (size_t size, size_t bytes) -> void* {
+            return operator new (size + bytes);
         }
-        void operator delete (void* p);
+        void operator delete (void*);
     protected:
-        virtual void mark () const {}
-        friend void mark (Obj const&); // i.e. Monty::mark
+        Obj () {} // only derived objects can be instantiated
+
+        virtual void marker () const {} // called to mark all ref'd objects
+        friend void mark (Obj const&);
     };
 
     struct Vec {
@@ -22,25 +24,25 @@ namespace Monty {
 
         auto ptr () const -> uint8_t* { return data; }
         auto cap () const -> size_t;
-        auto resize (size_t sz) -> bool;
+        auto resize (size_t bytes) -> bool;
 
     protected:
         uint32_t info :8;   // for use in derived classes
     private:
         uint32_t caps :24;  // capacity in slots, see cap()
-        uint8_t* data;
+        uint8_t* data;      // points into memory pool when cap() > 0
 
-        auto findSpace (size_t needs) -> void*; // hide private type
+        auto findSpace (size_t) -> void*; // hidden private type
     };
 
-    void init (uintptr_t* base, size_t size);
-    auto avail () -> size_t;
+    void setup (uintptr_t* base, size_t bytes); // configure the memory pool
+    auto avail () -> size_t; // free bytes between the object & vector areas
 
     inline void mark (Obj const* p) { if (p != 0) mark(*p); }
     void mark (Obj const& obj);
-    void sweep();
-    void compact();
+    void sweep();   // reclaim all unmarked objects
+    void compact(); // reclaim and compact unused vector space
 
-    extern void (*panicOutOfMemory)();
+    extern void (*panicOutOfMemory)(); // triggers an assertion by default
 
 } // namespace Monty

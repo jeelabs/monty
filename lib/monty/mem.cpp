@@ -1,6 +1,7 @@
 // Objects and vectors with garbage collection, implementation.
 
 #include <cassert>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -33,7 +34,7 @@ struct VecSlot {
     Vec* vec;
     union {
         VecSlot* next;
-        uint8_t buf [];
+        uint8_t buf [1];
     };
 };
 
@@ -64,7 +65,7 @@ static auto multipleOf (size_t n) -> size_t {
 }
 
 static auto obj2slot (Obj const& o) -> ObjSlot* {
-    return o.inObjPool() ? (ObjSlot*) ((uintptr_t) &o - PTR_SZ) : 0;
+    return o.isCollectable() ? (ObjSlot*) ((uintptr_t) &o - PTR_SZ) : 0;
 }
 
 static void mergeFreeObjs (ObjSlot& slot) {
@@ -99,7 +100,7 @@ namespace Monty {
 
     void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
-    auto Obj::inObjPool () const -> bool {
+    auto Obj::isCollectable () const -> bool {
         auto p = (void const*) this;
         return objLow <= p && p < limit;
     }
@@ -220,7 +221,7 @@ namespace Monty {
         return true;
     }
 
-    void init (uintptr_t* base, size_t size) {
+    void setup (uintptr_t* base, size_t size) {
         assert((uintptr_t) base % PTR_SZ == 0);
         assert(size % PTR_SZ == 0);
 
@@ -235,6 +236,7 @@ namespace Monty {
             ++start;
         if ((uintptr_t) limit % VS_SZ == 0)
             --limit;
+        assert(start < limit); // need room for at least the objLow setup
 
         vecHigh = (VecSlot*) start;
 
@@ -257,7 +259,7 @@ namespace Monty {
                 return;
             p->setMark();
         }
-        obj.mark();
+        obj.marker();
     }
 
     void sweep () {
