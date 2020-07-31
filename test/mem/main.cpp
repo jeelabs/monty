@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <unistd.h>
-#include "mem.h"
+#include "xmonty.h"
 #include <unity.h>
 
 using namespace Monty;
@@ -20,7 +20,7 @@ struct MarkObj : Obj {
 void setUp () {
     init(memory, sizeof memory);
     created = destroyed = marked = failed = 0;
-    Monty::outOfMemory = []() { ++failed; };
+    Monty::panicOutOfMemory = []() { ++failed; };
 }
 
 // void tearDown () {}

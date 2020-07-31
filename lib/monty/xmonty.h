@@ -1,4 +1,4 @@
-// Objects and vectors with garbage collection, public header.
+// Objects and vectors with garbage collection.
 namespace Monty {
 
     struct Obj {
@@ -39,6 +39,6 @@ namespace Monty {
     void sweep();
     void compact();
 
-    extern void (*outOfMemory)();
+    extern void (*panicOutOfMemory)();
 
 } // namespace Monty

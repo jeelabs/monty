@@ -6,7 +6,7 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "mem.h"
+#include "xmonty.h"
 
 using namespace Monty;
 
@@ -72,9 +72,13 @@ static void mergeFreeObjs (ObjSlot& slot) {
     }
 }
 
+// don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
+//void (*panicOutOfMemory)() = []() { assert(false); };
+static void defaultOutOfMemoryHandler () { assert(false); }
+
 namespace Monty {
 
-    void (*outOfMemory)() = []() { assert(false); };
+    void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
     bool Obj::inObjPool () const {
         auto p = (const void*) this;
@@ -94,7 +98,7 @@ namespace Monty {
             }
 
         if ((uintptr_t) objLow - need < (uintptr_t) vecHigh)
-            return outOfMemory(), malloc(sz); // give up, last resort
+            return panicOutOfMemory(), malloc(sz); // give up, last resort
 
         auto prev = objLow;
         objLow = (ObjSlot*) ((uintptr_t) prev - need);
@@ -125,7 +129,7 @@ namespace Monty {
             auto slot = data != 0 ? (VecSlot*) (data - PTR_SZ) : 0;
             if (slot == 0) {                        // new alloc
                 if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
-                    return outOfMemory(), false;
+                    return panicOutOfMemory(), false;
                 vecHigh->vec = this;
                 data = (uint8_t*) &vecHigh->next;
                 vecHigh += numSlots;
@@ -137,14 +141,14 @@ namespace Monty {
                 data = 0;
             } else if (slot + capa == vecHigh) {    // easy resize
                 if ((uintptr_t) (slot + numSlots) > (uintptr_t) objLow)
-                    return outOfMemory(), false;
+                    return panicOutOfMemory(), false;
                 vecHigh += numSlots - capa;
             } else {
                 // TODO merge all free slots after this one
                 //  ... then a "grow" might become a "shrink"
                 if (numSlots > capa) {              // grow, i.e. del + new
                     if ((uintptr_t) (vecHigh + numSlots) > (uintptr_t) objLow)
-                        return outOfMemory(), false;
+                        return panicOutOfMemory(), false;
                     slot->vec = 0;
                     slot->next = slot + capa;
                     vecHigh->vec = this;
