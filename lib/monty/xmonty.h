@@ -6,9 +6,9 @@ namespace Monty {
 
         auto isCollectable () const -> bool;
 
-        auto operator new (size_t size) -> void*;
-        auto operator new (size_t size, size_t bytes) -> void* {
-            return operator new (size + bytes);
+        auto operator new (size_t bytes) -> void*;
+        auto operator new (size_t bytes, size_t extra) -> void* {
+            return operator new (bytes + extra);
         }
         void operator delete (void*);
     protected:
