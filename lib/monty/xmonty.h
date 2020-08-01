@@ -198,6 +198,10 @@ namespace Monty {
         static auto noFactory (TypeObj const&, int, Value[]) -> Value;
     };
 
+} // namespace Monty
+
+// see array.cpp - vectors, arrays, and other derived types
+namespace Monty {
     struct Vector : private Vec {
         Vector (size_t bits);
         //~Vector () { alloc(0); }
