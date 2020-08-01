@@ -52,12 +52,11 @@ namespace Monty {
 namespace Monty {
 
     // forward decl's
+    enum class UnOp : uint8_t;
+    enum class BinOp : uint8_t;
     struct Object;
     struct TypeObj;
     struct LookupObj;
-    struct IntObj;
-    enum class UnOp : uint8_t;
-    enum class BinOp : uint8_t;
 
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
@@ -122,6 +121,7 @@ namespace Monty {
         static const TypeObj info;
         virtual auto type () const -> TypeObj const& =0;
 
+        // virtual auto repr (BufferObj&) const -> Value; // see builtin.h
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
 
@@ -136,7 +136,7 @@ namespace Monty {
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
-        static const NoneObj noneObj;
+        static NoneObj const noneObj;
     private:
         NoneObj () {} // can't construct more instances
     };
@@ -152,8 +152,8 @@ namespace Monty {
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
-        static const BoolObj trueObj;
-        static const BoolObj falseObj;
+        static BoolObj const trueObj;
+        static BoolObj const falseObj;
     private:
         BoolObj () {} // can't construct more instances
     };

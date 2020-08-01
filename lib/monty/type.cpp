@@ -33,49 +33,14 @@ void Value::verify (TypeObj const& t) const {
     assert(check(t));
 }
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// TODO added to satisfy linker
-
-struct Monty::LookupObj {
-    // TODO
-};
-
-LookupObj const BoolObj::attrs;
-LookupObj const IntObj::attrs;
-LookupObj const TypeObj::attrs;
-
 auto Object::unop (UnOp) const -> Value {
     assert(false);
     return Value ();
 }
 
-auto NoneObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
-}
-
-auto BoolObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
-}
-
-auto IntObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
-}
-
 auto Object::binop (BinOp, Value) const -> Value {
     assert(false);
     return Value ();
-}
-
-auto BoolObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
-}
-
-auto IntObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
-}
-
-auto TypeObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
 }
 
 auto TypeObj::noFactory (const TypeObj&, int, Value[]) -> Value {
@@ -98,3 +63,38 @@ const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj&       IntObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
 //CG>
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// TODO added to satisfy linker
+
+struct Monty::LookupObj {
+    // TODO
+};
+
+LookupObj const BoolObj::attrs;
+LookupObj const IntObj::attrs;
+LookupObj const TypeObj::attrs;
+
+auto NoneObj::unop (UnOp) const -> Value {
+    return Value (); // TODO
+}
+
+auto BoolObj::unop (UnOp) const -> Value {
+    return Value (); // TODO
+}
+
+auto IntObj::unop (UnOp) const -> Value {
+    return Value (); // TODO
+}
+
+auto BoolObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
+    return Value (); // TODO
+}
+
+auto IntObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
+    return Value (); // TODO
+}
+
+auto TypeObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
+    return Value (); // TODO
+}
