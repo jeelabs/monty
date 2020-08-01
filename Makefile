@@ -7,7 +7,7 @@ help:
 run: gen native verify/demo.mpy
 	.pio/build/native/program verify/demo.mpy
 
-test: platformio.ini
+test: gen platformio.ini
 	pio test -e native
 
 up: platformio.ini

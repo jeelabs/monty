@@ -51,25 +51,27 @@ namespace Monty {
 // see type.cpp - basic object types and type system
 namespace Monty {
 
-    struct Object; // forward decl
-    struct TypeObj; // forward decl
-    struct LookupObj; // forward decl
+    // forward decl's
+    struct Object;
+    struct TypeObj;
+    struct LookupObj;
+    struct IntObj;
     enum class UnOp : uint8_t;
     enum class BinOp : uint8_t;
 
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
 
-        Value ()                  : v (0) {}
-        Value (int arg)           : v ((arg << 1) | 1) {}
-        Value (char const* arg)   : v (((uintptr_t) arg << 2) | 2) {}
-        Value (Object const* arg) : v ((uintptr_t) arg) {}
+        Value () : v (0) {}
+        Value (int arg);
+        Value (char const* arg);
+        Value (Object const* arg) : v ((uintptr_t) arg) {} // TODO keep?
         Value (Object const& arg) : v ((uintptr_t) &arg) {}
 
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const { return (char const*) (v >> 2); }
         auto obj () const -> Object& { return *(Object*) v; }
-        //inline auto objPtr () const -> ForceObj;
+        // TODO inline auto objPtr () const -> ForceObj;
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
@@ -103,7 +105,7 @@ namespace Monty {
         auto binOp (BinOp op, Value rhs) const -> Value;
         void dump (char const* msg =0) const; // see builtin.h
 
-        static auto asBool (int f) -> Value { return f ? True : False; }
+        static auto asBool (bool f) -> Value { return f ? True : False; }
         auto invert () const -> Value { return asBool(!truthy()); }
 
         static const Value None;
@@ -120,7 +122,8 @@ namespace Monty {
         static const TypeObj info;
         virtual auto type () const -> TypeObj const& =0;
 
-        virtual auto unop  (UnOp) const -> Value =0;
+        virtual auto unop  (UnOp) const -> Value;
+        virtual auto binop (BinOp, Value) const -> Value;
 
         //void marker () const override {}
     };
@@ -154,6 +157,81 @@ namespace Monty {
     private:
         BoolObj () {} // can't construct more instances
     };
+
+    //CG< type int
+    struct IntObj : Object {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        IntObj (int64_t v) : i (v) {}
+
+        //auto repr (BufferObj&) const -> Value override; // see builtin.h
+        auto unop (UnOp) const -> Value override;
+
+    private:
+        int64_t i;
+    };
+
+    //CG< type type
+    struct TypeObj : Object {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        typedef auto (*Factory)(TypeObj const&,int,Value[]) -> Value;
+
+        char const* name;
+        Factory const factory;
+
+        TypeObj (char const* s, Factory f =noFactory, LookupObj const* a =0)
+            : name (s), factory (f) { /* TODO chain = a; */ }
+
+        //auto call (int argc, Value argv[]) const -> Value override;
+        //auto attr (char const*, Value&) const -> Value override;
+
+    private:
+        static auto noFactory (TypeObj const&, int, Value[]) -> Value;
+    };
+
+    struct Vector : private Vec {
+        Vector (size_t bits);
+        //~Vector () { alloc(0); }
+
+        auto length () const -> size_t { return fill; }
+        int width () const { auto b = 1<<info; return b < 8 ? -b : b/8; }
+        size_t widthOf (int num) const { return (num << info) >> 3; }
+
+        auto getInt (int idx) const -> int;
+        auto getIntU (int idx) const -> uint32_t;
+        auto getPtr (int idx) const -> void*;
+
+        void set (int idx, int val);
+        void set (int idx, void const* ptr);
+
+        void ins (int idx, int num =1);
+        void del (int idx, int num =1);
+
+    protected:
+        uint32_t fill = 0;          // in elements
+    };
+
+    template< typename T >
+    struct VecOf : Vector {
+        VecOf () : Vector (8 * sizeof (T)) {}
+
+        auto get (int idx) const -> T { return *(T*) getPtr(idx); }
+        void set (int idx, T val) { Vector::set(idx, &val); }
+    };
+
+    struct VecOfValue : VecOf<Value> {
+        void markVec () const;
+    };
+
 
     auto Value::isNone  () const -> bool { return &obj() == &NoneObj::noneObj; }
     auto Value::isFalse () const -> bool { return &obj() == &BoolObj::falseObj; }
