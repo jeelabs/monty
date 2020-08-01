@@ -5,8 +5,6 @@
 
 #include "monty.h"
 
-extern void initBoard ();
-
 Vector::Vector (size_t bits) : logBits (0), capacity (0) {
     while (bits > (1U << logBits))
         ++logBits;
