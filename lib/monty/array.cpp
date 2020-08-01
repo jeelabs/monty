@@ -15,6 +15,12 @@ Vector::Vector (size_t bits) {
         ++info;
 }
 
+auto Vector::getPtr (int idx) const -> void* {
+    if (idx < 0)
+        idx += fill;
+    return ptr() + widthOf(idx);
+}
+
 auto Vector::getInt (int idx) const -> int {
     auto p = getPtr(idx);
     switch (info) {
@@ -40,17 +46,6 @@ auto Vector::getIntU (int idx) const -> uint32_t {
     return 0;
 }
 
-auto Vector::getPtr (int idx) const -> void* {
-    if (idx < 0)
-        idx += fill;
-    return ptr() + widthOf(idx);
-}
-
-void Vector::set (int idx, int val) {
-    assert(1U << info <= 8 * sizeof val);
-    set(idx, &val); // TODO assumes little-endian byte order
-}
-
 void Vector::set (int idx, const void* ptr) {
     if (idx < 0)
         idx += fill;
@@ -71,6 +66,11 @@ void Vector::set (int idx, const void* ptr) {
         case 5: *(uint32_t*) p = *(const uint32_t*) ptr; return;
     }
     memcpy(getPtr(idx), ptr, widthOf(1));
+}
+
+void Vector::set (int idx, int val) {
+    assert(1U << info <= 8 * sizeof val);
+    set(idx, &val); // TODO assumes little-endian byte order
 }
 
 void Vector::ins (int idx, int num) {
@@ -96,10 +96,10 @@ void Vector::del (int idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
-void VecOfValue::markVec () const {
-    for (size_t i = 0; i < length(); ++i) {
-        auto v = get(i);
-        if (v.isObj())
-            mark(v.obj());
+void markVec (VecOf<Value> const& v) {
+    for (size_t i = 0; i < v.length(); ++i) {
+        auto o = v.get(i);
+        if (o.isObj())
+            mark(o.obj());
     }
 }

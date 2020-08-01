@@ -117,15 +117,14 @@ namespace Monty {
         uintptr_t v;
     };
 
+    // can't use "CG3 type <object>", as type() is virtual iso override
     struct Object : Obj {
         static const TypeObj info;
-        virtual auto type () const -> TypeObj const& =0;
+        virtual auto type () const -> TypeObj const&;
 
         // virtual auto repr (BufferObj&) const -> Value; // see builtin.h
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
-
-        //void marker () const override {}
     };
 
     //CG3 type <none>
@@ -195,7 +194,7 @@ namespace Monty {
         //auto attr (char const*, Value&) const -> Value override;
 
     private:
-        static auto noFactory (TypeObj const&, int, Value[]) -> Value;
+        static auto noFactory (TypeObj const&,int,Value[]) -> Value;
     };
 
 } // namespace Monty
@@ -210,12 +209,12 @@ namespace Monty {
         int width () const { auto b = 1<<info; return b < 8 ? -b : b/8; }
         size_t widthOf (int num) const { return (num << info) >> 3; }
 
+        auto getPtr (int idx) const -> void*;
         auto getInt (int idx) const -> int;
         auto getIntU (int idx) const -> uint32_t;
-        auto getPtr (int idx) const -> void*;
 
-        void set (int idx, int val);
         void set (int idx, void const* ptr);
+        void set (int idx, int val);
 
         void ins (int idx, int num =1);
         void del (int idx, int num =1);
@@ -232,10 +231,7 @@ namespace Monty {
         void set (int idx, T val) { Vector::set(idx, &val); }
     };
 
-    struct VecOfValue : VecOf<Value> {
-        void markVec () const;
-    };
-
+    void markVec (VecOf<Value> const& v);
 
     auto Value::isNone  () const -> bool { return &obj() == &NoneObj::noneObj; }
     auto Value::isFalse () const -> bool { return &obj() == &BoolObj::falseObj; }
