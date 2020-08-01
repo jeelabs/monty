@@ -109,9 +109,9 @@ namespace Monty {
         static auto asBool (bool f) -> Val { return f ? True : False; }
         auto invert () const -> Val { return asBool(!truthy()); }
 
-        static const Val None;
-        static const Val False;
-        static const Val True;
+        static Val const None;
+        static Val const False;
+        static Val const True;
     private:
         auto check (TypeObj const& t) const -> bool;
         void verify (TypeObj const& t) const;
@@ -227,7 +227,7 @@ namespace Monty {
         void del (size_t idx, int num =1);
 
     protected:
-        uint32_t fill = 0;          // in elements
+        uint32_t fill = 0; // in elements
     };
 
     template< typename T >

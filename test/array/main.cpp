@@ -31,7 +31,7 @@ static void vecInstance () {
     TEST_ASSERT_EQUAL(0, v.length());
 }
 
-static void vecSetAndGrow () {
+static void vecSetGrow () {
     Vector v (32);
     TEST_ASSERT_EQUAL(4, v.width());
 
@@ -59,7 +59,7 @@ static void vecSetAndGrow () {
     TEST_ASSERT_EQUAL(123, v.getInt(1));
 }
 
-static void vecOfValue () {
+static void vecOfVal () {
     VecOf<Val> v;
     TEST_ASSERT_EQUAL(sizeof (Val), v.width());
 
@@ -92,8 +92,8 @@ auto main () -> int {
 
     RUN_TEST(smokeTest);
     RUN_TEST(vecInstance);
-    RUN_TEST(vecSetAndGrow);
-    RUN_TEST(vecOfValue);
+    RUN_TEST(vecSetGrow);
+    RUN_TEST(vecOfVal);
 
     UNITY_END();
     return 0;
