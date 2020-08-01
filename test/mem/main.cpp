@@ -11,12 +11,13 @@ uintptr_t memory [1024];
 int created, destroyed, marked, failed;
 
 struct MarkObj : Obj {
-    MarkObj (MarkObj* o =0) : other (o) { ++created; }
-    ~MarkObj () override { ++destroyed; }
+    MarkObj (Obj* o =0) : other (o) { ++created; }
+    ~MarkObj () override            { ++destroyed; }
 
-    void marker () const override { ++marked; mark(other); }
+private:
+    void marker () const override   { ++marked; mark(other); }
 
-    MarkObj* other;
+    Obj* other;
 };
 
 void setUp () {
