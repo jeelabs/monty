@@ -167,6 +167,8 @@ namespace Monty {
 
         IntObj (int64_t v) : i (v) {}
 
+        operator int64_t () const { return i; }
+
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
@@ -203,7 +205,6 @@ namespace Monty {
 namespace Monty {
     struct Vector : private Vec {
         Vector (size_t bits);
-        //~Vector () { alloc(0); }
 
         auto length () const -> size_t { return fill; }
         int width () const { auto b = 1<<info; return b < 8 ? -b : b/8; }
