@@ -31,6 +31,7 @@ void setUp () {
 void tearDown () {
     sweep();
     TEST_ASSERT_EQUAL(created, destroyed);
+    compact();
     TEST_ASSERT_EQUAL(memAvail, avail());
 }
 

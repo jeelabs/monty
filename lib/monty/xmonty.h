@@ -39,9 +39,9 @@ namespace Monty {
     auto avail () -> size_t; // free bytes between the object & vector areas
 
     inline void mark (Obj const* p) { if (p != 0) mark(*p); }
-    void mark (Obj const& obj);
-    void sweep();   // reclaim all unmarked objects
-    void compact(); // reclaim and compact unused vector space
+    void mark (Obj const&);
+    void sweep ();   // reclaim all unmarked objects
+    void compact (); // reclaim and compact unused vector space
 
     extern void (*panicOutOfMemory)(); // triggers an assertion by default
 

@@ -87,17 +87,16 @@ static auto mergeVecs (VecSlot& slot) -> bool {
         tail = tail->next;
     if (tail < vecHigh)
         return false;
-    assert(tail == vecHigh);
     vecHigh = &slot;
     return true;
 }
 
-// turn a vec slot into a free slot, ending at tail->next
+// turn a vec slot into a free slot, ending at tail
 static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
-    if (tail->next <= &slot)
+    if (tail <= &slot)
         return; // no room for a free slot
     slot.vec = 0;
-    slot.next = tail->next;
+    slot.next = tail;
 }
 
 // don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
@@ -106,7 +105,6 @@ static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
 static void defaultOutOfMemoryHandler () { assert(false); }
 
 namespace Monty {
-
     void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
     auto Obj::isCollectable () const -> bool {
@@ -165,7 +163,7 @@ namespace Monty {
             else if (slot + needs > slot->next)     // won't fit
                 slot = slot->next;
             else {                                  // fits, may need to split
-                splitFreeVec(slot[needs], slot);
+                splitFreeVec(slot[needs], slot->next);
                 break;                              // found existing space
             }
         if (slot == vecHigh) {
@@ -203,27 +201,25 @@ namespace Monty {
                         return panicOutOfMemory(), false;
                     vecHigh += needs - caps;
                 } else if (needs < caps)            // split, free at end
-                    splitFreeVec(slot[needs], slot);
+                    splitFreeVec(slot[needs], slot + caps);
                 else if (!tail->isFree() || slot + needs > tail->next) {
                     // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
                     if (nslot == 0)                 // no room
                         return false;
-                    // TODO copy data over!
+                    memcpy(nslot->buf, data, cap()); // copy data over
                     data = nslot->buf;
                     slot->vec = 0;
                     slot->next = slot + caps;
                 } else                              // use (part of) next free
-                    splitFreeVec(slot[needs], tail);
+                    splitFreeVec(slot[needs], tail->next);
             }
-            // FIXME wrong, and besides, this is too messy!
-            if (0 && needs > caps) {                     // clear added bytes
-                auto bytes = (needs - caps) * VS_SZ;
-                if (caps == 0) // vector sizes are 0,4,12,20,... for 32b arch
-                    bytes -= PTR_SZ;
-                memset(data - PTR_SZ + needs * VS_SZ - bytes, 0, bytes);
-            }
+            // clear newly added bytes
+            auto obytes = cap();
             caps = needs;
+            auto nbytes = cap();
+            if (nbytes > obytes)                    // clear added bytes
+                memset(data + obytes, 0, nbytes - obytes);
         }
         assert((uintptr_t) data % VS_SZ == 0);
         return true;
@@ -283,6 +279,7 @@ namespace Monty {
 
     void compact () {
         auto slot = (VecSlot*) start;
+//if (slot < vecHigh && slot->isFree()) mergeVecs(*slot);
         while (slot < vecHigh) {
             // TODO
             ++slot; // wrong
