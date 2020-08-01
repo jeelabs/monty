@@ -150,7 +150,7 @@ namespace Monty {
     }
 
     auto Vec::cap () const -> size_t {
-        return caps > 0 ? (2 * caps - 1) * sizeof (void*) : 0;
+        return caps > 0 ? (2 * caps - 1) * PTR_SZ : 0;
     }
 
     auto Vec::findSpace (size_t needs) -> void* {
@@ -177,7 +177,7 @@ namespace Monty {
         return slot;
     }
 
-    // many tricky cases, to try and merge/reuse free slots where possible
+    // many tricky cases, to merge/reuse free slots as much as possible
     auto Vec::resize (size_t sz) -> bool {
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (caps != needs) {
@@ -278,12 +278,20 @@ namespace Monty {
     }
 
     void compact () {
-        auto slot = (VecSlot*) start;
-//if (slot < vecHigh && slot->isFree()) mergeVecs(*slot);
-        while (slot < vecHigh) {
-            // TODO
-            ++slot; // wrong
-        }
+        auto newHigh = (VecSlot*) start;
+        size_t n;
+        for (auto slot = newHigh; slot < vecHigh; slot += n)
+            if (slot->isFree())
+                n = slot->next - slot;
+            else {
+                n = slot->vec->caps;
+                if (newHigh < slot) {
+                    slot->vec->data = newHigh->buf;
+                    memmove(newHigh, slot, n * VS_SZ);
+                }
+                newHigh += n;
+            }
+        vecHigh = newHigh;
     }
 
 } // namespace Monty

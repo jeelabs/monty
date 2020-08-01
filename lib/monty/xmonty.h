@@ -33,6 +33,7 @@ namespace Monty {
         uint8_t* data;      // points into memory pool when cap() > 0
 
         auto findSpace (size_t) -> void*; // hidden private type
+        friend void compact ();
     };
 
     void setup (uintptr_t* base, size_t bytes); // configure the memory pool
