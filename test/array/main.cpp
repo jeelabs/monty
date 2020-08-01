@@ -60,8 +60,8 @@ static void vecSetAndGrow () {
 }
 
 static void vecOfValue () {
-    VecOf<Value> v;
-    TEST_ASSERT_EQUAL(sizeof (Value), v.width());
+    VecOf<Val> v;
+    TEST_ASSERT_EQUAL(sizeof (Val), v.width());
 
     v.set(0, 123);
     TEST_ASSERT_EQUAL(1, v.length());

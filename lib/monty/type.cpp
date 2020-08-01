@@ -12,40 +12,40 @@ const NoneObj NoneObj::noneObj;
 const BoolObj BoolObj::falseObj;
 const BoolObj BoolObj::trueObj;
 
-const Value Value::None =  NoneObj::noneObj;
-const Value Value::False = BoolObj::falseObj;
-const Value Value::True  = BoolObj::trueObj;
+const Val Val::None =  NoneObj::noneObj;
+const Val Val::False = BoolObj::falseObj;
+const Val Val::True  = BoolObj::trueObj;
 
-Value::Value (int arg) : v ((arg << 1) | 1) {
+Val::Val (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
         *this = new IntObj (arg);
 }
 
-Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
+Val::Val (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
-auto Value::check (TypeObj const& t) const -> bool {
+auto Val::check (TypeObj const& t) const -> bool {
     return isObj() && &obj().type() == &t;
 }
 
-void Value::verify (TypeObj const& t) const {
+void Val::verify (TypeObj const& t) const {
     assert(check(t));
 }
 
-auto Object::unop (UnOp) const -> Value {
+auto Object::unop (UnOp) const -> Val {
     assert(false);
-    return Value ();
+    return Val ();
 }
 
-auto Object::binop (BinOp, Value) const -> Value {
+auto Object::binop (BinOp, Val) const -> Val {
     assert(false);
-    return Value ();
+    return Val ();
 }
 
-auto TypeObj::noFactory (const TypeObj&, int, Value[]) -> Value {
+auto TypeObj::noFactory (const TypeObj&, int, Val[]) -> Val {
     assert(false);
-    return Value ();
+    return Val ();
 }
 
 TypeObj const Object::info ("<object>");
@@ -75,26 +75,26 @@ LookupObj const BoolObj::attrs;
 LookupObj const IntObj::attrs;
 LookupObj const TypeObj::attrs;
 
-auto NoneObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
+auto NoneObj::unop (UnOp) const -> Val {
+    return Val (); // TODO
 }
 
-auto BoolObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
+auto BoolObj::unop (UnOp) const -> Val {
+    return Val (); // TODO
 }
 
-auto IntObj::unop (UnOp) const -> Value {
-    return Value (); // TODO
+auto IntObj::unop (UnOp) const -> Val {
+    return Val (); // TODO
 }
 
-auto BoolObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
+auto BoolObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
+    return Val (); // TODO
 }
 
-auto IntObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
+auto IntObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
+    return Val (); // TODO
 }
 
-auto TypeObj::create (const TypeObj&, int argc, Value argv[]) -> Value {
-    return Value (); // TODO
+auto TypeObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
+    return Val (); // TODO
 }

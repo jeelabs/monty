@@ -101,7 +101,7 @@ void Vector::del (size_t idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
-void markVec (VecOf<Value> const& v) {
+void markVec (VecOf<Val> const& v) {
     for (size_t i = 0; i < v.length(); ++i) {
         auto o = v.get(i);
         if (o.isObj())
