@@ -9,6 +9,7 @@ using namespace Monty;
 
 uintptr_t memory [1024];
 int created, destroyed, marked, failed;
+size_t memAvail;
 
 struct MarkObj : Obj {
     MarkObj (Obj* o =0) : other (o) { ++created; }
@@ -22,11 +23,16 @@ private:
 
 void setUp () {
     setup(memory, sizeof memory);
+    memAvail = avail();
     created = destroyed = marked = failed = 0;
     panicOutOfMemory = []() { ++failed; };
 }
 
-// void tearDown () {}
+void tearDown () {
+    sweep();
+    TEST_ASSERT_EQUAL(created, destroyed);
+    TEST_ASSERT_EQUAL(memAvail, avail());
+}
 
 void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
@@ -38,41 +44,39 @@ void initMem () {
 }
 
 void newObj () {
-    auto avail1 = avail();
-
     MarkObj o1; // on the stack
     TEST_ASSERT(!o1.isCollectable());
     TEST_ASSERT_EQUAL(sizeof (MarkObj), sizeof o1);
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 
     auto p1 = new MarkObj; // allocated in pool
     TEST_ASSERT_NOT_NULL(p1);
     TEST_ASSERT(p1->isCollectable());
 
-    auto avail2 = avail();
-    TEST_ASSERT_LESS_THAN(avail1, avail2);
+    auto avail1 = avail();
+    TEST_ASSERT_LESS_THAN(memAvail, avail1);
 
     auto p2 = new MarkObj; // second object in pool
     TEST_ASSERT(p2->isCollectable());
     TEST_ASSERT_NOT_EQUAL(p1, p2);
 
-    auto avail3 = avail();
-    TEST_ASSERT_LESS_THAN(avail2, avail3);
-    TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
+    auto avail2 = avail();
+    TEST_ASSERT_LESS_THAN(avail1, avail2);
+    TEST_ASSERT_EQUAL(memAvail - avail1, avail1 - avail2);
 
     auto p3 = new (0) MarkObj; // same as without the extra size
     TEST_ASSERT(p3->isCollectable());
 
-    auto avail4 = avail();
-    TEST_ASSERT_LESS_THAN(avail3, avail4);
-    TEST_ASSERT_EQUAL(avail2 - avail3, avail3 - avail4);
+    auto avail3 = avail();
+    TEST_ASSERT_LESS_THAN(avail2, avail3);
+    TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
 
     auto p4 = new (20) MarkObj; // extra space at end of object
     TEST_ASSERT(p4->isCollectable());
 
-    auto avail5 = avail();
-    TEST_ASSERT_LESS_THAN(avail4, avail5);
-    TEST_ASSERT_GREATER_THAN(avail2 - avail3, avail4 - avail5);
+    auto avail4 = avail();
+    TEST_ASSERT_LESS_THAN(avail3, avail4);
+    TEST_ASSERT_GREATER_THAN(avail1 - avail2, avail3 - avail4);
 }
 
 void markObj () {
@@ -119,22 +123,21 @@ void markThrough () {
 }
 
 void reuseObjMem () {
-    auto avail1 = avail();
     auto p1 = new MarkObj;          // [ p1 ]
     delete p1;                      // [ ]
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 
     auto p2 = new MarkObj;          // [ p2 ]
     /* p3: */ new MarkObj;          // [ p3 p2 ]
     delete p2;                      // [ p3 gap ]
     TEST_ASSERT_EQUAL_PTR(p1, p2);
-    TEST_ASSERT_LESS_THAN(avail1, avail());
+    TEST_ASSERT_LESS_THAN(memAvail, avail());
 
     auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
     sweep();                   // [ ]
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void mergeNext () {
@@ -150,7 +153,6 @@ void mergeNext () {
 }
 
 void mergePrevious () {
-    auto avail1 = avail();
     auto p1 = new MarkObj;
     auto p2 = new MarkObj;
     auto p3 = new MarkObj;          // [ p3 p2 p1 ]
@@ -163,7 +165,7 @@ void mergePrevious () {
 
     delete p4;                      // [ p3 gap ]
     delete p3;                      // [ ]
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void mergeMulti () {
@@ -185,35 +187,35 @@ void outOfObjMem () {
     for (int i = 0; i < 12; ++i)
         new (N) MarkObj;
     TEST_ASSERT_LESS_THAN(N, avail());
-    TEST_ASSERT_EQUAL_PTR(12, created);
-    TEST_ASSERT_GREATER_THAN(0, failed);
+    TEST_ASSERT_EQUAL(12, created);
+    TEST_ASSERT_EQUAL(3, failed);
+
+    destroyed += failed; // avoid assertion in tearDown()
 }
 
 void newVec () {
-    auto avail1 = avail();
     {
         Vec v1;
         TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof v1);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
-        TEST_ASSERT_EQUAL(avail1, avail());
+        TEST_ASSERT_EQUAL(memAvail, avail());
     }
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void resizeVec () {
-    auto avail1 = avail();
     {
         Vec v1;
         v1.resize(0);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
-        TEST_ASSERT_EQUAL(avail1, avail());
+        TEST_ASSERT_EQUAL(memAvail, avail());
 
         v1.resize(1);
         TEST_ASSERT_NOT_EQUAL(0, v1.ptr());
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
-        TEST_ASSERT_LESS_THAN(avail1, avail());
+        TEST_ASSERT_LESS_THAN(memAvail, avail());
 
         v1.resize(sizeof (void*));
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
@@ -224,19 +226,17 @@ void resizeVec () {
         v1.resize(1);
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
     }
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void reuseVecMem () {
-    auto avail1 = avail();
-
     Vec v1;
     v1.resize(100);                 // [ v1 ]
     Vec v2;
     v2.resize(20);                  // [ v1 v2 ]
 
     auto a = avail();
-    TEST_ASSERT_LESS_THAN(avail1, a);
+    TEST_ASSERT_LESS_THAN(memAvail, a);
     TEST_ASSERT_GREATER_THAN(v1.ptr(), v2.ptr());
 
     v1.resize(0);                   // [ gap v2 ]
@@ -277,18 +277,16 @@ void reuseVecMem () {
     v2.resize(0);                   // [ gap ]
     auto b = avail();
     TEST_ASSERT_GREATER_THAN(a, b);
-    TEST_ASSERT_LESS_THAN(avail1, b);
+    TEST_ASSERT_LESS_THAN(memAvail, b);
 
     v1.resize(1);                   // [ v1 ]
     TEST_ASSERT_GREATER_THAN(b, avail());
 
     v1.resize(0);                   // [ ]
-    TEST_ASSERT_EQUAL(avail1, avail());
+    TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void outOfVecMem () {
-    auto avail1 = avail();
-
     Vec v1;
     v1.resize(999);
     TEST_ASSERT_EQUAL(0, failed);
@@ -298,7 +296,7 @@ void outOfVecMem () {
     auto a = avail();
     TEST_ASSERT_NOT_EQUAL(0, p);
     TEST_ASSERT_GREATER_THAN(999, n);
-    TEST_ASSERT_LESS_THAN(avail1, a);
+    TEST_ASSERT_LESS_THAN(memAvail, a);
 
     auto f = v1.resize(sizeof memory); // fail, vector should be the old one
 
