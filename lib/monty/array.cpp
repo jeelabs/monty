@@ -15,7 +15,7 @@ Vector::Vector (size_t bits) {
         ++info;
 }
 
-auto Vector::getPtr (int idx) const -> void* {
+auto Vector::getPtr (int idx) const -> uint8_t* {
     if (idx < 0)
         idx += fill;
     return ptr() + widthOf(idx);
@@ -34,7 +34,7 @@ auto Vector::getInt (int idx) const -> int {
 auto Vector::getIntU (int idx) const -> uint32_t {
     if (idx < 0)
         idx += fill;
-    auto p = (uint8_t*) getPtr(idx);
+    auto p = getPtr(idx);
     switch (info) {
         case 0: return (*p >> (idx&7)) & 0x1;
         case 1: return (*p >> 2*(idx&3)) & 0x3;
@@ -53,7 +53,7 @@ void Vector::set (int idx, const void* ptr) {
         auto n = (cap() << 3) >> info;
         ins(n, idx + 1 - n);
     }
-    auto p = (uint8_t*) getPtr(idx);
+    auto p = getPtr(idx);
     switch (info) {
         case 0: *p = (*p & ~(0x1 << (idx&7))) |
                         ((*(const uint8_t*) ptr & 0x1) << (idx&7)); return;
@@ -73,7 +73,11 @@ void Vector::set (int idx, int val) {
     set(idx, &val); // TODO assumes little-endian byte order
 }
 
-void Vector::ins (int idx, int num) {
+void Vector::ins (size_t idx, int num) {
+    if (fill < idx) {
+        num += idx - fill;
+        idx = fill;
+    }
     if (num <= 0)
         return;
     auto needed = widthOf(fill + num);
@@ -83,12 +87,13 @@ void Vector::ins (int idx, int num) {
     }
     auto p = getPtr(idx);
     assert(info >= 3); // TODO
+    assert (fill >= idx);
     memmove(getPtr(idx + num), p, widthOf(fill - idx));
     memset(p, 0, widthOf(num));
     fill += num;
 }
 
-void Vector::del (int idx, int num) {
+void Vector::del (size_t idx, int num) {
     if (num <= 0)
         return;
     fill -= num;

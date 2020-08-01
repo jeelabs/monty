@@ -207,17 +207,17 @@ namespace Monty {
 
         auto length () const -> size_t { return fill; }
         int width () const { auto b = 1<<info; return b < 8 ? -b : b/8; }
-        size_t widthOf (int num) const { return (num << info) >> 3; }
+        size_t widthOf (int num) const { return ((num << info) + 7) >> 3; }
 
-        auto getPtr (int idx) const -> void*;
+        auto getPtr (int idx) const -> uint8_t*;
         auto getInt (int idx) const -> int;
         auto getIntU (int idx) const -> uint32_t;
 
         void set (int idx, void const* ptr);
         void set (int idx, int val);
 
-        void ins (int idx, int num =1);
-        void del (int idx, int num =1);
+        void ins (size_t idx, int num =1);
+        void del (size_t idx, int num =1);
 
     protected:
         uint32_t fill = 0;          // in elements

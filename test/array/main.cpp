@@ -39,8 +39,6 @@ static void vecSetAndGrow () {
     TEST_ASSERT_EQUAL(1, v.length());
     TEST_ASSERT_EQUAL(123, v.getInt(0));
 
-v.ins(1, 2); // FIXME v.set doesn't resize properly with a gap (!?)
-
     v.set(2, 456);
     TEST_ASSERT_EQUAL(3, v.length());
     TEST_ASSERT_EQUAL(123, v.getInt(0));
