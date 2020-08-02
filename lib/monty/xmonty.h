@@ -63,7 +63,7 @@ namespace Monty {
     struct Val {
         enum Tag { Nil, Int, Str, Obj };
 
-        Val () : v (0) {}
+        Val () {}
         Val (int arg);
         Val (char const* arg);
         Val (Object const* arg) : v ((uintptr_t) arg) {} // TODO keep?
@@ -116,7 +116,7 @@ namespace Monty {
         auto check (TypeObj const& t) const -> bool;
         void verify (TypeObj const& t) const;
 
-        uintptr_t v;
+        uintptr_t v{0};
     };
 
     // can't use "CG3 type <object>", as type() is virtual iso override
@@ -227,7 +227,7 @@ namespace Monty {
         void del (size_t idx, int num =1);
 
     protected:
-        uint32_t fill = 0; // in elements
+        uint32_t fill{0}; // in elements
     };
 
     template< typename T >
