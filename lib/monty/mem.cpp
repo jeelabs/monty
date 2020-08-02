@@ -11,8 +11,8 @@ using namespace Monty;
 
 struct ObjSlot {
     auto next () const -> ObjSlot* { return (ObjSlot*) (flag & ~1); }
-    auto isFree () const -> bool   { return vt == 0; }
-    auto isLast () const -> bool   { return chain == 0; }
+    auto isFree () const -> bool   { return vt == nullptr; }
+    auto isLast () const -> bool   { return chain == nullptr; }
     auto isMarked () const -> bool { return (flag & 1) != 0; }
     void setMark ()                { flag |= 1; }
     void clearMark ()              { flag &= ~1; }
@@ -29,7 +29,7 @@ struct ObjSlot {
 };
 
 struct VecSlot {
-    auto isFree () const -> bool { return vec == 0; }
+    auto isFree () const -> bool { return vec == nullptr; }
 
     Vec* vec;
     union {
@@ -44,9 +44,9 @@ constexpr auto OS_SZ  = sizeof (ObjSlot);
 
 static_assert (OS_SZ == 2 * PTR_SZ, "wrong ObjSlot size");
 static_assert (VS_SZ == 2 * PTR_SZ, "wrong VecSlot size");
-static_assert (VS_SZ == OS_SZ, "mismatched slot sizes");
+static_assert (OS_SZ == VS_SZ, "mismatched slot sizes");
 
-static uintptr_t* start;    // start of memory pool, aligned to OS_SZ-PTR_SZ
+static uintptr_t* start;    // start of memory pool, aligned to VS_SZ-PTR_SZ
 static uintptr_t* limit;    // limit of memory pool, aligned to OS_SZ-PTR_SZ
 
 static ObjSlot* objLow;     // low water mark of object memory pool
@@ -71,7 +71,7 @@ static auto obj2slot (Obj const& o) -> ObjSlot* {
 static void mergeFreeObjs (ObjSlot& slot) {
     while (true) {
         auto nextSlot = slot.chain;
-        assert(nextSlot != 0);
+        assert(nextSlot != nullptr);
         if (!nextSlot->isFree() || nextSlot->isLast())
             break;
         slot.chain = nextSlot->chain;
@@ -95,7 +95,7 @@ static auto mergeVecs (VecSlot& slot) -> bool {
 static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
     if (tail <= &slot)
         return; // no room for a free slot
-    slot.vec = 0;
+    slot.vec = nullptr;
     slot.next = tail;
 }
 
@@ -136,11 +136,11 @@ namespace Monty {
     }
 
     void Obj::operator delete (void* p) {
-        assert(p != 0);
+        assert(p != nullptr);
         auto slot = obj2slot(*(Obj*) p);
-        assert(slot != 0);
+        assert(slot != nullptr);
 
-        slot->vt = 0; // mark this object as free and make it unusable
+        slot->vt = nullptr; // mark this object as free and make it unusable
 
         mergeFreeObjs(*slot);
 
@@ -181,17 +181,17 @@ namespace Monty {
     auto Vec::resize (size_t sz) -> bool {
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (caps != needs) {
-            auto slot = data != 0 ? (VecSlot*) (data - PTR_SZ) : 0;
-            if (slot == 0) {                        // new alloc
+            auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
+            if (slot == nullptr) {                        // new alloc
                 slot = (VecSlot*) findSpace(needs);
-                if (slot == 0)                      // no room
+                if (slot == nullptr)                      // no room
                     return false;
                 data = slot->buf;
             } else if (needs == 0) {                // delete
-                slot->vec = 0;
+                slot->vec = nullptr;
                 slot->next = slot + caps;
                 mergeVecs(*slot);
-                data = 0;
+                data = nullptr;
             } else {                                // resize
                 auto tail = slot + caps;
                 if (tail < vecHigh && tail->isFree())
@@ -205,11 +205,11 @@ namespace Monty {
                 else if (!tail->isFree() || slot + needs > tail->next) {
                     // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
-                    if (nslot == 0)                 // no room
+                    if (nslot == nullptr)                 // no room
                         return false;
                     memcpy(nslot->buf, data, cap()); // copy data over
                     data = nslot->buf;
-                    slot->vec = 0;
+                    slot->vec = nullptr;
                     slot->next = slot + caps;
                 } else                              // use (part of) next free
                     splitFreeVec(slot[needs], tail->next);
@@ -245,8 +245,8 @@ namespace Monty {
         vecHigh = (VecSlot*) start;
 
         objLow = (ObjSlot*) limit - 1;
-        objLow->chain = 0;
-        objLow->vt = 0;
+        objLow->chain = nullptr;
+        objLow->vt = nullptr;
 
         assert((uintptr_t) &vecHigh->next % VS_SZ == 0);
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
@@ -258,7 +258,7 @@ namespace Monty {
 
     void mark (Obj const& obj) {
         auto p = obj2slot(obj);
-        if (p != 0) {
+        if (p != nullptr) {
             if (p->isMarked())
                 return;
             p->setMark();
@@ -267,7 +267,7 @@ namespace Monty {
     }
 
     void sweep () {
-        for (auto slot = objLow; slot != 0; slot = slot->chain)
+        for (auto slot = objLow; slot != nullptr; slot = slot->chain)
             if (slot->isMarked())
                 slot->clearMark();
             else if (!slot->isFree()) {

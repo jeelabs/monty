@@ -10,7 +10,6 @@
 using namespace Monty;
 
 Vector::Vector (size_t bits) {
-    extra = 0;
     while (bits > (1U << extra))
         ++extra;
 }
@@ -83,7 +82,7 @@ void Vector::ins (size_t idx, int num) {
     auto needed = widthOf(fill + num);
     if (needed > cap()) {
         resize(needed);
-        assert(ptr() != 0 && cap() >= needed);
+        assert(ptr() != nullptr && cap() >= needed);
     }
     auto p = getPtr(idx);
     assert(extra >= 3); // TODO

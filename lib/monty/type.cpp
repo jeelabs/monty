@@ -8,104 +8,104 @@
 
 using namespace Monty;
 
-const NoneObj NoneObj::noneObj;
-const BoolObj BoolObj::falseObj;
-const BoolObj BoolObj::trueObj;
+const None None::noneObj;
+const Bool Bool::falseObj;
+const Bool Bool::trueObj;
 
-const Val Val::None =  NoneObj::noneObj;
-const Val Val::False = BoolObj::falseObj;
-const Val Val::True  = BoolObj::trueObj;
+const Val Val::None {None::noneObj};
+const Val Val::False{Bool::falseObj};
+const Val Val::True {Bool::trueObj};
 
 Val::Val (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
-        *this = new IntObj (arg);
+        *this = new Long (arg);
 }
 
 Val::Val (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
-auto Val::check (TypeObj const& t) const -> bool {
+auto Val::check (Type const& t) const -> bool {
     return isObj() && &obj().type() == &t;
 }
 
-void Val::verify (TypeObj const& t) const {
+void Val::verify (Type const& t) const {
     assert(check(t));
 }
 
 auto Object::unop (UnOp) const -> Val {
     assert(false);
-    return Val ();
+    return Val{};
 }
 
 auto Object::binop (BinOp, Val) const -> Val {
     assert(false);
-    return Val ();
+    return Val{};
 }
 
-auto TypeObj::noFactory (const TypeObj&, int, Val[]) -> Val {
+auto Type::noFactory (const Type&, int, Val[]) -> Val {
     assert(false);
-    return Val ();
+    return Val{};
 }
 
-TypeObj const Object::info ("<object>");
-auto Object::type () const -> TypeObj const& { return info; }
+Type const Object::info ("<object>");
+auto Object::type () const -> Type const& { return info; }
 
-ArrayObj::ArrayObj (char atype) {
+Array::Array (char atype) {
     // TODO
 }
 
 //CG< builtin-types lib/monty/xmonty.h
-const TypeObj      NoneObj::info ("<none>");
+const TypeObj         None::info ("<none>");
 
-const TypeObj ArrayObj::info ("array", ArrayObj::create, &ArrayObj::attrs);
-const TypeObj  BoolObj::info ("bool", BoolObj::create, &BoolObj::attrs);
-const TypeObj   IntObj::info ("int", IntObj::create, &IntObj::attrs);
-const TypeObj  TypeObj::info ("type", TypeObj::create, &TypeObj::attrs);
+const TypeObj    Array::info ("array", Array::create, &Array::attrs);
+const TypeObj     Bool::info ("bool", Bool::create, &Bool::attrs);
+const TypeObj     Long::info ("int", Long::create, &Long::attrs);
+const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
-const TypeObj&      NoneObj::type () const { return info; }
-const TypeObj&     ArrayObj::type () const { return info; }
-const TypeObj&      BoolObj::type () const { return info; }
-const TypeObj&       IntObj::type () const { return info; }
-const TypeObj&      TypeObj::type () const { return info; }
+const TypeObj&         None::type () const { return info; }
+const TypeObj&        Array::type () const { return info; }
+const TypeObj&         Bool::type () const { return info; }
+const TypeObj&         Long::type () const { return info; }
+const TypeObj&         Type::type () const { return info; }
 //CG>
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
 
-struct Monty::LookupObj {
+struct Monty::Lookup {
     // TODO
 };
 
-LookupObj const BoolObj::attrs;
-LookupObj const IntObj::attrs;
-LookupObj const TypeObj::attrs;
-LookupObj const ArrayObj::attrs;
+Lookup const Bool::attrs;
+Lookup const Long::attrs;
+Lookup const Type::attrs;
+Lookup const Array::attrs;
 
-auto NoneObj::unop (UnOp) const -> Val {
-    return Val (); // TODO
+auto None::unop (UnOp) const -> Val {
+    return Val{}; // TODO
 }
 
-auto BoolObj::unop (UnOp) const -> Val {
-    return Val (); // TODO
+auto Bool::unop (UnOp) const -> Val {
+    return Val{}; // TODO
 }
 
-auto IntObj::unop (UnOp) const -> Val {
-    return Val (); // TODO
+auto Long::unop (UnOp) const -> Val {
+    return Val{}; // TODO
 }
 
-auto BoolObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
-    return Val (); // TODO
+auto Bool::create (const Type&, int argc, Val argv[]) -> Val {
+    return Val{}; // TODO
 }
 
-auto IntObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
-    return Val (); // TODO
+auto Long::create (const Type&, int argc, Val argv[]) -> Val {
+    return Val{}; // TODO
 }
 
-auto TypeObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
-    return Val (); // TODO
+auto Type::create (const Type&, int argc, Val argv[]) -> Val {
+    return Val{}; // TODO
 }
 
-auto ArrayObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
-    return Val (); // TODO
+auto Array::create (const Type&, int argc, Val argv[]) -> Val {
+    return Val{}; // TODO
 }

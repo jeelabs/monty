@@ -19,7 +19,7 @@ namespace Monty {
     };
 
     struct Vec {
-        Vec () : extra (0), caps (0), data (0) {}
+        Vec () : extra (0), caps (0), data (nullptr) {}
         ~Vec () { resize(0); }
 
         auto ptr () const -> uint8_t* { return data; }
@@ -39,7 +39,7 @@ namespace Monty {
     void setup (uintptr_t* base, size_t bytes); // configure the memory pool
     auto avail () -> size_t; // free bytes between the object & vector areas
 
-    inline void mark (Obj const* p) { if (p != 0) mark(*p); }
+    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);
     void sweep ();   // reclaim all unmarked objects
     void compact (); // reclaim and compact unused vector space
@@ -55,10 +55,13 @@ namespace Monty {
     enum class UnOp : uint8_t;
     enum class BinOp : uint8_t;
     struct Object;
-    struct TypeObj;
-    struct LookupObj;
+    struct Type;
+    struct Lookup;
 
-    using Value = struct Val; // TODO keep until codegen.py has been updated
+    // TODO keep these aliases until codegen.py has been updated
+    using Value = struct Val;
+    using LookupObj = Lookup;
+    using TypeObj = Type;
 
     struct Val {
         enum Tag { Nil, Int, Str, Obj };
@@ -81,30 +84,30 @@ namespace Monty {
         auto asType () const -> T& { verify(T::info); return *(T*) &obj(); }
 
         auto tag () const -> enum Tag {
-            return (v & 1) ? Int : // bit 0 set
-                    v == 0 ? Nil : // all bits 0
-                (v & 2) ? Str : // bit 1 set, ptr shifted 2 up
-                            Obj;  // bits 0 and 1 clear, ptr stored as is
+            return (v&1) != 0 ? Int : // bit 0 set
+                       v == 0 ? Nil : // all bits 0
+                   (v&2) != 0 ? Str : // bit 1 set, ptr shifted 2 up
+                                Obj;  // bits 0 and 1 clear, ptr stored as is
         }
 
         auto id () const -> uintptr_t { return v; }
 
         auto isNil () const -> bool { return v == 0; }
-        auto isInt () const -> bool { return v & 1; }
-        auto isStr () const -> bool { return (v & 3) == 2; }
-        auto isObj () const -> bool { return (v & 3) == 0 && v != 0; }
+        auto isInt () const -> bool { return (v&1) != 0; }
+        auto isStr () const -> bool { return (v&3) == 2; }
+        auto isObj () const -> bool { return (v&3) == 0 && v != 0; }
 
         inline auto isNone  () const -> bool;
         inline auto isFalse () const -> bool;
         inline auto isTrue  () const -> bool;
-        auto isBool  () const -> bool { return isFalse() || isTrue(); }
+               auto isBool  () const -> bool { return isFalse() || isTrue(); }
 
         auto truthy () const -> bool;
 
         auto isEq (Val) const -> bool;
         auto unOp (UnOp op) const -> Val;
         auto binOp (BinOp op, Val rhs) const -> Val;
-        void dump (char const* msg =0) const; // see builtin.h
+        void dump (char const* msg =nullptr) const; // see builtin.h
 
         static auto asBool (bool f) -> Val { return f ? True : False; }
         auto invert () const -> Val { return asBool(!truthy()); }
@@ -113,16 +116,16 @@ namespace Monty {
         static Val const False;
         static Val const True;
     private:
-        auto check (TypeObj const& t) const -> bool;
-        void verify (TypeObj const& t) const;
+        auto check (Type const& t) const -> bool;
+        void verify (Type const& t) const;
 
         uintptr_t v{0};
     };
 
     // can't use "CG3 type <object>", as type() is virtual iso override
     struct Object : Obj {
-        static const TypeObj info;
-        virtual auto type () const -> TypeObj const&;
+        static const Type info;
+        virtual auto type () const -> Type const&;
 
         // virtual auto repr (BufferObj&) const -> Val; // see builtin.h
         virtual auto unop  (UnOp) const -> Val;
@@ -130,20 +133,20 @@ namespace Monty {
     };
 
     //CG3 type <none>
-    struct NoneObj : Object {
+    struct None : Object {
         static const TypeObj info;
         const TypeObj& type () const override;
 
         //auto repr (BufferObj&) const -> Val override; // see builtin.h
         auto unop (UnOp) const -> Val override;
 
-        static NoneObj const noneObj;
+        static None const noneObj;
     private:
-        NoneObj () {} // can't construct more instances
+        None () {} // can't construct more instances
     };
 
     //CG< type bool
-    struct BoolObj : Object {
+    struct Bool : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
@@ -153,21 +156,21 @@ namespace Monty {
         //auto repr (BufferObj&) const -> Val override; // see builtin.h
         auto unop (UnOp) const -> Val override;
 
-        static BoolObj const trueObj;
-        static BoolObj const falseObj;
+        static Bool const trueObj;
+        static Bool const falseObj;
     private:
-        BoolObj () {} // can't construct more instances
+        Bool () {} // can't construct more instances
     };
 
     //CG< type int
-    struct IntObj : Object {
+    struct Long : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
 
-        IntObj (int64_t v) : i (v) {}
+        Long (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
 
@@ -179,31 +182,31 @@ namespace Monty {
     };
 
     //CG< type type
-    struct TypeObj : Object {
+    struct Type : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
 
-        typedef auto (*Factory)(TypeObj const&,int,Val[]) -> Val;
+        typedef auto (*Factory)(Type const&,int,Val[]) -> Val;
 
         char const* name;
         Factory const factory;
 
-        TypeObj (char const* s, Factory f =noFactory, LookupObj const* a =0)
+        Type (char const* s, Factory f =noFactory, Lookup const* a =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
         //auto call (int argc, Val argv[]) const -> Val override;
         //auto attr (char const*, Val&) const -> Val override;
 
     private:
-        static auto noFactory (TypeObj const&,int,Val[]) -> Val;
+        static auto noFactory (Type const&,int,Val[]) -> Val;
     };
 
-    auto Val::isNone  () const -> bool { return &obj() == &NoneObj::noneObj; }
-    auto Val::isFalse () const -> bool { return &obj() == &BoolObj::falseObj; }
-    auto Val::isTrue  () const -> bool { return &obj() == &BoolObj::trueObj; }
+    auto Val::isNone  () const -> bool { return &obj() == &None::noneObj; }
+    auto Val::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
+    auto Val::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
 } // namespace Monty
 
@@ -239,16 +242,16 @@ namespace Monty {
     };
 
     //CG< type array
-    struct ArrayObj : Object, private Vec {
+    struct Array : Object, private Vec {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
 
-        ArrayObj (char atype);
+        Array (char atype);
     };
 
-    void markVec (VecOf<Val> const& v); // TODO move into ArrayObj
+    void markVec (VecOf<Val> const& v); // TODO move into Array
 
 } // namespace Monty
