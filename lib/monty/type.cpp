@@ -51,14 +51,20 @@ auto TypeObj::noFactory (const TypeObj&, int, Val[]) -> Val {
 TypeObj const Object::info ("<object>");
 auto Object::type () const -> TypeObj const& { return info; }
 
+ArrayObj::ArrayObj (char atype) {
+    // TODO
+}
+
 //CG< builtin-types lib/monty/xmonty.h
 const TypeObj      NoneObj::info ("<none>");
 
+const TypeObj ArrayObj::info ("array", ArrayObj::create, &ArrayObj::attrs);
 const TypeObj  BoolObj::info ("bool", BoolObj::create, &BoolObj::attrs);
 const TypeObj   IntObj::info ("int", IntObj::create, &IntObj::attrs);
 const TypeObj  TypeObj::info ("type", TypeObj::create, &TypeObj::attrs);
 
 const TypeObj&      NoneObj::type () const { return info; }
+const TypeObj&     ArrayObj::type () const { return info; }
 const TypeObj&      BoolObj::type () const { return info; }
 const TypeObj&       IntObj::type () const { return info; }
 const TypeObj&      TypeObj::type () const { return info; }
@@ -74,6 +80,7 @@ struct Monty::LookupObj {
 LookupObj const BoolObj::attrs;
 LookupObj const IntObj::attrs;
 LookupObj const TypeObj::attrs;
+LookupObj const ArrayObj::attrs;
 
 auto NoneObj::unop (UnOp) const -> Val {
     return Val (); // TODO
@@ -96,5 +103,9 @@ auto IntObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
 }
 
 auto TypeObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
+    return Val (); // TODO
+}
+
+auto ArrayObj::create (const TypeObj&, int argc, Val argv[]) -> Val {
     return Val (); // TODO
 }

@@ -19,7 +19,7 @@ namespace Monty {
     };
 
     struct Vec {
-        Vec () : info (0), caps (0), data (0) {}
+        Vec () : extra (0), caps (0), data (0) {}
         ~Vec () { resize(0); }
 
         auto ptr () const -> uint8_t* { return data; }
@@ -27,7 +27,7 @@ namespace Monty {
         auto resize (size_t bytes) -> bool;
 
     protected:
-        uint32_t info :8;   // for use in derived classes
+        uint32_t extra :8;  // for use in derived classes
     private:
         uint32_t caps :24;  // capacity in slots, see cap()
         uint8_t* data;      // points into memory pool when cap() > 0
@@ -213,8 +213,8 @@ namespace Monty {
         Vector (size_t bits);
 
         auto length () const -> size_t { return fill; }
-        int width () const { auto b = 1<<info; return b < 8 ? -b : b/8; }
-        size_t widthOf (int num) const { return ((num << info) + 7) >> 3; }
+        int width () const { auto b = 1<<extra; return b < 8 ? -b : b/8; }
+        size_t widthOf (int num) const { return ((num << extra) + 7) >> 3; }
 
         auto getPtr (int idx) const -> uint8_t*;
         auto getInt (int idx) const -> int;
@@ -238,6 +238,17 @@ namespace Monty {
         void set (int idx, T val) { Vector::set(idx, &val); }
     };
 
-    void markVec (VecOf<Val> const& v);
+    //CG< type array
+    struct ArrayObj : Object, private Vec {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        ArrayObj (char atype);
+    };
+
+    void markVec (VecOf<Val> const& v); // TODO move into ArrayObj
 
 } // namespace Monty
