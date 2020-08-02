@@ -27,9 +27,9 @@ namespace Monty {
         auto resize (size_t bytes) -> bool;
 
     protected:
-        uint32_t extra :8;  // for use in derived classes
+        uint32_t extra :8;  // for use in derived classes TODO remove
     private:
-        uint32_t caps :24;  // capacity in slots, see cap()
+        uint32_t caps :24;  // capacity in slots, see cap() TODO in bytes
         uint8_t* data;      // points into memory pool when cap() > 0
 
         auto findSpace (size_t) -> void*; // hidden private type
@@ -122,6 +122,21 @@ namespace Monty {
         uintptr_t v{0};
     };
 
+    template< typename T >
+    struct Chunk {
+        Chunk (Vec const& v, size_t o =0, size_t n =0)
+            : vec (v), off (o), len (n) {}
+
+        auto operator[] (size_t idx) const -> T& {
+            //assert(idx < len);
+            return ((T*) vec.ptr())[off+idx];
+        }
+
+        Vec const& vec;
+        size_t off;
+        size_t len;
+    };
+
     // can't use "CG3 type <object>", as type() is virtual iso override
     struct Object : Obj {
         static const Type info;
@@ -197,7 +212,7 @@ namespace Monty {
         Type (char const* s, Factory f =noFactory, Lookup const* a =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
-        //auto call (int argc, Val argv[]) const -> Val override;
+        //auto call (Chunk<Val>& args) const -> Val override;
         //auto attr (char const*, Val&) const -> Val override;
 
     private:
@@ -233,16 +248,8 @@ namespace Monty {
         uint32_t fill{0}; // in elements
     };
 
-    template< typename T >
-    struct VecOf : Vector {
-        VecOf () : Vector (8 * sizeof (T)) {}
-
-        auto get (int idx) const -> T { return *(T*) getPtr(idx); }
-        void set (int idx, T val) { Vector::set(idx, &val); }
-    };
-
     //CG< type array
-    struct Array : Object, private Vec {
+    struct Array : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
@@ -250,8 +257,21 @@ namespace Monty {
     //CG>
 
         Array (char atype);
+
+        auto get (int idx) const -> Val;
+        void set (int idx, Val val);
+
+        union {
+            Chunk<Val>      v;
+            Chunk<int8_t>   i8;
+            Chunk<int16_t>  i16;
+            Chunk<int32_t>  i32;
+            Chunk<uint8_t>  u8;
+            Chunk<uint16_t> u16;
+            Chunk<uint32_t> u32;
+        };
     };
 
-    void markVec (VecOf<Val> const& v); // TODO move into Array
+    void mark (Chunk<Val> const& v);
 
 } // namespace Monty

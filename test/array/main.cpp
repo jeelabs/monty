@@ -59,6 +59,15 @@ static void vecSetGrow () {
     TEST_ASSERT_EQUAL(123, v.getInt(1));
 }
 
+// TODO obsolete, replace with Chunk<Val> and new API
+template< typename T >
+struct VecOf : Vector {
+    VecOf () : Vector (8 * sizeof (T)) {}
+
+    auto get (int idx) const -> T { return *(T*) getPtr(idx); }
+    void set (int idx, T val) { Vector::set(idx, &val); }
+};
+
 static void vecOfVal () {
     VecOf<Val> v;
     TEST_ASSERT_EQUAL(sizeof (Val), v.width());

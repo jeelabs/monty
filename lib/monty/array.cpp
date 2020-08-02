@@ -100,10 +100,12 @@ void Vector::del (size_t idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
-void markVec (VecOf<Val> const& v) {
-    for (size_t i = 0; i < v.length(); ++i) {
-        auto o = v.get(i);
-        if (o.isObj())
-            mark(o.obj());
-    }
+Array::Array (char atype) {
+    // TODO
+}
+
+void mark (Chunk<Val> const& v) {
+    for (size_t i = 0; i < v.len; ++i)
+        if (v[i].isObj())
+            mark(v[i].obj());
 }

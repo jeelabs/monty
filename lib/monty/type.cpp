@@ -51,10 +51,6 @@ auto Type::noFactory (const Type&, int, Val[]) -> Val {
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
-Array::Array (char atype) {
-    // TODO
-}
-
 //CG< builtin-types lib/monty/xmonty.h
 const TypeObj         None::info ("<none>");
 
@@ -93,6 +89,8 @@ auto Bool::unop (UnOp) const -> Val {
 auto Long::unop (UnOp) const -> Val {
     return Val{}; // TODO
 }
+
+// TODO change argc/argv to: Chunk<Val> const& args
 
 auto Bool::create (const Type&, int argc, Val argv[]) -> Val {
     return Val{}; // TODO
