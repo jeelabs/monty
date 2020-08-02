@@ -48,6 +48,35 @@ namespace Monty {
 
 } // namespace Monty
 
+// TODO vec.cpp ... also move Vector stuff here (from array.cpp)
+namespace Monty {
+
+    template< typename T >
+    struct VecOf : Vec {
+        VecOf (size_t n =0) : len (n) {}
+
+        auto operator[] (size_t idx) const -> T& {
+            //assert(idx < len);
+            return ((T*) ptr())[idx];
+        }
+
+        size_t len;
+    };
+
+    template< typename T >
+    struct Chunk {
+        Chunk (VecOf<T> const& v, size_t o =0) : vec (v), off (o) {}
+
+        auto operator[] (size_t idx) const -> T& {
+            return ((T*) vec.ptr())[off+idx];
+        }
+
+        VecOf<T> const& vec;
+        size_t off;
+    };
+
+} // namespace Monty
+
 // see type.cpp - basic object types and type system
 namespace Monty {
 
@@ -120,21 +149,6 @@ namespace Monty {
         void verify (Type const& t) const;
 
         uintptr_t v{0};
-    };
-
-    template< typename T >
-    struct Chunk {
-        Chunk (Vec const& v, size_t o =0, size_t n =0)
-            : vec (v), off (o), len (n) {}
-
-        auto operator[] (size_t idx) const -> T& {
-            //assert(idx < len);
-            return ((T*) vec.ptr())[off+idx];
-        }
-
-        Vec const& vec;
-        size_t off;
-        size_t len;
     };
 
     // can't use "CG3 type <object>", as type() is virtual iso override
@@ -219,6 +233,8 @@ namespace Monty {
         static auto noFactory (Type const&,int,Val[]) -> Val;
     };
 
+    void mark (VecOf<Val> const& v);
+
     auto Val::isNone  () const -> bool { return &obj() == &None::noneObj; }
     auto Val::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Val::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
@@ -271,7 +287,5 @@ namespace Monty {
             Chunk<uint32_t> u32;
         };
     };
-
-    void mark (Chunk<Val> const& v);
 
 } // namespace Monty

@@ -103,9 +103,3 @@ void Vector::del (size_t idx, int num) {
 Array::Array (char atype) {
     // TODO
 }
-
-void mark (Chunk<Val> const& v) {
-    for (size_t i = 0; i < v.len; ++i)
-        if (v[i].isObj())
-            mark(v[i].obj());
-}
