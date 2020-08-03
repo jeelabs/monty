@@ -40,6 +40,11 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
+void memTypeSizes () {
+    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Obj));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
+}
+
 void initMem () {
     TEST_ASSERT_LESS_THAN(sizeof memory, avail());
     TEST_ASSERT_GREATER_THAN(sizeof memory - 50, avail());
@@ -451,6 +456,8 @@ auto main () -> int {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
+    RUN_TEST(memTypeSizes);
+
     RUN_TEST(initMem);
     RUN_TEST(newObj);
     RUN_TEST(markObj);

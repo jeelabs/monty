@@ -25,6 +25,10 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
+void arrayTypeSizes () {
+    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Array));
+}
+
 static void vecInstance () {
     Vector v (12);
     TEST_ASSERT_EQUAL(2, v.width()); // 12 bits in 2 bytes
@@ -63,6 +67,7 @@ auto main () -> int {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
+    RUN_TEST(arrayTypeSizes);
     RUN_TEST(vecInstance);
     RUN_TEST(vecSetGrow);
 
