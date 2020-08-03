@@ -307,6 +307,8 @@ namespace Monty {
 
 // see array.cpp - vectors, arrays, and other derived types
 namespace Monty {
+
+#if 1 // TODO obsolete
     struct Vector : private Vec {
         Vector (size_t bits);
 
@@ -327,6 +329,7 @@ namespace Monty {
     protected:
         uint32_t fill{0}; // in elements
     };
+#endif
 
     //CG< type array
     struct Array : Object {
