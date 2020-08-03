@@ -101,6 +101,8 @@ namespace Monty {
         auto length () const -> size_t {
             auto& vec = asVec<T>();
             auto n = vec.cap() - off;
+            if (n > len)
+                n = len;
             return n >= 0 ? n : 0;
         }
 
