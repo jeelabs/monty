@@ -81,11 +81,12 @@ namespace Monty {
         auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
         auto asArray  () const -> Array& { return *(Array*) ptr; }
 
-        auto isVec     () const -> bool { return typ != 'A'; }
-        auto isArray   () const -> bool { return typ == 'A'; }
+        auto isValid   () const -> bool { return ptr != nullptr; }
+        auto isVec     () const -> bool { return isValid() && typ != 'A'; }
+        auto isArray   () const -> bool { return isValid() && typ == 'A'; }
 
-        auto hasChunks () const -> bool { return typ == 'C'; }
-        auto hasVals   () const -> bool { return typ == 'V'; }
+        auto hasChunks () const -> bool { return isValid() && typ == 'C'; }
+        auto hasVals   () const -> bool { return isValid() && typ == 'V'; }
 
         void* ptr;       // pointer to vector or array
         size_t off{0};   // starting offset
