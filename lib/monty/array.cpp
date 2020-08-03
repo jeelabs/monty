@@ -121,28 +121,12 @@ struct ArrayOf : Array {
     }
 };
 
-void Monty::markVals (ChunkOf<Val> const& chunk) {
-    for (size_t i = 0; i < chunk.length(); ++i)
-        if (chunk[i].isObj())
-            mark(chunk[i].obj());
-}
-
 struct ArrayOfVal : ArrayOf<'V',Val> {
     void marker () const override {
         Array::marker();
-        markVals((ChunkOf<Val> const&) chunk);
+        mark((ChunkOf<Val> const&) chunk);
     }
 };
-
-static void markChunks (ChunkOf<Chunk> const& chunk) {
-    for (size_t i = 0; i < chunk.length(); ++i) {
-        auto& chk = chunk[i];
-        if (chk.hasVals())
-            markVals((ChunkOf<Val> const&) chk);
-        else if (chk.hasChunks())
-            markChunks((ChunkOf<Chunk> const&) chk);
-    }
-}
 
 struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
     auto get (int idx) const -> Val override {
@@ -169,7 +153,7 @@ struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
     }
     void marker () const override {
         Array::marker();
-        markChunks((ChunkOf<Chunk>&) chunk);
+        mark((ChunkOf<Chunk>&) chunk);
     }
 };
 

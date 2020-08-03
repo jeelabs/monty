@@ -51,8 +51,90 @@ namespace Monty {
 
 } // namespace Monty
 
-// TODO vec.cpp ... also move Vector stuff here (from array.cpp)
+// see chunk.cpp - typed and chunked access to vectors
 namespace Monty {
+
+    struct Array; // forward decl
+    struct Val;   // forward decl
+
+    template< typename T >
+    struct VecOf : Vec {
+        auto ptr () const -> T* { return (T*) Vec::ptr(); }
+        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
+
+        auto operator[] (size_t idx) const -> T { return ptr()[idx]; }
+        auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
+
+        void move (size_t pos, size_t num, int off) {
+            memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
+        }
+        void wipe (size_t pos, size_t num) {
+            memset(ptr() + pos, 0, num * sizeof (T));
+        }
+    };
+
+    struct Chunk {
+        Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
+        Chunk (char t, Array& a) : ptr (&a), typ (t) {}
+
+        template< typename T >
+        auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
+        auto asArray  () const -> Array& { return *(Array*) ptr; }
+
+        auto isVec     () const -> bool { return typ != 'A'; }
+        auto isArray   () const -> bool { return typ == 'A'; }
+
+        auto hasChunks () const -> bool { return typ == 'C'; }
+        auto hasVals   () const -> bool { return typ == 'V'; }
+
+        void* ptr;       // pointer to vector or array
+        size_t off{0};   // starting offset
+        size_t len{~0U}; // maximum length
+        char typ;        // chunk type, 'V' is Val, 'C' is Chunk, 'A' is Array
+    };
+
+    template< typename T >
+    struct ChunkOf : Chunk {
+        using Chunk::Chunk; // re-use constructors
+
+        auto length () const -> size_t {
+            auto& vec = asVec<T>();
+            auto n = vec.cap() - off;
+            return n >= 0 ? n : 0;
+        }
+
+        auto operator[] (size_t idx) const -> T& {
+            // assert(idx < length());
+            auto& vec = asVec<T>();
+            return vec[off+idx];
+        }
+
+        void insert (size_t idx, size_t num =1) {
+            // TODO deal with off != 0, and cap/resize
+            if (idx > len) {
+                num += idx - len;
+                idx = len;
+            }
+            auto& vec = asVec<T>();
+            vec.move(idx, len - idx, num);
+            vec.wipe(idx, num);
+            len += num;
+        }
+
+        void remove (size_t idx, size_t num =1) {
+            // TODO deal with off != 0, and cap/resize
+            if (idx >= len)
+                return;
+            if (num > len - idx)
+                num = len - idx;
+            auto& vec = asVec<T>();
+            vec.move(idx + num, len - (idx + num), -num);
+            len -= num;
+        }
+    };
+
+    void mark (ChunkOf<Chunk> const&);
+    void mark (ChunkOf<Val> const&);
 
 } // namespace Monty
 
@@ -240,89 +322,6 @@ namespace Monty {
     protected:
         uint32_t fill{0}; // in elements
     };
-
-    extern "C" void* memmove (void*,const void*,size_t);
-    extern "C" void* memset (void*,int,size_t);
-
-    template< typename T >
-    struct VecOf : Vec {
-        auto ptr () const -> T* { return (T*) Vec::ptr(); }
-        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
-
-        auto operator[] (size_t idx) const -> T { return ptr()[idx]; }
-        auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
-
-        void move (size_t pos, size_t num, int off) {
-            memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
-        }
-        void wipe (size_t pos, size_t num) {
-            memset(ptr() + pos, 0, num * sizeof (T));
-        }
-    };
-
-    struct Array; // forward decl
-
-    struct Chunk {
-        Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
-        Chunk (char t, Array& a) : ptr (&a), typ (t) {}
-
-        template< typename T >
-        auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
-        auto asArray  () const -> Array& { return *(Array*) ptr; }
-
-        auto isVec     () const -> bool { return typ != 'A'; }
-        auto isArray   () const -> bool { return typ == 'A'; }
-
-        auto hasVals   () const -> bool { return typ == 'V'; }
-        auto hasChunks () const -> bool { return typ == 'C'; }
-
-        void* ptr;       // pointer to vector or array
-        size_t off{0};   // starting offset
-        size_t len{~0U}; // maximum length
-        char typ;        // chunk type, 'V' is Val, 'C' is Chunk, 'A' is Array
-    };
-
-    template< typename T >
-    struct ChunkOf : Chunk {
-        using Chunk::Chunk; // re-use constructors
-
-        auto length () const -> size_t {
-            auto& vec = asVec<T>();
-            auto n = vec.cap() - off;
-            return n >= 0 ? n : 0;
-        }
-
-        auto operator[] (size_t idx) const -> T& {
-            // assert(idx < length());
-            auto& vec = asVec<T>();
-            return vec[off+idx];
-        }
-
-        void insert (size_t idx, size_t num =1) {
-            // TODO deal with off != 0, and cap/resize
-            if (idx > len) {
-                num += idx - len;
-                idx = len;
-            }
-            auto& vec = asVec<T>();
-            vec.move(idx, len - idx, num);
-            vec.wipe(idx, num);
-            len += num;
-        }
-
-        void remove (size_t idx, size_t num =1) {
-            // TODO deal with off != 0, and cap/resize
-            if (idx >= len)
-                return;
-            if (num > len - idx)
-                num = len - idx;
-            auto& vec = asVec<T>();
-            vec.move(idx + num, len - (idx + num), -num);
-            len -= num;
-        }
-    };
-
-    void markVals (ChunkOf<Val> const&);
 
     //CG< type array
     struct Array : Object {
