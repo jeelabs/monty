@@ -44,6 +44,13 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
+void vecTypeSizes () {
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<int>));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<Vec>));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<Chunk>));
+}
+
 void vecOfInited () {
     TEST_ASSERT_GREATER_OR_EQUAL(25, v.cap());
     TEST_ASSERT_LESS_THAN(30, v.cap());
@@ -71,6 +78,13 @@ void vecOfMoveAndWipe () {
     static int m3 [] = { 0, 11, 0, 55, 22, 55, 22, 33, 44, 99, 0, };
     for (int i = 0; i < 11; ++i)
         TEST_ASSERT_EQUAL(m3[i], v[i]);
+}
+
+void chunkTypeSizes () {
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Chunk));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<int>));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<Vec>));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<Chunk>));
 }
 
 void chunkOfItems () {
@@ -144,10 +158,14 @@ auto main () -> int {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
+    RUN_TEST(vecTypeSizes);
     RUN_TEST(vecOfInited);
     RUN_TEST(vecOfMoveAndWipe);
+
+    RUN_TEST(chunkTypeSizes);
     RUN_TEST(chunkOfItems);
     RUN_TEST(chunkOfInsAndDel);
+
     RUN_TEST(vecOfVal);
 
     UNITY_END();
