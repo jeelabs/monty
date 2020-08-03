@@ -134,42 +134,42 @@ struct ArrayOfVal : ArrayOf<'V',Val> {
     }
 };
 
-static void markChunks (ChunkOf<Chunky> const& chunk) {
-    for (size_t i = 0; i < chunk.length(); ++i)
-        switch (chunk[i].type) {
-            case 'V': markVals(chunk[i].asVec<Val>()); break;
-            case 'C': markChunks(chunk[i].asVec<Chunky>()); break;
-        }
+static void markChunks (ChunkOf<Chunk> const& chunk) {
+    for (size_t i = 0; i < chunk.length(); ++i) {
+        auto& chk = chunk[i];
+        if (chk.hasVals())
+            markVals((ChunkOf<Val> const&) chk);
+        else if (chk.hasChunks())
+            markChunks((ChunkOf<Chunk> const&) chk);
+    }
 }
 
-struct ArrayOfChunky : Array { // TODO figure out how to use ArrayOf<'C',Chunky>
+struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
     auto get (int idx) const -> Val override {
-        auto& chk = (ChunkOf<Chunky>&) chunk;
-        auto* a = create(chk[idx].type);
+        auto& chk = (ChunkOf<Chunk>&) chunk;
+        auto* a = create(chk[idx].typ);
         assert(a != nullptr);
-        // a->chunk = chk[idx]; TODO can't seem to get past the ref init error
-        memcpy(&a->chunk, &chk[idx], sizeof (Chunky));
+        a->chunk = chk[idx];
         return a;
     }
     void set (int idx, Val val) override {
-        auto& chk = (ChunkOf<Chunky>&) chunk;
+        auto& chk = (ChunkOf<Chunk>&) chunk;
         auto& a = val.asType<Array>();
-        // chk[idx] = a.chunk; TODO can't seem to get past the ref init error
-        memcpy(&chk[idx], &a.chunk, sizeof (Chunky));
+        a.chunk = chk[idx];
     }
     void ins (size_t idx, size_t num =1) override {
         // TODO same code as in ArrayOf<T>
-        auto& chk = (ChunkOf<Chunky>&) chunk;
+        auto& chk = (ChunkOf<Chunk>&) chunk;
         chk.insert(idx, num);
     }
     void del (size_t idx, size_t num =1) override {
         // TODO same code as in ArrayOf<T>
-        auto& chk = (ChunkOf<Chunky>&) chunk;
+        auto& chk = (ChunkOf<Chunk>&) chunk;
         chk.remove(idx, num);
     }
     void marker () const override {
         Array::marker();
-        markChunks((ChunkOf<Chunky>&) chunk);
+        markChunks((ChunkOf<Chunk>&) chunk);
     }
 };
 
@@ -186,7 +186,7 @@ auto Array::create (char c) -> Array* {
         case 'L': p = new ArrayOf<'L',uint32_t>; break;
 
         case 'V': p = new ArrayOfVal; break;
-        case 'C': p = new ArrayOfChunky; break;
+        case 'C': p = new ArrayOfChunk; break;
         
         //case 'P': // 1b: Packed
         //case 'T': // 2b: Tiny
@@ -196,7 +196,7 @@ auto Array::create (char c) -> Array* {
 assert(p != nullptr);
 p->chunk.asVec<uint8_t>().resize(100);
 p->chunk.asVec<Val>().move(1,2,3);
-p->chunk.asVec<Chunky>().move(1,2,3);
+p->chunk.asVec<Chunk>().move(1,2,3);
 
     return p;
 }

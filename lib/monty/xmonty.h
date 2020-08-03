@@ -261,44 +261,41 @@ namespace Monty {
     };
 
     struct Array; // forward decl
-    struct Chunky; // forward decl
 
     struct Chunk {
-        enum Tag { Simple, Values, Chunks, Mapped };
-
-        Chunk (Vec& arg)           : p (((uintptr_t) &arg) | Simple) {}
-        Chunk (VecOf<Val>& arg)    : p (((uintptr_t) &arg) | Values) {}
-        Chunk (VecOf<Chunky>& arg) : p (((uintptr_t) &arg) | Chunks) {}
-        Chunk (Array& arg)         : p (((uintptr_t) &arg) | Mapped) {}
+        Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
+        Chunk (char t, Array& a) : ptr (&a), typ (t) {}
 
         template< typename T >
-        auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) (p & ~3); }
-        auto asArray  () const -> Array& { return *(Array*) (p & ~3); }
+        auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
+        auto asArray  () const -> Array& { return *(Array*) ptr; }
 
-        auto tag () const -> Tag { return (Tag) (p & 3); }
+        auto isVec     () const -> bool { return typ != 'A'; }
+        auto isArray   () const -> bool { return typ == 'A'; }
 
-        auto isVec   () const -> bool { return tag() != Mapped; }
-        auto isArray () const -> bool { return tag() == Mapped; }
+        auto hasVals   () const -> bool { return typ == 'V'; }
+        auto hasChunks () const -> bool { return typ == 'C'; }
 
-        uintptr_t p;    // one of 4 pointer types, tagged in bit 0..1
-        size_t off{0};  // starting offset
+        void* ptr;       // pointer to vector or array
+        size_t off{0};   // starting offset
         size_t len{~0U}; // maximum length
+        char typ;        // chunk type, 'V' is Val, 'C' is Chunk, 'A' is Array
     };
-
-    struct Chunky : Chunk { char type{0}; };
 
     template< typename T >
     struct ChunkOf : Chunk {
         using Chunk::Chunk; // re-use constructors
 
         auto length () const -> size_t {
-            auto n = asVec<T>().cap() - off;
+            auto& vec = asVec<T>();
+            auto n = vec.cap() - off;
             return n >= 0 ? n : 0;
         }
 
         auto operator[] (size_t idx) const -> T& {
             // assert(idx < length());
-            return asVec<T>()[off+idx];
+            auto& vec = asVec<T>();
+            return vec[off+idx];
         }
 
         void insert (size_t idx, size_t num =1) {
@@ -307,8 +304,9 @@ namespace Monty {
                 num += idx - len;
                 idx = len;
             }
-            asVec<T>().move(idx, len - idx, num);
-            asVec<T>().wipe(idx, num);
+            auto& vec = asVec<T>();
+            vec.move(idx, len - idx, num);
+            vec.wipe(idx, num);
             len += num;
         }
 
@@ -318,7 +316,8 @@ namespace Monty {
                 return;
             if (num > len - idx)
                 num = len - idx;
-            asVec<T>().move(idx + num, len - (idx + num), -num);
+            auto& vec = asVec<T>();
+            vec.move(idx + num, len - (idx + num), -num);
             len -= num;
         }
     };
@@ -334,7 +333,8 @@ namespace Monty {
     //CG>
         static auto create (char type) -> Array*;
 
-        Array () {}
+        Array () : chunk ('V', vec) {}
+        Array (Chunk const& c) : chunk (c) {}
 
         auto operator[] (size_t idx) const -> Val { return get(idx); }
         // TODO set via [] will require a proxy instance
@@ -345,7 +345,7 @@ namespace Monty {
         virtual void del (size_t idx, size_t num =1) =0;
 
         Vec vec;
-        ChunkOf<Vec> chunk{vec};
+        Chunk chunk;
     };
 
 } // namespace Monty
