@@ -121,7 +121,7 @@ struct ArrayOf : Array {
     }
 };
 
-void Monty::mark (ChunkOf<Val> const& chunk) {
+void Monty::markVals (ChunkOf<Val> const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i)
         if (chunk[i].isObj())
             mark(chunk[i].obj());
@@ -130,17 +130,23 @@ void Monty::mark (ChunkOf<Val> const& chunk) {
 struct ArrayOfVal : ArrayOf<'V',Val> {
     void marker () const override {
         Array::marker();
-        mark((ChunkOf<Val> const&) chunk);
+        markVals((ChunkOf<Val> const&) chunk);
     }
 };
 
-struct Chunk { Vec& v; char t; };
+struct Chunk {
+    union {
+        ChunkOf<Val> v;
+        ChunkOf<Chunk> c;
+    } &u;
+    char t;
+};
 
-static void mark (ChunkOf<Chunk> const& chunk) {
+static void markChunks (ChunkOf<Chunk> const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i)
         switch (chunk[i].t) {
-            case 'V': mark((VecOf<Val>&) chunk[i].v); break;
-            case 'C': mark((VecOf<Chunk>&) chunk[i].v); break;
+            case 'V': markVals(chunk[i].u.v.vec); break;
+            case 'C': markChunks(chunk[i].u.c.vec); break;
         }
 }
 
@@ -171,7 +177,7 @@ struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
     }
     void marker () const override {
         Array::marker();
-        mark((ChunkOf<Chunk>&) chunk);
+        markChunks((ChunkOf<Chunk>&) chunk);
     }
 };
 
@@ -197,7 +203,7 @@ auto Array::create (char c) -> Array* {
     
 assert(p != nullptr);
 p->chunk.vec.resize(100);
-p->chunk.vec.move(1,2,3);
+((VecOf<Vec>&) p->chunk.vec).move(1,2,3);
 
     return p;
 }

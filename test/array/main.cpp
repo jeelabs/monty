@@ -89,7 +89,6 @@ static void vecOfVal () {
 #endif
     auto a = Array::create('B');
     TEST_ASSERT_NOT_NULL(a);
-    TEST_ASSERT_EQUAL(0, sizeof *a);
 }
 
 auto main () -> int {

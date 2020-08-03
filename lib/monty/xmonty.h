@@ -301,7 +301,7 @@ namespace Monty {
         size_t len; // in units of T
     };
 
-    void mark (ChunkOf<Val> const&);
+    void markVals (ChunkOf<Val> const&);
 
     //CG< type array
     struct Array : Object {
