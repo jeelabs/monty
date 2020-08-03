@@ -87,7 +87,9 @@ static void vecOfVal () {
     TEST_ASSERT_EQUAL_INT(0,   v.get(0));
     TEST_ASSERT_EQUAL_INT(123, v.get(1));
 #endif
-    auto& a = Array::create('B');
+    auto a = Array::create('B');
+    TEST_ASSERT_NOT_NULL(a);
+    TEST_ASSERT_EQUAL(0, sizeof *a);
 }
 
 auto main () -> int {

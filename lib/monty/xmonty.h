@@ -275,6 +275,27 @@ namespace Monty {
             return vec[off+idx];
         }
 
+        void insert (size_t idx, size_t num =1) {
+            // TODO deal with off != 0, and cap/resize
+            if (idx > len) {
+                num += idx - len;
+                idx = len;
+            }
+            vec.move(idx, len - idx, num);
+            vec.wipe(idx, num);
+            len += num;
+        }
+
+        void remove (size_t idx, size_t num =1) {
+            // TODO deal with off != 0, and cap/resize
+            if (idx >= len)
+                return;
+            if (num > len - idx)
+                num = len - idx;
+            vec.move(idx + num, len - (idx + num), -num);
+            len -= num;
+        }
+
         VecOf<T>& vec;
         size_t off; // in units of T
         size_t len; // in units of T
@@ -289,7 +310,7 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
-        static auto create (char type) -> Array&;
+        static auto create (char type) -> Array*;
 
         Array () {}
 
