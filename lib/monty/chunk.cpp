@@ -12,10 +12,10 @@ using namespace Monty;
 void Monty::mark (ChunkOf<Chunk> const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i) {
         auto& chk = chunk[i];
-        if (chk.hasVals())
-            mark((ChunkOf<Val> const&) chk);
-        else if (chk.hasChunks())
+        if (chk.hasChunks())
             mark((ChunkOf<Chunk> const&) chk);
+        else if (chk.hasVals())
+            mark((ChunkOf<Val> const&) chk);
     }
 }
 

@@ -74,6 +74,7 @@ namespace Monty {
     };
 
     struct Chunk {
+        Chunk (Val v);
         Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
         Chunk (char t, Array& a) : ptr (&a), typ (t) {}
 
@@ -88,6 +89,9 @@ namespace Monty {
         auto hasChunks () const -> bool { return isValid() && typ == 'C'; }
         auto hasVals   () const -> bool { return isValid() && typ == 'V'; }
 
+        operator Val () const;
+        //chk[idx] = val.asType<Array>().chunk;
+
         void* ptr;       // pointer to vector or array
         size_t off{0};   // starting offset
         size_t len{~0U}; // maximum length
@@ -101,9 +105,7 @@ namespace Monty {
         auto length () const -> size_t {
             auto& vec = asVec<T>();
             auto n = vec.cap() - off;
-            if (n > len)
-                n = len;
-            return n >= 0 ? n : 0;
+            return n > len ? len : n >= 0 ? n : 0;
         }
 
         auto operator[] (size_t idx) const -> T& {

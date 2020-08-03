@@ -100,6 +100,15 @@ void Vector::del (size_t idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
+// this is a "delegating constructor", i.e. it calls on another constructor
+Chunk::Chunk (Val v) : Chunk ('A', v.asType<Array>()) {} // TODO is 'A' correct?
+
+Chunk::operator Val () const {
+    auto p = Array::create(typ); // TODO what about Vec ownership & lifetime?
+    assert(p != nullptr);
+    return *p;
+}
+
 template< char C, typename T >
 struct ArrayOf : Array {
     auto get (int idx) const -> Val override {
@@ -128,29 +137,7 @@ struct ArrayOfVal : ArrayOf<'V',Val> {
     }
 };
 
-struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
-    auto get (int idx) const -> Val override {
-        auto& chk = (ChunkOf<Chunk>&) chunk;
-        auto* a = create(chk[idx].typ);
-        assert(a != nullptr);
-        a->chunk = chk[idx];
-        return a;
-    }
-    void set (int idx, Val val) override {
-        auto& chk = (ChunkOf<Chunk>&) chunk;
-        auto& a = val.asType<Array>();
-        a.chunk = chk[idx];
-    }
-    void ins (size_t idx, size_t num =1) override {
-        // TODO same code as in ArrayOf<T>
-        auto& chk = (ChunkOf<Chunk>&) chunk;
-        chk.insert(idx, num);
-    }
-    void del (size_t idx, size_t num =1) override {
-        // TODO same code as in ArrayOf<T>
-        auto& chk = (ChunkOf<Chunk>&) chunk;
-        chk.remove(idx, num);
-    }
+struct ArrayOfChunk : ArrayOf<'C',Chunk> {
     void marker () const override {
         Array::marker();
         mark((ChunkOf<Chunk>&) chunk);
