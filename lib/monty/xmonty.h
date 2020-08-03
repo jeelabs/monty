@@ -212,8 +212,6 @@ namespace Monty {
         static auto noFactory (Type const&,int,Val[]) -> Val;
     };
 
-    // TODO void mark (VecOf<Val> const& v);
-
     auto Val::isNone  () const -> bool { return &obj() == &None::noneObj; }
     auto Val::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Val::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
@@ -258,7 +256,7 @@ namespace Monty {
             memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
         }
         void wipe (size_t pos, size_t num) {
-            memset(ptr() + pos, num * sizeof (T));
+            memset(ptr() + pos, 0, num * sizeof (T));
         }
     };
 
@@ -282,18 +280,7 @@ namespace Monty {
         size_t len; // in units of T
     };
 
-    union Chunk {
-        ChunkOf<Val>      v;
-        ChunkOf<int8_t>   i8;
-        ChunkOf<int16_t>  i16;
-        ChunkOf<int32_t>  i32;
-        ChunkOf<uint8_t>  u8;
-        ChunkOf<uint16_t> u16;
-        ChunkOf<uint32_t> u32;
-        ChunkOf<Chunk>    c;
-
-        Chunk (Vec& vec) : v ((VecOf<Val>&) vec) {}
-    }; 
+    void mark (ChunkOf<Val> const&);
 
     //CG< type array
     struct Array : Object {
@@ -302,22 +289,20 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
+        static auto create (char type) -> Array&;
 
-        Array (char atype);
+        Array () {}
 
-        void marker () const override { items.marker(chunk); }
+        auto operator[] (size_t idx) const -> Val { return get(idx); }
+        // TODO set via [] will require a proxy instance
 
-        struct Items {
-            virtual auto get (Chunk const& chk, int idx) const -> Val =0;
-            virtual void set (Chunk& chk, int idx, Val val) =0;
-            virtual void ins (Chunk& chk, size_t idx, int num =1) =0;
-            virtual void del (Chunk& chk, size_t idx, int num =1) =0;
-            virtual void marker (Chunk const& chk) const {}
-        };
+        virtual auto get (int idx) const -> Val =0;
+        virtual void set (int idx, Val val) =0;
+        virtual void ins (size_t idx, size_t num =1) =0;
+        virtual void del (size_t idx, size_t num =1) =0;
 
-        Items& items;
-        Chunk chunk;
         Vec vec;
+        ChunkOf<Vec> chunk{(VecOf<Vec>&) vec};
     };
 
 } // namespace Monty

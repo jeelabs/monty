@@ -100,82 +100,116 @@ void Vector::del (size_t idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
-void moveBytes (void* to, void const* from, size_t len) {
-    memmove(to, from, len);
-}
-
-void wipeBytes (void* ptr, size_t len) {
-    memset(ptr, 0, len);
-}
-
-template< typename T >
-struct ItemsOf : Array::Items {
-    auto get (Chunk const& chk, int idx) const -> Val override {
-        auto chunk = (ChunkOf<T>&) chk;
-        return chunk[idx];
+template< char C, typename T >
+struct ArrayOf : Array {
+    auto get (int idx) const -> Val override {
+        auto& chk = (ChunkOf<T>&) chunk;
+        return chk[idx];
     }
-    void set (Chunk& chk, int idx, Val val) override {
-        auto chunk = (ChunkOf<T>&) chk;
-        ins(chk, idx + 1, 0); // grow if needed
-        chunk[idx] = val;
+    void set (int idx, Val val) override {
+        auto& chk = (ChunkOf<T>&) chunk;
+        ins(idx + 1, 0); // grow if needed
+        chk[idx] = val;
     }
-    void ins (Chunk& chk, size_t idx, int num =1) override {
-        //auto chunk = (ChunkOf<T>&) chk;
-        // TODO
+    void ins (size_t idx, size_t num =1) override {
+        auto& chk = (ChunkOf<T>&) chunk;
+        // TODO deal with off != 0, and cap/resize
+        if (idx > chk.len) {
+            num += idx - chk.len;
+            idx = chk.len;
+        }
+        chk.vec.move(idx, chk.len - idx, num);
+        chk.vec.wipe(idx, num);
+        chk.len += num;
     }
-    void del (Chunk& chk, size_t idx, int num =1) override {
-        //auto chunk = (ChunkOf<T>&) chk;
-        // TODO
-    }
-};
-
-struct ItemsOfObj : ItemsOf<Val> {
-    void marker (Chunk const& chk) const override {
-        auto chunk = (ChunkOf<Val>&) chk;
-        for (size_t i = 0; i < chunk.length(); ++i)
-            if (chunk[i].isObj())
-                mark(chunk[i].obj());
+    void del (size_t idx, size_t num =1) override {
+        auto& chk = (ChunkOf<T>&) chunk;
+        // TODO deal with off != 0, and cap/resize
+        if (idx >= chk.len)
+            return;
+        if (num > chk.len - idx)
+            num = chk.len - idx;
+        chk.vec.move(idx + num, chk.len - (idx + num), -num);
+        chk.len -= num;
     }
 };
 
-#if 0 // TODO how?
-struct ItemsOfChunk : ItemsOf<Chunk> {
-    void marker (Chunk const& chk) const override {
-        auto chunk = (ChunkOf<Chunk>&) chk;
-        for (size_t i = 0; i < chunk.length(); ++i)
+void Monty::mark (ChunkOf<Val> const& chunk) {
+    for (size_t i = 0; i < chunk.length(); ++i)
+        if (chunk[i].isObj())
             mark(chunk[i].obj());
+}
+
+struct ArrayOfObj : ArrayOf<'V',Val> {
+    void marker () const override {
+        Array::marker();
+        auto& chk = (ChunkOf<Val> const&) chunk;
+        mark(chk);
     }
 };
-#endif
 
-static auto typedItem (char c) -> Array::Items& {
-    Array::Items* p = nullptr;
+struct Chunk { Vec& v; char t; };
+
+static void mark (ChunkOf<Chunk> const& chunk) {
+    for (size_t i = 0; i < chunk.length(); ++i)
+        switch (chunk[i].t) {
+            case 'V': mark((VecOf<Val>&) chunk[i].v); break;
+            case 'C': mark((VecOf<Chunk>&) chunk[i].v); break;
+        }
+}
+
+struct ArrayOfChunk : Array { // TODO figure out how to use ArrayOf<'C',Chunk>
+    auto get (int idx) const -> Val override {
+        auto& chk = (ChunkOf<Chunk>&) chunk;
+        auto& a = create(chk[idx].t);
+        // a.chunk = chk[idx]; TODO can't seem to get past the ref init error
+        memcpy(&a.chunk, &chk[idx], sizeof (Chunk));
+        return a;
+    }
+    void set (int idx, Val val) override {
+        auto& chk = (ChunkOf<Chunk>&) chunk;
+        auto& a = val.asType<Array>();
+        // chk[idx] = a.chunk; TODO can't seem to get past the ref init error
+        memcpy(&chk[idx], &a.chunk, sizeof (Chunk));
+    }
+    void ins (size_t idx, size_t num =1) override {
+        //auto& chk = (ChunkOf<T>&) chunk;
+        // TODO
+    }
+    void del (size_t idx, size_t num =1) override {
+        //auto& chk = (ChunkOf<T>&) chunk;
+        // TODO
+    }
+    void marker () const override {
+        Array::marker();
+        auto& chk = (ChunkOf<Chunk>&) chunk;
+        mark(chk);
+    }
+};
+
+auto Array::create (char c) -> Array& {
+    Array* p = nullptr;
     switch (c) {
-        case 'b': p = new ItemsOf<int8_t>; break;
-        case 'B': p = new ItemsOf<uint8_t>; break;
-        case 'h': p = new ItemsOf<int16_t>; break;
-        case 'H': p = new ItemsOf<uint16_t>; break;
-        case 'i': p = new ItemsOf<int16_t>; break;
-        case 'I': p = new ItemsOf<uint16_t>; break;
-        case 'l': p = new ItemsOf<int32_t>; break;
-        case 'L': p = new ItemsOf<uint32_t>; break;
+        case 'b': p = new ArrayOf<'b',int8_t>; break;
+        case 'B': p = new ArrayOf<'B',uint8_t>; break;
+        case 'h': p = new ArrayOf<'h',int16_t>; break;
+        case 'H': p = new ArrayOf<'H',uint16_t>; break;
+        case 'i': p = new ArrayOf<'i',int16_t>; break;
+        case 'I': p = new ArrayOf<'I',uint16_t>; break;
+        case 'l': p = new ArrayOf<'l',int32_t>; break;
+        case 'L': p = new ArrayOf<'L',uint32_t>; break;
 
-        case 'o': p = new ItemsOfObj; break;
-        //case 'c': p = new ItemsOfChunk; break;
+        case 'V': p = new ArrayOfObj; break;
+        case 'C': p = new ArrayOfChunk; break;
         
         //case 'P': // 1b: Packed
         //case 'T': // 2b: Tiny
         //case 'N': // 4b: Nibble
     }
     assert(p != nullptr);
-    return *p;
-}
-
-Array::Array (char type) : items (typedItem(type)), chunk (vec) {
-    // TODO
     
-    chunk.v.vec.resize(100);
-    chunk.v.vec.move(1,2,3);
-    chunk.u8.vec.move(1,2,3);
-    chunk.c.vec.move(1,2,3);
+p->chunk.vec.resize(100);
+p->chunk.vec.move(1,2,3);
+
+    return *p;
 }
