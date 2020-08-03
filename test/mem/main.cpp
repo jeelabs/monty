@@ -209,23 +209,28 @@ void newVec () {
 void resizeVec () {
     {
         Vec v1;
-        v1.resize(0);
+        auto f = v1.resize(0);
+        TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
         TEST_ASSERT_EQUAL(memAvail, avail());
 
-        v1.resize(1);
+        f = v1.resize(1);
+        TEST_ASSERT_TRUE(f);
         TEST_ASSERT_NOT_EQUAL(0, v1.ptr());
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
         TEST_ASSERT_LESS_THAN(memAvail, avail());
 
-        v1.resize(sizeof (void*));
+        f = v1.resize(sizeof (void*));
+        TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
 
-        v1.resize(sizeof (void*) + 1);
+        f = v1.resize(sizeof (void*) + 1);
+        TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(3 * sizeof (void*), v1.cap());
 
-        v1.resize(1);
+        f = v1.resize(1);
+        TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
     }
     TEST_ASSERT_EQUAL(memAvail, avail());
@@ -422,7 +427,8 @@ void vecData () {
 
 void outOfVecs () {
     Vec v1;
-    v1.resize(999);
+    auto f = v1.resize(999);
+    TEST_ASSERT_TRUE(f);
     TEST_ASSERT_EQUAL(0, failed);
 
     auto p = v1.ptr();
@@ -432,7 +438,7 @@ void outOfVecs () {
     TEST_ASSERT_GREATER_THAN(999, n);
     TEST_ASSERT_LESS_THAN(memAvail, a);
 
-    auto f = v1.resize(sizeof memory); // fail, vector should be the old one
+    f = v1.resize(sizeof memory); // fail, vector should be the old one
 
     TEST_ASSERT_FALSE(f);
     TEST_ASSERT_GREATER_THAN(0, failed);

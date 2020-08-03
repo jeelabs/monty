@@ -87,6 +87,7 @@ static void vecOfVal () {
     TEST_ASSERT_EQUAL_INT(0,   v.get(0));
     TEST_ASSERT_EQUAL_INT(123, v.get(1));
 #endif
+    Array a ('B');
 }
 
 auto main () -> int {

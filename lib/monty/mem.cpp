@@ -149,6 +149,11 @@ namespace Monty {
             objLow = objLow->chain;
     }
 
+    auto Vec::isResizable () const -> bool {
+        auto p = (void*) data;
+        return p == nullptr || (start < p && p < vecHigh);
+    }
+
     auto Vec::cap () const -> size_t {
         return caps > 0 ? (2 * caps - 1) * PTR_SZ : 0;
     }
@@ -179,6 +184,8 @@ namespace Monty {
 
     // many tricky cases, to merge/reuse free slots as much as possible
     auto Vec::resize (size_t sz) -> bool {
+        if (!isResizable())
+            return false;
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (caps != needs) {
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;

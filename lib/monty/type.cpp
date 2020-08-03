@@ -51,11 +51,13 @@ auto Type::noFactory (const Type&, int, Val[]) -> Val {
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
+#if 0
 void mark (VecOf<Val> const& v) {
     for (size_t i = 0; i < v.len; ++i)
         if (v[i].isObj())
             mark(v[i].obj());
 }
+#endif
 
 //CG< builtin-types lib/monty/xmonty.h
 const TypeObj         None::info ("<none>");

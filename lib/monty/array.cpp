@@ -100,6 +100,82 @@ void Vector::del (size_t idx, int num) {
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
 
-Array::Array (char atype) {
+void moveBytes (void* to, void const* from, size_t len) {
+    memmove(to, from, len);
+}
+
+void wipeBytes (void* ptr, size_t len) {
+    memset(ptr, 0, len);
+}
+
+template< typename T >
+struct ItemsOf : Array::Items {
+    auto get (Chunk const& chk, int idx) const -> Val override {
+        auto chunk = (ChunkOf<T>&) chk;
+        return chunk[idx];
+    }
+    void set (Chunk& chk, int idx, Val val) override {
+        auto chunk = (ChunkOf<T>&) chk;
+        ins(chk, idx + 1, 0); // grow if needed
+        chunk[idx] = val;
+    }
+    void ins (Chunk& chk, size_t idx, int num =1) override {
+        //auto chunk = (ChunkOf<T>&) chk;
+        // TODO
+    }
+    void del (Chunk& chk, size_t idx, int num =1) override {
+        //auto chunk = (ChunkOf<T>&) chk;
+        // TODO
+    }
+};
+
+struct ItemsOfObj : ItemsOf<Val> {
+    void marker (Chunk const& chk) const override {
+        auto chunk = (ChunkOf<Val>&) chk;
+        for (size_t i = 0; i < chunk.length(); ++i)
+            if (chunk[i].isObj())
+                mark(chunk[i].obj());
+    }
+};
+
+#if 0 // TODO how?
+struct ItemsOfChunk : ItemsOf<Chunk> {
+    void marker (Chunk const& chk) const override {
+        auto chunk = (ChunkOf<Chunk>&) chk;
+        for (size_t i = 0; i < chunk.length(); ++i)
+            mark(chunk[i].obj());
+    }
+};
+#endif
+
+static auto typedItem (char c) -> Array::Items& {
+    Array::Items* p = nullptr;
+    switch (c) {
+        case 'b': p = new ItemsOf<int8_t>; break;
+        case 'B': p = new ItemsOf<uint8_t>; break;
+        case 'h': p = new ItemsOf<int16_t>; break;
+        case 'H': p = new ItemsOf<uint16_t>; break;
+        case 'i': p = new ItemsOf<int16_t>; break;
+        case 'I': p = new ItemsOf<uint16_t>; break;
+        case 'l': p = new ItemsOf<int32_t>; break;
+        case 'L': p = new ItemsOf<uint32_t>; break;
+
+        case 'o': p = new ItemsOfObj; break;
+        //case 'c': p = new ItemsOfChunk; break;
+        
+        //case 'P': // 1b: Packed
+        //case 'T': // 2b: Tiny
+        //case 'N': // 4b: Nibble
+    }
+    assert(p != nullptr);
+    return *p;
+}
+
+Array::Array (char type) : items (typedItem(type)), chunk (vec) {
     // TODO
+    
+    chunk.v.vec.resize(100);
+    chunk.v.vec.move(1,2,3);
+    chunk.u8.vec.move(1,2,3);
+    chunk.c.vec.move(1,2,3);
 }

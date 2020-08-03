@@ -19,8 +19,11 @@ namespace Monty {
     };
 
     struct Vec {
-        Vec () : extra (0), caps (0), data (nullptr) {}
-        ~Vec () { resize(0); }
+        Vec (void const* ptr =nullptr, size_t len =0) // TODO caps in bytes
+            : extra (0), caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
+        ~Vec () { (void) resize(0); }
+
+        auto isResizable () const -> bool;
 
         auto ptr () const -> uint8_t* { return data; }
         auto cap () const -> size_t;
@@ -50,30 +53,6 @@ namespace Monty {
 
 // TODO vec.cpp ... also move Vector stuff here (from array.cpp)
 namespace Monty {
-
-    template< typename T >
-    struct VecOf : Vec {
-        VecOf (size_t n =0) : len (n) {}
-
-        auto operator[] (size_t idx) const -> T& {
-            //assert(idx < len);
-            return ((T*) ptr())[idx];
-        }
-
-        size_t len;
-    };
-
-    template< typename T >
-    struct Chunk {
-        Chunk (VecOf<T> const& v, size_t o =0) : vec (v), off (o) {}
-
-        auto operator[] (size_t idx) const -> T& {
-            return ((T*) vec.ptr())[off+idx];
-        }
-
-        VecOf<T> const& vec;
-        size_t off;
-    };
 
 } // namespace Monty
 
@@ -226,14 +205,14 @@ namespace Monty {
         Type (char const* s, Factory f =noFactory, Lookup const* a =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
-        //auto call (Chunk<Val>& args) const -> Val override;
+        //auto call (ChunkOf<Val>& args) const -> Val override;
         //auto attr (char const*, Val&) const -> Val override;
 
     private:
         static auto noFactory (Type const&,int,Val[]) -> Val;
     };
 
-    void mark (VecOf<Val> const& v);
+    // TODO void mark (VecOf<Val> const& v);
 
     auto Val::isNone  () const -> bool { return &obj() == &None::noneObj; }
     auto Val::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
@@ -264,6 +243,58 @@ namespace Monty {
         uint32_t fill{0}; // in elements
     };
 
+    extern "C" void* memmove (void*,const void*,size_t);
+    extern "C" void* memset (void*,int,size_t);
+
+    template< typename T >
+    struct VecOf : Vec {
+        auto ptr () const -> T* { return (T*) Vec::ptr(); }
+        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
+
+        auto operator[] (size_t idx) const -> T { return ptr()[idx]; }
+        auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
+
+        void move (size_t pos, size_t num, int off) {
+            memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
+        }
+        void wipe (size_t pos, size_t num) {
+            memset(ptr() + pos, num * sizeof (T));
+        }
+    };
+
+    template< typename T >
+    struct ChunkOf {
+        ChunkOf (VecOf<T>& vector, size_t offset =0, size_t length =~0)
+            : vec (vector), off (offset), len (length) {}
+
+        auto length () const -> size_t {
+            auto n = vec.cap() - off;
+            return n >= 0 ? n : 0;
+        }
+
+        auto operator[] (size_t idx) const -> T& {
+            // assert(idx < length());
+            return vec[off+idx];
+        }
+
+        VecOf<T>& vec;
+        size_t off; // in units of T
+        size_t len; // in units of T
+    };
+
+    union Chunk {
+        ChunkOf<Val>      v;
+        ChunkOf<int8_t>   i8;
+        ChunkOf<int16_t>  i16;
+        ChunkOf<int32_t>  i32;
+        ChunkOf<uint8_t>  u8;
+        ChunkOf<uint16_t> u16;
+        ChunkOf<uint32_t> u32;
+        ChunkOf<Chunk>    c;
+
+        Chunk (Vec& vec) : v ((VecOf<Val>&) vec) {}
+    }; 
+
     //CG< type array
     struct Array : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
@@ -274,18 +305,19 @@ namespace Monty {
 
         Array (char atype);
 
-        auto get (int idx) const -> Val;
-        void set (int idx, Val val);
+        void marker () const override { items.marker(chunk); }
 
-        union {
-            Chunk<Val>      v;
-            Chunk<int8_t>   i8;
-            Chunk<int16_t>  i16;
-            Chunk<int32_t>  i32;
-            Chunk<uint8_t>  u8;
-            Chunk<uint16_t> u16;
-            Chunk<uint32_t> u32;
+        struct Items {
+            virtual auto get (Chunk const& chk, int idx) const -> Val =0;
+            virtual void set (Chunk& chk, int idx, Val val) =0;
+            virtual void ins (Chunk& chk, size_t idx, int num =1) =0;
+            virtual void del (Chunk& chk, size_t idx, int num =1) =0;
+            virtual void marker (Chunk const& chk) const {}
         };
+
+        Items& items;
+        Chunk chunk;
+        Vec vec;
     };
 
 } // namespace Monty
