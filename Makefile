@@ -51,7 +51,7 @@ platformio.ini:
 docs:
 	rsync -av --delete docs/ ~/Nextcloud/monty-docs/
 tags:
-	ctags -R src/ lib/monty/
+	ctags -R src/ lib/monty/ test/
 clean:
 	rm -rf .pio
 

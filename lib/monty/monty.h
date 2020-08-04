@@ -4,7 +4,20 @@
 #include <stdlib.h>
 
 struct Vector {
-    Vector (size_t bits);
+#if 0
+    constexpr Vector (size_t bits) : logBits (0), capacity (0) {
+        while (bits > (1U << logBits))
+            ++logBits;
+    }
+#else
+    constexpr static uint8_t log2 (size_t b) {
+        return b <= 1 ? 0 : b <= 2 ? 1 : b <= 4 ? 2 : b <= 8 ? 3 : b <= 16 ? 4 :
+                b <= 32 ? 5 : b <= 64 ? 6 : b <= 128 ? 7 : b <= 256 ? 8 :
+                 b <= 512 ? 9 : b <= 1024 ? 10 : b <= 2048 ? 11 : 12;
+    }
+    constexpr Vector (size_t bits) : logBits (log2(bits)), capacity (0) {}
+#endif
+
     ~Vector () { alloc(0); }
 
     size_t length () const { return fill; }
@@ -39,7 +52,7 @@ private:
 
 template< typename T >
 struct VecOf : Vector {
-    VecOf () : Vector (8 * sizeof (T)) {}
+    constexpr VecOf () : Vector (8 * sizeof (T)) {}
 
     T get (int idx) const { return *(T*) getPtr(idx); }
     void set (int idx, T val) { Vector::set(idx, &val); }
@@ -63,15 +76,15 @@ struct BufferObj; // forward decl
 struct Value {
     enum Tag { Nil, Int, Str, Obj };
 
-    Value ()                  : v (0) {}
-    Value (int arg)           : v ((arg << 1) | 1) {}
-    Value (const char* arg)   : v (((uintptr_t) arg << 2) | 2) {}
-    Value (const Object* arg) : v ((uintptr_t) arg) {}
-    Value (const Object& arg) : v ((uintptr_t) &arg) {}
+    constexpr Value ()                  : v (0) {}
+    constexpr Value (int arg)           : v ((arg << 1) | 1) {}
+              Value (const char* arg)   : v (((uintptr_t) arg << 2) | 2) {}
+    constexpr Value (const Object* arg) : p (arg) {}
+    constexpr Value (const Object& arg) : p (&arg) {}
 
     operator int () const { return (intptr_t) v >> 1; }
     operator const char* () const { return (const char*) (v >> 2); }
-    Object& obj () const { return *(Object*) v; }
+    Object& obj () const { return *(Object*) p; }
     inline ForceObj objPtr () const;
 
     template< typename T > // return null pointer if not of required type
@@ -118,7 +131,10 @@ private:
     bool check (const TypeObj& t) const;
     void verify (const TypeObj& t) const;
 
-    uintptr_t v;
+    union {
+        uintptr_t v;
+        const void* p;
+    };
 
     friend Context; // TODO yuck, just so Context::handlers [] can be inited
 };
@@ -163,7 +179,7 @@ struct NoneObj : Object {
 
     static const NoneObj noneObj;
 private:
-    NoneObj () {} // can't construct more instances
+    constexpr NoneObj () {} // can't construct more instances
 };
 
 bool Value::isNone  () const { return &obj() == &NoneObj::noneObj; }
@@ -182,7 +198,7 @@ struct BoolObj : Object {
     static const BoolObj trueObj;
     static const BoolObj falseObj;
 private:
-    BoolObj () {} // can't construct more instances
+    constexpr BoolObj () {} // can't construct more instances
 };
 
 bool Value::isFalse () const { return &obj() == &BoolObj::falseObj; }
@@ -249,7 +265,7 @@ struct SeqObj : Object {
 
     static const SeqObj dummy;
 protected:
-    SeqObj () {} // cannot be instantiated directly
+    constexpr SeqObj () {} // cannot be instantiated directly
 };
 
 //CG< type bytes
@@ -346,7 +362,7 @@ struct LookupObj : SeqObj {
 
     struct Item { const char* k; const Object* v; };
 
-    LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
+    constexpr LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
 
     void mark (void (*gc)(const Object&)) const override;
     Value at (Value) const override;
@@ -374,7 +390,7 @@ struct MutSeqObj : SeqObj, protected VecOfValue {
 
     static MutSeqObj dummy;
 protected:
-    MutSeqObj () {} // cannot be instantiated directly
+    constexpr MutSeqObj () {} // cannot be instantiated directly
 };
 
 //CG< type array
@@ -467,7 +483,8 @@ struct DictObj : MutSeqObj {
     enum Mode { Get, Set, Del };
     const Object* chain = 0; // TODO hide
 
-    DictObj (int size =0);
+    constexpr DictObj (const Object* ch =nullptr) : chain (ch) {}
+    DictObj (int size);
 
     void mark (void (*gc)(const Object&)) const override;
 
@@ -489,8 +506,8 @@ struct TypeObj : DictObj {
     const char* name;
     const Factory factory;
 
-    TypeObj (const char* s, Factory f =noFactory, const LookupObj* a =0)
-        : name (s), factory (f) { chain = a; }
+    constexpr TypeObj (const char* s, Factory f =noFactory, const LookupObj* a =0)
+        : DictObj (a), name (s), factory (f) {}
 
     Value call (int argc, Value argv[]) const override;
     Value attr (const char*, Value&) const override;
@@ -532,7 +549,7 @@ struct FunObj : Object {
 
     typedef Value (*Func)(int,Value[]);
 
-    FunObj (Func f) : func (f) {}
+    constexpr FunObj (Func f) : func (f) {}
 
     Value call (int argc, Value argv[]) const override {
         return func(argc, argv);
@@ -597,14 +614,14 @@ struct MethodBase {
 
 template< typename M >
 struct Method : MethodBase {
-    Method (M memberPtr) : methPtr (memberPtr) {}
+    constexpr Method (M memberPtr) : methPtr (memberPtr) {}
 
     Value call (Value self, int argc, Value argv[]) const override {
         return MethodBase::argConv(methPtr, *self.objPtr(), argc, argv);
     }
 
 private:
-    M methPtr;
+    const M methPtr;
 };
 
 //CG3 type <method>
@@ -612,14 +629,14 @@ struct MethObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    MethObj (const MethodBase& m) : meth (m) {}
+    constexpr MethObj (const MethodBase& m) : meth (m) {}
 
     Value call (int argc, Value argv[]) const override {
         return meth.call(argv[0], argc, argv);
     }
 
     template< typename M >
-    static Method<M> wrap (M memberPtr) {
+    constexpr static Method<M> wrap (M memberPtr) {
         return memberPtr;
     }
 
@@ -632,7 +649,7 @@ struct BoundMethObj : Object {
     static const TypeObj info;
     const TypeObj& type () const override;
 
-    BoundMethObj (Value f, Value o) : meth (f), self (o) {}
+    constexpr BoundMethObj (Value f, Value o) : meth (f), self (o) {}
 
     Value call (int argc, Value argv[]) const override;
 
@@ -699,7 +716,7 @@ struct ModuleObj : DictObj {
 
     const BytecodeObj* init = 0;
 
-    ModuleObj (const LookupObj* lu =0) { chain = lu; }
+    constexpr ModuleObj (const LookupObj* lu =0) : DictObj (lu) {}
 
     void mark (void (*gc)(const Object&)) const override;
 
