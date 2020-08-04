@@ -308,7 +308,7 @@ struct StrObj : SeqObj {
     const TypeObj& type () const override;
 //CG>
 
-    StrObj (const char* v) : s (v) {}
+    constexpr StrObj (const char* v) : s (v) {}
     operator const char* () const { return s; }
 
     Value repr (BufferObj&) const override; // see builtin.h

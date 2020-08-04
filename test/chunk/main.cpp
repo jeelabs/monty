@@ -12,8 +12,6 @@ uintptr_t memory [1024];
 size_t memAvail;
 VecOf<int> v;
 
-#include <cstdio>
-
 void setUp () {
     setup(memory, sizeof memory);
     memAvail = avail();
@@ -114,7 +112,6 @@ void chunkOfItems () {
 void chunkOfInsAndDel () {
     ChunkOf<int> c ('l', v);
 
-    // TODO
 #if 0
     for (int i = 0; i < 11; ++i)
         printf("%d, ", v[i]);

@@ -10,7 +10,7 @@ UartBufDev< PINS_CONSOLE > console;
 void unittest_uart_begin () {
     console.init();
     console.baud(115200, fullSpeedClock() / UART_BUSDIV);
-    wait_ms(100);
+    wait_ms(200);
 }
 
 void unittest_uart_putchar (char c) {

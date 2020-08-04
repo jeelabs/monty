@@ -354,9 +354,10 @@ Value Context::print (BufferObj& w, Value v) {
     return Value ();
 }
 
+static BufferObj w = Value (); // TODO
+
 //CG1 builtin print
 static Value bi_print (int argc, Value argv[]) {
-    static BufferObj w = Value (); // TODO
     return new Printer (w, argc, argv);
 }
 

@@ -69,7 +69,8 @@ namespace Monty {
             memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
         }
         void wipe (size_t pos, size_t num) {
-            memset((uint8_t*) ptr() + pos, 0, num * sizeof (T));
+            // get rid of ptr type, esp32 compile fails due to aliasing effect
+            memset((uint8_t*) ptr() + pos * sizeof (T), 0, num * sizeof (T));
         }
     };
 
