@@ -69,7 +69,7 @@ namespace Monty {
             memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
         }
         void wipe (size_t pos, size_t num) {
-            memset(ptr() + pos, 0, num * sizeof (T));
+            memset((uint8_t*) ptr() + pos, 0, num * sizeof (T));
         }
     };
 
