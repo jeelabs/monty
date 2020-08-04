@@ -8,7 +8,8 @@
 
 using namespace Monty;
 
-uintptr_t memory [1024];
+constexpr auto MEMSZ = 1024;
+uintptr_t memory [MEMSZ];
 int created, destroyed, marked, failed;
 size_t memAvail;
 
@@ -452,6 +453,53 @@ void outOfVecs () {
     TEST_ASSERT_EQUAL(a, avail());
 }
 
+void memRomOrRam () {
+#if !NATIVE
+    struct RomObj {
+        virtual void blah () {} // virtual is romable
+    };
+    static const RomObj romObj;
+    static       RomObj ramObj;
+
+    struct DataObj {
+        virtual ~DataObj () {} // but not if virtual destructor (!)
+    };
+    static const DataObj dataObj;
+
+    struct BssObj { // with plain destructor, it needs run-time init (?)
+        ~BssObj () {}
+    };
+    static const BssObj bssObj;
+
+    //extern int _etext [];
+    extern int _sdata [];
+    extern int _edata [];
+    extern int _sbss [];
+    extern int _ebss [];
+
+    auto rom = (void*) &romObj;
+    TEST_ASSERT(rom < _sdata);                  // in flash, i.e. .rodata
+
+    auto ram = (void*) &ramObj;                 // not const
+    TEST_ASSERT(_sdata <= ram && ram < _edata); // pre-inited, i.e. in .data
+
+    auto data = (void*) &dataObj;
+    TEST_ASSERT(_sdata <= data && data < _edata);
+
+    auto bss = (void*) &bssObj;
+    TEST_ASSERT(_sbss <= bss && bss < _ebss);
+#endif
+
+    Object stackObj;
+    auto heapObj = new Object;
+
+    auto heap = (void*) heapObj;
+    TEST_ASSERT(memory <= heap && heap < memory + MEMSZ);
+
+    auto stack = (void*) &stackObj;
+    TEST_ASSERT(heap <= stack);
+}
+
 auto main () -> int {
     UNITY_BEGIN();
 
@@ -474,6 +522,8 @@ auto main () -> int {
     RUN_TEST(compactVecs);
     RUN_TEST(vecData);
     RUN_TEST(outOfVecs);
+
+    RUN_TEST(memRomOrRam);
 
     UNITY_END();
     return 0;

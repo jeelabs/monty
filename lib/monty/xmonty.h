@@ -12,14 +12,14 @@ namespace Monty {
         }
         void operator delete (void*);
     protected:
-        Obj () {} // only derived objects can be instantiated
+        constexpr Obj () {} // only derived objects can be instantiated
 
         virtual void marker () const {} // called to mark all ref'd objects
         friend void mark (Obj const&);
     };
 
     struct Vec {
-        Vec (void const* ptr =nullptr, size_t len =0) // TODO caps in bytes
+        constexpr Vec (void const* ptr =nullptr, size_t len =0) // TODO caps b
             : extra (0), caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
         ~Vec () { (void) resize(0); }
 
@@ -75,9 +75,9 @@ namespace Monty {
     };
 
     struct Chunk {
-        Chunk (Val v);
-        Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
-        Chunk (char t, Array& a) : ptr (&a), typ (t) {}
+                  Chunk (Val v);
+        constexpr Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
+        constexpr Chunk (char t, Array& a) : ptr (&a), typ (t) {}
 
         template< typename T >
         auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
@@ -162,11 +162,11 @@ namespace Monty {
     struct Val {
         enum Tag { Nil, Int, Str, Obj };
 
-        Val () {}
-        Val (int arg);
-        Val (char const* arg);
-        Val (Object const* arg) : v ((uintptr_t) arg) {} // TODO keep?
-        Val (Object const& arg) : v ((uintptr_t) &arg) {}
+        constexpr Val () : v (0) {}
+                  Val (int arg);
+                  Val (char const* arg);
+        constexpr Val (Object const* arg) : p (arg) {} // TODO keep?
+        constexpr Val (Object const& arg) : p (&arg) {}
 
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const { return (char const*) (v >> 2); }
@@ -215,7 +215,10 @@ namespace Monty {
         auto check (Type const& t) const -> bool;
         void verify (Type const& t) const;
 
-        uintptr_t v{0};
+        union {
+            uintptr_t v;
+            const void* p;
+        };
     };
 
     // can't use "CG3 type <object>", as type() is virtual iso override
@@ -238,7 +241,7 @@ namespace Monty {
 
         static None const noneObj;
     private:
-        None () {} // can't construct more instances
+        constexpr None () {} // can't construct more instances
     };
 
     //CG< type bool
@@ -255,7 +258,7 @@ namespace Monty {
         static Bool const trueObj;
         static Bool const falseObj;
     private:
-        Bool () {} // can't construct more instances
+        constexpr Bool () {} // can't construct more instances
     };
 
     //CG< type int
@@ -266,7 +269,7 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        Long (int64_t v) : i (v) {}
+        constexpr Long (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
 
@@ -275,7 +278,7 @@ namespace Monty {
 
     private:
         int64_t i;
-    };
+    } __attribute__((packed)); // better fit on 32b arch, no effect on 64b
 
     //CG< type type
     struct Type : Object {
@@ -290,7 +293,7 @@ namespace Monty {
         char const* name;
         Factory const factory;
 
-        Type (char const* s, Factory f =noFactory, Lookup const* a =nullptr)
+        constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
         //auto call (ChunkOf<Val>& args) const -> Val override;
