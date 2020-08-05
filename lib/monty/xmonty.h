@@ -303,6 +303,7 @@ namespace Monty {
 
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
 
     private:
         int64_t i __attribute__((packed));

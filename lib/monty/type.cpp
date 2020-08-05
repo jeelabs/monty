@@ -111,6 +111,10 @@ auto Long::unop (UnOp) const -> Value {
     return Value{}; // TODO
 }
 
+auto Long::binop (BinOp, Value) const -> Value {
+    return Value{}; // TODO
+}
+
 // TODO change argc/argv to: Chunk<Value> const& args
 
 auto Bool::create (const Type&, int argc, Value argv[]) -> Value {
@@ -130,9 +134,11 @@ auto Array::create (const Type&, int argc, Value argv[]) -> Value {
 }
 
 auto List::create (const Type&, int argc, Value argv[]) -> Value {
-    return Value{}; // TODO
+    // TODO
+    return new List;
 }
 
 auto Dict::create (const Type&, int argc, Value argv[]) -> Value {
-    return Value{}; // TODO
+    // TODO
+    return new Dict;
 }
