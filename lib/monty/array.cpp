@@ -9,6 +9,30 @@
 
 using namespace Monty;
 
+int abc = 123; // avoid "has no symbols" warning TODO remove when there is code
+
+#if 0 // TODO obsolete
+    struct Vector : private Vec {
+        Vector (size_t bits);
+
+        auto length () const -> size_t { return fill; }
+        int width () const { auto b = 1<<extra; return b < 8 ? -b : b/8; }
+        size_t widthOf (int num) const { return ((num << extra) + 7) >> 3; }
+
+        auto getPtr (int idx) const -> uint8_t*;
+        auto getInt (int idx) const -> int;
+        auto getIntU (int idx) const -> uint32_t;
+
+        void set (int idx, void const* ptr);
+        void set (int idx, int val);
+
+        void ins (size_t idx, int num =1);
+        void del (size_t idx, int num =1);
+
+    protected:
+        uint32_t fill{0}; // in elements
+    };
+
 Vector::Vector (size_t bits) {
     while (bits > (1U << extra))
         ++extra;
@@ -99,3 +123,4 @@ void Vector::del (size_t idx, int num) {
     assert(extra >= 3); // TODO
     memmove(getPtr(idx), getPtr(idx + num), widthOf(fill - idx));
 }
+#endif

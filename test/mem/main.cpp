@@ -500,7 +500,7 @@ void memRomOrRam () {
     TEST_ASSERT(heap <= stack);
 }
 
-auto main () -> int {
+int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
@@ -526,5 +526,4 @@ auto main () -> int {
     RUN_TEST(memRomOrRam);
 
     UNITY_END();
-    return 0;
 }

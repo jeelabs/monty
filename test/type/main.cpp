@@ -44,12 +44,11 @@ void objTypeSizes () {
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Type)); // TODO will change
 }
 
-auto main () -> int {
+int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
     RUN_TEST(objTypeSizes);
 
     UNITY_END();
-    return 0;
 }

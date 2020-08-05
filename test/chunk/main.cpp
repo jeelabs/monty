@@ -163,7 +163,7 @@ static void vecOfVal () {
     //a->segment.chunk.asVec<Chunk>().move(1,2,3);
 }
 
-auto main () -> int {
+int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
@@ -180,5 +180,4 @@ auto main () -> int {
     RUN_TEST(vecOfVal);
 
     UNITY_END();
-    return 0;
 }
