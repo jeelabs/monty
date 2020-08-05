@@ -90,7 +90,7 @@ namespace Monty {
 
     template< typename T >
     struct ChunkOf : Chunk {
-        using Chunk::Chunk; // re-use constructors
+        using Chunk::Chunk; // re-use constructor
 
         auto length () const -> size_t {
             auto& vec = asVecOf<T>();
@@ -129,10 +129,9 @@ namespace Monty {
     };
 
     struct Segment : Chunk {
-        static auto create (Vec& vec, char type ='V') -> Segment&;
+        static auto create (char type, Vec& vec) -> Segment&;
 
-        // TODO using Chunk::Chunk;
-        Segment (Vec& v) : Chunk (v) {}
+        using Chunk::Chunk; // re-use constructor
         virtual ~Segment () {}
 
         operator Value () const;
@@ -351,7 +350,7 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        Array (char type) : segment (Segment::create(vec, type)) {}
+        Array (char type) : segment (Segment::create(type, vec)) {}
 
         struct Proxy { Segment& s; size_t i;
             operator Value () const { return s.get(i); }
@@ -363,10 +362,46 @@ namespace Monty {
 
         void marker () const override { mark(segment); }
 
-    protected:
+    private:
         Vec vec;
         Segment& segment;
         friend struct Segment;
+    };
+
+    //CG< type list
+    struct List : Object {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        List () : items (Segment::create('V', vec)) {}
+
+        void marker () const override { mark(items); }
+
+    private:
+        VecOf<Value> vec;
+        Segment& items;
+    };
+
+    //CG< type dict
+    struct Dict : Object {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        Dict () : keys (Segment::create('V', vec)),
+                  vals (Segment::create('V', vec)) {}
+
+        void marker () const override { mark(keys); mark(vals); }
+
+    private:
+        VecOf<Value> vec;
+        Segment& keys;
+        Segment& vals;
     };
 
 } // namespace Monty

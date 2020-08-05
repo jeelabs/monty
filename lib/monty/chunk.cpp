@@ -51,7 +51,7 @@ static_assert (sizeof (SegmentOf<'b',int8_t>)  == sizeof (Segment), "int8_t?");
 static_assert (sizeof (SegmentOf<'V',Value>)   == sizeof (Segment), "Value?");
 static_assert (sizeof (SegmentOf<'S',Segment>) == sizeof (Segment), "Segment?");
 
-auto Segment::create (Vec& v, char c) -> Segment& {
+auto Segment::create (char c, Vec& v) -> Segment& {
     Segment* p = nullptr;
     switch (c) {
         case 'b': p = new SegmentOf<'b',int8_t>   (v); break;

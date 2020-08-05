@@ -71,13 +71,17 @@ const TypeObj         None::info ("<none>");
 
 const TypeObj    Array::info ("array", Array::create, &Array::attrs);
 const TypeObj     Bool::info ("bool", Bool::create, &Bool::attrs);
+const TypeObj     Dict::info ("dict", Dict::create, &Dict::attrs);
 const TypeObj     Long::info ("int", Long::create, &Long::attrs);
+const TypeObj     List::info ("list", List::create, &List::attrs);
 const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
 const TypeObj&         None::type () const { return info; }
 const TypeObj&        Array::type () const { return info; }
 const TypeObj&         Bool::type () const { return info; }
+const TypeObj&         Dict::type () const { return info; }
 const TypeObj&         Long::type () const { return info; }
+const TypeObj&         List::type () const { return info; }
 const TypeObj&         Type::type () const { return info; }
 //CG>
 
@@ -92,6 +96,8 @@ Lookup const Bool::attrs;
 Lookup const Long::attrs;
 Lookup const Type::attrs;
 Lookup const Array::attrs;
+Lookup const List::attrs;
+Lookup const Dict::attrs;
 
 auto None::unop (UnOp) const -> Value {
     return Value{}; // TODO
@@ -120,5 +126,13 @@ auto Type::create (const Type&, int argc, Value argv[]) -> Value {
 }
 
 auto Array::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
+}
+
+auto List::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
+}
+
+auto Dict::create (const Type&, int argc, Value argv[]) -> Value {
     return Value{}; // TODO
 }
