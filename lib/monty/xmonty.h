@@ -340,7 +340,7 @@ namespace Monty {
 
 } // namespace Monty
 
-// see array.cpp - arrays, lists, dicts, and other derived types
+// see array.cpp - arrays, dicts, and other derived types
 namespace Monty {
 
     //CG< type array
@@ -363,25 +363,33 @@ namespace Monty {
 
         void marker () const override { mark(segment); }
 
-    private:
+    protected:
         Vec vec;
         Segment& segment;
         friend struct Segment;
     };
 
-    //CG< type dict
-    struct Dict : Object {
+    //CG< type set
+    struct Set : Array {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
 
-        void marker () const override { mark(keys); mark(vals); }
+    };
 
-    private:
-        VecOf<Value> vec;
-        ChunkOf<Value> keys{vec};
+    //CG< type dict
+    struct Dict : Set {
+        static Value create (const TypeObj&, int argc, Value argv[]);
+        static const LookupObj attrs;
+        static const TypeObj info;
+        const TypeObj& type () const override;
+    //CG>
+
+        void marker () const override { Set::marker(); mark(vals); }
+
+    protected:
         ChunkOf<Value> vals{vec};
     };
 

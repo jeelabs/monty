@@ -1,4 +1,4 @@
-// array.cpp - arrays, lists, dicts, and other derived types
+// array.cpp - arrays, dicts, and other derived types
 
 #include <cassert>
 #include <cstdint>
