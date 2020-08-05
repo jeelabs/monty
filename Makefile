@@ -1,8 +1,12 @@
 help:
-	# make run   - build and run a native (macos/linux) version
-	# make test  - build and run the native (macos/linux) C++ tests
-	# make up    - build and upload to an attached board
-	# make mon   - build, upload, and view output of an attached board
+	# make all    - shorthand for "make run testall verify"
+	# make run    - build and run a native (macos/linux) version
+	# make test   - build and run the native (macos/linux) C++ tests
+	# make verify - build and run the native (macos/linux) script tests
+	# make up     - build and upload to an attached board
+	# make mon    - build, upload, and view output of an attached board
+
+all: run testall verify
 
 run: gen native verify/demo.mpy
 	.pio/build/native/program verify/demo.mpy
@@ -26,8 +30,9 @@ native bluepill_f103c8 disco_f407vg esp8266 tinypico:
 gen:
 	src/codegen.py lib/monty/
 
-verify: native
-	@ make -C $@ BOARD=$<
+verify:
+	pio run -c configs/native.ini -s
+	@ make -C $@ BOARD=native
 
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.
