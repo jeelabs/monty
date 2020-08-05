@@ -128,8 +128,11 @@ namespace Monty {
         }
     };
 
-    struct Segment {
+    struct Segment : Chunk {
         static auto create (Vec& vec, char type ='V') -> Segment&;
+
+        // TODO using Chunk::Chunk;
+        Segment (Vec& v) : Chunk (v) {}
         virtual ~Segment () {}
 
         operator Value () const;
