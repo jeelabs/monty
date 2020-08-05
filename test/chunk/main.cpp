@@ -79,14 +79,14 @@ void vecOfMoveAndWipe () {
 }
 
 void chunkTypeSizes () {
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Chunk));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<int>));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<Vec>));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (ChunkOf<Chunk>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Chunk));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<int>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<Vec>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<Chunk>));
 }
 
 void chunkOfItems () {
-    ChunkOf<int> c ('l', v);
+    ChunkOf<int> c (v);
 
     static int m1 [] = { 0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0, };
     for (int i = 0; i < 11; ++i)
@@ -110,7 +110,7 @@ void chunkOfItems () {
 }
 
 void chunkOfInsAndDel () {
-    ChunkOf<int> c ('l', v);
+    ChunkOf<int> c (v);
 
     TEST_ASSERT_NOT_NULL(&c); // TODO placeholder
 #if 0
@@ -148,8 +148,12 @@ static void vecOfVal () {
     TEST_ASSERT_EQUAL_INT(0,   v.get(0));
     TEST_ASSERT_EQUAL_INT(123, v.get(1));
 #endif
-    auto a = Array::create('B');
+    auto a = new Array ('B');
     TEST_ASSERT_NOT_NULL(a);
+
+    //a->segment.vec().resize(100);
+    //a->segment.chunk.asVec<Value>().move(1,2,3);
+    //a->segment.chunk.asVec<Chunk>().move(1,2,3);
 }
 
 auto main () -> int {
