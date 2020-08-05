@@ -22,29 +22,10 @@ Segment& Segment::operator= (Value v) {
 
 // cannot be an abstract class because the size is needed for VecOf<Segment>
 auto Segment::typ () const -> char     { assert(false); }
-auto Segment::vec () const -> Vec&     { assert(false); }
 auto Segment::get (int) const -> Value { assert(false); }
 void Segment::set (int, Value)         { assert(false); }
 void Segment::ins (size_t, size_t)     { assert(false); }
 void Segment::del (size_t, size_t)     { assert(false); }
-
-template< char C, typename T >
-struct SegmentOf : Segment {
-    SegmentOf (Vec& v) : Segment (v) {}
-
-    auto typ () const -> char override { return C; }
-    auto vec () const -> Vec& override { return cotc().asVec(); }
-
-    auto get (int i) const -> Value  override { return cotc()[i]; }
-    void set (int i, Value v)        override { cot()[i] = v; }
-    void ins (size_t i, size_t n =1) override { cot().insert(i, n); }
-    void del (size_t i, size_t n =1) override { cot().remove(i, n); }
-
-private:
-    using CoT = ChunkOf<T>;
-    auto cot () -> CoT& { return *(CoT*) this; }
-    auto cotc () const -> CoT const& { return *(CoT const*) this; }
-};
 
 // all SegmentOf<T> instances must have the same size as the base class
 static_assert (sizeof (SegmentOf<'b',int8_t>)  == sizeof (Segment), "int8_t?");

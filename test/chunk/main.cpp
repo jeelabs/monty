@@ -120,6 +120,13 @@ void chunkOfInsAndDel () {
 #endif
 }
 
+void segmentTypeSizes () {
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Segment));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'l',int32_t>));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'V',Vec>));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'S',Segment>));
+}
+
 static void vecOfVal () {
 #if 0
     VecOf<Val> v;
@@ -167,6 +174,8 @@ auto main () -> int {
     RUN_TEST(chunkTypeSizes);
     RUN_TEST(chunkOfItems);
     RUN_TEST(chunkOfInsAndDel);
+
+    RUN_TEST(segmentTypeSizes);
 
     RUN_TEST(vecOfVal);
 

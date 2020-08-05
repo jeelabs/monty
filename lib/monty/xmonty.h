@@ -54,7 +54,6 @@ namespace Monty {
 // see chunk.cpp - typed and chunked access to vectors
 namespace Monty {
 
-    struct Array; // forward decl
     struct Value; // forward decl
 
     template< typename T >
@@ -90,7 +89,7 @@ namespace Monty {
 
     template< typename T >
     struct ChunkOf : Chunk {
-        using Chunk::Chunk; // re-use constructor
+        using Chunk::Chunk;
 
         auto length () const -> size_t {
             auto& vec = asVecOf<T>();
@@ -131,19 +130,31 @@ namespace Monty {
     struct Segment : Chunk {
         static auto create (char type, Vec& vec) -> Segment&;
 
-        using Chunk::Chunk; // re-use constructor
+        using Chunk::Chunk;
         virtual ~Segment () {}
 
         operator Value () const;
         Segment& operator= (Value);
 
         virtual auto typ () const -> char;
-        virtual auto vec () const -> Vec&;
-
         virtual auto get (int idx) const -> Value;
         virtual void set (int idx, Value val);
         virtual void ins (size_t idx, size_t num =1);
         virtual void del (size_t idx, size_t num =1);
+    };
+
+    template< char C, typename T >
+    struct SegmentOf : Segment {
+        using Segment::Segment;
+
+        auto typ () const -> char override { return C; }
+        auto get (int i) const -> Value override;
+        void set (int i, Value v) override;
+        void ins (size_t i, size_t n =1) override { cot().insert(i, n); }
+        void del (size_t i, size_t n =1) override { cot().remove(i, n); }
+
+    private:
+        auto cot () -> ChunkOf<T>& { return *(ChunkOf<T>*) this; }
     };
 
     void mark (Segment const&);
@@ -227,6 +238,16 @@ namespace Monty {
             const void* p;
         };
     };
+
+    // define SegmentOf<C,T>'s get & set, now that Value type is complete
+    template< char C, typename T >
+    auto SegmentOf<C,T>::get (int i) const -> Value {
+        return (*(ChunkOf<T> const*) this)[i];
+    }
+    template< char C, typename T >
+    void SegmentOf<C,T>::set (int i, Value v) {
+        cot()[i] = v;
+    }
 
     // can't use "CG3 type <object>", as type() is virtual iso override
     struct Object : Obj {
@@ -376,13 +397,13 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        List () : items (Segment::create('V', vec)) {}
+        //List () {}
 
         void marker () const override { mark(items); }
 
     private:
         VecOf<Value> vec;
-        Segment& items;
+        ChunkOf<Value> items{vec};
     };
 
     //CG< type dict
@@ -393,15 +414,14 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        Dict () : keys (Segment::create('V', vec)),
-                  vals (Segment::create('V', vec)) {}
+        //Dict () {}
 
         void marker () const override { mark(keys); mark(vals); }
 
     private:
         VecOf<Value> vec;
-        Segment& keys;
-        Segment& vals;
+        ChunkOf<Value> keys{vec};
+        ChunkOf<Value> vals{vec};
     };
 
 } // namespace Monty
