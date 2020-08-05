@@ -10,6 +10,9 @@ run: gen native verify/demo.mpy
 test: gen platformio.ini
 	pio test -e native
 
+testall: gen platformio.ini
+	pio test -e native -f '*'
+
 up: platformio.ini
 	pio run -t upload -s
 
