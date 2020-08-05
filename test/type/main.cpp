@@ -38,8 +38,8 @@ void objTypeSizes () {
     struct Normal { void* p; int64_t i; };
     TEST_ASSERT(sizeof (Packed) < sizeof (Normal) || 8 * sizeof (void*) == 64);
 
-    TEST_ASSERT_GREATER_OR_EQUAL(sizeof (Packed), sizeof (Long));
-    TEST_ASSERT_LESS_OR_EQUAL(sizeof (Normal), sizeof (Long));
+    TEST_ASSERT_GREATER_OR_EQUAL(sizeof (Packed), sizeof (Fixed));
+    TEST_ASSERT_LESS_OR_EQUAL(sizeof (Normal), sizeof (Fixed));
 
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Type)); // TODO will change
 }

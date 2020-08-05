@@ -172,8 +172,10 @@ namespace Monty {
     struct Object;
     struct Type;
     struct Lookup;
+    struct Function;
 
     // TODO keep these aliases until codegen.py has been updated
+    using FunObj = Function;
     using LookupObj = Lookup;
     using TypeObj = Type;
 
@@ -290,14 +292,14 @@ namespace Monty {
     };
 
     //CG< type int
-    struct Long : Object {
+    struct Fixed : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
         static const LookupObj attrs;
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
 
-        constexpr Long (int64_t v) : i (v) {}
+        constexpr Fixed (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
 
@@ -317,7 +319,7 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        typedef auto (*Factory)(Type const&,int,Value[]) -> Value;
+        using Factory = auto (*)(Type const&,int,Value[]) -> Value;
 
         char const* name;
         Factory const factory;
@@ -338,7 +340,7 @@ namespace Monty {
 
 } // namespace Monty
 
-// see array.cpp - vectors, arrays, and other derived types
+// see array.cpp - arrays, lists, dicts, and other derived types
 namespace Monty {
 
     //CG< type array
@@ -400,6 +402,38 @@ namespace Monty {
         VecOf<Value> vec;
         ChunkOf<Value> keys{vec};
         ChunkOf<Value> vals{vec};
+    };
+
+} // namespace Monty
+
+// see state.cpp - execution state, stacks, and callables
+namespace Monty {
+
+    //CG3 type <function>
+    struct Function : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+        using Prim = auto (*)(int,Value[]) -> Value;
+
+        constexpr Function (Prim f) : func (f) {}
+
+        //Value call (int argc, Value argv[]) const override {
+        //    return func(argc, argv);
+        //}
+
+    // TODO private:
+        const Prim func;
+    };
+
+    //CG3 type <context>
+    struct Context : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+    // TODO private:
+        VecOf<Value> vec;
+        ChunkOf<Value> stack{vec};
     };
 
 } // namespace Monty

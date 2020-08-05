@@ -23,7 +23,7 @@ const Value Value::True {Bool::trueObj};
 
 Value::Value (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
-        *this = new Long (arg);
+        *this = new Fixed (arg);
 }
 
 Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
@@ -58,6 +58,22 @@ auto Object::binop (BinOp, Value) const -> Value {
     return Value{};
 }
 
+auto None::unop (UnOp) const -> Value {
+    return Value{}; // TODO
+}
+
+auto Bool::unop (UnOp) const -> Value {
+    return Value{}; // TODO
+}
+
+auto Fixed::unop (UnOp) const -> Value {
+    return Value{}; // TODO
+}
+
+auto Fixed::binop (BinOp, Value) const -> Value {
+    return Value{}; // TODO
+}
+
 auto Type::noFactory (const Type&, int, Value[]) -> Value {
     assert(false);
     return Value{};
@@ -67,20 +83,24 @@ Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
+const TypeObj      Context::info ("<context>");
+const TypeObj     Function::info ("<function>");
 const TypeObj         None::info ("<none>");
 
 const TypeObj    Array::info ("array", Array::create, &Array::attrs);
 const TypeObj     Bool::info ("bool", Bool::create, &Bool::attrs);
 const TypeObj     Dict::info ("dict", Dict::create, &Dict::attrs);
-const TypeObj     Long::info ("int", Long::create, &Long::attrs);
+const TypeObj    Fixed::info ("int", Fixed::create, &Fixed::attrs);
 const TypeObj     List::info ("list", List::create, &List::attrs);
 const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
+const TypeObj&      Context::type () const { return info; }
+const TypeObj&     Function::type () const { return info; }
 const TypeObj&         None::type () const { return info; }
 const TypeObj&        Array::type () const { return info; }
 const TypeObj&         Bool::type () const { return info; }
 const TypeObj&         Dict::type () const { return info; }
-const TypeObj&         Long::type () const { return info; }
+const TypeObj&        Fixed::type () const { return info; }
 const TypeObj&         List::type () const { return info; }
 const TypeObj&         Type::type () const { return info; }
 //CG>
@@ -93,35 +113,19 @@ struct Monty::Lookup {
 };
 
 Lookup const Bool::attrs;
-Lookup const Long::attrs;
+Lookup const Fixed::attrs;
 Lookup const Type::attrs;
 Lookup const Array::attrs;
 Lookup const List::attrs;
 Lookup const Dict::attrs;
 
-auto None::unop (UnOp) const -> Value {
-    return Value{}; // TODO
-}
-
-auto Bool::unop (UnOp) const -> Value {
-    return Value{}; // TODO
-}
-
-auto Long::unop (UnOp) const -> Value {
-    return Value{}; // TODO
-}
-
-auto Long::binop (BinOp, Value) const -> Value {
-    return Value{}; // TODO
-}
-
-// TODO change argc/argv to: Chunk<Value> const& args
+// TODO change argc/argv to: ChunkOf<Value> const& args
 
 auto Bool::create (const Type&, int argc, Value argv[]) -> Value {
     return Value{}; // TODO
 }
 
-auto Long::create (const Type&, int argc, Value argv[]) -> Value {
+auto Fixed::create (const Type&, int argc, Value argv[]) -> Value {
     return Value{}; // TODO
 }
 
