@@ -66,29 +66,24 @@ namespace Monty {
         auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
 
         void move (size_t pos, size_t num, int off) {
-            memmove(ptr() + pos + off, ptr() + pos, num * sizeof (T));
+            memmove((void*) (ptr() + pos + off),
+                        (void const*) (ptr() + pos), num * sizeof (T));
         }
         void wipe (size_t pos, size_t num) {
-            // get rid of ptr type, esp32 compile fails due to aliasing effect
-            memset((uint8_t*) ptr() + pos * sizeof (T), 0, num * sizeof (T));
+            memset((void*) (ptr() + pos), 0, num * sizeof (T));
         }
     };
 
     struct Chunk {
-        Chunk (Value v);
-        Chunk (Vec& v)   : ptr (&v) {}
-        Chunk (Array& a) : ptr (&a) {}
+        Chunk (Vec& v) : vec (v) {}
 
-        auto isValid   () const -> bool { return ptr != nullptr; }
+        auto isValid () const -> bool { return (void*) &vec != nullptr; }
 
-        auto asVec    () const -> Vec& { return *(Vec*) ptr; }
+        auto asVec () const -> Vec& { return vec; }
         template< typename T >
-        auto asVecOf  () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
-        auto asArray  () const -> Array& { return *(Array*) ptr; }
+        auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
-        operator Value () const;
-
-        void* ptr;       // pointer to vector or array
+        Vec& vec;        // parent vector
         size_t off{0};   // starting offset
         size_t len{~0U}; // maximum length
     };
@@ -137,17 +132,20 @@ namespace Monty {
         static auto create (Vec& vec, char type ='V') -> Segment&;
         virtual ~Segment () {}
 
-        virtual auto typ () const -> char =0;
-        virtual auto vec () const -> Vec& =0;
+        operator Value () const;
+        Segment& operator= (Value);
 
-        virtual auto get (int idx) const -> Value =0;
-        virtual void set (int idx, Value val) =0;
-        virtual void ins (size_t idx, size_t num =1) =0;
-        virtual void del (size_t idx, size_t num =1) =0;
+        virtual auto typ () const -> char;
+        virtual auto vec () const -> Vec&;
+
+        virtual auto get (int idx) const -> Value;
+        virtual void set (int idx, Value val);
+        virtual void ins (size_t idx, size_t num =1);
+        virtual void del (size_t idx, size_t num =1);
     };
 
     void mark (Segment const&);
-    void mark (ChunkOf<Chunk> const&);
+    void mark (ChunkOf<Segment> const&);
     void mark (ChunkOf<Value> const&);
 
 } // namespace Monty
@@ -365,6 +363,7 @@ namespace Monty {
     protected:
         Vec vec;
         Segment& segment;
+        friend struct Segment;
     };
 
 } // namespace Monty

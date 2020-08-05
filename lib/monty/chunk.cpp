@@ -9,14 +9,25 @@
 
 using namespace Monty;
 
-// this is a "delegating constructor", i.e. it calls on another constructor
-Chunk::Chunk (Value v) : Chunk (v.asType<Array>()) {} // TODO ...
-
-Chunk::operator Value () const {
+Segment::operator Value () const {
     auto p = new Array ('A'); // TODO type 'A'? Vec ownership & lifetime?
     assert(p != nullptr);
     return *p;
 }
+
+Segment& Segment::operator= (Value v) {
+    *this = v.asType<Array>().segment;
+    return *this;
+}
+
+// must be defined because the size is needed for VecOf<Segment>
+// careful: SegmentOf<T> instances must all have this same size!
+auto Segment::typ () const -> char     { assert(false); }
+auto Segment::vec () const -> Vec&     { assert(false); }
+auto Segment::get (int) const -> Value { assert(false); }
+void Segment::set (int, Value)         { assert(false); }
+void Segment::ins (size_t, size_t)     { assert(false); }
+void Segment::del (size_t, size_t)     { assert(false); }
 
 template< char C, typename T >
 struct SegmentOf : Segment, ChunkOf<T> {
@@ -45,7 +56,7 @@ auto Segment::create (Vec& v, char c) -> Segment& {
         case 'l': p = new SegmentOf<'l',int32_t>  (v); break;
         case 'L': p = new SegmentOf<'L',uint32_t> (v); break;
         case 'V': p = new SegmentOf<'V',Value>    (v); break;
-        case 'C': p = new SegmentOf<'C',Chunk>    (v); break;
+        case 'S': p = new SegmentOf<'S',Segment>  (v); break;
         
         //case 'P': // 1b: Packed
         //case 'T': // 2b: Tiny
@@ -55,29 +66,25 @@ auto Segment::create (Vec& v, char c) -> Segment& {
     return *p;
 }
 
+void Monty::mark (Segment const& seg) {
+    switch (seg.typ()) {
+        case 'S':
+            mark((ChunkOf<Segment>&) (SegmentOf<'S',Segment> const&) seg);
+            break;
+        case 'V':
+            mark((ChunkOf<Value>&) (SegmentOf<'V',Value> const&) seg);
+            break;
+    }
+}
+
+void Monty::mark (ChunkOf<Segment> const& chunk) {
+    for (size_t i = 0; i < chunk.length(); ++i) {
+        mark(chunk[i]);
+    }
+}
+
 void Monty::mark (ChunkOf<Value> const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i)
         if (chunk[i].isObj())
             mark(chunk[i].obj());
-}
-
-void Monty::mark (ChunkOf<Chunk> const& chunk) {
-    for (size_t i = 0; i < chunk.length(); ++i) {
-        auto& chk = chunk[i];
-#if 1
-        (void) chk; // FIXME can't figure out type via char ...
-#else
-        if (chk.hasChunks())
-            mark((ChunkOf<Chunk> const&) chk);
-        else if (chk.hasVals())
-            mark((ChunkOf<Value> const&) chk);
-#endif
-    }
-}
-
-void Monty::mark (Segment const& segment) {
-    switch (segment.typ()) {
-        // TODO case 'V': mark(((SegmentOf<'V',Value> const&) segment)); break;
-        // TODO case 'C': mark(((SegmentOf<'C',Chunk> const&) segment)); break;
-    }
 }
