@@ -27,7 +27,7 @@ void smokeTest () {
 }
 
 void arrayTypeSizes () {
-    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Array));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Array));
 }
 
 static void vecInstance () {

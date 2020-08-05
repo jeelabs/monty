@@ -79,8 +79,9 @@ namespace Monty {
         Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
         Chunk (char t, Array& a) : ptr (&a), typ (t) {}
 
+        auto asVec    () const -> Vec& { return *(Vec*) ptr; }
         template< typename T >
-        auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
+        auto asVecOf  () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
         auto asArray  () const -> Array& { return *(Array*) ptr; }
 
         auto isValid   () const -> bool { return ptr != nullptr; }
@@ -103,14 +104,14 @@ namespace Monty {
         using Chunk::Chunk; // re-use constructors
 
         auto length () const -> size_t {
-            auto& vec = asVec<T>();
+            auto& vec = asVecOf<T>();
             auto n = vec.cap() - off;
             return n > len ? len : n >= 0 ? n : 0;
         }
 
         auto operator[] (size_t idx) const -> T& {
             // assert(idx < length());
-            auto& vec = asVec<T>();
+            auto& vec = asVecOf<T>();
             return vec[off+idx];
         }
 
@@ -120,7 +121,7 @@ namespace Monty {
                 num += idx - len;
                 idx = len;
             }
-            auto& vec = asVec<T>();
+            auto& vec = asVecOf<T>();
             vec.move(idx, len - idx, num);
             vec.wipe(idx, num);
             len += num;
@@ -132,7 +133,7 @@ namespace Monty {
                 return;
             if (num > len - idx)
                 num = len - idx;
-            auto& vec = asVec<T>();
+            auto& vec = asVecOf<T>();
             vec.move(idx + num, len - (idx + num), -num);
             len -= num;
         }
@@ -333,6 +334,19 @@ namespace Monty {
     };
 #endif
 
+    struct Segment {
+        static auto create (Vec& vec, char type ='V') -> Segment&;
+        virtual ~Segment () {}
+
+        virtual auto typ () const -> char =0;
+        virtual auto vec () const -> Vec& =0;
+
+        virtual auto get (int idx) const -> Value =0;
+        virtual void set (int idx, Value val) =0;
+        virtual void ins (size_t idx, size_t num =1) =0;
+        virtual void del (size_t idx, size_t num =1) =0;
+    };
+
     //CG< type array
     struct Array : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
@@ -342,19 +356,20 @@ namespace Monty {
     //CG>
         static auto create (char type) -> Array*;
 
-        Array () : chunk ('V', vec) {}
-        Array (Chunk const& c) : chunk (c) {}
+        Array (char type) : segment (Segment::create(vec, type)) {}
 
-        auto operator[] (size_t idx) const -> Value { return get(idx); }
+        auto operator[] (size_t idx) const -> Value; // TODO { return get(idx); }
         // TODO set via [] will require a proxy instance
 
-        virtual auto get (int idx) const -> Value =0;
-        virtual void set (int idx, Value val) =0;
-        virtual void ins (size_t idx, size_t num =1) =0;
-        virtual void del (size_t idx, size_t num =1) =0;
+        //virtual auto get (int idx) const -> Value =0;
+        //virtual void set (int idx, Value val) =0;
+        //virtual void ins (size_t idx, size_t num =1) =0;
+        //virtual void del (size_t idx, size_t num =1) =0;
+
+        void marker () const override;
 
         Vec vec;
-        Chunk chunk;
+        Segment& segment;
     };
 
 } // namespace Monty

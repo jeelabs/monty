@@ -110,64 +110,57 @@ Chunk::operator Value () const {
 }
 
 template< char C, typename T >
-struct ArrayOf : Array {
-    auto get (int idx) const -> Value override {
-        auto& chk = (ChunkOf<T>&) chunk;
-        return chk[idx];
-    }
-    void set (int idx, Value val) override {
-        auto& chk = (ChunkOf<T>&) chunk;
-        ins(idx + 1, 0); // grow if needed
-        chk[idx] = val;
-    }
-    void ins (size_t idx, size_t num =1) override {
-        auto& chk = (ChunkOf<T>&) chunk;
-        chk.insert(idx, num);
-    }
-    void del (size_t idx, size_t num =1) override {
-        auto& chk = (ChunkOf<T>&) chunk;
-        chk.remove(idx, num);
-    }
+struct SegmentOf : Segment, ChunkOf<T> {
+    using CoT = ChunkOf<T>;
+
+    SegmentOf (Vec& v) : CoT (C, v) {}
+
+    auto typ () const -> char override { return C; }
+    auto vec () const -> Vec& override { return CoT::asVec(); }
+
+    auto get (int i) const -> Value  override { return CoT::operator[](i); }
+    void set (int i, Value v)        override { CoT::operator[](i) = v; }
+    void ins (size_t i, size_t n =1) override { CoT::insert(i, n); }
+    void del (size_t i, size_t n =1) override { CoT::remove(i, n); }
 };
 
-struct ArrayOfVal : ArrayOf<'V',Value> {
-    void marker () const override {
-        Array::marker();
-        mark((ChunkOf<Value> const&) chunk);
+void Array::marker () const {
+    switch (segment.typ()) {
+        case 'V': mark(((SegmentOf<'V',Value> const&) segment)); break;
+        case 'C': mark(((SegmentOf<'C',Chunk> const&) segment)); break;
     }
-};
+}
 
-struct ArrayOfChunk : ArrayOf<'C',Chunk> {
-    void marker () const override {
-        Array::marker();
-        mark((ChunkOf<Chunk>&) chunk);
-    }
-};
-
-auto Array::create (char c) -> Array* {
-    Array* p = nullptr;
+auto Segment::create (Vec& v, char c) -> Segment& {
+    Segment* p = nullptr;
     switch (c) {
-        case 'b': p = new ArrayOf<'b',int8_t>; break;
-        case 'B': p = new ArrayOf<'B',uint8_t>; break;
-        case 'h': p = new ArrayOf<'h',int16_t>; break;
-        case 'H': p = new ArrayOf<'H',uint16_t>; break;
-        case 'i': p = new ArrayOf<'i',int16_t>; break;
-        case 'I': p = new ArrayOf<'I',uint16_t>; break;
-        case 'l': p = new ArrayOf<'l',int32_t>; break;
-        case 'L': p = new ArrayOf<'L',uint32_t>; break;
-
-        case 'V': p = new ArrayOfVal; break;
-        case 'C': p = new ArrayOfChunk; break;
+        case 'b': p = new SegmentOf<'b',int8_t>   (v); break;
+        case 'B': p = new SegmentOf<'B',uint8_t>  (v); break;
+        case 'h': p = new SegmentOf<'h',int16_t>  (v); break;
+        case 'H': p = new SegmentOf<'H',uint16_t> (v); break;
+        case 'i': p = new SegmentOf<'i',int16_t>  (v); break;
+        case 'I': p = new SegmentOf<'I',uint16_t> (v); break;
+        case 'l': p = new SegmentOf<'l',int32_t>  (v); break;
+        case 'L': p = new SegmentOf<'L',uint32_t> (v); break;
+        case 'V': p = new SegmentOf<'V',Value>    (v); break;
+        case 'C': p = new SegmentOf<'C',Chunk>    (v); break;
         
         //case 'P': // 1b: Packed
         //case 'T': // 2b: Tiny
         //case 'N': // 4b: Nibble
     }
-    
+    assert(p != nullptr);
+    return *p;
+}
+
+
+auto Array::create (char c) -> Array* {
+    auto p = new Array (c);
+
 assert(p != nullptr);
-p->chunk.asVec<uint8_t>().resize(100);
-p->chunk.asVec<Value>().move(1,2,3);
-p->chunk.asVec<Chunk>().move(1,2,3);
+p->segment.vec().resize(100);
+//p->segment.chunk.asVec<Value>().move(1,2,3);
+//p->segment.chunk.asVec<Chunk>().move(1,2,3);
 
     return p;
 }
