@@ -27,7 +27,7 @@ void smokeTest () {
 }
 
 void objTypeSizes () {
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Val));
+    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Value));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Object));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));

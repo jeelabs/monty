@@ -15,11 +15,11 @@ void Monty::mark (ChunkOf<Chunk> const& chunk) {
         if (chk.hasChunks())
             mark((ChunkOf<Chunk> const&) chk);
         else if (chk.hasVals())
-            mark((ChunkOf<Val> const&) chk);
+            mark((ChunkOf<Value> const&) chk);
     }
 }
 
-void Monty::mark (ChunkOf<Val> const& chunk) {
+void Monty::mark (ChunkOf<Value> const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i)
         if (chunk[i].isObj())
             mark(chunk[i].obj());

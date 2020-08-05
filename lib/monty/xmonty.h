@@ -55,7 +55,7 @@ namespace Monty {
 namespace Monty {
 
     struct Array; // forward decl
-    struct Val;   // forward decl
+    struct Value; // forward decl
 
     template< typename T >
     struct VecOf : Vec {
@@ -75,9 +75,9 @@ namespace Monty {
     };
 
     struct Chunk {
-                  Chunk (Val v);
-        constexpr Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
-        constexpr Chunk (char t, Array& a) : ptr (&a), typ (t) {}
+        Chunk (Value v);
+        Chunk (char t, Vec& v)   : ptr (&v), typ (t) {}
+        Chunk (char t, Array& a) : ptr (&a), typ (t) {}
 
         template< typename T >
         auto asVec    () const -> VecOf<T>& { return *(VecOf<T>*) ptr; }
@@ -90,13 +90,12 @@ namespace Monty {
         auto hasChunks () const -> bool { return isValid() && typ == 'C'; }
         auto hasVals   () const -> bool { return isValid() && typ == 'V'; }
 
-        operator Val () const;
-        //chk[idx] = val.asType<Array>().chunk;
+        operator Value () const;
 
         void* ptr;       // pointer to vector or array
         size_t off{0};   // starting offset
         size_t len{~0U}; // maximum length
-        char typ;        // chunk type, 'V' is Val, 'C' is Chunk, 'A' is Array
+        char typ;        // chunk type, 'V' is Value, 'C' is Chunk, 'A' is Array
     };
 
     template< typename T >
@@ -140,7 +139,7 @@ namespace Monty {
     };
 
     void mark (ChunkOf<Chunk> const&);
-    void mark (ChunkOf<Val> const&);
+    void mark (ChunkOf<Value> const&);
 
 } // namespace Monty
 
@@ -155,18 +154,17 @@ namespace Monty {
     struct Lookup;
 
     // TODO keep these aliases until codegen.py has been updated
-    using Value = struct Val;
     using LookupObj = Lookup;
     using TypeObj = Type;
 
-    struct Val {
+    struct Value {
         enum Tag { Nil, Int, Str, Obj };
 
-        constexpr Val () : v (0) {}
-                  Val (int arg);
-                  Val (char const* arg);
-        constexpr Val (Object const* arg) : p (arg) {} // TODO keep?
-        constexpr Val (Object const& arg) : p (&arg) {}
+        constexpr Value () : v (0) {}
+                  Value (int arg);
+                  Value (char const* arg);
+        constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
+        constexpr Value (Object const& arg) : p (&arg) {}
 
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const { return (char const*) (v >> 2); }
@@ -200,17 +198,17 @@ namespace Monty {
 
         auto truthy () const -> bool;
 
-        auto isEq (Val) const -> bool;
-        auto unOp (UnOp op) const -> Val;
-        auto binOp (BinOp op, Val rhs) const -> Val;
+        auto isEq (Value) const -> bool;
+        auto unOp (UnOp op) const -> Value;
+        auto binOp (BinOp op, Value rhs) const -> Value;
         void dump (char const* msg =nullptr) const; // see builtin.h
 
-        static auto asBool (bool f) -> Val { return f ? True : False; }
-        auto invert () const -> Val { return asBool(!truthy()); }
+        static auto asBool (bool f) -> Value { return f ? True : False; }
+        auto invert () const -> Value { return asBool(!truthy()); }
 
-        static Val const None;
-        static Val const False;
-        static Val const True;
+        static Value const None;
+        static Value const False;
+        static Value const True;
     private:
         auto check (Type const& t) const -> bool;
         void verify (Type const& t) const;
@@ -226,9 +224,9 @@ namespace Monty {
         static const Type info;
         virtual auto type () const -> Type const&;
 
-        // virtual auto repr (BufferObj&) const -> Val; // see builtin.h
-        virtual auto unop  (UnOp) const -> Val;
-        virtual auto binop (BinOp, Val) const -> Val;
+        // virtual auto repr (BufferObj&) const -> Value; // see builtin.h
+        virtual auto unop  (UnOp) const -> Value;
+        virtual auto binop (BinOp, Value) const -> Value;
     };
 
     //CG3 type <none>
@@ -236,8 +234,8 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
 
-        //auto repr (BufferObj&) const -> Val override; // see builtin.h
-        auto unop (UnOp) const -> Val override;
+        //auto repr (BufferObj&) const -> Value override; // see builtin.h
+        auto unop (UnOp) const -> Value override;
 
         static None const noneObj;
     private:
@@ -252,8 +250,8 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        //auto repr (BufferObj&) const -> Val override; // see builtin.h
-        auto unop (UnOp) const -> Val override;
+        //auto repr (BufferObj&) const -> Value override; // see builtin.h
+        auto unop (UnOp) const -> Value override;
 
         static Bool const trueObj;
         static Bool const falseObj;
@@ -273,8 +271,8 @@ namespace Monty {
 
         operator int64_t () const { return i; }
 
-        //auto repr (BufferObj&) const -> Val override; // see builtin.h
-        auto unop (UnOp) const -> Val override;
+        //auto repr (BufferObj&) const -> Value override; // see builtin.h
+        auto unop (UnOp) const -> Value override;
 
     private:
         int64_t i __attribute__((packed));
@@ -288,7 +286,7 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        typedef auto (*Factory)(Type const&,int,Val[]) -> Val;
+        typedef auto (*Factory)(Type const&,int,Value[]) -> Value;
 
         char const* name;
         Factory const factory;
@@ -296,16 +294,16 @@ namespace Monty {
         constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
-        //auto call (ChunkOf<Val>& args) const -> Val override;
-        //auto attr (char const*, Val&) const -> Val override;
+        //auto call (ChunkOf<Value>& args) const -> Value override;
+        //auto attr (char const*, Value&) const -> Value override;
 
     private:
-        static auto noFactory (Type const&,int,Val[]) -> Val;
+        static auto noFactory (Type const&,int,Value[]) -> Value;
     };
 
-    auto Val::isNone  () const -> bool { return &obj() == &None::noneObj; }
-    auto Val::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
-    auto Val::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
+    auto Value::isNone  () const -> bool { return &obj() == &None::noneObj; }
+    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
+    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
 } // namespace Monty
 
@@ -347,11 +345,11 @@ namespace Monty {
         Array () : chunk ('V', vec) {}
         Array (Chunk const& c) : chunk (c) {}
 
-        auto operator[] (size_t idx) const -> Val { return get(idx); }
+        auto operator[] (size_t idx) const -> Value { return get(idx); }
         // TODO set via [] will require a proxy instance
 
-        virtual auto get (int idx) const -> Val =0;
-        virtual void set (int idx, Val val) =0;
+        virtual auto get (int idx) const -> Value =0;
+        virtual void set (int idx, Value val) =0;
         virtual void ins (size_t idx, size_t num =1) =0;
         virtual void del (size_t idx, size_t num =1) =0;
 

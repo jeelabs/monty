@@ -101,9 +101,9 @@ void Vector::del (size_t idx, int num) {
 }
 
 // this is a "delegating constructor", i.e. it calls on another constructor
-Chunk::Chunk (Val v) : Chunk ('A', v.asType<Array>()) {} // TODO is 'A' correct?
+Chunk::Chunk (Value v) : Chunk ('A', v.asType<Array>()) {} // TODO is 'A' correct?
 
-Chunk::operator Val () const {
+Chunk::operator Value () const {
     auto p = Array::create(typ); // TODO what about Vec ownership & lifetime?
     assert(p != nullptr);
     return *p;
@@ -111,11 +111,11 @@ Chunk::operator Val () const {
 
 template< char C, typename T >
 struct ArrayOf : Array {
-    auto get (int idx) const -> Val override {
+    auto get (int idx) const -> Value override {
         auto& chk = (ChunkOf<T>&) chunk;
         return chk[idx];
     }
-    void set (int idx, Val val) override {
+    void set (int idx, Value val) override {
         auto& chk = (ChunkOf<T>&) chunk;
         ins(idx + 1, 0); // grow if needed
         chk[idx] = val;
@@ -130,10 +130,10 @@ struct ArrayOf : Array {
     }
 };
 
-struct ArrayOfVal : ArrayOf<'V',Val> {
+struct ArrayOfVal : ArrayOf<'V',Value> {
     void marker () const override {
         Array::marker();
-        mark((ChunkOf<Val> const&) chunk);
+        mark((ChunkOf<Value> const&) chunk);
     }
 };
 
@@ -166,7 +166,7 @@ auto Array::create (char c) -> Array* {
     
 assert(p != nullptr);
 p->chunk.asVec<uint8_t>().resize(100);
-p->chunk.asVec<Val>().move(1,2,3);
+p->chunk.asVec<Value>().move(1,2,3);
 p->chunk.asVec<Chunk>().move(1,2,3);
 
     return p;

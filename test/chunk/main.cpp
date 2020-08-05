@@ -112,6 +112,7 @@ void chunkOfItems () {
 void chunkOfInsAndDel () {
     ChunkOf<int> c ('l', v);
 
+    TEST_ASSERT_NOT_NULL(&c); // TODO placeholder
 #if 0
     for (int i = 0; i < 11; ++i)
         printf("%d, ", v[i]);

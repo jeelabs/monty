@@ -7,46 +7,60 @@
 
 #include "xmonty.h"
 
+namespace Monty { // TODO move into defs.h
+#include "defs.h"
+}
+
 using namespace Monty;
 
 const None None::noneObj;
 const Bool Bool::falseObj;
 const Bool Bool::trueObj;
 
-const Val Val::None {None::noneObj};
-const Val Val::False{Bool::falseObj};
-const Val Val::True {Bool::trueObj};
+const Value Value::None {None::noneObj};
+const Value Value::False{Bool::falseObj};
+const Value Value::True {Bool::trueObj};
 
-Val::Val (int arg) : v ((arg << 1) | 1) {
+Value::Value (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
         *this = new Long (arg);
 }
 
-Val::Val (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
+Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
-auto Val::check (Type const& t) const -> bool {
+auto Value::check (Type const& t) const -> bool {
     return isObj() && &obj().type() == &t;
 }
 
-void Val::verify (Type const& t) const {
+void Value::verify (Type const& t) const {
     assert(check(t));
 }
 
-auto Object::unop (UnOp) const -> Val {
+bool Value::truthy () const {
+    switch (tag()) {
+        case Value::Nil: return false;
+        case Value::Int: return (int) *this != 0;
+        case Value::Str: return *(const char*) *this != 0;
+        case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
+    }
     assert(false);
-    return Val{};
 }
 
-auto Object::binop (BinOp, Val) const -> Val {
+auto Object::unop (UnOp) const -> Value {
     assert(false);
-    return Val{};
+    return Value{};
 }
 
-auto Type::noFactory (const Type&, int, Val[]) -> Val {
+auto Object::binop (BinOp, Value) const -> Value {
     assert(false);
-    return Val{};
+    return Value{};
+}
+
+auto Type::noFactory (const Type&, int, Value[]) -> Value {
+    assert(false);
+    return Value{};
 }
 
 Type const Object::info ("<object>");
@@ -79,32 +93,32 @@ Lookup const Long::attrs;
 Lookup const Type::attrs;
 Lookup const Array::attrs;
 
-auto None::unop (UnOp) const -> Val {
-    return Val{}; // TODO
+auto None::unop (UnOp) const -> Value {
+    return Value{}; // TODO
 }
 
-auto Bool::unop (UnOp) const -> Val {
-    return Val{}; // TODO
+auto Bool::unop (UnOp) const -> Value {
+    return Value{}; // TODO
 }
 
-auto Long::unop (UnOp) const -> Val {
-    return Val{}; // TODO
+auto Long::unop (UnOp) const -> Value {
+    return Value{}; // TODO
 }
 
-// TODO change argc/argv to: Chunk<Val> const& args
+// TODO change argc/argv to: Chunk<Value> const& args
 
-auto Bool::create (const Type&, int argc, Val argv[]) -> Val {
-    return Val{}; // TODO
+auto Bool::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
 }
 
-auto Long::create (const Type&, int argc, Val argv[]) -> Val {
-    return Val{}; // TODO
+auto Long::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
 }
 
-auto Type::create (const Type&, int argc, Val argv[]) -> Val {
-    return Val{}; // TODO
+auto Type::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
 }
 
-auto Array::create (const Type&, int argc, Val argv[]) -> Val {
-    return Val{}; // TODO
+auto Array::create (const Type&, int argc, Value argv[]) -> Value {
+    return Value{}; // TODO
 }
