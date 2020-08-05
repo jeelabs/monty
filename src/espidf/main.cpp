@@ -68,8 +68,8 @@ static const uint8_t* loadBytecode (const char* fname) {
 }
 
 extern "C" int app_main () {
-    int argc = 1;
-    const char* argv [] = { "" };
+    //int argc = 1;
+    //const char* argv [] = { "" };
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
     printf("\xFF" // send out special marker for easier remote output capture
            "main qstr #%d %db %s\n",
