@@ -277,8 +277,8 @@ namespace Monty {
         auto unop (UnOp) const -> Val override;
 
     private:
-        int64_t i;
-    } __attribute__((packed)); // better fit on 32b arch, no effect on 64b
+        int64_t i __attribute__((packed));
+    }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
     //CG< type type
     struct Type : Object {

@@ -32,13 +32,14 @@ void objTypeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
 
-    //struct LongAlign { void* p; int64_t i; };
-    //TEST_ASSERT_EQUAL(sizeof (LongAlign), sizeof (Long));
-
     // on 32b arch, packed = 12 bytes, which will fit in 2 GC slots i.s.o. 3
     // on 64b arch, packed is the same as unpacked as void* is also 8 bytes
-    struct LongPacked { void* p; int64_t i; } __attribute__((packed));
-    TEST_ASSERT_EQUAL(sizeof (LongPacked), sizeof (Long));
+    struct Packed { void* p; int64_t i; } __attribute__((packed));
+    struct Normal { void* p; int64_t i; };
+    TEST_ASSERT(sizeof (Packed) < sizeof (Normal) || 8 * sizeof (void*) == 64);
+
+    TEST_ASSERT_GREATER_OR_EQUAL(sizeof (Packed), sizeof (Long));
+    TEST_ASSERT_LESS_OR_EQUAL(sizeof (Normal), sizeof (Long));
 
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Type)); // TODO will change
 }
