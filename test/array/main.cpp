@@ -28,7 +28,6 @@ void smokeTest () {
 
 void arrayTypeSizes () {
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Array));
-    TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (List));
     TEST_ASSERT_EQUAL(9 * sizeof (void*), sizeof (Dict));
 }
 

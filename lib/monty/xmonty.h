@@ -351,7 +351,7 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        Array (char type) : segment (Segment::create(type, vec)) {}
+        Array (char type ='V') : segment (Segment::create(type, vec)) {}
 
         struct Proxy { Segment& s; size_t i;
             operator Value () const { return s.get(i); }
@@ -369,23 +369,6 @@ namespace Monty {
         friend struct Segment;
     };
 
-    //CG< type list
-    struct List : Object {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
-    //CG>
-
-        //List () {}
-
-        void marker () const override { mark(items); }
-
-    private:
-        VecOf<Value> vec;
-        ChunkOf<Value> items{vec};
-    };
-
     //CG< type dict
     struct Dict : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
@@ -393,8 +376,6 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
     //CG>
-
-        //Dict () {}
 
         void marker () const override { mark(keys); mark(vals); }
 
@@ -431,7 +412,9 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
 
-    // TODO private:
+        void marker () const override { mark(stack); }
+
+    private:
         VecOf<Value> vec;
         ChunkOf<Value> stack{vec};
     };
