@@ -428,3 +428,15 @@ namespace Monty {
     };
 
 } // namespace Monty
+
+// see import.cpp - importing, loading, and bytecode objects
+namespace Monty {
+
+    //CG3 type <module>
+    struct Module : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+    };
+
+} // namespace Monty

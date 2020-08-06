@@ -85,6 +85,7 @@ auto Object::type () const -> Type const& { return info; }
 //CG< builtin-types lib/monty/xmonty.h
 const TypeObj      Context::info ("<context>");
 const TypeObj     Function::info ("<function>");
+const TypeObj       Module::info ("<module>");
 const TypeObj         None::info ("<none>");
 
 const TypeObj    Array::info ("array", Array::create, &Array::attrs);
@@ -96,6 +97,7 @@ const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
 const TypeObj&      Context::type () const { return info; }
 const TypeObj&     Function::type () const { return info; }
+const TypeObj&       Module::type () const { return info; }
 const TypeObj&         None::type () const { return info; }
 const TypeObj&        Array::type () const { return info; }
 const TypeObj&         Bool::type () const { return info; }
