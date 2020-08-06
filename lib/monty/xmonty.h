@@ -170,9 +170,9 @@ namespace Monty {
     enum class UnOp : uint8_t;
     enum class BinOp : uint8_t;
     struct Object;
-    struct Type;
     struct Lookup;
     struct Function;
+    struct Type;
 
     // TODO keep these aliases until codegen.py has been updated
     using FunObj = Function;
@@ -337,14 +337,14 @@ namespace Monty {
 
         using Factory = auto (*)(Type const&,int,Value[]) -> Value;
 
-        char const* name;
-        Factory const factory;
-
         constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
-        //auto call (ChunkOf<Value>& args) const -> Value override;
+        //auto call (ChunkOf<Value> const& args) const -> Value override;
         //auto attr (char const*, Value&) const -> Value override;
+
+        char const* name;
+        Factory const factory;
 
     private:
         static auto noFactory (Type const&,int,Value[]) -> Value;
@@ -419,11 +419,11 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
 
-        using Prim = auto (*)(int,Value[]) -> Value;
+        using Prim = auto (*)(ChunkOf<Value> const&) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
 
-        //Value call (int argc, Value argv[]) const override {
+        //auto call (ChunkOf<Value> const& args) const -> Value override {
         //    return func(argc, argv);
         //}
 
