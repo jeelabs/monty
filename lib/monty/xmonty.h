@@ -449,11 +449,21 @@ namespace Monty {
 namespace Monty {
 
     //CG3 type <module>
-    struct Module : Dict {
+    struct Module : Object {
         static const TypeObj info;
         const TypeObj& type () const override;
 
-        Module (Value data);
+        Module () {}
+
+    protected:
+        Dict globals;
     };
+
+#if 0
+    struct Main : Module {
+        Dict loaded;
+        Array tasks;
+    };
+#endif
 
 } // namespace Monty
