@@ -85,6 +85,7 @@ auto Object::type () const -> Type const& { return info; }
 //CG< builtin-types lib/monty/xmonty.h
 const TypeObj      Context::info ("<context>");
 const TypeObj     Function::info ("<function>");
+const TypeObj       Lookup::info ("<lookup>");
 const TypeObj       Module::info ("<module>");
 const TypeObj         None::info ("<none>");
 
@@ -97,6 +98,7 @@ const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
 const TypeObj&      Context::type () const { return info; }
 const TypeObj&     Function::type () const { return info; }
+const TypeObj&       Lookup::type () const { return info; }
 const TypeObj&       Module::type () const { return info; }
 const TypeObj&         None::type () const { return info; }
 const TypeObj&        Array::type () const { return info; }
@@ -107,19 +109,38 @@ const TypeObj&          Set::type () const { return info; }
 const TypeObj&         Type::type () const { return info; }
 //CG>
 
+static const LookupObj::Item builtins [] = {
+    //CG< builtin-emit 1
+    { "array", &Array::info },
+    { "bool", &Bool::info },
+    { "dict", &Dict::info },
+    { "int", &Fixed::info },
+    { "set", &Set::info },
+    { "type", &Type::info },
+    //CG>
+#if 0
+    { "monty", &m_monty },
+    { "machine", &m_machine },
+#if INCLUDE_NETWORK
+    { "network", &m_network },
+#endif
+#if INCLUDE_SDCARD
+    { "sdcard", &m_sdcard },
+#endif
+#endif
+};
+
+LookupObj const builtinDict (builtins, sizeof builtins / sizeof *builtins);
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
 
-struct Monty::Lookup {
-    // TODO
-};
-
-Lookup const Bool::attrs;
-Lookup const Fixed::attrs;
-Lookup const Type::attrs;
-Lookup const Array::attrs;
-Lookup const Set::attrs;
-Lookup const Dict::attrs;
+Lookup const  Bool::attrs {nullptr, 0};
+Lookup const Fixed::attrs {nullptr, 0};
+Lookup const  Type::attrs {nullptr, 0};
+Lookup const Array::attrs {nullptr, 0};
+Lookup const   Set::attrs {nullptr, 0};
+Lookup const  Dict::attrs {nullptr, 0};
 
 // TODO change argc/argv to: ChunkOf<Value> const& args
 

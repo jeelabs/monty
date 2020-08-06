@@ -311,6 +311,22 @@ namespace Monty {
         int64_t i __attribute__((packed));
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
+    //CG3 type <lookup>
+    struct Lookup : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+        struct Item { char const* k; Value v; };
+
+        constexpr Lookup (Item const* p, size_t n) : items (p), count (n) {}
+
+        //auto at (Value) const -> Value override;
+
+    // TODO private:
+        Item const* items;
+        size_t count;
+    };
+
     //CG< type type
     struct Type : Object {
         static Value create (const TypeObj&, int argc, Value argv[]);
@@ -433,10 +449,11 @@ namespace Monty {
 namespace Monty {
 
     //CG3 type <module>
-    struct Module : Object {
+    struct Module : Dict {
         static const TypeObj info;
         const TypeObj& type () const override;
 
+        Module (Value data);
     };
 
 } // namespace Monty
