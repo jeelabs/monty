@@ -82,9 +82,9 @@ namespace Monty {
         template< typename T >
         auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
-        Vec& vec;        // parent vector
-        size_t off{0};   // starting offset
-        size_t len{~0U}; // maximum length
+        Vec& vec;         // parent vector
+        size_t off {0};   // starting offset
+        size_t len {~0U}; // maximum length
     };
 
     template< typename T >
@@ -351,21 +351,21 @@ namespace Monty {
         const TypeObj& type () const override;
     //CG>
 
-        Array (char type ='V') : segment (Segment::create(type, vec)) {}
+        Array (char type ='V') : items (Segment::create(type, vec)) {}
 
-        struct Proxy { Segment& s; size_t i;
-            operator Value () const { return s.get(i); }
-            Value operator= (Value v) { s.set(i, v); return v; }
+        struct Proxy { Segment& seg; size_t idx;
+            operator Value () const { return seg.get(idx); }
+            Value operator= (Value v) { seg.set(idx, v); return v; }
         };
 
-        auto operator[] (size_t idx) const -> Value { return segment.get(idx); }
-        auto operator[] (size_t idx) -> Proxy { return Proxy{segment, idx}; }
+        auto operator[] (size_t idx) const -> Value { return items.get(idx); }
+        auto operator[] (size_t idx) -> Proxy { return Proxy {items, idx}; }
 
-        void marker () const override { mark(segment); }
+        void marker () const override { mark(items); }
 
     protected:
         Vec vec;
-        Segment& segment;
+        Segment& items;
         friend struct Segment;
     };
 
@@ -390,7 +390,7 @@ namespace Monty {
         void marker () const override { Set::marker(); mark(vals); }
 
     protected:
-        ChunkOf<Value> vals{vec};
+        ChunkOf<Value> vals {vec};
     };
 
 } // namespace Monty
@@ -424,7 +424,7 @@ namespace Monty {
 
     private:
         VecOf<Value> vec;
-        ChunkOf<Value> stack{vec};
+        ChunkOf<Value> stack {vec};
     };
 
 } // namespace Monty
