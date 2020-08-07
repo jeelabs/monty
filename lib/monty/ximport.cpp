@@ -288,12 +288,14 @@ struct Loader {
 
         loadOps();
 
-        loaderf("subs %08x\n", *(const uint32_t*) dp);
+        //loaderf("subs %08x\n", *(const uint32_t*) dp);
         //loaderf("jump %08x\n", *(const uint32_t*) bc.code);
 
         bc.nData = varInt();
         bc.nCode = varInt();
         loaderf("nData %d nCode %d\n", bc.nData, bc.nCode);
+
+        bc.constObjs.insert(0, bc.n_pos + bc.n_kwonly + bc.nData + bc.nCode);
 
         int ct = 0;
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
@@ -305,21 +307,19 @@ struct Loader {
             assert(type != 'e'); // TODO ellipsis
             auto sz = varInt();
             auto ptr = skip(sz);
-#if 1 //TODO
-            (void) ptr;
-#else
             if (type == 'b') {
+#if 0 //TODO
                 auto p = new (sz) BytesObj (ptr, sz);
                 loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
-                bc.constObjs.set(ct++, p);
+                bc.constObjs[ct++] = p;
+#endif
             } else if (type == 's') {
                 auto buf = (char*) malloc(sz+1);
                 memcpy(buf, ptr, sz);
                 buf[sz] = 0;
                 loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
-                bc.constObjs.set(ct++, buf);
+                bc.constObjs[ct++] = buf;
             } else
-#endif
                 assert(false); // TODO
         }
         for (int i = 0; i < bc.nCode; ++i) {
