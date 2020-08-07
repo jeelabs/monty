@@ -32,26 +32,24 @@ static_assert (sizeof (SegmentOf<'b',int8_t>)  == sizeof (Segment), "int8_t?");
 static_assert (sizeof (SegmentOf<'V',Value>)   == sizeof (Segment), "Value?");
 static_assert (sizeof (SegmentOf<'S',Segment>) == sizeof (Segment), "Segment?");
 
-auto Segment::create (char c, Vec& v) -> Segment& {
-    Segment* p = nullptr;
+auto Segment::make (char c, Vec& v) -> Segment {
     switch (c) {
-        case 'b': p = new SegmentOf<'b',int8_t>   (v); break;
-        case 'B': p = new SegmentOf<'B',uint8_t>  (v); break;
-        case 'h': p = new SegmentOf<'h',int16_t>  (v); break;
-        case 'H': p = new SegmentOf<'H',uint16_t> (v); break;
-        case 'i': p = new SegmentOf<'i',int16_t>  (v); break;
-        case 'I': p = new SegmentOf<'I',uint16_t> (v); break;
-        case 'l': p = new SegmentOf<'l',int32_t>  (v); break;
-        case 'L': p = new SegmentOf<'L',uint32_t> (v); break;
-        case 'V': p = new SegmentOf<'V',Value>    (v); break;
-        case 'S': p = new SegmentOf<'S',Segment>  (v); break;
+        case 'b': return SegmentOf<'b',int8_t>   (v);
+        case 'B': return SegmentOf<'B',uint8_t>  (v);
+        case 'h': return SegmentOf<'h',int16_t>  (v);
+        case 'H': return SegmentOf<'H',uint16_t> (v);
+        case 'i': return SegmentOf<'i',int16_t>  (v);
+        case 'I': return SegmentOf<'I',uint16_t> (v);
+        case 'l': return SegmentOf<'l',int32_t>  (v);
+        case 'L': return SegmentOf<'L',uint32_t> (v);
+        case 'V': return SegmentOf<'V',Value>    (v);
+        case 'S': return SegmentOf<'S',Segment>  (v);
         
         //case 'P': // 1b: Packed
         //case 'T': // 2b: Tiny
         //case 'N': // 4b: Nibble
     }
-    assert(p != nullptr);
-    return *p;
+    assert(false);
 }
 
 void Monty::mark (Segment const& seg) {

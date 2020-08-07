@@ -51,10 +51,12 @@ int main () {
     if (!runInterp(_estack - 0x1000)) // 4 KB below end of RAM
         printf("can't load bytecode\n");
 
+#ifndef STM32F1 // won't fit on a Blue Pill
     // TODO load using the new code ...
     static uintptr_t myMem [4096];
     Monty::setup(myMem, sizeof myMem);
     printf("new load %p\n", Monty::loadModule(_estack - 0x1000));
+#endif
 
     printf("done\n");
     return archDone();

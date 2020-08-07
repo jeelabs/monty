@@ -137,7 +137,7 @@ namespace Monty {
     };
 
     struct Segment : Chunk {
-        static auto create (char type, Vec& vec) -> Segment&;
+        static auto make (char type, Vec& vec) -> Segment;
 
         using Chunk::Chunk;
         virtual ~Segment () {}
@@ -387,7 +387,7 @@ namespace Monty {
         auto type () const -> Type const& override;
     //CG>
 
-        Array (char type ='V') : items (Segment::create(type, vec)) {}
+        Array (char type ='V') : items (Segment::make(type, vec)) {}
 
         struct Proxy { Segment& seg; size_t idx;
             operator Value () const { return seg.get(idx); }
@@ -401,8 +401,7 @@ namespace Monty {
 
     protected:
         Vec vec;
-        Segment& items; // TODO copy inline, iso current malloc() in create()
-        friend struct Segment;
+        Segment items;
     };
 
     //CG< type set
