@@ -87,12 +87,15 @@ namespace Monty {
         auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
         Vec& vec;         // parent vector
-        size_t off {0};   // starting offset
-        size_t len {~0U}; // maximum length
+    protected:
+        size_t off {0};   // starting offset, in typed units
+        size_t len {~0U}; // maximum length, in typed units
     };
 
     template< typename T >
     struct ChunkOf : Chunk {
+        using Chunk::off; // make public
+        using Chunk::len; // make public
         using Chunk::Chunk;
 
         auto length () const -> size_t {
@@ -173,9 +176,9 @@ namespace Monty {
     // forward decl's
     enum class UnOp : uint8_t;
     enum class BinOp : uint8_t;
+    struct Callable;
     struct Object;
     struct Lookup;
-    struct Function;
     struct Type;
 
     struct Value {
@@ -421,7 +424,6 @@ namespace Monty {
     struct Function : Object {
         static Type const info;
         auto type () const -> Type const& override;
-
         using Prim = auto (*)(int,ChunkOf<Value> const&) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
@@ -432,14 +434,6 @@ namespace Monty {
 
     protected:
         Prim func;
-    };
-
-    //CG3 type <callable>
-    struct Callable : Object {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-        Callable () {}
     };
 
     //CG3 type <boundmeth>
@@ -463,14 +457,16 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        enum Frame { Fp, Sp, Ip, Ep, Code, Locals, Globals, Result, Offset };
-        auto frame (Frame f) -> Value& { return stack[f]; }
+        enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
+
+        void push (Callable const&);
+        void pop ();
 
         void marker () const override { mark(stack); }
 
+        ChunkOf<Value> stack {vec};
     private:
         VecOf<Value> vec;
-        ChunkOf<Value> stack {vec};
     };
 
 } // namespace Monty
@@ -478,12 +474,33 @@ namespace Monty {
 // see import.cpp - importing, loading, and bytecode objects
 namespace Monty {
 
+    struct Bytecode; // hidden
+
+    //CG3 type <callable>
+    struct Callable : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Callable (Bytecode const& bc) : callee (bc) {}
+
+        auto frameSize () const -> size_t;
+
+        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
+
+        void marker () const override;
+
+    private:
+        Bytecode const& callee;
+    };
+
     //CG3 type <module>
     struct Module : Object {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Module () {}
+        Module (Value);
+
+        void marker () const override { globals.marker(); }
 
     protected:
         Dict globals;

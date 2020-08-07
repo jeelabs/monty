@@ -7,7 +7,6 @@
 #endif
 
 struct Loader {
-    const LookupObj* modules; // TODO cleanup when?
     const QstrPool* qPool;
     const uint8_t* dp;
     VecOf<char> qBuf;

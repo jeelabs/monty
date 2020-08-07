@@ -9,4 +9,28 @@
 
 using namespace Monty;
 
-int ghi = 123; // avoid "has no symbols" warning TODO remove when there is code
+struct Monty::Bytecode : Object {
+    static Type const info;
+    auto type () const -> Type const& override;
+
+    //Bytecode ();
+
+    void marker () const override {} // TODO
+};
+
+Type const Bytecode::info ("<bytecode>");
+auto Bytecode::type () const -> Type const& { return info; }
+
+auto Callable::frameSize () const -> size_t {
+    return 100; // TODO
+}
+
+void Callable::marker () const {
+    callee.marker();
+}
+
+Module::Module (Value v) {
+    auto& bc = v.asType<Bytecode>();
+
+    (void) bc; // TODO
+}

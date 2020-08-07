@@ -28,7 +28,6 @@ void smokeTest () {
 
 void stateTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Function));
-    TEST_ASSERT_EQUAL(1 * sizeof (void*), sizeof (Callable));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (BoundMeth));
     TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (Context));
 }
