@@ -225,6 +225,7 @@ struct Loader {
         s[len] = 0;
         loaderf("q:%s\n", s);
         int n = qVec.length();
+        qVec.insert(n, 1); // make room
         qVec[n] = s;
         qWin.remove(qWin.length()-1);
         qWin.insert(0);
