@@ -501,13 +501,15 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Module (Value);
-
         void marker () const override { globals.marker(); }
 
     protected:
+        Module () {}
+
         Dict globals;
     };
+
+    auto loadModule (uint8_t const* addr) -> Module*;
 
 #if 0
     struct Main : Module {

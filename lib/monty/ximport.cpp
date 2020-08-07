@@ -52,16 +52,17 @@ void Callable::marker () const {
     bc.marker();
 }
 
-Module::Module (Value v) {
-    auto& bc = v.asType<Bytecode>();
-
-    (void) bc; // TODO
-}
-
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #if NATIVE
 #define VERBOSE_LOAD 1
+#endif
+
+#if VERBOSE_LOAD
+#include <cstdio>
+#define loaderf printf
+#else
+#define loaderf(...)
 #endif
 
 namespace Monty {
@@ -97,12 +98,18 @@ struct QstrPool : Object {
     }
 };
 
-#if VERBOSE_LOAD // see main.cpp
-#include <cstdio>
-#define loaderf printf
-#else
-#define loaderf(...)
-#endif
+struct LoadedModule : Module {
+    LoadedModule (Bytecode const& b, QstrPool const& q) : init (b), qPool (q) {}
+
+    void marker () const override {
+        Module::marker();
+        init.marker();
+        mark(qPool);
+    }
+
+    Bytecode const& init;
+    QstrPool const& qPool;
+};
 
 struct Loader {
     const QstrPool* qPool;
@@ -179,16 +186,15 @@ struct Loader {
         loaderf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
-        qBuf.insert(0, 500); // TODO create space to avoid constant resizing
-        qBuf.remove(0, 500);
+        qBufVec.resize(500); // TODO avoid large over-alloc
 
-        auto mo = new Module (loadRaw());
+        auto& bc = loadRaw();
 
         loaderf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
         qPool = QstrPool::create((const char*) qBufVec.ptr(), qVec.length(), qBuf.length());
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed
-        return mo;
+        return new LoadedModule (bc, *qPool);
     }
 
     uint32_t varInt () {
@@ -383,3 +389,8 @@ struct Loader {
 #undef loaderf // !VERBOSE_LOAD
 
 } // namespace Monty
+
+auto Monty::loadModule (uint8_t const* addr) -> Module* {
+    Loader loader;
+    return loader.load (addr);
+}

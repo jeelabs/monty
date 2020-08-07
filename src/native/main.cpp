@@ -13,6 +13,8 @@
 #include "loader.h"
 #include "util.h"
 
+#include "xmonty.h"
+
 static bool runInterp (const uint8_t* data) {
     Interp vm;
 
@@ -68,6 +70,12 @@ int main (int argc, const char* argv []) {
     }
 
     auto ok = runInterp(bcData);
+
+    // TODO loading using the new code ...
+    static uintptr_t myMem [8192];
+    Monty::setup(myMem, sizeof myMem);
+    Monty::loadModule(bcData);
+
     free((void*) bcData);
 
     if (!ok) {
