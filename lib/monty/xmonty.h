@@ -174,11 +174,6 @@ namespace Monty {
     struct Function;
     struct Type;
 
-    // TODO keep these aliases until codegen.py has been updated
-    using FunObj = Function;
-    using LookupObj = Lookup;
-    using TypeObj = Type;
-
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
 
@@ -209,9 +204,9 @@ namespace Monty {
         auto id () const -> uintptr_t { return v; }
 
         auto isNil () const -> bool { return v == 0; }
-        auto isInt () const -> bool { return (v&1) != 0; }
-        auto isStr () const -> bool { return (v&3) == 2; }
-        auto isObj () const -> bool { return (v&3) == 0 && v != 0; }
+        auto isInt () const -> bool { return (v&1) == Int; }
+        auto isStr () const -> bool { return (v&3) == Str; }
+        auto isObj () const -> bool { return (v&3) == Nil && v != 0; }
 
         inline auto isNone  () const -> bool;
         inline auto isFalse () const -> bool;
@@ -265,8 +260,8 @@ namespace Monty {
 
     //CG3 type <none>
     struct None : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
@@ -278,10 +273,10 @@ namespace Monty {
 
     //CG< type bool
     struct Bool : Object {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
@@ -295,10 +290,10 @@ namespace Monty {
 
     //CG< type int
     struct Fixed : Object {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
         constexpr Fixed (int64_t v) : i (v) {}
@@ -315,8 +310,8 @@ namespace Monty {
 
     //CG3 type <lookup>
     struct Lookup : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         struct Item { char const* k; Value v; };
 
@@ -333,13 +328,13 @@ namespace Monty {
 
     //CG< type type
     struct Type : Object {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
-        using Factory = auto (*)(Type const&,int,Value[]) -> Value;
+        using Factory = auto (*)(Type const&,ChunkOf<Value> const&) -> Value;
 
         constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
@@ -351,7 +346,7 @@ namespace Monty {
         Factory const factory;
 
     private:
-        static auto noFactory (Type const&,int,Value[]) -> Value;
+        static auto noFactory (Type const&,ChunkOf<Value> const&) -> Value;
     };
 
     auto Value::isNone  () const -> bool { return &obj() == &None::noneObj; }
@@ -365,10 +360,10 @@ namespace Monty {
 
     //CG< type array
     struct Array : Object {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
         Array (char type ='V') : items (Segment::create(type, vec)) {}
@@ -391,20 +386,20 @@ namespace Monty {
 
     //CG< type set
     struct Set : Array {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
     };
 
     //CG< type dict
     struct Dict : Set {
-        static Value create (const TypeObj&, int argc, Value argv[]);
-        static const LookupObj attrs;
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
     //CG>
 
         void marker () const override { Set::marker(); mark(vals); }
@@ -420,8 +415,8 @@ namespace Monty {
 
     //CG3 type <function>
     struct Function : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         using Prim = auto (*)(int,ChunkOf<Value> const&) -> Value;
 
@@ -437,16 +432,16 @@ namespace Monty {
 
     //CG3 type <callable>
     struct Callable : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         Callable () {}
     };
 
     //CG3 type <boundmeth>
     struct BoundMeth : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
@@ -461,8 +456,8 @@ namespace Monty {
 
     //CG3 type <context>
     struct Context : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         void marker () const override { mark(stack); }
 
@@ -478,8 +473,8 @@ namespace Monty {
 
     //CG3 type <module>
     struct Module : Object {
-        static const TypeObj info;
-        const TypeObj& type () const override;
+        static Type const info;
+        auto type () const -> Type const& override;
 
         Module () {}
 

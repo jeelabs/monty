@@ -79,7 +79,7 @@ void Lookup::marker () const {
         mark(items[i].v);
 }
 
-auto Type::noFactory (const Type&, int, Value[]) -> Value {
+auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {
     assert(false);
     return Value{};
 }
@@ -88,37 +88,37 @@ Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
-const TypeObj    BoundMeth::info ("<boundmeth>");
-const TypeObj     Callable::info ("<callable>");
-const TypeObj      Context::info ("<context>");
-const TypeObj     Function::info ("<function>");
-const TypeObj       Lookup::info ("<lookup>");
-const TypeObj       Module::info ("<module>");
-const TypeObj         None::info ("<none>");
+Type const    BoundMeth::info ("<boundmeth>");
+Type const     Callable::info ("<callable>");
+Type const      Context::info ("<context>");
+Type const     Function::info ("<function>");
+Type const       Lookup::info ("<lookup>");
+Type const       Module::info ("<module>");
+Type const         None::info ("<none>");
 
-const TypeObj    Array::info ("array", Array::create, &Array::attrs);
-const TypeObj     Bool::info ("bool", Bool::create, &Bool::attrs);
-const TypeObj     Dict::info ("dict", Dict::create, &Dict::attrs);
-const TypeObj    Fixed::info ("int", Fixed::create, &Fixed::attrs);
-const TypeObj      Set::info ("set", Set::create, &Set::attrs);
-const TypeObj     Type::info ("type", Type::create, &Type::attrs);
+Type const    Array::info ("array", Array::create, &Array::attrs);
+Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
+Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
+Type const    Fixed::info ("int", Fixed::create, &Fixed::attrs);
+Type const      Set::info ("set", Set::create, &Set::attrs);
+Type const     Type::info ("type", Type::create, &Type::attrs);
 
-const TypeObj&    BoundMeth::type () const { return info; }
-const TypeObj&     Callable::type () const { return info; }
-const TypeObj&      Context::type () const { return info; }
-const TypeObj&     Function::type () const { return info; }
-const TypeObj&       Lookup::type () const { return info; }
-const TypeObj&       Module::type () const { return info; }
-const TypeObj&         None::type () const { return info; }
-const TypeObj&        Array::type () const { return info; }
-const TypeObj&         Bool::type () const { return info; }
-const TypeObj&         Dict::type () const { return info; }
-const TypeObj&        Fixed::type () const { return info; }
-const TypeObj&          Set::type () const { return info; }
-const TypeObj&         Type::type () const { return info; }
+auto    BoundMeth::type () const -> Type const& { return info; }
+auto     Callable::type () const -> Type const& { return info; }
+auto      Context::type () const -> Type const& { return info; }
+auto     Function::type () const -> Type const& { return info; }
+auto       Lookup::type () const -> Type const& { return info; }
+auto       Module::type () const -> Type const& { return info; }
+auto         None::type () const -> Type const& { return info; }
+auto        Array::type () const -> Type const& { return info; }
+auto         Bool::type () const -> Type const& { return info; }
+auto         Dict::type () const -> Type const& { return info; }
+auto        Fixed::type () const -> Type const& { return info; }
+auto          Set::type () const -> Type const& { return info; }
+auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-static const LookupObj::Item builtins [] = {
+static const Lookup::Item builtins [] = {
     //CG< builtin-emit 1
     { "array", &Array::info },
     { "bool", &Bool::info },
@@ -139,7 +139,7 @@ static const LookupObj::Item builtins [] = {
 #endif
 };
 
-LookupObj const builtinDict (builtins, sizeof builtins / sizeof *builtins);
+Lookup const builtinDict (builtins, sizeof builtins / sizeof *builtins);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
@@ -151,31 +151,29 @@ Lookup const Array::attrs {nullptr, 0};
 Lookup const   Set::attrs {nullptr, 0};
 Lookup const  Dict::attrs {nullptr, 0};
 
-// TODO change argc/argv to: ChunkOf<Value> const& args
-
-auto Bool::create (const Type&, int argc, Value argv[]) -> Value {
+auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
     return Value{}; // TODO
 }
 
-auto Fixed::create (const Type&, int argc, Value argv[]) -> Value {
+auto Fixed::create (const Type&, ChunkOf<Value> const& args) -> Value {
     return Value{}; // TODO
 }
 
-auto Type::create (const Type&, int argc, Value argv[]) -> Value {
+auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
     return Value{}; // TODO
 }
 
-auto Array::create (const Type&, int argc, Value argv[]) -> Value {
+auto Array::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
     return new Array;
 }
 
-auto Set::create (const Type&, int argc, Value argv[]) -> Value {
+auto Set::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
     return new Set;
 }
 
-auto Dict::create (const Type&, int argc, Value argv[]) -> Value {
+auto Dict::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
     return new Dict;
 }

@@ -37,6 +37,22 @@ def TAG(block, *args):
     return [(76-len(text)) * ' ' + '// ' + text]
 
 # generate the header of an exposed type
+def xTYPE(block, tag, *_):
+    line = block[0].split()
+    name, base = line[1], line[3:-1]
+    base = ' '.join(base) # accept multi-word, e.g. protected
+    out = [
+        'struct %s : %s {' % (name, base),
+        '    static auto create (Type const&,ChunkOf<Value> const&) -> Value;',
+        '    static Lookup const attrs;',
+        '    static Type const info;',
+        '    auto type () const -> Type const& override;',
+    ]
+    if tag.startswith('<'):
+        del out[1:3] # can't construct from the VM
+    return out
+
+# generate the header of an exposed type
 def TYPE(block, tag, *_):
     line = block[0].split()
     name, base = line[1], line[3:-1]
@@ -66,6 +82,39 @@ def OFF(block, *args):
 
 # generate builtin function table
 builtins = [[], []]
+
+# parse the src/defs.h header
+def xBUILTIN_TYPES(block, fname):
+    builtins[0].clear()
+    builtins[1].clear()
+    info = []
+    with open(fname, 'r') as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith('//CG'):
+                f1 = line.split()
+                if len(f1) > 1 and f1[1] == 'type':
+                    f2 = next(f).split()
+                    info.append([f1[2], f2[1], f2[3]])
+    info.sort()
+    out = []
+    fmt1a = 'Type const %12s::info ("%s");'
+    fmt1b = 'Type const %8s::info ("%s", %s::create, &%s::attrs);'
+    fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
+    sep = True
+    for tag, name, base in info:
+        if tag.startswith('<'):
+            out.append(fmt1a % (name, tag))
+        else:
+            if sep: out.append('')
+            sep = False
+            out.append(fmt1b % (name, tag, name, name))
+    out.append('')
+    for tag, name, base in info:
+        out.append(fmt2 % name)
+        if not tag.startswith('<'):
+            builtins[1].append('{ "%s", &%s::info },' % (tag, name))
+    return out
 
 # parse the src/defs.h header
 def BUILTIN_TYPES(block, fname):
@@ -225,9 +274,12 @@ def processLines(lines):
                         raise 'unexpected //CG, got: ' + s
                     block.append(s)
 
+            name = tag.replace('-','_').upper()
+            if 'x' in flags and 'x'+name in globals():
+                name = 'x'+name
             try:
-                handler = globals()[tag.replace('-','_').upper()]
-            except KeyError:
+                handler = globals()[name]
+            except:
                 print('unknown tag:', tag)
                 return
             args, kwargs = parseArgs(params)
@@ -259,6 +311,8 @@ def processLines(lines):
 # process one source file, replace it only if the new contents is different
 def processFile(path):
     flags.clear()
+    if '/x' in path: # new code style
+        flags['x'] = True
     if verbose:
         print(path)
     # TODO only process files if they have changed
