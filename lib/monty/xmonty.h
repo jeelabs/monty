@@ -241,6 +241,8 @@ namespace Monty {
         };
     };
 
+    inline void mark (Value v) { if (v.isObj()) mark(v.obj()); }
+
     // define SegmentOf<C,T>'s get & set, now that Value type is complete
     template< char C, typename T >
     auto SegmentOf<C,T>::get (int i) const -> Value {
@@ -322,7 +324,9 @@ namespace Monty {
 
         //auto at (Value) const -> Value override;
 
-    // TODO private:
+        void marker () const override;
+
+    protected:
         Item const* items;
         size_t count;
     };
@@ -340,10 +344,10 @@ namespace Monty {
         constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
             : name (s), factory (f) { /* TODO chain = a; */ }
 
-        //auto call (ChunkOf<Value> const& args) const -> Value override;
+        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
         //auto attr (char const*, Value&) const -> Value override;
 
-        char const* name;
+        char const* const name;
         Factory const factory;
 
     private:
@@ -419,16 +423,40 @@ namespace Monty {
         static const TypeObj info;
         const TypeObj& type () const override;
 
-        using Prim = auto (*)(ChunkOf<Value> const&) -> Value;
+        using Prim = auto (*)(int,ChunkOf<Value> const&) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
 
-        //auto call (ChunkOf<Value> const& args) const -> Value override {
-        //    return func(argc, argv);
+        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override {
+        //    return func(ac, av);
         //}
 
-    // TODO private:
-        const Prim func;
+    protected:
+        Prim func;
+    };
+
+    //CG3 type <callable>
+    struct Callable : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+        Callable () {}
+    };
+
+    //CG3 type <boundmeth>
+    struct BoundMeth : Object {
+        static const TypeObj info;
+        const TypeObj& type () const override;
+
+        constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
+
+        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
+
+        void marker () const override { mark(meth); mark(self); }
+
+    protected:
+        Value meth;
+        Value self;
     };
 
     //CG3 type <context>

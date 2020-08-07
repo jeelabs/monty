@@ -27,7 +27,7 @@ void Segment::set (int, Value)         { assert(false); }
 void Segment::ins (size_t, size_t)     { assert(false); }
 void Segment::del (size_t, size_t)     { assert(false); }
 
-// all SegmentOf<T> instances must have the same size as the base class
+// all SegmentOf<T> instances must have the same size as the Segment base class
 static_assert (sizeof (SegmentOf<'b',int8_t>)  == sizeof (Segment), "int8_t?");
 static_assert (sizeof (SegmentOf<'V',Value>)   == sizeof (Segment), "Value?");
 static_assert (sizeof (SegmentOf<'S',Segment>) == sizeof (Segment), "Segment?");

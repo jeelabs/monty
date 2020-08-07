@@ -74,6 +74,11 @@ auto Fixed::binop (BinOp, Value) const -> Value {
     return Value{}; // TODO
 }
 
+void Lookup::marker () const {
+    for (size_t i = 0; i < count; ++i)
+        mark(items[i].v);
+}
+
 auto Type::noFactory (const Type&, int, Value[]) -> Value {
     assert(false);
     return Value{};
@@ -83,6 +88,8 @@ Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
+const TypeObj    BoundMeth::info ("<boundmeth>");
+const TypeObj     Callable::info ("<callable>");
 const TypeObj      Context::info ("<context>");
 const TypeObj     Function::info ("<function>");
 const TypeObj       Lookup::info ("<lookup>");
@@ -96,6 +103,8 @@ const TypeObj    Fixed::info ("int", Fixed::create, &Fixed::attrs);
 const TypeObj      Set::info ("set", Set::create, &Set::attrs);
 const TypeObj     Type::info ("type", Type::create, &Type::attrs);
 
+const TypeObj&    BoundMeth::type () const { return info; }
+const TypeObj&     Callable::type () const { return info; }
 const TypeObj&      Context::type () const { return info; }
 const TypeObj&     Function::type () const { return info; }
 const TypeObj&       Lookup::type () const { return info; }
