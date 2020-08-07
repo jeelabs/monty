@@ -55,14 +55,14 @@ void Callable::marker () const {
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 #if NATIVE
-#define VERBOSE_LOAD 1
+#define VERBOSE_LOAD 0
 #endif
 
 #if VERBOSE_LOAD
 #include <cstdio>
-#define loaderf printf
+#define debugf printf
 #else
-#define loaderf(...)
+#define debugf(...)
 #endif
 
 namespace Monty {
@@ -149,12 +149,12 @@ struct Loader {
                 n_def_pos_args |= (z & 0x1) << n;
             }
             n_state += 1;
-            loaderf("n_state        %d\n", n_state);
-            loaderf("n_exc_stack    %d\n", n_exc_stack);
-            loaderf("scope_flags    %d\n", scope_flags);
-            loaderf("n_pos_args     %d\n", n_pos_args);
-            loaderf("n_kwonly_args  %d\n", n_kwonly_args);
-            loaderf("n_def_pos_args %d\n", n_def_pos_args);
+            debugf("n_state        %d\n", n_state);
+            debugf("n_exc_stack    %d\n", n_exc_stack);
+            debugf("scope_flags    %d\n", scope_flags);
+            debugf("n_pos_args     %d\n", n_pos_args);
+            debugf("n_kwonly_args  %d\n", n_kwonly_args);
+            debugf("n_def_pos_args %d\n", n_def_pos_args);
 
             n_info = 0;
             n_cell = 0;
@@ -164,8 +164,8 @@ struct Loader {
                 n_cell |= (z & 1) << n;
                 n_info |= ((z & 0x7e) >> 1) << (6 * n);
             }
-            loaderf("n_info         %d\n", n_info);
-            loaderf("n_cell         %d\n", n_cell);
+            debugf("n_info         %d\n", n_info);
+            debugf("n_cell         %d\n", n_cell);
             return n_info + n_cell;
         }
     } prelude;
@@ -175,19 +175,19 @@ struct Loader {
         if (*dp++ != 'M')
             return 0; // incorrect file format
 
-        loaderf("version %d\n", dp[0]);
-        loaderf("features 0x%02x\n", dp[1]);
-        loaderf("intbits %d\n", dp[2]);
+        debugf("version %d\n", dp[0]);
+        debugf("features 0x%02x\n", dp[1]);
+        debugf("intbits %d\n", dp[2]);
         dp += 3;
         int n = varInt();
-        loaderf("qwin %d\n", (int) n);
+        debugf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
         qBufRaw.resize(500); // TODO avoid large over-alloc
 
         auto& bc = loadRaw();
 
-        loaderf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
+        debugf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
         auto pool = QstrPool::create((const char*) qBufRaw.ptr(), qVec.length(), qBuf.length());
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed
@@ -223,7 +223,7 @@ struct Loader {
         for (int i = 0; i < len; ++i)
             s[i] = *dp++;
         s[len] = 0;
-        loaderf("q:%s\n", s);
+        debugf("q:%s\n", s);
         int n = qVec.length();
         qVec.insert(n, 1); // make room
         qVec[n] = s;
@@ -253,7 +253,7 @@ struct Loader {
     const Bytecode& loadRaw () {
         auto typsiz = varInt();
         auto bCount = typsiz >> 2;
-        loaderf("type %d size %d (%d)\n", typsiz & 3, bCount, typsiz);
+        debugf("type %d size %d (%d)\n", typsiz & 3, bCount, typsiz);
 
         auto savedDp = dp;
         auto nskip = prelude.load(*this);
@@ -272,14 +272,14 @@ struct Loader {
         bc.n_def_pos = prelude.n_def_pos_args;
         bc.hdrSz = prelude.n_info + prelude.n_cell;
         bc.size = bCount;
-        loaderf("raw sc %d np %d hs %d sz %d ns %d nx %d ko %d dp %d\n",
+        debugf("raw sc %d np %d hs %d sz %d ns %d nx %d ko %d dp %d\n",
                 bc.flags, bc.n_pos, bc.hdrSz, bc.size,
                 bc.stackSz, bc.excDepth, bc.n_kwonly, bc.n_def_pos);
 
         auto n1 = storeQstr();
         auto n2 = storeQstr();
         (void) n1; (void) n2;
-        loaderf("qstr %d %d npre %d nskip %d\n", n1+1, n2+1, (int) npre, nskip);
+        debugf("qstr %d %d npre %d nskip %d\n", n1+1, n2+1, (int) npre, nskip);
 
         for (int i = 4; i < nskip; ++i)
             *bcNext++ = *dp++;
@@ -288,12 +288,12 @@ struct Loader {
 
         loadOps();
 
-        //loaderf("subs %08x\n", *(const uint32_t*) dp);
-        //loaderf("jump %08x\n", *(const uint32_t*) bc.code);
+        debugf("subs %08x\n", *(const uint32_t*) dp);
+        //debugf("jump %08x\n", *(const uint32_t*) bc.code);
 
         bc.nData = varInt();
         bc.nCode = varInt();
-        loaderf("nData %d nCode %d\n", bc.nData, bc.nCode);
+        debugf("nData %d nCode %d\n", bc.nData, bc.nCode);
 
         bc.constObjs.insert(0, bc.n_pos + bc.n_kwonly + bc.nData + bc.nCode);
 
@@ -310,20 +310,20 @@ struct Loader {
             if (type == 'b') {
 #if 0 //TODO
                 auto p = new (sz) BytesObj (ptr, sz);
-                loaderf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
+                debugf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
                 bc.constObjs[ct++] = p;
 #endif
             } else if (type == 's') {
                 auto buf = (char*) malloc(sz+1);
                 memcpy(buf, ptr, sz);
                 buf[sz] = 0;
-                loaderf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
+                debugf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
                 bc.constObjs[ct++] = buf;
             } else
                 assert(false); // TODO
         }
         for (int i = 0; i < bc.nCode; ++i) {
-            loaderf("  raw %d:\n", i+bc.nData);
+            debugf("  raw %d:\n", i+bc.nData);
             bc.constObjs[ct++] = loadRaw();
         }
 
@@ -344,7 +344,7 @@ struct Loader {
             int f = (0x000003A4 >> 2*(op>>4)) & 3;
             switch (f) {
                 case MP_BC_FORMAT_BYTE:
-                    loaderf("  B: 0x%02x\n", op);
+                    debugf("  B: 0x%02x\n", op);
                     break;
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
@@ -352,13 +352,13 @@ struct Loader {
                     auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1] :
                                         (const char*) qVec[n-qstrNext];
                     (void) s;
-                    loaderf("  Q: 0x%02x (%d) %s\n", op, (int) n, s);
+                    debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, s);
                     break;
                 }
                 case MP_BC_FORMAT_VAR_UINT: {
                     auto savedDp = dp;
                     auto n = varInt();
-                    loaderf("  V: 0x%02x %d\n", op, n);
+                    debugf("  V: 0x%02x %d\n", op, n);
                     (void) n;
                     while (savedDp < dp)
                         *bcNext++ = *savedDp++;
@@ -367,7 +367,7 @@ struct Loader {
                 case MP_BC_FORMAT_OFFSET: {
                     uint8_t op1 = *dp++;
                     uint8_t op2 = *dp++;
-                    loaderf("  O: 0x%02x %04x\n", op, op1 | (op2 << 8));
+                    debugf("  O: 0x%02x %04x\n", op, op1 | (op2 << 8));
                     *bcNext++ = op1;
                     *bcNext++ = op2;
                     break;
@@ -376,7 +376,7 @@ struct Loader {
             if (f != MP_BC_FORMAT_QSTR && (op & MP_BC_MASK_EXTRA_BYTE) == 0) {
                 auto n = *dp++;
                 *bcNext++ = n;
-                loaderf("   x 0x%02x\n", n);
+                debugf("   x 0x%02x\n", n);
                 while (n-- > 0)
                     *bcNext++ = *dp++;
             }
@@ -384,7 +384,7 @@ struct Loader {
     }
 };
 
-#undef loaderf // !VERBOSE_LOAD
+#undef debugf // !VERBOSE_LOAD
 
 } // namespace Monty
 
