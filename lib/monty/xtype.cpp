@@ -50,28 +50,28 @@ bool Value::truthy () const {
 
 auto Object::unop (UnOp) const -> Value {
     assert(false);
-    return Value {};
+    return {};
 }
 
 auto Object::binop (BinOp, Value) const -> Value {
     assert(false);
-    return Value {};
+    return {};
 }
 
 auto None::unop (UnOp) const -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Bool::unop (UnOp) const -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Fixed::unop (UnOp) const -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Fixed::binop (BinOp, Value) const -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 void Lookup::marker () const {
@@ -81,7 +81,7 @@ void Lookup::marker () const {
 
 auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {
     assert(false);
-    return Value {};
+    return {};
 }
 
 Type const Object::info ("<object>");
@@ -152,15 +152,15 @@ Lookup const   Set::attrs {nullptr, 0};
 Lookup const  Dict::attrs {nullptr, 0};
 
 auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Fixed::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    return Value {}; // TODO
+    return {}; // TODO
 }
 
 auto Array::create (const Type&, ChunkOf<Value> const& args) -> Value {

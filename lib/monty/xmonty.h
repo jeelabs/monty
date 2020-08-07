@@ -377,7 +377,7 @@ namespace Monty {
         };
 
         auto operator[] (size_t idx) const -> Value { return items.get(idx); }
-        auto operator[] (size_t idx) -> Proxy { return Proxy {items, idx}; }
+        auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
 
         void marker () const override { mark(items); }
 
