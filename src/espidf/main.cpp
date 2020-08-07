@@ -26,6 +26,8 @@ extern "C" int debugf (const char* fmt, ...) {
 #include "interp.h"
 #include "loader.h"
 
+#include "xmonty.h"
+
 static bool runInterp (const uint8_t* data) {
     Interp vm;
 
@@ -90,6 +92,11 @@ extern "C" int app_main () {
         printf("can't load module\n");
         return 2;
     }
+
+    // TODO load using the new code ...
+    static uintptr_t myMem [4096];
+    Monty::setup(myMem, sizeof myMem);
+    printf("new load %p\n", Monty::loadModule(bcData));
 
     free((void*) bcData);
 

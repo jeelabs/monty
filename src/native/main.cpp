@@ -71,10 +71,10 @@ int main (int argc, const char* argv []) {
 
     auto ok = runInterp(bcData);
 
-    // TODO loading using the new code ...
-    static uintptr_t myMem [8192];
+    // TODO load using the new code ...
+    static uintptr_t myMem [4096];
     Monty::setup(myMem, sizeof myMem);
-    Monty::loadModule(bcData);
+    printf("new load %p\n", Monty::loadModule(bcData));
 
     free((void*) bcData);
 

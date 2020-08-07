@@ -13,6 +13,8 @@
 #include "loader.h"
 #include "util.h"
 
+#include "xmonty.h"
+
 static bool runInterp (const uint8_t* data) {
     Interp vm;
 
@@ -48,6 +50,11 @@ int main () {
     extern uint8_t _estack [];
     if (!runInterp(_estack - 0x1000)) // 4 KB below end of RAM
         printf("can't load bytecode\n");
+
+    // TODO load using the new code ...
+    static uintptr_t myMem [4096];
+    Monty::setup(myMem, sizeof myMem);
+    printf("new load %p\n", Monty::loadModule(_estack - 0x1000));
 
     printf("done\n");
     return archDone();

@@ -31,6 +31,8 @@ extern "C" int debugf (const char* fmt, ...) {
 #include "interp.h"
 #include "loader.h"
 
+#include "xmonty.h"
+
 static const uint8_t* loadBytecode (const char* fname) {
     File f = SPIFFS.open(fname, "r");
     if (!f)
@@ -92,6 +94,11 @@ void setup () {
         printf("can't load bytecode\n");
         return;
     }
+
+    // TODO load using the new code ...
+    static uintptr_t myMem [4096];
+    Monty::setup(myMem, sizeof myMem);
+    printf("new load %p\n", Monty::loadModule(bcData));
 
     printf("done\n");
 }
