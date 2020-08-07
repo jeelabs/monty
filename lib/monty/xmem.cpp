@@ -155,14 +155,14 @@ namespace Monty {
     }
 
     auto Vec::cap () const -> size_t {
-        return caps > 0 ? (2 * caps - 1) * PTR_SZ : 0;
+        return size > 0 ? (2 * size - 1) * PTR_SZ : 0;
     }
 
     auto Vec::findSpace (size_t needs) -> void* {
         auto slot = (VecSlot*) start;               // scan all vectors
         while (slot < vecHigh)
             if (!slot->isFree())                    // skip used slots
-                slot += slot->vec->caps;
+                slot += slot->vec->size;
             else if (mergeVecs(*slot))              // no more free slots
                 break;
             else if (slot + needs > slot->next)     // won't fit
@@ -187,7 +187,7 @@ namespace Monty {
         if (!isResizable())
             return false;
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
-        if (caps != needs) {
+        if (size != needs) {
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
             if (slot == nullptr) {                        // new alloc
                 slot = (VecSlot*) findSpace(needs);
@@ -196,19 +196,19 @@ namespace Monty {
                 data = slot->buf;
             } else if (needs == 0) {                // delete
                 slot->vec = nullptr;
-                slot->next = slot + caps;
+                slot->next = slot + size;
                 mergeVecs(*slot);
                 data = nullptr;
             } else {                                // resize
-                auto tail = slot + caps;
+                auto tail = slot + size;
                 if (tail < vecHigh && tail->isFree())
                     mergeVecs(*tail);
                 if (tail == vecHigh) {              // easy resize
                     if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
-                    vecHigh += needs - caps;
-                } else if (needs < caps)            // split, free at end
-                    splitFreeVec(slot[needs], slot + caps);
+                    vecHigh += needs - size;
+                } else if (needs < size)            // split, free at end
+                    splitFreeVec(slot[needs], slot + size);
                 else if (!tail->isFree() || slot + needs > tail->next) {
                     // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
@@ -217,13 +217,13 @@ namespace Monty {
                     memcpy(nslot->buf, data, cap()); // copy data over
                     data = nslot->buf;
                     slot->vec = nullptr;
-                    slot->next = slot + caps;
+                    slot->next = slot + size;
                 } else                              // use (part of) next free
                     splitFreeVec(slot[needs], tail->next);
             }
             // clear newly added bytes
             auto obytes = cap();
-            caps = needs;
+            size = needs;
             auto nbytes = cap();
             if (nbytes > obytes)                    // clear added bytes
                 memset(data + obytes, 0, nbytes - obytes);
@@ -291,7 +291,7 @@ namespace Monty {
             if (slot->isFree())
                 n = slot->next - slot;
             else {
-                n = slot->vec->caps;
+                n = slot->vec->size;
                 if (newHigh < slot) {
                     slot->vec->data = newHigh->buf;
                     memmove(newHigh, slot, n * VS_SZ);

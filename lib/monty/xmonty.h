@@ -20,7 +20,7 @@ namespace Monty {
 
     struct Vec {
         constexpr Vec (void const* ptr =nullptr, size_t len =0) // TODO caps b
-            : extra (0), caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
+            : size (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
         ~Vec () { (void) resize(0); }
 
         Vec (Vec const&) = delete;
@@ -33,11 +33,9 @@ namespace Monty {
         auto cap () const -> size_t;
         auto resize (size_t bytes) -> bool;
 
-    protected:
-        uint32_t extra :8;  // for use in derived classes TODO remove
     private:
-        uint32_t caps :24;  // capacity in slots, see cap() TODO in bytes
-        uint8_t* data;      // points into memory pool when cap() > 0
+        uint32_t size;  // capacity in slots, see cap() TODO in bytes
+        uint8_t* data;  // points into memory pool when cap() > 0
 
         auto findSpace (size_t) -> void*; // hidden private type
         friend void compact ();
@@ -96,7 +94,8 @@ namespace Monty {
     struct ChunkOf : Chunk {
         using Chunk::off; // make public
         using Chunk::len; // make public
-        using Chunk::Chunk;
+
+        constexpr ChunkOf (Vec& v) : Chunk (v) {}
 
         auto length () const -> size_t {
             auto& vot = asVecOf<T>();
@@ -111,6 +110,9 @@ namespace Monty {
         }
 
         void insert (size_t idx, size_t num =1) {
+            auto& vot = asVecOf<T>();
+            if (len > vot.cap())
+                len = vot.cap();
             if (idx > len) {
                 num += idx - len;
                 idx = len;
@@ -118,18 +120,19 @@ namespace Monty {
             auto need = (off + len + num) * sizeof (T);
             if (need > vec.cap())
                 vec.resize(need);
-            auto& vot = asVecOf<T>();
             vot.move(off + idx, len - idx, num);
             vot.wipe(off + idx, num);
             len += num;
         }
 
         void remove (size_t idx, size_t num =1) {
+            auto& vot = asVecOf<T>();
+            if (len > vot.cap())
+                len = vot.cap();
             if (idx >= len)
                 return;
             if (num > len - idx)
                 num = len - idx;
-            auto& vot = asVecOf<T>();
             vot.move(off + idx + num, len - (idx + num), -num);
             len -= num;
         }

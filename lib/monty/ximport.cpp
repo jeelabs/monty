@@ -99,30 +99,27 @@ struct QstrPool : Object {
 };
 
 struct LoadedModule : Module {
-    LoadedModule (Bytecode const& b, QstrPool const& q) : init (b), qPool (q) {}
+    LoadedModule (Bytecode const& b, QstrPool const& q) : init (b), pool (q) {}
 
     void marker () const override {
         Module::marker();
         init.marker();
-        mark(qPool);
+        mark(pool);
     }
 
     Bytecode const& init;
-    QstrPool const& qPool;
+    QstrPool const& pool;
 };
 
 struct Loader {
-    const QstrPool* qPool;
     const uint8_t* dp;
-    VecOf<char> qBufVec;
-    ChunkOf<char> qBuf {qBufVec};
-    VecOf<Value> qVecRaw;
+    Vec qBufRaw, qVecRaw, qWinRaw;
+    ChunkOf<char> qBuf {qBufRaw};
     ChunkOf<Value> qVec {qVecRaw};
+    ChunkOf<uint16_t> qWin {qWinRaw};
     uint8_t* bcBuf;
     uint8_t* bcNext;
     uint8_t* bcLimit;
-    VecOf<uint16_t> qWinVec;
-    ChunkOf<uint16_t> qWin {qWinVec};
 
     struct Prelude {
         uint32_t n_state;
@@ -186,15 +183,15 @@ struct Loader {
         loaderf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
-        qBufVec.resize(500); // TODO avoid large over-alloc
+        qBufRaw.resize(500); // TODO avoid large over-alloc
 
         auto& bc = loadRaw();
 
         loaderf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
-        qPool = QstrPool::create((const char*) qBufVec.ptr(), qVec.length(), qBuf.length());
+        auto pool = QstrPool::create((const char*) qBufRaw.ptr(), qVec.length(), qBuf.length());
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed
-        return new LoadedModule (bc, *qPool);
+        return new LoadedModule (bc, *pool);
     }
 
     uint32_t varInt () {
@@ -222,7 +219,7 @@ struct Loader {
         len >>= 1;
         auto o = qBuf.length();
         qBuf.insert(o, len + 1);
-        auto s = (char*) qBufVec.ptr() + o; // TODO careful, can move
+        auto s = (char*) qBufRaw.ptr() + o; // TODO careful, can move
         for (int i = 0; i < len; ++i)
             s[i] = *dp++;
         s[len] = 0;

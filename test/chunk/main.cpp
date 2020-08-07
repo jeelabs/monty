@@ -179,6 +179,14 @@ void chunkOfInsert () {
         TEST_ASSERT_EQUAL(m2[i], c[i]);
     }
 
+    Vec v2;
+    ChunkOf<Value> cov {v2};
+    cov.insert(0, 10);
+    TEST_ASSERT_EQUAL(10, cov.length());
+
+    for (size_t i = 0; i < cov.length(); ++i)
+        TEST_ASSERT(cov[i].isNil());
+
 #if 0
     for (size_t i = 0; i < c.length(); ++i)
         printf("%d, ", c[i]);
