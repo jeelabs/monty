@@ -314,6 +314,24 @@ namespace Monty {
         int64_t i __attribute__((packed));
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
+    //CG< type bytes
+    struct Bytes : Object {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+    };
+
+    //CG< type str
+    struct Str : Object {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+    };
+
     //CG3 type <lookup>
     struct Lookup : Object {
         static Type const info;
@@ -383,7 +401,7 @@ namespace Monty {
 
     protected:
         Vec vec;
-        Segment& items;
+        Segment& items; // TODO copy inline, iso current malloc() in create()
         friend struct Segment;
     };
 
