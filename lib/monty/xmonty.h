@@ -1,5 +1,6 @@
-// see mem.cpp - objects and vectors with garbage collection
 namespace Monty {
+
+// see mem.cpp - objects and vectors with garbage collection
 
     struct Obj {
         virtual ~Obj () {}
@@ -51,10 +52,7 @@ namespace Monty {
 
     extern void (*panicOutOfMemory)(); // triggers an assertion by default
 
-} // namespace Monty
-
 // see chunk.cpp - typed and chunked access to vectors
-namespace Monty {
 
     struct Value; // forward decl
 
@@ -172,10 +170,7 @@ namespace Monty {
     void mark (ChunkOf<Segment> const&);
     void mark (ChunkOf<Value> const&);
 
-} // namespace Monty
-
 // see type.cpp - basic object types and type system
-namespace Monty {
 
     // forward decl's
     enum class UnOp : uint8_t;
@@ -364,10 +359,7 @@ namespace Monty {
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
-} // namespace Monty
-
 // see array.cpp - arrays, dicts, and other derived types
-namespace Monty {
 
     //CG< type array
     struct Array : Object {
@@ -419,10 +411,7 @@ namespace Monty {
         ChunkOf<Value> vals {vec};
     };
 
-} // namespace Monty
-
 // see state.cpp - execution state, stacks, and callables
-namespace Monty {
 
     //CG3 type <function>
     struct Function : Object {
@@ -473,10 +462,7 @@ namespace Monty {
         VecOf<Value> vec;
     };
 
-} // namespace Monty
-
 // see import.cpp - importing, loading, and bytecode objects
-namespace Monty {
 
     struct Bytecode; // hidden
 
@@ -513,12 +499,5 @@ namespace Monty {
     };
 
     auto loadModule (uint8_t const* addr) -> Module*;
-
-#if 0
-    struct Main : Module {
-        Dict loaded;
-        Array tasks;
-    };
-#endif
 
 } // namespace Monty
