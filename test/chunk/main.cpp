@@ -78,6 +78,32 @@ void vecOfMoveAndWipe () {
         TEST_ASSERT_EQUAL(m3[i], v[i]);
 }
 
+void vecCopyMove () {
+    VecOf<int> v2;
+    v2.resize(3 * sizeof (int));
+
+    v2[0] = 100;
+    v2[1] = 101;
+    v2[2] = 102;
+
+    TEST_ASSERT_GREATER_OR_EQUAL(3, v2.cap());
+    TEST_ASSERT_LESS_THAN(8, v2.cap());
+
+#if 0 // TODO
+    //v2 = VecOf<int> {};
+    //TEST_ASSERT_EQUAL(0, v2.cap());
+
+    VecOf<int> v3 = VecOf<int> {};
+    ...
+
+    VecOf<int> v3 = v2;
+    TEST_ASSERT_GREATER_OR_EQUAL(5, v3.cap());
+    TEST_ASSERT_LESS_THAN(10, v3.cap());
+
+    v3.resize(15 * sizeof (int));
+#endif
+}
+
 void chunkTypeSizes () {
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Chunk));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<int>));
@@ -170,6 +196,7 @@ int main () {
     RUN_TEST(vecTypeSizes);
     RUN_TEST(vecOfInited);
     RUN_TEST(vecOfMoveAndWipe);
+    RUN_TEST(vecCopyMove);
 
     RUN_TEST(chunkTypeSizes);
     RUN_TEST(chunkOfItems);

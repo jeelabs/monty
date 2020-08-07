@@ -23,6 +23,10 @@ namespace Monty {
             : extra (0), caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
         ~Vec () { (void) resize(0); }
 
+        Vec (Vec const&) = delete;
+        Vec& operator= (Vec const&) = delete;
+        // TODO Vec (Vec&& v); Vec& operator= (Vec&& v);
+
         auto isResizable () const -> bool;
 
         auto ptr () const -> uint8_t* { return data; }
@@ -458,6 +462,9 @@ namespace Monty {
     struct Context : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
+        enum Frame { Fp, Sp, Ip, Ep, Code, Locals, Globals, Result, Offset };
+        auto frame (Frame f) -> Value& { return stack[f]; }
 
         void marker () const override { mark(stack); }
 
