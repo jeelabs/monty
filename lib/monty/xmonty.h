@@ -99,37 +99,38 @@ namespace Monty {
         using Chunk::Chunk;
 
         auto length () const -> size_t {
-            auto& vec = asVecOf<T>();
-            auto n = vec.cap() - off;
+            auto& vot = asVecOf<T>();
+            auto n = vot.cap() - off;
             return n > len ? len : n >= 0 ? n : 0;
         }
 
         auto operator[] (size_t idx) const -> T& {
             // assert(idx < length());
-            auto& vec = asVecOf<T>();
-            return vec[off+idx];
+            auto& vot = asVecOf<T>();
+            return vot[off+idx];
         }
 
         void insert (size_t idx, size_t num =1) {
-            // TODO deal with off != 0, and cap/resize
             if (idx > len) {
                 num += idx - len;
                 idx = len;
             }
-            auto& vec = asVecOf<T>();
-            vec.move(idx, len - idx, num);
-            vec.wipe(idx, num);
+            auto need = (off + len + num) * sizeof (T);
+            if (need > vec.cap())
+                vec.resize(need);
+            auto& vot = asVecOf<T>();
+            vot.move(off + idx, len - idx, num);
+            vot.wipe(off + idx, num);
             len += num;
         }
 
         void remove (size_t idx, size_t num =1) {
-            // TODO deal with off != 0, and cap/resize
             if (idx >= len)
                 return;
             if (num > len - idx)
                 num = len - idx;
-            auto& vec = asVecOf<T>();
-            vec.move(idx + num, len - (idx + num), -num);
+            auto& vot = asVecOf<T>();
+            vot.move(off + idx + num, len - (idx + num), -num);
             len -= num;
         }
     };
@@ -481,16 +482,18 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Callable (Bytecode const& bc) : callee (bc) {}
+        Callable (Bytecode const& callee) : bc (callee) {}
 
         auto frameSize () const -> size_t;
+        auto isGenerator () const -> bool;
+        auto hasVarArgs () const -> bool;
 
         //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
 
         void marker () const override;
 
     private:
-        Bytecode const& callee;
+        Bytecode const& bc;
     };
 
     //CG3 type <module>

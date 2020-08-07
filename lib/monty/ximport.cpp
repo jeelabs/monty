@@ -9,6 +9,7 @@
 
 using namespace Monty;
 
+// TODO CG3 type <bytecode>
 struct Monty::Bytecode : Object {
     static Type const info;
     auto type () const -> Type const& override;
@@ -30,18 +31,25 @@ struct Monty::Bytecode : Object {
     int16_t size;
     int16_t nData;
     int16_t nCode;
-
 };
 
 Type const Bytecode::info ("<bytecode>");
 auto Bytecode::type () const -> Type const& { return info; }
 
 auto Callable::frameSize () const -> size_t {
-    return 100; // TODO
+    return bc.stackSz + 3 * bc.excDepth; // TODO hard-coded 3 ?
+}
+
+auto Callable::isGenerator () const -> bool {
+    return (bc.flags & 1) != 0;
+}
+
+auto Callable::hasVarArgs () const -> bool {
+    return (bc.flags & 4) != 0;
 }
 
 void Callable::marker () const {
-    callee.marker();
+    bc.marker();
 }
 
 Module::Module (Value v) {

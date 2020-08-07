@@ -5,6 +5,7 @@
 #include "xmonty.h"
 
 #include <unity.h>
+#include <cstdio>
 
 using namespace Monty;
 
@@ -135,13 +136,52 @@ void chunkOfItems () {
     TEST_ASSERT_EQUAL(n - 3, c.length());
 }
 
-void chunkOfInsAndDel () {
+void chunkOfInsert () {
     ChunkOf<int> c (v);
 
-    TEST_ASSERT_NOT_NULL(&c); // TODO placeholder
+    auto n = v.cap();
+    TEST_ASSERT_EQUAL(n, c.length());
+
+    for (size_t i = 10; i < c.length(); ++i)
+        c[i] = 100 + i;
+
+    for (size_t i = 0; i < 10; ++i) {
+        TEST_ASSERT_EQUAL(11 * i, v[i]);
+        TEST_ASSERT_EQUAL(11 * i, c[i]);
+    }
+    for (size_t i = 10; i < n; ++i)
+        TEST_ASSERT_EQUAL(100 + i, v[i]);
+
+    c.off = 20;
+    c.len = 3;
+    for (size_t i = 0; i < c.length(); ++i)
+        TEST_ASSERT_EQUAL(120 + i, c[i]);
+
+    c.insert(1, 2);
+    TEST_ASSERT_EQUAL(n, v.cap());
+    TEST_ASSERT_EQUAL(5, c.length());
+
+    static int m1 [] = { 120, 0, 0, 121, 122, };
+    for (size_t i = 0; i < c.length(); ++i) {
+        TEST_ASSERT_EQUAL(m1[i], v[i+20]);
+        TEST_ASSERT_EQUAL(m1[i], c[i]);
+    }
+
+    c.insert(4, 5);
+    TEST_ASSERT_EQUAL(10, c.length());
+    TEST_ASSERT_EQUAL(10, c.len);
+    TEST_ASSERT_GREATER_THAN(n, v.cap());
+    TEST_ASSERT_GREATER_OR_EQUAL(c.off + c.len, v.cap());
+
+    static int m2 [] = { 120, 0, 0, 121, 0, 0, 0, 0, 0, 122, };
+    for (size_t i = 0; i < c.length(); ++i) {
+        TEST_ASSERT_EQUAL(m2[i], v[i+20]);
+        TEST_ASSERT_EQUAL(m2[i], c[i]);
+    }
+
 #if 0
-    for (int i = 0; i < 11; ++i)
-        printf("%d, ", v[i]);
+    for (size_t i = 0; i < c.length(); ++i)
+        printf("%d, ", c[i]);
     printf("\n");
 #endif
 }
@@ -200,7 +240,7 @@ int main () {
 
     RUN_TEST(chunkTypeSizes);
     RUN_TEST(chunkOfItems);
-    RUN_TEST(chunkOfInsAndDel);
+    RUN_TEST(chunkOfInsert);
 
     RUN_TEST(segmentTypeSizes);
 
