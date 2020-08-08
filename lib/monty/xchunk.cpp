@@ -22,6 +22,7 @@ Segment& Segment::operator= (Value v) {
 
 // cannot be an abstract class because the size is needed for VecOf<Segment>
 auto Segment::typ () const -> char     { assert(false); }
+auto Segment::len () const -> size_t   { assert(false); }
 auto Segment::get (int) const -> Value { assert(false); }
 void Segment::set (int, Value)         { assert(false); }
 void Segment::ins (size_t, size_t)     { assert(false); }

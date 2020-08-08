@@ -110,6 +110,9 @@ namespace Monty {
             return vot[off+idx];
         }
 
+        auto begin () const -> T const* { return &asVecOf<T>()[0]; }
+        auto end () const -> T const* { return begin() + length(); }
+
         auto begin () -> T* { return &asVecOf<T>()[0]; }
         auto end () -> T* { return begin() + length(); }
 
@@ -152,6 +155,7 @@ namespace Monty {
         Segment& operator= (Value);
 
         virtual auto typ () const -> char;
+        virtual auto len () const -> size_t;
         virtual auto get (int idx) const -> Value;
         virtual void set (int idx, Value val);
         virtual void ins (size_t idx, size_t num =1);
@@ -163,6 +167,7 @@ namespace Monty {
         using Segment::Segment;
 
         auto typ () const -> char override { return C; }
+        auto len () const -> size_t override { return ccot().length(); }
         auto get (int i) const -> Value override;
         void set (int i, Value v) override;
         void ins (size_t i, size_t n =1) override { cot().insert(i, n); }
@@ -170,6 +175,9 @@ namespace Monty {
 
     private:
         auto cot () -> ChunkOf<T>& { return *(ChunkOf<T>*) this; }
+        auto ccot () const -> ChunkOf<T> const& {
+            return *(ChunkOf<T> const*) this;
+        }
     };
 
     void mark (Segment const&);
@@ -253,7 +261,7 @@ namespace Monty {
     // define SegmentOf<C,T>'s get & set, now that Value type is complete
     template< char C, typename T >
     auto SegmentOf<C,T>::get (int i) const -> Value {
-        return (*(ChunkOf<T> const*) this)[i];
+        return ccot()[i];
     }
     template< char C, typename T >
     void SegmentOf<C,T>::set (int i, Value v) {
@@ -348,7 +356,7 @@ namespace Monty {
         Slice (Value a, Value b, Value c);
 
     private:
-        int32_t off, num, cap;
+        int32_t off, num, step;
     };
 
     //CG3 type <lookup>
@@ -363,7 +371,6 @@ namespace Monty {
         auto operator[] (char const* key) -> Value;
 
         void marker () const override;
-
     protected:
         Item const* items;
         size_t count;
@@ -415,8 +422,9 @@ namespace Monty {
 
         auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
 
-        void marker () const override { mark(items); }
+        auto len () const -> size_t { return items.len(); }
 
+        void marker () const override { mark(items); }
     protected:
         Vec vec;
         Segment items;
@@ -429,6 +437,8 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        Tuple () : Tuple (0, nullptr) {}
+        Tuple (size_t n, Value const* vals);
     };
 
     //CG< type list
@@ -438,15 +448,33 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        List () : List (0, nullptr) {}
+        List (size_t n, Value const* vals);
     };
 
     //CG< type set
-    struct Set : Array {
+    struct Set : Object {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        Set () : Set (0, nullptr) {}
+        Set (size_t n, Value const* vals);
+
+        struct Proxy { Set& s; Value v;
+            operator bool () const;
+            auto operator= (Value v) -> bool;
+        };
+
+        auto operator[] (Value key) -> Proxy { return {*this, key}; }
+
+        auto find (Value v) const -> int;
+
+        void marker () const override { mark(keys); }
+    protected:
+        Vec vec;
+        ChunkOf<Value> keys {vec};
     };
 
     //CG< type dict
@@ -456,17 +484,19 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        Dict (size_t n =0);
+
         struct Proxy { Dict& d; Value v;
             operator Value () const;
-            Value operator= (Value v);
+            auto operator= (Value v) -> Value;
         };
 
         auto operator[] (Value key) -> Proxy { return {*this, key}; }
 
         void marker () const override { Set::marker(); mark(vals); }
-
     protected:
-        ChunkOf<Value> vals {vec};
+        Vec vec2;
+        ChunkOf<Value> vals {vec2};
         Object* chain {nullptr};
     };
 
@@ -498,7 +528,6 @@ namespace Monty {
         //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
 
         void marker () const override { mark(meth); mark(self); }
-
     protected:
         Value meth;
         Value self;
@@ -549,7 +578,6 @@ namespace Monty {
         //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
 
         void marker () const override;
-
     private:
         Bytecode const& bc;
     };
@@ -560,7 +588,6 @@ namespace Monty {
         auto type () const -> Type const& override;
 
         void marker () const override { globals.marker(); }
-
     protected:
         Module () {}
 

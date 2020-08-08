@@ -97,14 +97,16 @@ struct PyVM {
     //CG2 op s
     void op_PopJumpIfFalse (int arg) {
         printf("PopJumpIfFalse %d\n", arg);
-        if (!(*sp--).truthy())
+        if (!sp->truthy())
             ip += arg;
+        --sp;
     }
     //CG2 op s
     void op_PopJumpIfTrue (int arg) {
         printf("PopJumpIfTrue %d\n", arg);
-        if ((*sp--).truthy())
+        if (sp->truthy())
             ip += arg;
+        --sp;
     }
 
     //CG2 op q
@@ -128,6 +130,37 @@ struct PyVM {
     void op_StoreGlobal (const char* arg) {
         printf("StoreGlobal %s\n", arg);
         ctx.globals()[arg] = *sp--;
+    }
+
+    //CG2 op v
+    void op_BuildSlice (uint32_t arg) {
+        printf("BuildSlice %u\n", arg);
+        Value v = arg > 2 ? *sp : Value {};
+        sp -= arg - 1; // arg is 2 or 3
+        *sp = new Slice (sp[0], sp[1], v);
+    }
+    //CG2 op v
+    void op_BuildTuple (uint32_t arg) {
+        printf("BuildTuple %u\n", arg);
+        sp -= (int) arg - 1; // signed, if arg is 0
+        *sp = new Tuple (arg, sp);
+    }
+    //CG2 op v
+    void op_BuildList (uint32_t arg) {
+        printf("BuildList %u\n", arg);
+        sp -= (int) arg - 1; // signed, if arg is 0
+        *sp = new List (arg, sp);
+    }
+    //CG2 op v
+    void op_BuildSet (uint32_t arg) {
+        printf("BuildSet %u\n", arg);
+        sp -= (int) arg - 1; // signed, if arg is 0
+        *sp = new Set (arg, sp);
+    }
+    //CG2 op v
+    void op_BuildMap (uint32_t arg) {
+        printf("BuildMap %u\n", arg);
+        *++sp = new Dict (arg);
     }
 
     PyVM (Context& context) : ctx (context) {
@@ -175,6 +208,16 @@ struct PyVM {
                     op_LoadGlobal(fetchQstr()); break;
                 case Op::StoreGlobal:
                     op_StoreGlobal(fetchQstr()); break;
+                case Op::BuildSlice:
+                    op_BuildSlice(fetchVarInt()); break;
+                case Op::BuildTuple:
+                    op_BuildTuple(fetchVarInt()); break;
+                case Op::BuildList:
+                    op_BuildList(fetchVarInt()); break;
+                case Op::BuildSet:
+                    op_BuildSet(fetchVarInt()); break;
+                case Op::BuildMap:
+                    op_BuildMap(fetchVarInt()); break;
                 //CG>
 
                 default: {

@@ -30,14 +30,6 @@ Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
-auto Value::check (Type const& t) const -> bool {
-    return isObj() && &obj().type() == &t;
-}
-
-void Value::verify (Type const& t) const {
-    assert(check(t));
-}
-
 bool Value::truthy () const {
     switch (tag()) {
         case Value::Nil: return false;
@@ -46,6 +38,29 @@ bool Value::truthy () const {
         case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
     }
     assert(false);
+}
+
+auto Value::isEq (Value) const -> bool {
+    assert(false);
+    return false; // TODO
+}
+
+auto Value::unOp (UnOp op) const -> Value {
+    assert(false);
+    return {}; // TODO
+}
+
+auto Value::binOp (BinOp op, Value rhs) const -> Value {
+    assert(false);
+    return {}; // TODO
+}
+
+auto Value::check (Type const& t) const -> bool {
+    return isObj() && &obj().type() == &t;
+}
+
+void Value::verify (Type const& t) const {
+    assert(check(t));
 }
 
 auto Object::unop (UnOp) const -> Value {
@@ -59,19 +74,30 @@ auto Object::binop (BinOp, Value) const -> Value {
 }
 
 auto None::unop (UnOp) const -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Bool::unop (UnOp) const -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Fixed::unop (UnOp) const -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Fixed::binop (BinOp, Value) const -> Value {
+    assert(false);
     return {}; // TODO
+}
+
+Slice::Slice (Value a, Value b, Value c) {
+    assert(a.isInt() && b.isInt());
+    off = a;
+    num = b;
+    step = c.isInt() ? (int) c : 1;
 }
 
 void Lookup::marker () const {
@@ -172,26 +198,32 @@ Lookup const Slice::attrs {nullptr, 0};
 Lookup const  Dict::attrs {nullptr, 0};
 
 auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Fixed::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Bytes::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Str::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Slice::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
 auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    assert(false);
     return {}; // TODO
 }
 
