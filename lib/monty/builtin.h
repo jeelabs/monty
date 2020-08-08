@@ -392,12 +392,12 @@ static Value bi_type (int argc, Value argv[]) {
 }
 
 //CG< builtin-emit 0
-static const FunObj f_print (bi_print);
-static const FunObj f_len (bi_len);
-static const FunObj f_abs (bi_abs);
-static const FunObj f_hash (bi_hash);
-static const FunObj f_next (bi_next);
-static const FunObj f_type (bi_type);
+static FunObj const f_print (bi_print);
+static FunObj const f_len (bi_len);
+static FunObj const f_abs (bi_abs);
+static FunObj const f_hash (bi_hash);
+static FunObj const f_next (bi_next);
+static FunObj const f_type (bi_type);
 //CG>
 
 static const StrObj s_version = VERSION;

@@ -153,7 +153,7 @@ def BUILTIN_EMIT(block, sel):
     return builtins[sel]
 
 def BUILTIN(block, name):
-    builtins[0].append('static const FunObj f_%s (bi_%s);' % (name, name))
+    builtins[0].append('static FunObj const f_%s (bi_%s);' % (name, name))
     builtins[1].append('{ "%s", &f_%s },' % (name, name))
     fmt = 'static Value bi_%s (int argc, Value argv[]) {'
     return [fmt % name]
@@ -168,7 +168,7 @@ def OP(block, typ=''):
     op = block[0].split()[1][3:]
     opdefs.append('case Op::%s:' % op)
     if typ == 'q':
-        fmt, arg, decl = ' %s', 'fetchQstr()', 'const char* arg'
+        fmt, arg, decl = ' %s', 'fetchQstr()', 'char const* arg'
     elif typ == 'v':
         fmt, arg, decl = ' %u', 'fetchVarInt()', 'uint32_t arg'
     elif typ == 'o':
@@ -182,6 +182,7 @@ def OP(block, typ=''):
     out = ['void %s (%s) {' % (name, decl)]
     if 'op:print' in flags:
         info = ', arg' if arg else ''
+        if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
         out.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
     return out
 

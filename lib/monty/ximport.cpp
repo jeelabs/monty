@@ -9,29 +9,23 @@
 
 extern "C" int printf (const char*, ...);
 
-namespace Monty {
-#include "defs.h"
-#include "xpyvm.h"
-}
-
-using namespace Monty;
-
-volatile uint32_t pending;
-
 #if NATIVE
 #define VERBOSE_LOAD 0
 #endif
 
 #if VERBOSE_LOAD
-#include <cstdio>
 #define debugf printf
 #else
 #define debugf(...)
 #endif
 
-namespace {
+namespace Monty {
 
+#include "defs.h"
+#include "xpyvm.h"
 #include "qstr.h"
+
+volatile uint32_t pending;
 
 struct Bytecode : Object {
     static Type const info;
@@ -147,7 +141,7 @@ struct Loader {
         }
     } prelude;
 
-    Module* load (const uint8_t* data, int index =0) {
+    Callable* load (const uint8_t* data, int index =0) {
         dp  = data;
         if (*dp++ != 'M')
             return 0; // incorrect file format
@@ -170,13 +164,8 @@ struct Loader {
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed
 
-        auto& mod = *new Module (*pool);
-        Callable init (mod, bc);
-        Context ctx;
-        //ctx.push(init);
-        //ctx.stack[ctx.Globals] = mod;
-        // ...
-        return &mod;
+        auto mod = new Module (*pool);
+        return new Callable (*mod, bc);
     }
 
     uint32_t varInt () {
@@ -293,11 +282,9 @@ struct Loader {
             auto sz = varInt();
             auto ptr = skip(sz);
             if (type == 'b') {
-#if 0 //TODO
-                auto p = new (sz) BytesObj (ptr, sz);
+                auto p = new (sz) Bytes (ptr, sz);
                 debugf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
                 bc.constObjs[ct++] = p;
-#endif
             } else if (type == 's') {
                 auto buf = (char*) malloc(sz+1);
                 memcpy(buf, ptr, sz);
@@ -369,9 +356,11 @@ struct Loader {
     }
 };
 
-} // namespace
+} // namespace Monty
 
 #undef debugf // !VERBOSE_LOAD
+
+using namespace Monty;
 
 auto Callable::frameSize () const -> size_t {
     auto& bcode = bc.asType<Bytecode>();
@@ -395,5 +384,13 @@ auto Callable::codeStart () const -> uint8_t const* {
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Loader loader;
-    return loader.load (addr);
+    auto* call = loader.load (addr);
+
+    Context ctx;
+    // FIXME crashes ...
+    //ctx.push(*call);
+    //ctx.stack[ctx.Globals] = call->mo;
+
+    //PyVM vm (ctx);
+    return &call->mo;
 }

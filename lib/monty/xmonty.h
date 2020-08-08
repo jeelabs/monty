@@ -335,6 +335,7 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        Bytes (uint8_t const* =nullptr, size_t =0) {} // TODO
     };
 
     //CG< type str
@@ -612,7 +613,8 @@ namespace Monty {
         void marker () const override {
             mark(mo); mark(bc); mark(pos); mark(kw);
         }
-    private:
+
+    // TODO private:
         Module& mo;
         Value bc; // don't expose actual type
         Tuple* pos {nullptr};

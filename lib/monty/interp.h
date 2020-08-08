@@ -112,18 +112,18 @@ private:
     //CG: op-init
 
     //CG1 op q
-    void op_LoadConstString (const char* arg) {
+    void op_LoadConstString (char const* arg) {
         *++sp = arg;
     }
 
     //CG1 op q
-    void op_LoadName (const char* arg) {
+    void op_LoadName (char const* arg) {
         *++sp = fp->locals->at(arg);
         assert(!sp->isNil());
     }
 
     //CG1 op q
-    void op_StoreName (const char* arg) {
+    void op_StoreName (char const* arg) {
         fp->locals->atKey(arg, DictObj::Set) = *sp--;
     }
 
@@ -198,7 +198,7 @@ private:
     }
 
     //CG1 op q
-    void op_LoadAttr (const char* arg) {
+    void op_LoadAttr (char const* arg) {
         Value self;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
@@ -207,7 +207,7 @@ private:
     }
 
     //CG1 op q
-    void op_StoreAttr (const char* arg) {
+    void op_StoreAttr (char const* arg) {
         assert(&sp->obj().type().type() == &ClassObj::info);
         auto& io = (InstanceObj&) sp->obj(); // can't use asType<>
         io.atKey(arg, DictObj::Set) = sp[-1];
@@ -215,7 +215,7 @@ private:
     }
 
     //CG1 op q
-    void op_LoadMethod (const char* arg) {
+    void op_LoadMethod (char const* arg) {
         sp[1] = *sp;
         *sp = sp->objPtr()->attr(arg, sp[1]);
         ++sp;
@@ -337,13 +337,13 @@ private:
     }
 
     //CG1 op q
-    void op_LoadGlobal (const char* arg) {
+    void op_LoadGlobal (char const* arg) {
         *++sp = fp->bcObj.owner.at(arg);
         assert(!sp->isNil());
     }
 
     //CG1 op q
-    void op_StoreGlobal (const char* arg) {
+    void op_StoreGlobal (char const* arg) {
         fp->bcObj.owner.atKey(arg, DictObj::Set) = *sp--;
     }
 

@@ -33,7 +33,7 @@ struct PyVM {
     //CG: op-init
 
     //CG2 op q
-    void op_LoadConstString (const char* arg) {
+    void op_LoadConstString (char const* arg) {
         printf("LoadConstString %s\n", arg);
         *++sp = arg;
     }
@@ -110,56 +110,56 @@ struct PyVM {
     }
 
     //CG2 op q
-    void op_LoadName (const char* arg) {
+    void op_LoadName (char const* arg) {
         printf("LoadName %s\n", arg);
         *++sp = ctx.locals()[arg];
         assert(!sp->isNil());
     }
     //CG2 op q
-    void op_StoreName (const char* arg) {
+    void op_StoreName (char const* arg) {
         printf("StoreName %s\n", arg);
         ctx.locals()[arg] = *sp--;
     }
     //CG2 op q
-    void op_LoadGlobal (const char* arg) {
+    void op_LoadGlobal (char const* arg) {
         printf("LoadGlobal %s\n", arg);
         *++sp = ctx.globals()[arg];
         assert(!sp->isNil());
     }
     //CG2 op q
-    void op_StoreGlobal (const char* arg) {
+    void op_StoreGlobal (char const* arg) {
         printf("StoreGlobal %s\n", arg);
         ctx.globals()[arg] = *sp--;
     }
 
     //CG2 op v
     void op_BuildSlice (uint32_t arg) {
-        printf("BuildSlice %u\n", arg);
+        printf("BuildSlice %u\n", (unsigned) arg);
         Value v = arg > 2 ? *sp : Value {};
         sp -= arg - 1; // arg is 2 or 3
         *sp = new Slice (sp[0], sp[1], v);
     }
     //CG2 op v
     void op_BuildTuple (uint32_t arg) {
-        printf("BuildTuple %u\n", arg);
+        printf("BuildTuple %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
         *sp = new Tuple (arg, sp);
     }
     //CG2 op v
     void op_BuildList (uint32_t arg) {
-        printf("BuildList %u\n", arg);
+        printf("BuildList %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
         *sp = new List (arg, sp);
     }
     //CG2 op v
     void op_BuildSet (uint32_t arg) {
-        printf("BuildSet %u\n", arg);
+        printf("BuildSet %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
         *sp = new Set (arg, sp);
     }
     //CG2 op v
     void op_BuildMap (uint32_t arg) {
-        printf("BuildMap %u\n", arg);
+        printf("BuildMap %u\n", (unsigned) arg);
         *++sp = new Dict (arg);
     }
 
