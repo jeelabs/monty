@@ -113,6 +113,9 @@ auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
+Type const Instance::info ("<instance>");
+auto Instance::type () const -> Type const& { return info; }
+
 //CG< builtin-types lib/monty/xmonty.h
 Type const    BoundMeth::info ("<boundmeth>");
 Type const     Callable::info ("<callable>");
@@ -125,6 +128,7 @@ Type const         None::info ("<none>");
 Type const    Array::info ("array", Array::create, &Array::attrs);
 Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
 Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
+Type const    Class::info ("class", Class::create, &Class::attrs);
 Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
 Type const    Fixed::info ("int", Fixed::create, &Fixed::attrs);
 Type const     List::info ("list", List::create, &List::attrs);
@@ -144,6 +148,7 @@ auto         None::type () const -> Type const& { return info; }
 auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
+auto        Class::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
 auto        Fixed::type () const -> Type const& { return info; }
 auto         List::type () const -> Type const& { return info; }
@@ -159,6 +164,7 @@ static const Lookup::Item builtins [] = {
     { "array", &Array::info },
     { "bool", &Bool::info },
     { "bytes", &Bytes::info },
+    { "class", &Class::info },
     { "dict", &Dict::info },
     { "int", &Fixed::info },
     { "list", &List::info },
@@ -185,17 +191,19 @@ Lookup const builtinDict (builtins, sizeof builtins / sizeof *builtins);
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
 
-Lookup const  Bool::attrs {nullptr, 0};
-Lookup const Fixed::attrs {nullptr, 0};
-Lookup const Bytes::attrs {nullptr, 0};
-Lookup const   Str::attrs {nullptr, 0};
-Lookup const  Type::attrs {nullptr, 0};
-Lookup const Array::attrs {nullptr, 0};
-Lookup const Tuple::attrs {nullptr, 0};
-Lookup const  List::attrs {nullptr, 0};
-Lookup const   Set::attrs {nullptr, 0};
-Lookup const Slice::attrs {nullptr, 0};
-Lookup const  Dict::attrs {nullptr, 0};
+Lookup const     Bool::attrs {nullptr, 0};
+Lookup const    Fixed::attrs {nullptr, 0};
+Lookup const    Bytes::attrs {nullptr, 0};
+Lookup const      Str::attrs {nullptr, 0};
+Lookup const     Type::attrs {nullptr, 0};
+Lookup const    Array::attrs {nullptr, 0};
+Lookup const    Tuple::attrs {nullptr, 0};
+Lookup const     List::attrs {nullptr, 0};
+Lookup const      Set::attrs {nullptr, 0};
+Lookup const    Slice::attrs {nullptr, 0};
+Lookup const     Dict::attrs {nullptr, 0};
+Lookup const    Class::attrs {nullptr, 0};
+Lookup const Instance::attrs {nullptr, 0};
 
 auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
     assert(false);
@@ -250,4 +258,14 @@ auto Set::create (const Type&, ChunkOf<Value> const& args) -> Value {
 auto Dict::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
     return new Dict;
+}
+
+auto Class::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    // TODO
+    return new Class;
+}
+
+auto Instance::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    // TODO
+    return new Instance;
 }

@@ -500,6 +500,32 @@ namespace Monty {
         Object* chain {nullptr};
     };
 
+    //CG< type class
+    struct Class : Type {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+
+        Class () : Type (nullptr) {} // TODO
+
+    protected:
+        Dict cattr;
+    };
+
+    struct Instance : Object {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Instance () {}
+
+    protected:
+        Dict iattr;
+    };
+
 // see state.cpp - execution state, stacks, and callables
 
     //CG3 type <function>
