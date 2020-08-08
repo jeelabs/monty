@@ -108,24 +108,24 @@ struct PyVM {
     //CG2 op q
     void op_LoadName (const char* arg) {
         printf("LoadName %s\n", arg);
-        *++sp = ctx.asDict(ctx.Locals)[arg];
+        *++sp = ctx.locals()[arg];
         assert(!sp->isNil());
     }
     //CG2 op q
     void op_StoreName (const char* arg) {
         printf("StoreName %s\n", arg);
-        ctx.asDict(ctx.Locals)[arg] = *sp--;
+        ctx.locals()[arg] = *sp--;
     }
     //CG2 op q
     void op_LoadGlobal (const char* arg) {
         printf("LoadGlobal %s\n", arg);
-        *++sp = ctx.asDict(ctx.Globals)[arg];
+        *++sp = ctx.globals()[arg];
         assert(!sp->isNil());
     }
     //CG2 op q
     void op_StoreGlobal (const char* arg) {
         printf("StoreGlobal %s\n", arg);
-        ctx.asDict(ctx.Globals)[arg] = *sp--;
+        ctx.globals()[arg] = *sp--;
     }
 
     PyVM (Context& context) : ctx (context) {

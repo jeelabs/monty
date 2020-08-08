@@ -486,7 +486,10 @@ namespace Monty {
 
         auto ipBase () const -> uint8_t const*;
         auto fastSlot (size_t) -> Value&;
+
         auto asDict (Reg) -> Dict&;
+        auto locals () -> Dict& { return asDict(Locals); }
+        auto globals () -> Dict& { return asDict(Globals); }
 
         void marker () const override { mark(stack); }
 
