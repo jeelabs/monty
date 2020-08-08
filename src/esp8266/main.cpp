@@ -1,4 +1,4 @@
-#include <FS.h>
+#include <LittleFS.h>
 #include <ESP8266WiFi.h>
 
 #include "../../../ssidpass.h"
@@ -34,7 +34,7 @@ extern "C" int debugf (const char* fmt, ...) {
 #include "xmonty.h"
 
 static const uint8_t* loadBytecode (const char* fname) {
-    File f = SPIFFS.open(fname, "r");
+    File f = LittleFS.open(fname, "r");
     if (!f)
         return 0;
     size_t bytes = f.size();
@@ -79,8 +79,8 @@ void setup () {
 
     if (initWifi())
         printf("Wifi connected\n");
-    if (SPIFFS.begin())
-        printf("SPIFFS mounted\n");
+    if (LittleFS.begin())
+        printf("LittleFS mounted\n");
 
     const char* fname = "/demo.mpy";
     auto bcData = loadBytecode(fname);
