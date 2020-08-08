@@ -560,6 +560,8 @@ namespace Monty {
 
         enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
 
+        Context () {}
+
         void push (Callable const&);
         void pop ();
 
@@ -579,16 +581,26 @@ namespace Monty {
 
 // see import.cpp - importing, loading, and bytecode objects
 
-    struct Bytecode; // hidden
-
     extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
+
+    //CG3 type <module>
+    struct Module : Dict {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Module (Value qpool) : qp (qpool) {}
+
+        void marker () const override { Dict::marker(); mark(qp); }
+
+        Value qp;
+    };
 
     //CG3 type <callable>
     struct Callable : Object {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Callable (Bytecode const& callee) : bc (callee) {}
+        Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 
         auto frameSize () const -> size_t;
         auto isGenerator () const -> bool;
@@ -597,18 +609,14 @@ namespace Monty {
 
         //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
 
-        void marker () const override;
+        void marker () const override {
+            mark(mo); mark(bc); mark(pos); mark(kw);
+        }
     private:
-        Bytecode const& bc;
-    };
-
-    //CG3 type <module>
-    struct Module : Dict {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-    protected:
-        Module () {}
+        Module& mo;
+        Value bc; // don't expose actual type
+        Tuple* pos {nullptr};
+        Dict* kw {nullptr};
     };
 
     auto loadModule (uint8_t const* addr) -> Module*;

@@ -18,8 +18,22 @@ using namespace Monty;
 
 volatile uint32_t pending;
 
-// TODO CG3 type <bytecode>
-struct Monty::Bytecode : Object {
+#if NATIVE
+#define VERBOSE_LOAD 0
+#endif
+
+#if VERBOSE_LOAD
+#include <cstdio>
+#define debugf printf
+#else
+#define debugf(...)
+#endif
+
+namespace {
+
+#include "qstr.h"
+
+struct Bytecode : Object {
     static Type const info;
     auto type () const -> Type const& override;
 
@@ -44,43 +58,6 @@ struct Monty::Bytecode : Object {
 
 Type const Bytecode::info ("<bytecode>");
 auto Bytecode::type () const -> Type const& { return info; }
-
-auto Callable::frameSize () const -> size_t {
-    return bc.stackSz + 3 * bc.excDepth; // TODO hard-coded 3 ?
-}
-
-auto Callable::isGenerator () const -> bool {
-    return (bc.flags & 1) != 0;
-}
-
-auto Callable::hasVarArgs () const -> bool {
-    return (bc.flags & 4) != 0;
-}
-
-auto Callable::codeStart () const -> uint8_t const* {
-    return (uint8_t const*) (&bc + 1) + bc.code;
-}
-
-void Callable::marker () const {
-    bc.marker();
-}
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-#if NATIVE
-#define VERBOSE_LOAD 0
-#endif
-
-#if VERBOSE_LOAD
-#include <cstdio>
-#define debugf printf
-#else
-#define debugf(...)
-#endif
-
-namespace Monty {
-
-#include "qstr.h"
 
 struct QstrPool : Object {
     int len;
@@ -109,19 +86,6 @@ struct QstrPool : Object {
         assert(idx < len);
         return (const char*) off + off[idx];
     }
-};
-
-struct LoadedModule : Module {
-    LoadedModule (Bytecode const& b, QstrPool const& q) : init (b), pool (q) {}
-
-    void marker () const override {
-        Module::marker();
-        init.marker();
-        mark(pool);
-    }
-
-    Bytecode const& init;
-    QstrPool const& pool;
 };
 
 struct Loader {
@@ -202,9 +166,17 @@ struct Loader {
 
         debugf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
         auto pool = QstrPool::create((const char*) qBufRaw.ptr(), qVec.length(), qBuf.length());
+        assert(pool != nullptr);
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed
-        return new LoadedModule (bc, *pool);
+
+        auto& mod = *new Module (*pool);
+        Callable init (mod, bc);
+        Context ctx;
+        //ctx.push(init);
+        //ctx.stack[ctx.Globals] = mod;
+        // ...
+        return &mod;
     }
 
     uint32_t varInt () {
@@ -397,9 +369,29 @@ struct Loader {
     }
 };
 
+} // namespace
+
 #undef debugf // !VERBOSE_LOAD
 
-} // namespace Monty
+auto Callable::frameSize () const -> size_t {
+    auto& bcode = bc.asType<Bytecode>();
+    return bcode.stackSz + 3 * bcode.excDepth; // TODO hard-coded 3 ?
+}
+
+auto Callable::isGenerator () const -> bool {
+    auto& bcode = bc.asType<Bytecode>();
+    return (bcode.flags & 1) != 0;
+}
+
+auto Callable::hasVarArgs () const -> bool {
+    auto& bcode = bc.asType<Bytecode>();
+    return (bcode.flags & 4) != 0;
+}
+
+auto Callable::codeStart () const -> uint8_t const* {
+    auto& bcode = bc.asType<Bytecode>();
+    return (uint8_t const*) (&bcode + 1) + bcode.code;
+}
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Loader loader;
