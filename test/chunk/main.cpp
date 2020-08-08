@@ -14,7 +14,7 @@ size_t memAvail;
 VecOf<int> v;
 
 void setUp () {
-    setup(memory, sizeof memory);
+    setup(memory);
     memAvail = avail();
 
     TEST_ASSERT_EQUAL(0, v.cap());

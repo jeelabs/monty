@@ -24,7 +24,7 @@ private:
 };
 
 void setUp () {
-    setup(memory, sizeof memory);
+    setup(memory);
     memAvail = avail();
     created = destroyed = marked = failed = 0;
     panicOutOfMemory = []() { ++failed; };

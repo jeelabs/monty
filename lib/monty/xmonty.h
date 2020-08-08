@@ -43,6 +43,10 @@ namespace Monty {
     };
 
     void setup (uintptr_t* base, size_t bytes); // configure the memory pool
+
+    template< size_t N > // convenience wrapper
+    void setup (uintptr_t (&array)[N]) { setup(array, sizeof array); }
+
     auto avail () -> size_t; // free bytes between the object & vector areas
 
     inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
