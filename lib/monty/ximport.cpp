@@ -16,6 +16,8 @@ namespace Monty {
 
 using namespace Monty;
 
+volatile uint32_t pending;
+
 // TODO CG3 type <bytecode>
 struct Monty::Bytecode : Object {
     static Type const info;
@@ -53,6 +55,10 @@ auto Callable::isGenerator () const -> bool {
 
 auto Callable::hasVarArgs () const -> bool {
     return (bc.flags & 4) != 0;
+}
+
+auto Callable::codeStart () const -> uint8_t const* {
+    return (uint8_t const*) (&bc + 1) + bc.code;
 }
 
 void Callable::marker () const {

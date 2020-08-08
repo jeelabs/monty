@@ -25,3 +25,12 @@ void Context::pop () {
     stack.len = diff;
     stack.off -= diff;
 }
+
+auto Context::ipBase () const -> uint8_t const* {
+    return stack[Code].asType<Callable>().codeStart();
+}
+
+auto Context::fastSlot (size_t i) -> Value& {
+    auto fastBase = 0; // FIXME
+    return stack[fastBase + ~i];
+}

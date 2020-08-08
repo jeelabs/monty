@@ -82,12 +82,11 @@ namespace Monty {
 
         auto isValid () const -> bool { return (void*) &vec != nullptr; }
 
-        auto asVec () const -> Vec& { return vec; }
         template< typename T >
         auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
-        Vec& vec;         // parent vector
     protected:
+        Vec& vec;         // parent vector
         size_t off {0};   // starting offset, in typed units
         size_t len {~0U}; // maximum length, in typed units
     };
@@ -479,6 +478,9 @@ namespace Monty {
         void push (Callable const&);
         void pop ();
 
+        auto ipBase () const -> uint8_t const*;
+        auto fastSlot (size_t) -> Value&;
+
         void marker () const override { mark(stack); }
 
         ChunkOf<Value> stack {vec};
@@ -490,6 +492,8 @@ namespace Monty {
 
     struct Bytecode; // hidden
 
+    extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
+
     //CG3 type <callable>
     struct Callable : Object {
         static Type const info;
@@ -500,6 +504,7 @@ namespace Monty {
         auto frameSize () const -> size_t;
         auto isGenerator () const -> bool;
         auto hasVarArgs () const -> bool;
+        auto codeStart () const -> uint8_t const*;
 
         //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
 
