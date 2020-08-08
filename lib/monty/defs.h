@@ -82,7 +82,7 @@ enum class Op : uint8_t {
     BinaryOpMulti          = 0xD7,
 };
 
-typedef const Op* OpPtrRO;
+using OpPtrRO = Op const*;
 
 enum class UnOp : uint8_t {
     Pos, Neg, Inv, Not,

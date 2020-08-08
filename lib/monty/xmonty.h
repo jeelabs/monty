@@ -111,6 +111,9 @@ namespace Monty {
             return vot[off+idx];
         }
 
+        auto begin () -> T* { return &asVecOf<T>()[0]; }
+        auto end () -> T* { return begin() + length(); }
+
         void insert (size_t idx, size_t num =1) {
             auto& vot = asVecOf<T>();
             if (len > vot.cap())
@@ -480,7 +483,7 @@ namespace Monty {
 
         ChunkOf<Value> stack {vec};
     private:
-        VecOf<Value> vec;
+        Vec vec;
     };
 
 // see import.cpp - importing, loading, and bytecode objects
