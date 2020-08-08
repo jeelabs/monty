@@ -101,8 +101,11 @@ Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
 Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
 Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
 Type const    Fixed::info ("int", Fixed::create, &Fixed::attrs);
+Type const     List::info ("list", List::create, &List::attrs);
 Type const      Set::info ("set", Set::create, &Set::attrs);
+Type const    Slice::info ("slice", Slice::create, &Slice::attrs);
 Type const      Str::info ("str", Str::create, &Str::attrs);
+Type const    Tuple::info ("tuple", Tuple::create, &Tuple::attrs);
 Type const     Type::info ("type", Type::create, &Type::attrs);
 
 auto    BoundMeth::type () const -> Type const& { return info; }
@@ -117,8 +120,11 @@ auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
 auto        Fixed::type () const -> Type const& { return info; }
+auto         List::type () const -> Type const& { return info; }
 auto          Set::type () const -> Type const& { return info; }
+auto        Slice::type () const -> Type const& { return info; }
 auto          Str::type () const -> Type const& { return info; }
+auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
@@ -129,8 +135,11 @@ static const Lookup::Item builtins [] = {
     { "bytes", &Bytes::info },
     { "dict", &Dict::info },
     { "int", &Fixed::info },
+    { "list", &List::info },
     { "set", &Set::info },
+    { "slice", &Slice::info },
     { "str", &Str::info },
+    { "tuple", &Tuple::info },
     { "type", &Type::info },
     //CG>
 #if 0
@@ -156,7 +165,10 @@ Lookup const Bytes::attrs {nullptr, 0};
 Lookup const   Str::attrs {nullptr, 0};
 Lookup const  Type::attrs {nullptr, 0};
 Lookup const Array::attrs {nullptr, 0};
+Lookup const Tuple::attrs {nullptr, 0};
+Lookup const  List::attrs {nullptr, 0};
 Lookup const   Set::attrs {nullptr, 0};
+Lookup const Slice::attrs {nullptr, 0};
 Lookup const  Dict::attrs {nullptr, 0};
 
 auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
@@ -175,6 +187,10 @@ auto Str::create (const Type&, ChunkOf<Value> const& args) -> Value {
     return {}; // TODO
 }
 
+auto Slice::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    return {}; // TODO
+}
+
 auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
     return {}; // TODO
 }
@@ -182,6 +198,16 @@ auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
 auto Array::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
     return new Array;
+}
+
+auto Tuple::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    // TODO
+    return new Tuple;
+}
+
+auto List::create (const Type&, ChunkOf<Value> const& args) -> Value {
+    // TODO
+    return new List;
 }
 
 auto Set::create (const Type&, ChunkOf<Value> const& args) -> Value {

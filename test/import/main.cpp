@@ -27,7 +27,7 @@ void smokeTest () {
 }
 
 void importTypeSizes () {
-    TEST_ASSERT_EQUAL(11 * sizeof (void*), sizeof (Module));
+    TEST_ASSERT_EQUAL(12 * sizeof (void*), sizeof (Module));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Callable));
 }
 

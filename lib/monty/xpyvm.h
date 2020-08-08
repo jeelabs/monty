@@ -62,6 +62,7 @@ struct PyVM {
         printf("LoadNull\n");
         *++sp = Value {};
     }
+
     //CG2 op
     void op_DupTop () {
         printf("DupTop\n");
@@ -87,6 +88,7 @@ struct PyVM {
         printf("RotThree\n");
         auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = sp[-2]; sp[-2] = v;
     }
+
     //CG2 op s
     void op_Jump (int arg) {
         printf("Jump %d\n", arg);

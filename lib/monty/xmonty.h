@@ -338,6 +338,19 @@ namespace Monty {
     //CG>
     };
 
+    //CG< type slice
+    struct Slice : Object {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+        Slice (Value a, Value b, Value c);
+
+    private:
+        int32_t off, num, cap;
+    };
+
     //CG3 type <lookup>
     struct Lookup : Object {
         static Type const info;
@@ -347,7 +360,7 @@ namespace Monty {
 
         constexpr Lookup (Item const* p, size_t n) : items (p), count (n) {}
 
-        //auto at (Value) const -> Value override;
+        auto operator[] (char const* key) -> Value;
 
         void marker () const override;
 
@@ -400,7 +413,6 @@ namespace Monty {
             Value operator= (Value v) { seg.set(idx, v); return v; }
         };
 
-        auto operator[] (size_t idx) const -> Value { return items.get(idx); }
         auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
 
         void marker () const override { mark(items); }
@@ -410,6 +422,24 @@ namespace Monty {
         Segment items;
     };
 
+    //CG< type tuple
+    struct Tuple : Array {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+    };
+
+    //CG< type list
+    struct List : Array {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+    };
+
     //CG< type set
     struct Set : Array {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
@@ -417,7 +447,6 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
-
     };
 
     //CG< type dict
@@ -438,6 +467,7 @@ namespace Monty {
 
     protected:
         ChunkOf<Value> vals {vec};
+        Object* chain {nullptr};
     };
 
 // see state.cpp - execution state, stacks, and callables
