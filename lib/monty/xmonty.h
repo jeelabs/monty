@@ -427,6 +427,12 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        struct Proxy { Dict& d; Value v;
+            operator Value () const;
+            Value operator= (Value v);
+        };
+
+        auto operator[] (Value key) -> Proxy { return {*this, key}; }
 
         void marker () const override { Set::marker(); mark(vals); }
 
@@ -480,6 +486,7 @@ namespace Monty {
 
         auto ipBase () const -> uint8_t const*;
         auto fastSlot (size_t) -> Value&;
+        auto asDict (Reg) -> Dict&;
 
         void marker () const override { mark(stack); }
 

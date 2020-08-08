@@ -34,3 +34,9 @@ auto Context::fastSlot (size_t i) -> Value& {
     auto fastBase = 0; // FIXME
     return stack[fastBase + ~i];
 }
+
+auto Context::asDict (Reg r) -> Dict& {
+    if (stack[r].isNil())
+        stack[r] = new Dict;
+    return stack[r].asType<Dict>();
+}

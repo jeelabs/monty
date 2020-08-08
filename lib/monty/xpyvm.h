@@ -5,6 +5,7 @@
 struct PyVM {
     Value* sp;
     OpPtrRO ip;
+    Context& ctx;
 
     uint32_t fetchVarInt (uint32_t v =0) {
         uint8_t b = 0x80;
@@ -104,7 +105,30 @@ struct PyVM {
             ip += arg;
     }
 
-    PyVM (Context& ctx) {
+    //CG2 op q
+    void op_LoadName (const char* arg) {
+        printf("LoadName %s\n", arg);
+        *++sp = ctx.asDict(ctx.Locals)[arg];
+        assert(!sp->isNil());
+    }
+    //CG2 op q
+    void op_StoreName (const char* arg) {
+        printf("StoreName %s\n", arg);
+        ctx.asDict(ctx.Locals)[arg] = *sp--;
+    }
+    //CG2 op q
+    void op_LoadGlobal (const char* arg) {
+        printf("LoadGlobal %s\n", arg);
+        *++sp = ctx.asDict(ctx.Globals)[arg];
+        assert(!sp->isNil());
+    }
+    //CG2 op q
+    void op_StoreGlobal (const char* arg) {
+        printf("StoreGlobal %s\n", arg);
+        ctx.asDict(ctx.Globals)[arg] = *sp--;
+    }
+
+    PyVM (Context& context) : ctx (context) {
         size_t spOff = ctx.stack[ctx.Sp];
         sp = &ctx.stack[spOff];
         ip = (OpPtrRO) ctx.ipBase() + ctx.stack[ctx.Ip];
@@ -141,6 +165,14 @@ struct PyVM {
                     op_PopJumpIfFalse(fetchOffset()-0x8000); break;
                 case Op::PopJumpIfTrue:
                     op_PopJumpIfTrue(fetchOffset()-0x8000); break;
+                case Op::LoadName:
+                    op_LoadName(fetchQstr()); break;
+                case Op::StoreName:
+                    op_StoreName(fetchQstr()); break;
+                case Op::LoadGlobal:
+                    op_LoadGlobal(fetchQstr()); break;
+                case Op::StoreGlobal:
+                    op_StoreGlobal(fetchQstr()); break;
                 //CG>
 
                 default: {
