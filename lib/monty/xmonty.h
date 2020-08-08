@@ -228,24 +228,23 @@ namespace Monty {
         auto isStr () const -> bool { return (v&3) == Str; }
         auto isObj () const -> bool { return (v&3) == Nil && v != 0; }
 
-        inline auto isNone  () const -> bool;
+        inline auto isNull  () const -> bool;
         inline auto isFalse () const -> bool;
         inline auto isTrue  () const -> bool;
                auto isBool  () const -> bool { return isFalse() || isTrue(); }
 
         auto truthy () const -> bool;
 
-        auto isEq (Value) const -> bool;
+        auto operator== (Value) const -> bool;
+        auto operator< (Value) const -> bool;
+
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
-        void dump (char const* msg =nullptr) const; // see builtin.h
+        void dump (char const* msg =nullptr) const;
 
-        static auto asBool (bool f) -> Value { return f ? True : False; }
+        static inline auto asBool (bool f) -> Value;
         auto invert () const -> Value { return asBool(!truthy()); }
 
-        static Value const None;
-        static Value const False;
-        static Value const True;
     private:
         auto check (Type const& t) const -> bool;
         void verify (Type const& t) const;
@@ -257,6 +256,12 @@ namespace Monty {
     };
 
     inline void mark (Value v) { if (v.isObj()) mark(v.obj()); }
+
+    extern Value const Null;
+    extern Value const False;
+    extern Value const True;
+
+    auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
     // define SegmentOf<C,T>'s get & set, now that Value type is complete
     template< char C, typename T >
@@ -286,7 +291,7 @@ namespace Monty {
         //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
-        static None const noneObj;
+        static None const nullObj;
     private:
         constexpr None () {} // can't construct more instances
     };
@@ -339,12 +344,13 @@ namespace Monty {
     };
 
     //CG< type str
-    struct Str : Object {
+    struct Str : Bytes {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
+        Str (char const*) {} // TODO
     };
 
     //CG< type slice
@@ -377,7 +383,7 @@ namespace Monty {
         size_t count;
     };
 
-    auto Value::isNone  () const -> bool { return &obj() == &None::noneObj; }
+    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 

@@ -23,7 +23,7 @@ Set::Set (size_t n, Value const* vals) {
 
 auto Set::find (Value v) const -> int {
     for (auto& e : keys)
-        if (v.isEq(e))
+        if (v == e)
             return &e - &keys[0];
     return -1;
 }

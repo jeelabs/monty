@@ -40,17 +40,17 @@ struct PyVM {
     //CG2 op
     void op_LoadConstNone () {
         printf("LoadConstNone\n");
-        *++sp = Value::None;
+        *++sp = Null;
     }
     //CG2 op
     void op_LoadConstFalse () {
         printf("LoadConstFalse\n");
-        *++sp = Value::False;
+        *++sp = False;
     }
     //CG2 op
     void op_LoadConstTrue () {
         printf("LoadConstTrue\n");
-        *++sp = Value::True;
+        *++sp = True;
     }
     //CG2 op
     void op_LoadConstSmallInt () {

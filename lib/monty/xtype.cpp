@@ -13,13 +13,13 @@ namespace Monty { // TODO move into defs.h
 
 using namespace Monty;
 
-const None None::noneObj;
-const Bool Bool::falseObj;
-const Bool Bool::trueObj;
+None const None::nullObj;
+Bool const Bool::falseObj;
+Bool const Bool::trueObj;
 
-const Value Value::None {None::noneObj};
-const Value Value::False{Bool::falseObj};
-const Value Value::True {Bool::trueObj};
+Value const Monty::Null {None::nullObj};
+Value const Monty::False{Bool::falseObj};
+Value const Monty::True {Bool::trueObj};
 
 Value::Value (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
@@ -40,17 +40,116 @@ bool Value::truthy () const {
     assert(false);
 }
 
-auto Value::isEq (Value) const -> bool {
-    assert(false);
-    return false; // TODO
+auto Value::operator== (Value rhs) const -> bool {
+    if (v == rhs.v)
+        return true;
+#if 0 // TODO redundant?
+    if (tag() == rhs.tag())
+        switch (tag()) {
+            case Nil: assert(false); // handled above
+            case Int: return false;  // handled above
+            case Str: return strcmp(*this, rhs) == 0;
+            case Obj: return obj().binop(BinOp::Equal, rhs);
+#endif}
+    return binOp(BinOp::Equal, rhs);
+}
+
+auto Value::operator< (Value rhs) const -> bool {
+    return binOp(BinOp::Less, rhs);
 }
 
 auto Value::unOp (UnOp op) const -> Value {
+    switch (tag()) {
+        case Int: {
+            int n = *this;
+            switch (op) {
+                case UnOp::Int:  // fall through
+                case UnOp::Pos:  // fall through
+                case UnOp::Hash: return *this;
+                case UnOp::Abs:  if (n > 0) return *this; // else fall through
+                case UnOp::Neg:  return -n; // TODO overflow
+                case UnOp::Inv:  return ~n;
+                case UnOp::Not:  return asBool(!n);
+                case UnOp::Bool: return asBool(n);
+            }
+            break;
+        }
+        case Str: {
+            const char* s = *this;
+            switch (op) {
+                case UnOp::Bool: return asBool(*s);
+              //case UnOp::Hash: return BytesObj::hash((const uint8_t*) s,
+              //                                                    strlen(s));
+                default:         break;
+            }
+            break;
+        }
+        default: break;
+    }
+    // TODO return objPtr()->unop(op);
     assert(false);
     return {}; // TODO
 }
 
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
+    // TODO the inverted optimisations will fail if a ResumableObj is involved
+    switch (op) {
+        case BinOp::More:      return rhs.binOp(BinOp::Less, *this);
+        case BinOp::LessEqual: return rhs.binOp(BinOp::Less, *this).invert();
+        case BinOp::MoreEqual: return binOp(BinOp::Less, rhs).invert();
+        case BinOp::NotEqual:  return binOp(BinOp::Equal, rhs).invert();
+        default:               break;
+    }
+    if (tag() == rhs.tag())
+        switch (tag()) {
+            case Int: {
+                auto l = (int) *this, r = (int) rhs;
+                switch (op) {
+                    case BinOp::Less:            return asBool(l < r);
+                    case BinOp::Equal:           return asBool(l == r);
+                    case BinOp::Add:
+                    case BinOp::InplaceAdd:      return l + r;
+                    case BinOp::Subtract:
+                    case BinOp::InplaceSubtract: return l - r;
+                    case BinOp::Multiply:
+                    case BinOp::InplaceMultiply: return l * r;
+                    case BinOp::FloorDivide:
+                        if (r == 0) {
+                            // TODO Context::raise("blah"); // TODO
+                            return 0;
+                        }
+                        return l / r;
+                    default: break;
+                }
+                break;
+            }
+            case Str: {
+                auto l = (const char*) *this, r = (const char*) rhs;
+                switch (op) {
+                    case BinOp::Add: {
+                        auto buf = (char*) malloc(strlen(l) + strlen(r) + 1);
+                        strcpy(buf, l);
+                        strcat(buf, r);
+                        return buf;
+                    }
+                    default:
+                        break;
+                }
+                break;
+            }
+            default:
+                assert(isObj());
+                switch (op) {
+                    case BinOp::Equal:
+                        if (ifType<None>() != 0) // FIXME special-cased!
+                            return asBool(id() == rhs.id());
+                        // fall through
+                    default:
+                        break;
+                }
+                break;
+        }
+    // TODO return objPtr()->binop(op, rhs);
     assert(false);
     return {}; // TODO
 }
@@ -98,6 +197,13 @@ Slice::Slice (Value a, Value b, Value c) {
     off = a;
     num = b;
     step = c.isInt() ? (int) c : 1;
+}
+
+auto Lookup::operator[] (char const* key) -> Value {
+    for (size_t i = 0; i < count; ++i)
+        if (strcmp(key, items[i].k) == 0)
+            return items[i].v;
+    return {};
 }
 
 void Lookup::marker () const {
