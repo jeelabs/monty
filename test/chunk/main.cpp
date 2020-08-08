@@ -62,19 +62,19 @@ void vecOfInited () {
 void vecOfMoveAndWipe () {
     v.move(2, 3, 4);
 
-    static int m1 [] = { 0, 11, 22, 33, 44, 55, 22, 33, 44, 99, 0, };
+    static int m1 [] { 0, 11, 22, 33, 44, 55, 22, 33, 44, 99, 0, };
     for (int i = 0; i < 11; ++i)
         TEST_ASSERT_EQUAL(m1[i], v[i]);
 
     v.wipe(2, 3);
 
-    static int m2 [] = { 0, 11, 0, 0, 0, 55, 22, 33, 44, 99, 0, };
+    static int m2 [] { 0, 11, 0, 0, 0, 55, 22, 33, 44, 99, 0, };
     for (int i = 0; i < 11; ++i)
         TEST_ASSERT_EQUAL(m2[i], v[i]);
 
     v.move(4, 3, -2);
 
-    static int m3 [] = { 0, 11, 0, 55, 22, 55, 22, 33, 44, 99, 0, };
+    static int m3 [] { 0, 11, 0, 55, 22, 55, 22, 33, 44, 99, 0, };
     for (int i = 0; i < 11; ++i)
         TEST_ASSERT_EQUAL(m3[i], v[i]);
 }
@@ -115,7 +115,7 @@ void chunkTypeSizes () {
 void chunkOfItems () {
     ChunkOf<int> c (v);
 
-    static int m1 [] = { 0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0, };
+    static int m1 [] { 0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0, };
     for (int i = 0; i < 11; ++i)
         TEST_ASSERT_EQUAL(m1[i], c[i]);
 
@@ -161,10 +161,11 @@ void chunkOfInsert () {
     TEST_ASSERT_EQUAL(n, v.cap());
     TEST_ASSERT_EQUAL(5, c.length());
 
-    static int m1 [] = { 120, 0, 0, 121, 122, };
-    for (size_t i = 0; i < c.length(); ++i) {
-        TEST_ASSERT_EQUAL(m1[i], v[i+20]);
-        TEST_ASSERT_EQUAL(m1[i], c[i]);
+    static int m1 [] { 120, 0, 0, 121, 122, };
+    for (auto& e : m1) {
+        auto i = &e - m1;
+        TEST_ASSERT_EQUAL(e, v[i+20]);
+        TEST_ASSERT_EQUAL(e, c[i]);
     }
 
     c.insert(4, 5);
@@ -173,10 +174,11 @@ void chunkOfInsert () {
     TEST_ASSERT_GREATER_THAN(n, v.cap());
     TEST_ASSERT_GREATER_OR_EQUAL(c.off + c.len, v.cap());
 
-    static int m2 [] = { 120, 0, 0, 121, 0, 0, 0, 0, 0, 122, };
-    for (size_t i = 0; i < c.length(); ++i) {
-        TEST_ASSERT_EQUAL(m2[i], v[i+20]);
-        TEST_ASSERT_EQUAL(m2[i], c[i]);
+    static int m2 [] { 120, 0, 0, 121, 0, 0, 0, 0, 0, 122, };
+    for (auto& e : m2) {
+        auto i = &e - m2;
+        TEST_ASSERT_EQUAL(e, v[i+20]);
+        TEST_ASSERT_EQUAL(e, c[i]);
     }
 
     Vec v2;
@@ -184,8 +186,8 @@ void chunkOfInsert () {
     cov.insert(0, 10);
     TEST_ASSERT_EQUAL(10, cov.length());
 
-    for (size_t i = 0; i < cov.length(); ++i)
-        TEST_ASSERT(cov[i].isNil());
+    for (auto e : cov)
+        TEST_ASSERT(e.isNil());
 
 #if 0
     for (size_t i = 0; i < c.length(); ++i)

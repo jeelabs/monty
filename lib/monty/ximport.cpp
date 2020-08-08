@@ -7,6 +7,13 @@
 
 #include "xmonty.h"
 
+extern "C" int printf (const char*, ...);
+
+namespace Monty {
+#include "defs.h"
+#include "xpyvm.h"
+}
+
 using namespace Monty;
 
 // TODO CG3 type <bytecode>
@@ -19,7 +26,7 @@ struct Monty::Bytecode : Object {
     void marker () const override {} // TODO
 
     uint16_t code;
-    VecOf<Value> constObjsVec;
+    Vec constObjsVec;
     ChunkOf<Value> constObjs {constObjsVec};
     int16_t stackSz;
     int16_t flags;

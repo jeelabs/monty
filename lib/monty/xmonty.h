@@ -105,6 +105,9 @@ namespace Monty {
             return n > len ? len : n >= 0 ? n : 0;
         }
 
+        auto begin () -> T* { return &asVecOf<T>()[0]; }
+        auto end () -> T* { return begin() + length(); }
+
         auto operator[] (size_t idx) const -> T& {
             // assert(idx < length());
             auto& vot = asVecOf<T>();
@@ -480,7 +483,7 @@ namespace Monty {
 
         ChunkOf<Value> stack {vec};
     private:
-        VecOf<Value> vec;
+        Vec vec;
     };
 
 // see import.cpp - importing, loading, and bytecode objects
