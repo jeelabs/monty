@@ -376,29 +376,6 @@ namespace Monty {
         size_t count;
     };
 
-    //CG< type type
-    struct Type : Object {
-        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
-        static Lookup const attrs;
-        static Type const info;
-        auto type () const -> Type const& override;
-    //CG>
-
-        using Factory = auto (*)(Type const&,ChunkOf<Value> const&) -> Value;
-
-        constexpr Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
-            : name (s), factory (f) { /* TODO chain = a; */ }
-
-        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
-        //auto attr (char const*, Value&) const -> Value override;
-
-        char const* const name;
-        Factory const factory;
-
-    private:
-        static auto noFactory (Type const&,ChunkOf<Value> const&) -> Value;
-    };
-
     auto Value::isNone  () const -> bool { return &obj() == &None::noneObj; }
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
@@ -500,6 +477,29 @@ namespace Monty {
         Object* chain {nullptr};
     };
 
+    //CG< type type
+    struct Type : Dict {
+        static auto create (Type const&,ChunkOf<Value> const&) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+    //CG>
+
+        using Factory = auto (*)(Type const&,ChunkOf<Value> const&) -> Value;
+
+        Type (char const* s, Factory f =noFactory, Lookup const* =nullptr)
+            : name (s), factory (f) { /* TODO chain = a; */ }
+
+        //auto call (int ac, ChunkOf<Value> const& av) const -> Value override;
+        //auto attr (char const*, Value&) const -> Value override;
+
+        char const* const name;
+        Factory const factory;
+
+    private:
+        static auto noFactory (Type const&,ChunkOf<Value> const&) -> Value;
+    };
+
     //CG< type class
     struct Class : Type {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
@@ -509,21 +509,15 @@ namespace Monty {
     //CG>
 
         Class () : Type (nullptr) {} // TODO
-
-    protected:
-        Dict cattr;
     };
 
-    struct Instance : Object {
+    struct Instance : Dict {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
 
         Instance () {}
-
-    protected:
-        Dict iattr;
     };
 
 // see state.cpp - execution state, stacks, and callables
@@ -609,15 +603,12 @@ namespace Monty {
     };
 
     //CG3 type <module>
-    struct Module : Object {
+    struct Module : Dict {
         static Type const info;
         auto type () const -> Type const& override;
 
-        void marker () const override { globals.marker(); }
     protected:
         Module () {}
-
-        Dict globals;
     };
 
     auto loadModule (uint8_t const* addr) -> Module*;

@@ -61,3 +61,8 @@ auto Dict::Proxy::operator= (Value v) -> Value {
     d.vals[i] = v;
     return v;
 }
+
+auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {
+    assert(false);
+    return {};
+}

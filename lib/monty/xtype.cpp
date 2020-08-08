@@ -105,11 +105,6 @@ void Lookup::marker () const {
         mark(items[i].v);
 }
 
-auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {
-    assert(false);
-    return {};
-}
-
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
