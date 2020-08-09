@@ -143,7 +143,9 @@ struct PyVM {
     void op_BuildTuple (uint32_t arg) {
         printf("BuildTuple %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = new Tuple (arg, sp);
+        ChunkOf<Value> cov (ctx.stack.asVec());
+        assert(false); // TODO
+        *sp = Tuple::create(Tuple::info, cov);
     }
     //CG2 op v
     void op_BuildList (uint32_t arg) {

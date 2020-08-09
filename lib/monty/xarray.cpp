@@ -9,8 +9,8 @@
 
 using namespace Monty;
 
-Tuple::Tuple (size_t n, Value const* vals) {
-    // TODO
+Tuple::Tuple (size_t n, Value const* vals) : num (n) {
+    memcpy((Value*) data(), vals, n * sizeof *vals);
 }
 
 List::List (size_t n, Value const* vals) {

@@ -16,10 +16,12 @@ using namespace Monty;
 None const None::nullObj;
 Bool const Bool::falseObj;
 Bool const Bool::trueObj;
+Tuple const Tuple::emptyObj;
 
-Value const Monty::Null {None::nullObj};
-Value const Monty::False{Bool::falseObj};
-Value const Monty::True {Bool::trueObj};
+Value const Monty::Null  {None::nullObj};
+Value const Monty::False {Bool::falseObj};
+Value const Monty::True  {Bool::trueObj};
+Value const Monty::Empty {Tuple::emptyObj};
 
 Value::Value (int arg) : v ((arg << 1) | 1) {
     if ((int) *this != arg)
@@ -308,13 +310,22 @@ Lookup const    Class::attrs {nullptr, 0};
 Lookup const Instance::attrs {nullptr, 0};
 
 auto Bool::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    assert(false);
-    return {}; // TODO
+    auto n = args.length();
+    if (n == 1)
+        return args[0].unOp(UnOp::Bool);
+    assert(n == 0);
+    return False;
 }
 
 auto Fixed::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    assert(false);
-    return {}; // TODO
+    assert(args.length() == 1);
+    switch (args[0].tag()) {
+        case Value::Nil: assert(false); break;
+        case Value::Int: return args[0];
+        case Value::Str: return atoi(args[0]);
+        case Value::Obj: return args[0].unOp(UnOp::Int);
+    }
+    return {};
 }
 
 auto Bytes::create (const Type&, ChunkOf<Value> const& args) -> Value {
@@ -323,13 +334,17 @@ auto Bytes::create (const Type&, ChunkOf<Value> const& args) -> Value {
 }
 
 auto Str::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    assert(false);
-    return {}; // TODO
+    assert(args.length() == 1 && args[0].isStr());
+    return new Str (args[0]);
 }
 
 auto Slice::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    assert(false);
-    return {}; // TODO
+    auto n = args.length();
+    assert(1 <= n && n <= 3);
+    Value a = n > 1 ? args[0] : Value (0);
+    Value b = n == 1 ? args[0] : args[1];
+    Value c = n > 2 ? args[2] : b;
+    return new Slice (a, b, c);
 }
 
 auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
@@ -339,12 +354,14 @@ auto Type::create (const Type&, ChunkOf<Value> const& args) -> Value {
 
 auto Array::create (const Type&, ChunkOf<Value> const& args) -> Value {
     // TODO
-    return new Array;
+    return new Array ('B');
 }
 
 auto Tuple::create (const Type&, ChunkOf<Value> const& args) -> Value {
-    // TODO
-    return new Tuple;
+    auto n = args.length();
+    if (n == 0)
+        return Empty; // there's one unique empty tuple
+    return new (n * sizeof (Value)) Tuple (n, args.begin());
 }
 
 auto List::create (const Type&, ChunkOf<Value> const& args) -> Value {

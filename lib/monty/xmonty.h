@@ -262,6 +262,7 @@ namespace Monty {
     extern Value const Null;
     extern Value const False;
     extern Value const True;
+    extern Value const Empty; // Tuple
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
@@ -399,7 +400,7 @@ namespace Monty {
         auto type () const -> Type const& override;
     //CG>
 
-        Array (char type ='V') : items (Segment::make(type, vec)) {}
+        Array (char type) : items (Segment::make(type, vec)) {}
 
         struct Proxy { Segment& seg; size_t idx;
             operator Value () const { return seg.get(idx); }
@@ -416,14 +417,26 @@ namespace Monty {
     };
 
     //CG< type tuple
-    struct Tuple : Array {
+    struct Tuple : Object {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
     //CG>
-        Tuple () : Tuple (0, nullptr) {}
-        Tuple (size_t n, Value const* vals);
+
+        auto operator[] (size_t idx) const -> Value { return data()[idx]; }
+        auto len () const -> size_t { return num; }
+
+        auto begin () const -> Value const* { return data(); }
+        auto end () const -> Value const* { return data() + num; }
+
+        static Tuple const emptyObj;
+    private:
+        Tuple (size_t n =0, Value const* vals =nullptr);
+
+        auto data () const -> Value const* { return (Value const*) (this + 1); }
+
+        size_t num;
     };
 
     //CG< type list
