@@ -21,27 +21,27 @@ Set::Set (size_t n, Value const* vals) {
     // TODO
 }
 
-auto Set::find (Value v) const -> int {
+auto Set::find (Value v) const -> size_t {
     for (auto& e : items)
         if (v == e)
             return &e - &items[0];
-    return -1;
+    return len();
 }
 
 Set::Proxy::operator bool () const {
-    return s.find(v) >= 0;
+    return s.find(v) < s.len();
 }
 
 auto Set::Proxy::operator= (bool f) -> bool {
+    auto n = s.len();
     auto pos = s.find(v);
-    if (pos >= 0 && !f)
+    if (pos < n && !f)
         s.items.remove(pos);
-    else if (pos < 0 && f) {
-        auto n = s.items.length();
-        s.items.insert(n);
-        s.items[n] = v;
+    else if (pos == n && f) {
+        s.items.insert(pos);
+        s.items[pos] = v;
     }
-    return pos >= 0;
+    return pos < n;
 }
 
 Dict::Dict (size_t n) {
@@ -49,20 +49,36 @@ Dict::Dict (size_t n) {
 }
 
 Dict::Proxy::operator Value () const {
-    auto i = d.find(v);
-    return i >= 0 ? d.items[d.len()+i] : Value {};
+    auto pos = d.find(k);
+    return pos >= 0 ? d.items[d.len()+pos] : Value {};
 }
 
 auto Dict::Proxy::operator= (Value v) -> Value {
-    auto i = d.find(v);
-    if (i < 0) {
-        i = d.items.length();
-        d.items.insert(i);
-        d.items[i] = v;
-        assert(false); // TODO resize, moving vals up
+    Value w;
+    auto n = d.len();
+    auto pos = d.find(k);
+    if (v.isNil()) {
+        if (pos < n) {
+            d.items.len = 2*n;
+            d.items.remove(n+pos);
+            d.items.remove(pos);
+            d.items.len = --n;
+        }
+    } else {
+        if (pos == n) { // move all values up and create new gaps
+            d.items.len = 2*n;      // don't wipe existing vals
+            d.items.insert(2*n);    // create slot for new value
+            d.items.insert(n);      // same for key, moves all vals one up
+            assert(d.len() == 2*(n+1));
+            d.items.len = ++n;      // restore length to key count
+            d.items[pos] = k;       // store the key
+        } else
+            w = d.items[n+pos];
+        assert(d.items.asVecOf<Value>().cap() >= 2*n);
+        d.items[n+pos] = v;
     }
-    d.items[d.len()+i] = v;
-    return v;
+    // invariant: the layout is: N keys, then N values, with N == d.len()
+    return w;
 }
 
 auto Type::noFactory (const Type&, ChunkOf<Value> const&) -> Value {

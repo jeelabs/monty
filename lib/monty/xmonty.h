@@ -461,7 +461,7 @@ namespace Monty {
         Set () : Set (0, nullptr) {}
         Set (size_t n, Value const* vals);
 
-        auto find (Value v) const -> int;
+        auto find (Value v) const -> size_t;
 
         struct Proxy { Set& s; Value v;
             operator bool () const;
@@ -484,12 +484,12 @@ namespace Monty {
     //CG>
         Dict (size_t n =0);
 
-        struct Proxy { Dict& d; Value v;
+        struct Proxy { Dict& d; Value k;
             operator Value () const;
             auto operator= (Value v) -> Value;
         };
 
-        auto operator[] (Value key) -> Proxy { return {*this, key}; }
+        auto at (Value key) -> Proxy { return {*this, key}; }
 
         void marker () const override { Set::marker(); mark(chain); }
     protected:

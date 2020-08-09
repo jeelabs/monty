@@ -188,12 +188,6 @@ void chunkOfInsert () {
 
     for (auto e : cov)
         TEST_ASSERT(e.isNil());
-
-#if 0
-    for (size_t i = 0; i < c.length(); ++i)
-        printf("%d, ", c[i]);
-    printf("\n");
-#endif
 }
 
 void segmentTypeSizes () {

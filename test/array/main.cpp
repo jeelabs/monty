@@ -5,6 +5,7 @@
 #include "xmonty.h"
 
 #include <unity.h>
+#include <cstdio>
 
 using namespace Monty;
 
@@ -83,9 +84,9 @@ static void setInsDel () {
     Set s;
     TEST_ASSERT_EQUAL(0, s.len());
 
-    for (int i = 20; i < 25; ++i)   // 20 21 22 23 24
+    for (int i = 20; i < 25; ++i)
         s.has(i) = true;
-    TEST_ASSERT_EQUAL(5, s.len());
+    TEST_ASSERT_EQUAL(5, s.len());      // 20 21 22 23 24
 
     TEST_ASSERT_FALSE(s.has(19));
     TEST_ASSERT_TRUE(s.has(20));
@@ -98,9 +99,9 @@ static void setInsDel () {
     for (auto e : s)
         TEST_ASSERT(20 <= (int) e && (int) e < 25);
 
-    for (int i = 23; i < 28; ++i)   // 20 21 22
+    for (int i = 23; i < 28; ++i)
         s.has(i) = false;
-    TEST_ASSERT_EQUAL(3, s.len());
+    TEST_ASSERT_EQUAL(3, s.len());      // 20 21 22
 
     TEST_ASSERT_FALSE(s.has(19));
     TEST_ASSERT_TRUE(s.has(20));
@@ -110,9 +111,9 @@ static void setInsDel () {
     for (int i = 20; i < 23; ++i)
         TEST_ASSERT_TRUE(s.has(i));
 
-    for (int i = 19; i < 22; ++i)   // 19 20 21 22
+    for (int i = 19; i < 22; ++i)
         s.has(i) = true;
-    TEST_ASSERT_EQUAL(4, s.len());
+    TEST_ASSERT_EQUAL(4, s.len());      // 19 20 21 22
 
     TEST_ASSERT_FALSE(s.has(18));
     TEST_ASSERT_TRUE(s.has(19));
@@ -124,17 +125,19 @@ static void setInsDel () {
 
     s.has("abc") = true;
     s.has("def") = true;
-    TEST_ASSERT_EQUAL(6, s.len());
+    TEST_ASSERT_EQUAL(6, s.len());      // 19 20 21 22 "abc" "def"
 
     TEST_ASSERT_FALSE(s.has(""));
     TEST_ASSERT_TRUE(s.has("abc"));
     TEST_ASSERT_TRUE(s.has("def"));
     TEST_ASSERT_FALSE(s.has("ghi"));
 
-    s.has("abc") = true; // already included, no effect
+    s.has("abc") = true; // no effect
+    s.has("ghi") = false; // no effect
+    TEST_ASSERT_EQUAL(6, s.len());      // 19 20 21 22 "abc" "def"
+
     s.has("def") = false;
-    s.has("ghi") = false; // non-existent, no effect
-    TEST_ASSERT_EQUAL(5, s.len());
+    TEST_ASSERT_EQUAL(5, s.len());      // 19 20 21 22 "abc"
     TEST_ASSERT_TRUE(s.has("abc"));
     TEST_ASSERT_FALSE(s.has("def"));
     TEST_ASSERT_FALSE(s.has("ghi"));
@@ -143,6 +146,47 @@ static void setInsDel () {
 static void dictInsDel () {
     Dict d;
     TEST_ASSERT_EQUAL(0, d.len());
+
+    for (int i = 0; i < 5; ++i)
+        d.at(10+i) = 30+i;
+    TEST_ASSERT_EQUAL(5, d.len());      // 10:30 11:31 12:32 13:33 14:34
+    TEST_ASSERT_FALSE(d.has(15));
+
+    for (int i = 0; i < 5; ++i) {
+        Value e = d.at(10+i);
+        TEST_ASSERT_EQUAL(30+i, e);
+    }
+
+    d.at(15) = 35;
+    TEST_ASSERT_EQUAL(6, d.len());      // 10:30 11:31 12:32 13:33 14:34 15:35
+    TEST_ASSERT_TRUE(d.has(15));
+
+    for (int i = 0; i < 6; ++i) {
+        Value e = d.at(10+i);
+        TEST_ASSERT_EQUAL(30+i, e);
+    }
+
+    d.at(12) = 42;
+    TEST_ASSERT_EQUAL(6, d.len());      // 10:30 11:31 12:42 13:33 14:34 15:35
+    TEST_ASSERT_TRUE(d.has(12));
+    TEST_ASSERT_EQUAL(42, (Value) d.at(12));
+
+    d.at(11) = Value {};
+    TEST_ASSERT_EQUAL(5, d.len());      // 10:30 12:42 13:33 14:34 15:35
+    TEST_ASSERT_FALSE(d.has(11));
+
+    static int m1 [] { 1030, 1242, 1333, 1434, 1535, };
+    for (auto e : m1) {
+        int k = e / 100, v = e % 100;
+        TEST_ASSERT_EQUAL(v, (Value) d.at(k));
+    }
+
+#if 0
+    auto p = d.begin(); // a sneaky way to access the underlying VecOf<Value>
+    for (size_t i = 0; i < 2 * d.len(); ++i)
+        printf("%d, ", (int) p[i]);
+    printf("\n");
+#endif
 }
 
 int main () {
