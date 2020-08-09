@@ -36,10 +36,10 @@ struct PyVM {
 
     //CG: op-init
 
-    //CG2 op q
-    void op_LoadConstString (char const* arg) {
-        printf("LoadConstString %s\n", arg);
-        *++sp = arg;
+    //CG2 op
+    void op_LoadNull () {
+        printf("LoadNull\n");
+        *++sp = Value {};
     }
     //CG2 op
     void op_LoadConstNone () {
@@ -56,6 +56,11 @@ struct PyVM {
         printf("LoadConstTrue\n");
         *++sp = True;
     }
+    //CG2 op q
+    void op_LoadConstString (char const* arg) {
+        printf("LoadConstString %s\n", arg);
+        *++sp = arg;
+    }
     //CG2 op
     void op_LoadConstSmallInt () {
         printf("LoadConstSmallInt\n");
@@ -65,11 +70,6 @@ struct PyVM {
     void op_LoadConstObj (uint32_t arg) {
         printf("LoadConstObj %u\n", (unsigned) arg);
         assert(false); // TODO
-    }
-    //CG2 op
-    void op_LoadNull () {
-        printf("LoadNull\n");
-        *++sp = Value {};
     }
 
     //CG2 op
@@ -217,6 +217,21 @@ struct PyVM {
         assert(false); // TODO
     }
 
+    //CG2 op
+    void op_LoadBuildClass () {
+        printf("LoadBuildClass\n");
+        *++sp = Class::info;
+    }
+    //CG2 op q
+    void op_LoadMethod (char const* arg) {
+        printf("LoadMethod %s\n", arg);
+        assert(false); // TODO
+    }
+    //CG2 op v
+    void op_CallMethod (uint32_t arg) {
+        printf("CallMethod %u\n", (unsigned) arg);
+        assert(false); // TODO
+    }
     //CG2 op v
     void op_MakeFunction (uint32_t arg) {
         printf("MakeFunction %u\n", (unsigned) arg);
@@ -254,22 +269,6 @@ struct PyVM {
         assert(false); // TODO
     }
 
-    //CG2 op
-    void op_LoadBuildClass () {
-        printf("LoadBuildClass\n");
-        assert(false); // TODO
-    }
-    //CG2 op q
-    void op_LoadMethod (char const* arg) {
-        printf("LoadMethod %s\n", arg);
-        assert(false); // TODO
-    }
-    //CG2 op v
-    void op_CallMethod (uint32_t arg) {
-        printf("CallMethod %u\n", (unsigned) arg);
-        assert(false); // TODO
-    }
-
     PyVM (Context& context) : ctx (context) {
         size_t spOff = ctx.stack[ctx.Sp];
         sp = &ctx.stack[spOff];
@@ -280,20 +279,20 @@ struct PyVM {
             switch (*ip++) {
 
                 //CG< op-emit
-                case Op::LoadConstString:
-                    op_LoadConstString(fetchQstr()); break;
+                case Op::LoadNull:
+                    op_LoadNull(); break;
                 case Op::LoadConstNone:
                     op_LoadConstNone(); break;
                 case Op::LoadConstFalse:
                     op_LoadConstFalse(); break;
                 case Op::LoadConstTrue:
                     op_LoadConstTrue(); break;
+                case Op::LoadConstString:
+                    op_LoadConstString(fetchQstr()); break;
                 case Op::LoadConstSmallInt:
                     op_LoadConstSmallInt(); break;
                 case Op::LoadConstObj:
                     op_LoadConstObj(fetchVarInt()); break;
-                case Op::LoadNull:
-                    op_LoadNull(); break;
                 case Op::DupTop:
                     op_DupTop(); break;
                 case Op::DupTopTwo:
@@ -346,6 +345,12 @@ struct PyVM {
                     op_RaiseLast(); break;
                 case Op::UnwindJump:
                     op_UnwindJump(fetchOffset()-0x8000); break;
+                case Op::LoadBuildClass:
+                    op_LoadBuildClass(); break;
+                case Op::LoadMethod:
+                    op_LoadMethod(fetchQstr()); break;
+                case Op::CallMethod:
+                    op_CallMethod(fetchVarInt()); break;
                 case Op::MakeFunction:
                     op_MakeFunction(fetchVarInt()); break;
                 case Op::MakeFunctionDefargs:
@@ -360,12 +365,6 @@ struct PyVM {
                     op_GetIterStack(); break;
                 case Op::ForIter:
                     op_ForIter(fetchOffset()); break;
-                case Op::LoadBuildClass:
-                    op_LoadBuildClass(); break;
-                case Op::LoadMethod:
-                    op_LoadMethod(fetchQstr()); break;
-                case Op::CallMethod:
-                    op_CallMethod(fetchVarInt()); break;
                 //CG>
 
                 default: {
