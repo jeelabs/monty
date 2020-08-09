@@ -95,8 +95,8 @@ static void setInsDel () {
     for (int i = 20; i < 25; ++i)
         TEST_ASSERT_TRUE(v.has(i));
 
-    for (auto& e : v)
-        TEST_ASSERT_TRUE(e); // every item in v is in v, doh!
+    for (auto e : v)
+        TEST_ASSERT(20 <= (int) e && (int) e < 25);
 
     for (int i = 23; i < 28; ++i)   // 20 21 22
         v.has(i) = false;
