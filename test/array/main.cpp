@@ -37,42 +37,104 @@ void arrayTypeSizes () {
     TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Instance));
 }
 
-static void vecInstance () {
-#if 0
-    Vector v (12);
-    TEST_ASSERT_EQUAL(2, v.width()); // 12 bits in 2 bytes
-    TEST_ASSERT_EQUAL(0, v.length());
-#endif
+static void listInsDel () {
+    List v;
+    TEST_ASSERT_EQUAL(0, v.len());
+
+    v.ins(0, 5);
+    TEST_ASSERT_EQUAL(5, v.len());
+
+    for (auto e : v)
+        TEST_ASSERT(e.isNil());
+
+    for (size_t i = 0; i < 5; ++i)
+        v[i] = 10 + i;
+
+    for (auto& e : v) {
+        auto i = &e - &v[0];
+        TEST_ASSERT_EQUAL(10 + i, e);
+    }
+
+    v.ins(2, 3);
+    TEST_ASSERT_EQUAL(8, v.len());
+
+    static int m1 [] { 10, 11, 0, 0, 0, 12, 13, 14, };
+    for (auto& e : m1) {
+        auto i = &e - m1;
+        TEST_ASSERT_EQUAL(e, v[i]);
+    }
+
+    v.del(1, 5);
+    TEST_ASSERT_EQUAL(3, v.len());
+
+    static int m2 [] { 10, 13, 14, };
+    for (auto& e : m2) {
+        auto i = &e - m2;
+        TEST_ASSERT_EQUAL(e, v[i]);
+    }
+
+    for (auto& e : v) {
+        auto i = &e - &v[0];
+        TEST_ASSERT_EQUAL(m2[i], e);
+    }
 }
 
-static void vecSetGrow () {
-#if 0
-    Vector v (32);
-    TEST_ASSERT_EQUAL(4, v.width());
+static void setInsDel () {
+    Set v;
+    TEST_ASSERT_EQUAL(0, v.len());
 
-    v.set(0, 123);
-    TEST_ASSERT_EQUAL(1, v.length());
-    TEST_ASSERT_EQUAL(123, v.getInt(0));
+    for (int i = 20; i < 25; ++i)   // 20 21 22 23 24
+        v.has(i) = true;
+    TEST_ASSERT_EQUAL(5, v.len());
 
-    v.set(2, 456);
-    TEST_ASSERT_EQUAL(3, v.length());
-    TEST_ASSERT_EQUAL(123, v.getInt(0));
-    TEST_ASSERT_EQUAL(0,   v.getInt(1));
-    TEST_ASSERT_EQUAL(456, v.getInt(2));
+    TEST_ASSERT_FALSE(v.has(19));
+    TEST_ASSERT_TRUE(v.has(20));
+    TEST_ASSERT_TRUE(v.has(24));
+    TEST_ASSERT_FALSE(v.has(25));
 
-    v.ins(1, 2);
-    TEST_ASSERT_EQUAL(5, v.length());
-    TEST_ASSERT_EQUAL(123, v.getInt(0));
-    TEST_ASSERT_EQUAL(0,   v.getInt(1));
-    TEST_ASSERT_EQUAL(0,   v.getInt(2));
-    TEST_ASSERT_EQUAL(0,   v.getInt(3));
-    TEST_ASSERT_EQUAL(456, v.getInt(4));
+    for (int i = 20; i < 25; ++i)
+        TEST_ASSERT_TRUE(v.has(i));
 
-    v.ins(0);
-    TEST_ASSERT_EQUAL(6, v.length());
-    TEST_ASSERT_EQUAL(0,   v.getInt(0));
-    TEST_ASSERT_EQUAL(123, v.getInt(1));
-#endif
+    for (auto& e : v)
+        TEST_ASSERT_TRUE(e); // every item in v is in v, doh!
+
+    for (int i = 23; i < 28; ++i)   // 20 21 22
+        v.has(i) = false;
+    TEST_ASSERT_EQUAL(3, v.len());
+
+    TEST_ASSERT_FALSE(v.has(19));
+    TEST_ASSERT_TRUE(v.has(20));
+    TEST_ASSERT_TRUE(v.has(22));
+    TEST_ASSERT_FALSE(v.has(23));
+
+    for (int i = 20; i < 23; ++i)
+        TEST_ASSERT_TRUE(v.has(i));
+
+    for (int i = 19; i < 22; ++i)   // 19 20 21 22
+        v.has(i) = true;
+    TEST_ASSERT_EQUAL(4, v.len());
+
+    TEST_ASSERT_FALSE(v.has(18));
+    TEST_ASSERT_TRUE(v.has(19));
+    TEST_ASSERT_TRUE(v.has(22));
+    TEST_ASSERT_FALSE(v.has(23));
+
+    for (int i = 19; i < 23; ++i)
+        TEST_ASSERT_TRUE(v.has(i));
+
+    v.has("abc") = true;
+    v.has("def") = true;
+    TEST_ASSERT_EQUAL(6, v.len());
+
+    TEST_ASSERT_FALSE(v.has(""));
+    TEST_ASSERT_TRUE(v.has("abc"));
+    TEST_ASSERT_TRUE(v.has("def"));
+    TEST_ASSERT_FALSE(v.has("x"));
+
+    v.has("def") = false;
+    TEST_ASSERT_EQUAL(5, v.len());
+    TEST_ASSERT_TRUE(v.has("abc"));
+    TEST_ASSERT_FALSE(v.has("def"));
 }
 
 int main () {
@@ -80,8 +142,8 @@ int main () {
 
     RUN_TEST(smokeTest);
     RUN_TEST(arrayTypeSizes);
-    RUN_TEST(vecInstance);
-    RUN_TEST(vecSetGrow);
+    RUN_TEST(listInsDel);
+    RUN_TEST(setInsDel);
 
     UNITY_END();
 }

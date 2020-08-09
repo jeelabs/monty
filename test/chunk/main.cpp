@@ -18,7 +18,7 @@ void setUp () {
     memAvail = avail();
 
     TEST_ASSERT_EQUAL(0, v.cap());
-    v.adj(25 * sizeof (int));
+    v.adj(25);
 
     for (int i = 0; i < 20; ++i)
         TEST_ASSERT_EQUAL(0, v[i]);
@@ -81,7 +81,7 @@ void vecOfMoveAndWipe () {
 
 void vecCopyMove () {
     VecOf<int> v2;
-    v2.adj(3 * sizeof (int));
+    v2.adj(3);
 
     v2[0] = 100;
     v2[1] = 101;
@@ -101,7 +101,7 @@ void vecCopyMove () {
     TEST_ASSERT_GREATER_OR_EQUAL(5, v3.cap());
     TEST_ASSERT_LESS_THAN(10, v3.cap());
 
-    v3.adj(15 * sizeof (int));
+    v3.adj(15);
 #endif
 }
 

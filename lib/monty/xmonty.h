@@ -64,6 +64,7 @@ namespace Monty {
     struct VecOf : Vec {
         auto ptr () const -> T* { return (T*) Vec::ptr(); }
         auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
+        auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
 
         auto operator[] (size_t idx) const -> T { return ptr()[idx]; }
         auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
@@ -124,9 +125,9 @@ namespace Monty {
                 num += idx - len;
                 idx = len;
             }
-            auto need = (off + len + num) * sizeof (T);
-            if (need > vec.cap())
-                vec.adj(need);
+            auto need = off + len + num;
+            if (need > vot.cap())
+                vot.adj(need);
             vot.move(off + idx, len - idx, num);
             vot.wipe(off + idx, num);
             len += num;
@@ -435,7 +436,13 @@ namespace Monty {
         List (size_t n, Value const* vals);
 
         auto operator[] (size_t idx) -> Value& { return items[idx]; }
-        auto len () const -> size_t { return items.len; }
+        auto len () const -> size_t { return items.length(); }
+
+        void ins (size_t i, size_t n =1) { items.insert(i, n); }
+        void del (size_t i, size_t n =1) { items.remove(i, n); }
+
+        auto begin () -> Value* { return items.begin(); }
+        auto end () -> Value* { return items.end(); }
 
         void marker () const override { mark(items); }
 
@@ -454,15 +461,19 @@ namespace Monty {
         Set () : Set (0, nullptr) {}
         Set (size_t n, Value const* vals);
 
+        auto find (Value v) const -> int;
+
         struct Proxy { Set& s; Value v;
             operator bool () const;
-            auto operator= (Value v) -> bool;
+            auto operator= (bool) -> bool;
         };
 
         auto operator[] (size_t idx) -> Value& = delete;
-        auto operator[] (Value key) -> Proxy { return {*this, key}; }
+        void ins (size_t i, size_t n =1) = delete;
+        void del (size_t i, size_t n =1) = delete;
 
-        auto find (Value v) const -> int;
+        // operator[] is problematic when the value is an int
+        auto has (Value key) -> Proxy { return {*this, key}; }
     };
 
     //CG< type dict

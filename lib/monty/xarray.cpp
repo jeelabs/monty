@@ -32,13 +32,16 @@ Set::Proxy::operator bool () const {
     return s.find(v) >= 0;
 }
 
-auto Set::Proxy::operator= (Value v) -> bool {
-    if (s.find(v) >= 0)
-        return true;
-    auto i = s.items.length();
-    s.items.insert(i);
-    s.items[i] = v;
-    return false;
+auto Set::Proxy::operator= (bool f) -> bool {
+    auto pos = s.find(v);
+    if (pos >= 0 && !f)
+        s.items.remove(pos);
+    else if (pos < 0 && f) {
+        auto n = s.items.length();
+        s.items.insert(n);
+        s.items[n] = v;
+    }
+    return pos >= 0;
 }
 
 Dict::Dict (size_t n) {

@@ -51,7 +51,8 @@ auto Value::operator== (Value rhs) const -> bool {
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs);
 #endif
-    return binOp(BinOp::Equal, rhs);
+    // TODO return binOp(BinOp::Equal, rhs);
+    return false;
 }
 
 auto Value::operator< (Value rhs) const -> bool {
