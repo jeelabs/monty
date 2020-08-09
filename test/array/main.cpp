@@ -38,106 +38,111 @@ void arrayTypeSizes () {
 }
 
 static void listInsDel () {
-    List v;
-    TEST_ASSERT_EQUAL(0, v.len());
+    List l;
+    TEST_ASSERT_EQUAL(0, l.len());
 
-    v.ins(0, 5);
-    TEST_ASSERT_EQUAL(5, v.len());
+    l.ins(0, 5);
+    TEST_ASSERT_EQUAL(5, l.len());
 
-    for (auto e : v)
+    for (auto e : l)
         TEST_ASSERT(e.isNil());
 
     for (size_t i = 0; i < 5; ++i)
-        v[i] = 10 + i;
+        l[i] = 10 + i;
 
-    for (auto& e : v) {
-        auto i = &e - &v[0];
+    for (auto& e : l) {
+        auto i = &e - &l[0];
         TEST_ASSERT_EQUAL(10 + i, e);
     }
 
-    v.ins(2, 3);
-    TEST_ASSERT_EQUAL(8, v.len());
+    l.ins(2, 3);
+    TEST_ASSERT_EQUAL(8, l.len());
 
     static int m1 [] { 10, 11, 0, 0, 0, 12, 13, 14, };
     for (auto& e : m1) {
         auto i = &e - m1;
-        TEST_ASSERT_EQUAL(e, v[i]);
+        TEST_ASSERT_EQUAL(e, l[i]);
     }
 
-    v.del(1, 5);
-    TEST_ASSERT_EQUAL(3, v.len());
+    l.del(1, 5);
+    TEST_ASSERT_EQUAL(3, l.len());
 
     static int m2 [] { 10, 13, 14, };
     for (auto& e : m2) {
         auto i = &e - m2;
-        TEST_ASSERT_EQUAL(e, v[i]);
+        TEST_ASSERT_EQUAL(e, l[i]);
     }
 
-    for (auto& e : v) {
-        auto i = &e - &v[0];
+    for (auto& e : l) {
+        auto i = &e - &l[0];
         TEST_ASSERT_EQUAL(m2[i], e);
     }
 }
 
 static void setInsDel () {
-    Set v;
-    TEST_ASSERT_EQUAL(0, v.len());
+    Set s;
+    TEST_ASSERT_EQUAL(0, s.len());
 
     for (int i = 20; i < 25; ++i)   // 20 21 22 23 24
-        v.has(i) = true;
-    TEST_ASSERT_EQUAL(5, v.len());
+        s.has(i) = true;
+    TEST_ASSERT_EQUAL(5, s.len());
 
-    TEST_ASSERT_FALSE(v.has(19));
-    TEST_ASSERT_TRUE(v.has(20));
-    TEST_ASSERT_TRUE(v.has(24));
-    TEST_ASSERT_FALSE(v.has(25));
+    TEST_ASSERT_FALSE(s.has(19));
+    TEST_ASSERT_TRUE(s.has(20));
+    TEST_ASSERT_TRUE(s.has(24));
+    TEST_ASSERT_FALSE(s.has(25));
 
     for (int i = 20; i < 25; ++i)
-        TEST_ASSERT_TRUE(v.has(i));
+        TEST_ASSERT_TRUE(s.has(i));
 
-    for (auto e : v)
+    for (auto e : s)
         TEST_ASSERT(20 <= (int) e && (int) e < 25);
 
     for (int i = 23; i < 28; ++i)   // 20 21 22
-        v.has(i) = false;
-    TEST_ASSERT_EQUAL(3, v.len());
+        s.has(i) = false;
+    TEST_ASSERT_EQUAL(3, s.len());
 
-    TEST_ASSERT_FALSE(v.has(19));
-    TEST_ASSERT_TRUE(v.has(20));
-    TEST_ASSERT_TRUE(v.has(22));
-    TEST_ASSERT_FALSE(v.has(23));
+    TEST_ASSERT_FALSE(s.has(19));
+    TEST_ASSERT_TRUE(s.has(20));
+    TEST_ASSERT_TRUE(s.has(22));
+    TEST_ASSERT_FALSE(s.has(23));
 
     for (int i = 20; i < 23; ++i)
-        TEST_ASSERT_TRUE(v.has(i));
+        TEST_ASSERT_TRUE(s.has(i));
 
     for (int i = 19; i < 22; ++i)   // 19 20 21 22
-        v.has(i) = true;
-    TEST_ASSERT_EQUAL(4, v.len());
+        s.has(i) = true;
+    TEST_ASSERT_EQUAL(4, s.len());
 
-    TEST_ASSERT_FALSE(v.has(18));
-    TEST_ASSERT_TRUE(v.has(19));
-    TEST_ASSERT_TRUE(v.has(22));
-    TEST_ASSERT_FALSE(v.has(23));
+    TEST_ASSERT_FALSE(s.has(18));
+    TEST_ASSERT_TRUE(s.has(19));
+    TEST_ASSERT_TRUE(s.has(22));
+    TEST_ASSERT_FALSE(s.has(23));
 
     for (int i = 19; i < 23; ++i)
-        TEST_ASSERT_TRUE(v.has(i));
+        TEST_ASSERT_TRUE(s.has(i));
 
-    v.has("abc") = true;
-    v.has("def") = true;
-    TEST_ASSERT_EQUAL(6, v.len());
+    s.has("abc") = true;
+    s.has("def") = true;
+    TEST_ASSERT_EQUAL(6, s.len());
 
-    TEST_ASSERT_FALSE(v.has(""));
-    TEST_ASSERT_TRUE(v.has("abc"));
-    TEST_ASSERT_TRUE(v.has("def"));
-    TEST_ASSERT_FALSE(v.has("ghi"));
+    TEST_ASSERT_FALSE(s.has(""));
+    TEST_ASSERT_TRUE(s.has("abc"));
+    TEST_ASSERT_TRUE(s.has("def"));
+    TEST_ASSERT_FALSE(s.has("ghi"));
 
-    v.has("abc") = true; // already included, no effect
-    v.has("def") = false;
-    v.has("ghi") = false; // non-existent, no effect
-    TEST_ASSERT_EQUAL(5, v.len());
-    TEST_ASSERT_TRUE(v.has("abc"));
-    TEST_ASSERT_FALSE(v.has("def"));
-    TEST_ASSERT_FALSE(v.has("ghi"));
+    s.has("abc") = true; // already included, no effect
+    s.has("def") = false;
+    s.has("ghi") = false; // non-existent, no effect
+    TEST_ASSERT_EQUAL(5, s.len());
+    TEST_ASSERT_TRUE(s.has("abc"));
+    TEST_ASSERT_FALSE(s.has("def"));
+    TEST_ASSERT_FALSE(s.has("ghi"));
+}
+
+static void dictInsDel () {
+    Dict d;
+    TEST_ASSERT_EQUAL(0, d.len());
 }
 
 int main () {
@@ -147,6 +152,7 @@ int main () {
     RUN_TEST(arrayTypeSizes);
     RUN_TEST(listInsDel);
     RUN_TEST(setInsDel);
+    RUN_TEST(dictInsDel);
 
     UNITY_END();
 }

@@ -468,7 +468,6 @@ namespace Monty {
             auto operator= (bool) -> bool;
         };
 
-        auto operator[] (size_t idx) -> Value& = delete;
         void ins (size_t i, size_t n =1) = delete;
         void del (size_t i, size_t n =1) = delete;
 
