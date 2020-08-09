@@ -14,11 +14,11 @@ Tuple::Tuple (size_t n, Value const* vals) {
 }
 
 List::List (size_t n, Value const* vals) {
-    // TODO
+    items.asVecOf<Value>().adj(n);
 }
 
 Set::Set (size_t n, Value const* vals) {
-    // TODO
+    items.asVecOf<Value>().adj(n);
 }
 
 auto Set::find (Value v) const -> size_t {
@@ -45,14 +45,16 @@ auto Set::Proxy::operator= (bool f) -> bool {
 }
 
 Dict::Dict (size_t n) {
-    // TODO
+    items.asVecOf<Value>().adj(2*n);
 }
 
 Dict::Proxy::operator Value () const {
+    auto n = d.len();
     auto pos = d.find(k);
-    return pos >= 0 ? d.items[d.len()+pos] : Value {};
+    return pos < n ? d.items[n+pos] : Value {};
 }
 
+// dict invariant: items layout is: N keys, then N values, with N == d.len()
 auto Dict::Proxy::operator= (Value v) -> Value {
     Value w;
     auto n = d.len();
@@ -77,7 +79,6 @@ auto Dict::Proxy::operator= (Value v) -> Value {
         assert(d.items.asVecOf<Value>().cap() >= 2*n);
         d.items[n+pos] = v;
     }
-    // invariant: the layout is: N keys, then N values, with N == d.len()
     return w;
 }
 

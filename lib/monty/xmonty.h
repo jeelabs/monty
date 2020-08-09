@@ -87,9 +87,10 @@ namespace Monty {
         auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
     protected:
-        Vec& vec;         // parent vector
         size_t off {0};   // starting offset, in typed units
         size_t len {~0U}; // maximum length, in typed units
+    private:
+        Vec& vec;         // parent vector
     };
 
     template< typename T >
@@ -99,26 +100,26 @@ namespace Monty {
 
         constexpr ChunkOf (Vec& v) : Chunk (v) {}
 
+        auto asVec () const -> VecOf<T>& { return asVecOf<T>(); }
+
         auto length () const -> size_t {
-            auto& vot = asVecOf<T>();
-            auto n = vot.cap() - off;
-            return n > len ? len : n >= 0 ? n : 0;
+            auto n = asVec().cap() - off;
+            return (int) n < 0 ? 0 : n < len ? n : len;
         }
 
         auto operator[] (size_t idx) const -> T& {
             // assert(idx < length());
-            auto& vot = asVecOf<T>();
-            return vot[off+idx];
+            return asVec()[off+idx];
         }
 
-        auto begin () const -> T const* { return &asVecOf<T>()[0]; }
+        auto begin () const -> T const* { return &asVec()[0]; }
         auto end () const -> T const* { return begin() + length(); }
 
-        auto begin () -> T* { return &asVecOf<T>()[0]; }
+        auto begin () -> T* { return &asVec()[0]; }
         auto end () -> T* { return begin() + length(); }
 
         void insert (size_t idx, size_t num =1) {
-            auto& vot = asVecOf<T>();
+            auto& vot = asVec();
             if (len > vot.cap())
                 len = vot.cap();
             if (idx > len) {
@@ -134,7 +135,7 @@ namespace Monty {
         }
 
         void remove (size_t idx, size_t num =1) {
-            auto& vot = asVecOf<T>();
+            auto& vot = asVec();
             if (len > vot.cap())
                 len = vot.cap();
             if (idx >= len)
@@ -463,7 +464,7 @@ namespace Monty {
 
         auto find (Value v) const -> size_t;
 
-        struct Proxy { Set& s; Value v;
+        struct Proxy { Set& s; Value const v;
             operator bool () const;
             auto operator= (bool) -> bool;
         };
@@ -484,7 +485,7 @@ namespace Monty {
     //CG>
         Dict (size_t n =0);
 
-        struct Proxy { Dict& d; Value k;
+        struct Proxy { Dict& d; Value const k;
             operator Value () const;
             auto operator= (Value v) -> Value;
         };
