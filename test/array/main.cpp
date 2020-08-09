@@ -129,12 +129,15 @@ static void setInsDel () {
     TEST_ASSERT_FALSE(v.has(""));
     TEST_ASSERT_TRUE(v.has("abc"));
     TEST_ASSERT_TRUE(v.has("def"));
-    TEST_ASSERT_FALSE(v.has("x"));
+    TEST_ASSERT_FALSE(v.has("ghi"));
 
+    v.has("abc") = true; // already included, no effect
     v.has("def") = false;
+    v.has("ghi") = false; // non-existent, no effect
     TEST_ASSERT_EQUAL(5, v.len());
     TEST_ASSERT_TRUE(v.has("abc"));
     TEST_ASSERT_FALSE(v.has("def"));
+    TEST_ASSERT_FALSE(v.has("ghi"));
 }
 
 int main () {
