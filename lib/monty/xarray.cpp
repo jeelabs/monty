@@ -22,9 +22,9 @@ Set::Set (size_t n, Value const* vals) {
 }
 
 auto Set::find (Value v) const -> int {
-    for (auto& e : keys)
+    for (auto& e : items)
         if (v == e)
-            return &e - &keys[0];
+            return &e - &items[0];
     return -1;
 }
 
@@ -35,9 +35,9 @@ Set::Proxy::operator bool () const {
 auto Set::Proxy::operator= (Value v) -> bool {
     if (s.find(v) >= 0)
         return true;
-    auto i = s.keys.length();
-    s.keys.insert(i);
-    s[i] = v;
+    auto i = s.items.length();
+    s.items.insert(i);
+    s.items[i] = v;
     return false;
 }
 
@@ -47,18 +47,18 @@ Dict::Dict (size_t n) {
 
 Dict::Proxy::operator Value () const {
     auto i = d.find(v);
-    return i >= 0 ? d.vals[i] : Value {};
+    return i >= 0 ? d.items[d.len()+i] : Value {};
 }
 
 auto Dict::Proxy::operator= (Value v) -> Value {
     auto i = d.find(v);
     if (i < 0) {
-        i = d.keys.length();
-        d.keys.insert(i);
-        d.keys[i] = v;
-        d.vals.insert(i);
+        i = d.items.length();
+        d.items.insert(i);
+        d.items[i] = v;
+        assert(false); // TODO resize, moving vals up
     }
-    d.vals[i] = v;
+    d.items[d.len()+i] = v;
     return v;
 }
 

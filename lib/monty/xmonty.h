@@ -22,7 +22,7 @@ namespace Monty {
     struct Vec {
         constexpr Vec (void const* ptr =nullptr, size_t len =0) // TODO caps b
             : size (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
-        ~Vec () { (void) resize(0); }
+        ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
         Vec& operator= (Vec const&) = delete;
@@ -32,7 +32,7 @@ namespace Monty {
 
         auto ptr () const -> uint8_t* { return data; }
         auto cap () const -> size_t;
-        auto resize (size_t bytes) -> bool;
+        auto adj (size_t bytes) -> bool;
 
     private:
         uint32_t size;  // capacity in slots, see cap() TODO in bytes
@@ -126,7 +126,7 @@ namespace Monty {
             }
             auto need = (off + len + num) * sizeof (T);
             if (need > vec.cap())
-                vec.resize(need);
+                vec.adj(need);
             vot.move(off + idx, len - idx, num);
             vot.wipe(off + idx, num);
             len += num;
@@ -405,7 +405,6 @@ namespace Monty {
         };
 
         auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
-
         auto len () const -> size_t { return items.len(); }
 
         void marker () const override { mark(items); }
@@ -426,7 +425,7 @@ namespace Monty {
     };
 
     //CG< type list
-    struct List : Array {
+    struct List : Object {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
@@ -434,10 +433,19 @@ namespace Monty {
     //CG>
         List () : List (0, nullptr) {}
         List (size_t n, Value const* vals);
+
+        auto operator[] (size_t idx) -> Value& { return items[idx]; }
+        auto len () const -> size_t { return items.len; }
+
+        void marker () const override { mark(items); }
+
+    protected:
+        Vec vec;
+        ChunkOf<Value> items {vec};
     };
 
     //CG< type set
-    struct Set : Object {
+    struct Set : List {
         static auto create (Type const&,ChunkOf<Value> const&) -> Value;
         static Lookup const attrs;
         static Type const info;
@@ -451,14 +459,10 @@ namespace Monty {
             auto operator= (Value v) -> bool;
         };
 
+        auto operator[] (size_t idx) -> Value& = delete;
         auto operator[] (Value key) -> Proxy { return {*this, key}; }
 
         auto find (Value v) const -> int;
-
-        void marker () const override { mark(keys); }
-    protected:
-        Vec vec;
-        ChunkOf<Value> keys {vec};
     };
 
     //CG< type dict
@@ -477,10 +481,8 @@ namespace Monty {
 
         auto operator[] (Value key) -> Proxy { return {*this, key}; }
 
-        void marker () const override { Set::marker(); mark(vals); }
+        void marker () const override { Set::marker(); mark(chain); }
     protected:
-        Vec vec2;
-        ChunkOf<Value> vals {vec2};
         Object* chain {nullptr};
     };
 

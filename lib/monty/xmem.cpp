@@ -183,15 +183,15 @@ namespace Monty {
     }
 
     // many tricky cases, to merge/reuse free slots as much as possible
-    auto Vec::resize (size_t sz) -> bool {
+    auto Vec::adj (size_t sz) -> bool {
         if (!isResizable())
             return false;
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (size != needs) {
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
-            if (slot == nullptr) {                        // new alloc
+            if (slot == nullptr) {                  // new alloc
                 slot = (VecSlot*) findSpace(needs);
-                if (slot == nullptr)                      // no room
+                if (slot == nullptr)                // no room
                     return false;
                 data = slot->buf;
             } else if (needs == 0) {                // delete

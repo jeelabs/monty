@@ -154,7 +154,7 @@ struct Loader {
         debugf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
-        qBufRaw.resize(500); // TODO avoid large over-alloc
+        qBufRaw.adj(500); // TODO avoid large over-alloc
 
         auto& bc = loadRaw();
 

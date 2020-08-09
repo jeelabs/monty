@@ -215,27 +215,27 @@ void newVec () {
 void resizeVec () {
     {
         Vec v1;
-        auto f = v1.resize(0);
+        auto f = v1.adj(0);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
         TEST_ASSERT_EQUAL(memAvail, avail());
 
-        f = v1.resize(1);
+        f = v1.adj(1);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_NOT_EQUAL(0, v1.ptr());
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
         TEST_ASSERT_LESS_THAN(memAvail, avail());
 
-        f = v1.resize(sizeof (void*));
+        f = v1.adj(sizeof (void*));
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
 
-        f = v1.resize(sizeof (void*) + 1);
+        f = v1.adj(sizeof (void*) + 1);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(3 * sizeof (void*), v1.cap());
 
-        f = v1.resize(1);
+        f = v1.adj(1);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
     }
@@ -244,78 +244,78 @@ void resizeVec () {
 
 void reuseVecs () {
     Vec v1;
-    v1.resize(100);                 // [ v1 ]
+    v1.adj(100);                    // [ v1 ]
     Vec v2;
-    v2.resize(20);                  // [ v1 v2 ]
+    v2.adj(20);                     // [ v1 v2 ]
 
     auto a = avail();
     TEST_ASSERT_LESS_THAN(memAvail, a);
     TEST_ASSERT_GREATER_THAN(v1.ptr(), v2.ptr());
 
-    v1.resize(0);                   // [ gap v2 ]
+    v1.adj(0);                      // [ gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
     Vec v3;
-    v3.resize(20);                  // [ v3 gap v2 ]
+    v3.adj(20);                     // [ v3 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
     Vec v4;
-    v4.resize(20);                  // [ v3 v4 gap v2 ]
+    v4.adj(20);                     // [ v3 v4 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v3.resize(0);                   // [ gap v4 gap v2 ]
-    v4.resize(0);                   // [ gap gap v2 ]
+    v3.adj(0);                      // [ gap v4 gap v2 ]
+    v4.adj(0);                      // [ gap gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
     Vec v5;
-    v5.resize(100);                 // [ v5 v2 ]
+    v5.adj(100);                    // [ v5 v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v5.resize(40);                  // [ v5 gap v2 ]
+    v5.adj(40);                     // [ v5 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v5.resize(80);                  // [ v5 gap v2 ]
+    v5.adj(80);                     // [ v5 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v5.resize(100);                 // [ v5 v2 ]
+    v5.adj(100);                    // [ v5 v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v5.resize(20);                  // [ v5 gap v2 ]
-    v1.resize(1);                   // [ v5 v1 gap v2 ]
+    v5.adj(20);                     // [ v5 gap v2 ]
+    v1.adj(1);                      // [ v5 v1 gap v2 ]
     TEST_ASSERT_EQUAL(a, avail());
 
-    v1.resize(0);                   // [ v5 gap v2 ]
-    v5.resize(0);                   // [ gap v2 ]
+    v1.adj(0);                      // [ v5 gap v2 ]
+    v5.adj(0);                      // [ gap v2 ]
 
-    v2.resize(0);                   // [ gap ]
+    v2.adj(0);                      // [ gap ]
     auto b = avail();
     TEST_ASSERT_GREATER_THAN(a, b);
     TEST_ASSERT_LESS_THAN(memAvail, b);
 
-    v1.resize(1);                   // [ v1 ]
+    v1.adj(1);                      // [ v1 ]
     TEST_ASSERT_GREATER_THAN(b, avail());
 
-    v1.resize(0);                   // [ ]
+    v1.adj(0);                      // [ ]
     TEST_ASSERT_EQUAL(memAvail, avail());
 }
 
 void compactVecs () {
     Vec v1;
-    v1.resize(20);                 // [ v1 ]
+    v1.adj(20);                     // [ v1 ]
     Vec v2;
-    v2.resize(20);                 // [ v1 v2 ]
+    v2.adj(20);                     // [ v1 v2 ]
 
     auto a = avail();
 
     Vec v3;
-    v3.resize(20);                 // [ v1 v2 v3 ]
+    v3.adj(20);                     // [ v1 v2 v3 ]
 
     auto b = avail();
 
     Vec v4;
-    v4.resize(20);                 // [ v1 v2 v3 v4 ]
+    v4.adj(20);                     // [ v1 v2 v3 v4 ]
     Vec v5;
-    v5.resize(20);                 // [ v1 v2 v3 v4 v5 ]
+    v5.adj(20);                     // [ v1 v2 v3 v4 v5 ]
 
     auto c = avail();
     TEST_ASSERT_LESS_THAN(b, c);
@@ -323,14 +323,14 @@ void compactVecs () {
     compact();                      // [ v1 v2 v3 v4 v5 ]
     TEST_ASSERT_EQUAL(c, avail());
 
-    v2.resize(0);                   // [ v1 gap v3 v4 v5 ]
-    v4.resize(0);                   // [ v1 gap v3 gap v5 ]
+    v2.adj(0);                      // [ v1 gap v3 v4 v5 ]
+    v4.adj(0);                      // [ v1 gap v3 gap v5 ]
     TEST_ASSERT_EQUAL(c, avail());
 
     compact();                      // [ v1 v3 v5 ]
     TEST_ASSERT_EQUAL(b, avail());
 
-    v1.resize(0);                   // [ gap v3 v5 ]
+    v1.adj(0);                      // [ gap v3 v5 ]
     TEST_ASSERT_EQUAL(b, avail());
 
     compact();                      // [ v3 v5 ]
@@ -340,7 +340,7 @@ void compactVecs () {
 void vecData () {
     {
         Vec v1;                     // fill with 0xFF's
-        v1.resize(1000);
+        v1.adj(1000);
         TEST_ASSERT_GREATER_OR_EQUAL(1000, v1.cap());
 
         memset(v1.ptr(), 0xFF, v1.cap());
@@ -349,7 +349,7 @@ void vecData () {
     }
 
     Vec v2;
-    v2.resize(20);                  // [ v2 ]
+    v2.adj(20);                     // [ v2 ]
     auto p2 = v2.ptr();
     auto n = v2.cap();
     TEST_ASSERT_NOT_NULL(p2);
@@ -362,7 +362,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(0, p2[n-2]);
     TEST_ASSERT_EQUAL(2, p2[n-1]);
 
-    v2.resize(40);                  // [ v2 ]
+    v2.adj(40);                     // [ v2 ]
     TEST_ASSERT_EQUAL_PTR(p2, v2.ptr());
     TEST_ASSERT_EQUAL(1, p2[0]);
     TEST_ASSERT_EQUAL(2, p2[n-1]);
@@ -375,7 +375,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(22, v2.ptr()[v2.cap()-1]);
 
     Vec v3;
-    v3.resize(20);                  // [ v2 v3 ]
+    v3.adj(20);                     // [ v2 v3 ]
     auto p3 = v3.ptr();
     p3[0] = 3;
     p3[n-1] = 4;
@@ -383,14 +383,14 @@ void vecData () {
     TEST_ASSERT_EQUAL(4, p3[n-1]);
 
     Vec v4;
-    v4.resize(20);                  // [ v2 v3 v4 ]
+    v4.adj(20);                     // [ v2 v3 v4 ]
     auto p4 = v4.ptr();
     p4[0] = 5;
     p4[n-1] = 6;
     TEST_ASSERT_EQUAL(5, p4[0]);
     TEST_ASSERT_EQUAL(6, p4[n-1]);
 
-    v3.resize(40);                  // [ v2 gap v4 v3 ]
+    v3.adj(40);                     // [ v2 gap v4 v3 ]
     TEST_ASSERT_NOT_EQUAL(p3, v3.ptr());
     TEST_ASSERT_EQUAL(3, v3.ptr()[0]);
     TEST_ASSERT_EQUAL(4, v3.ptr()[n-1]);
@@ -419,8 +419,8 @@ void vecData () {
     TEST_ASSERT_EQUAL(5, v4.ptr()[0]);
     TEST_ASSERT_EQUAL(6, v4.ptr()[n-1]);
 
-    v2.resize(0);                   // [ gap v4 v3 ]
-    v4.resize(0);                   // [ gap gap v3 ]
+    v2.adj(0);                      // [ gap v4 v3 ]
+    v4.adj(0);                      // [ gap gap v3 ]
 
     compact();                      // [ v3 ]
     TEST_ASSERT_LESS_THAN(memAvail, avail());
@@ -433,7 +433,7 @@ void vecData () {
 
 void outOfVecs () {
     Vec v1;
-    auto f = v1.resize(999);
+    auto f = v1.adj(999);
     TEST_ASSERT_TRUE(f);
     TEST_ASSERT_EQUAL(0, failed);
 
@@ -444,7 +444,7 @@ void outOfVecs () {
     TEST_ASSERT_GREATER_THAN(999, n);
     TEST_ASSERT_LESS_THAN(memAvail, a);
 
-    f = v1.resize(sizeof memory); // fail, vector should be the old one
+    f = v1.adj(sizeof memory); // fail, vector should be the old one
 
     TEST_ASSERT_FALSE(f);
     TEST_ASSERT_GREATER_THAN(0, failed);
