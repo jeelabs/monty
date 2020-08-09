@@ -150,7 +150,15 @@ static void dictInsDel () {
     for (int i = 0; i < 5; ++i)
         d.at(10+i) = 30+i;
     TEST_ASSERT_EQUAL(5, d.len());      // 10:30 11:31 12:32 13:33 14:34
+
+    TEST_ASSERT_TRUE(d.has(12));
     TEST_ASSERT_FALSE(d.has(15));
+
+    Value v;
+    v = d.at(12);
+    TEST_ASSERT(!v.isNil() && v.isInt()); // exists
+    v = d.at(15);
+    TEST_ASSERT(v.isNil()); // doesn't exist
 
     for (int i = 0; i < 5; ++i) {
         Value e = d.at(10+i);
