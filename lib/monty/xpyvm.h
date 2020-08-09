@@ -135,34 +135,31 @@ struct PyVM {
     //CG2 op v
     void op_BuildSlice (uint32_t arg) {
         printf("BuildSlice %u\n", (unsigned) arg);
-        Value v = arg > 2 ? *sp : Value {};
         sp -= arg - 1; // arg is 2 or 3
-        *sp = new Slice (sp[0], sp[1], v);
+        *sp = ctx.create<Slice>(arg, sp);
     }
     //CG2 op v
     void op_BuildTuple (uint32_t arg) {
         printf("BuildTuple %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        ChunkOf<Value> cov (ctx.stack.asVec());
-        assert(false); // TODO
-        *sp = Tuple::create(Tuple::info, cov);
+        *sp = ctx.create<Tuple>(arg, sp);
     }
     //CG2 op v
     void op_BuildList (uint32_t arg) {
         printf("BuildList %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = new List (arg, sp);
+        *sp = ctx.create<List>(arg, sp);
     }
     //CG2 op v
     void op_BuildSet (uint32_t arg) {
         printf("BuildSet %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = new Set (arg, sp);
+        *sp = ctx.create<Set>(arg, sp);
     }
     //CG2 op v
     void op_BuildMap (uint32_t arg) {
         printf("BuildMap %u\n", (unsigned) arg);
-        *++sp = new Dict (arg);
+        *++sp = ctx.create<Dict>(arg);
     }
 
     PyVM (Context& context) : ctx (context) {

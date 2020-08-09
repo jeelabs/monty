@@ -604,6 +604,12 @@ namespace Monty {
         auto asDict (Reg) -> Dict&;
         auto locals () -> Dict& { return asDict(Locals); }
         auto globals () -> Dict& { return asDict(Globals); }
+        auto asArgs (size_t len, Value const* ptr) const -> ChunkOf<Value>;
+
+        template< typename T >
+        auto create (size_t len, Value const* ptr =nullptr) -> Value {
+            return T::create(T::info, asArgs(len, ptr));
+        }
 
         void marker () const override { mark(stack); }
 

@@ -40,3 +40,11 @@ auto Context::asDict (Reg r) -> Dict& {
         stack[r] = new Dict;
     return stack[r].asType<Dict>();
 }
+
+auto Context::asArgs (size_t len, Value const* ptr) const -> ChunkOf<Value> {
+    ChunkOf<Value> args (stack.asVec());
+    assert(args.begin() <= ptr && ptr < args.end());
+    args.off = ptr - args.begin();
+    args.len = len;
+    return stack;
+}
