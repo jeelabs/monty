@@ -5,7 +5,6 @@
 #include "xmonty.h"
 
 #include <unity.h>
-#include <cstdio>
 
 using namespace Monty;
 
