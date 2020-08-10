@@ -43,7 +43,7 @@ def xTYPE(block, tag, *_):
     base = ' '.join(base) # accept multi-word, e.g. protected
     out = [
         'struct %s : %s {' % (name, base),
-        '    static auto create (Type const&,ChunkOf<Value> const&) -> Value;',
+        '    static auto create (ChunkOf<Value> const&,Type const* =nullptr) -> Value;',
         '    static Lookup const attrs;',
         '    static Type const info;',
         '    auto type () const -> Type const& override;',

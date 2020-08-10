@@ -165,30 +165,30 @@ struct PyVM {
     void op_BuildSlice (uint32_t arg) {
         printf("BuildSlice %u\n", (unsigned) arg);
         sp -= arg - 1; // arg is 2 or 3
-        *sp = ctx.create<Slice>(arg, sp);
+        *sp = Slice::create(ctx.asArgs(arg, sp));
     }
     //CG2 op v
     void op_BuildTuple (uint32_t arg) {
         printf("BuildTuple %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = ctx.create<Tuple>(arg, sp);
+        *sp = Tuple::create(ctx.asArgs(arg, sp));
     }
     //CG2 op v
     void op_BuildList (uint32_t arg) {
         printf("BuildList %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = ctx.create<List>(arg, sp);
+        *sp = List::create(ctx.asArgs(arg, sp));
     }
     //CG2 op v
     void op_BuildSet (uint32_t arg) {
         printf("BuildSet %u\n", (unsigned) arg);
         sp -= (int) arg - 1; // signed, if arg is 0
-        *sp = ctx.create<Set>(arg, sp);
+        *sp = Set::create(ctx.asArgs(arg, sp));
     }
     //CG2 op v
     void op_BuildMap (uint32_t arg) {
         printf("BuildMap %u\n", (unsigned) arg);
-        *++sp = ctx.create<Dict>(arg);
+        *++sp = Dict::create(ctx.asArgs(arg));
     }
     //CG2 op
     void op_StoreMap () {

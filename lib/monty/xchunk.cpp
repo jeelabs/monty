@@ -59,7 +59,7 @@ void Monty::mark (Segment const& seg) {
             mark((ChunkOf<Segment>&) (SegmentOf<'S',Segment> const&) seg);
             break;
         case 'V':
-            mark((ChunkOf<Value>&) (SegmentOf<'V',Value> const&) seg);
+            mark((CofV&) (SegmentOf<'V',Value> const&) seg);
             break;
     }
 }
@@ -70,7 +70,7 @@ void Monty::mark (ChunkOf<Segment> const& chunk) {
     }
 }
 
-void Monty::mark (ChunkOf<Value> const& chunk) {
+void Monty::mark (CofV const& chunk) {
     for (size_t i = 0; i < chunk.length(); ++i)
         if (chunk[i].isObj())
             mark(chunk[i].obj());

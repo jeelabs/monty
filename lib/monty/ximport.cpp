@@ -37,7 +37,7 @@ struct Bytecode : Object {
 
     uint16_t code;
     Vec constObjsVec;
-    ChunkOf<Value> constObjs {constObjsVec};
+    CofV constObjs {constObjsVec};
     int16_t stackSz;
     int16_t flags;
     int8_t excDepth;
@@ -86,7 +86,7 @@ struct Loader {
     const uint8_t* dp;
     Vec qBufRaw, qVecRaw, qWinRaw;
     ChunkOf<char> qBuf {qBufRaw};
-    ChunkOf<Value> qVec {qVecRaw};
+    CofV qVec {qVecRaw};
     ChunkOf<uint16_t> qWin {qWinRaw};
     uint8_t* bcBuf;
     uint8_t* bcNext;

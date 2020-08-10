@@ -181,7 +181,7 @@ void chunkOfInsert () {
     }
 
     Vec v2;
-    ChunkOf<Value> cov {v2};
+    CofV cov {v2};
     cov.insert(0, 10);
     TEST_ASSERT_EQUAL(10, cov.length());
 
