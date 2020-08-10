@@ -194,8 +194,8 @@ namespace Monty {
 // see type.cpp - basic object types and type system
 
     // forward decl's
-    enum class UnOp : uint8_t;
-    enum class BinOp : uint8_t;
+    enum UnOp : uint8_t;
+    enum BinOp : uint8_t;
     struct Callable;
     struct Object;
     struct Lookup;

@@ -180,7 +180,7 @@ struct Loader {
         for (int i = 4; i < nskip; ++i)
             *bcNext++ = *dp++;
 
-        bc.code = (OpPtrRO) bcNext;
+        bc.code = bcNext;
 
         loadOps();
 

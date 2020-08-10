@@ -37,7 +37,7 @@ bool Value::truthy () const {
         case Value::Nil: return false;
         case Value::Int: return (int) *this != 0;
         case Value::Str: return *(const char*) *this != 0;
-        case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
+        case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
     }
     assert(false);
 }
@@ -73,14 +73,14 @@ auto Value::unOp (UnOp op) const -> Value {
                 case UnOp::Neg:  return -n; // TODO overflow
                 case UnOp::Inv:  return ~n;
                 case UnOp::Not:  return asBool(!n);
-                case UnOp::Bool: return asBool(n);
+                case UnOp::Boln: return asBool(n);
             }
             break;
         }
         case Str: {
             const char* s = *this;
             switch (op) {
-                case UnOp::Bool: return asBool(*s);
+                case UnOp::Boln: return asBool(*s);
               //case UnOp::Hash: return BytesObj::hash((const uint8_t*) s,
               //                                                    strlen(s));
                 default:         break;
@@ -314,7 +314,7 @@ Lookup const     Inst::attrs {nullptr, 0};
 auto Bool::create (CofV const& args, Type const*) -> Value {
     auto n = args.length();
     if (n == 1)
-        return args[0].unOp(UnOp::Bool);
+        return args[0].unOp(UnOp::Boln);
     assert(n == 0);
     return False;
 }

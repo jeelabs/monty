@@ -17,10 +17,8 @@
 #endif
 
 namespace Monty {
-
-#include "defs.h"
-#include "xpyvm.h"
-#include "qstr.h"
+    #include "xpyvm.h"
+    #include "qstr.h"
 
 volatile uint32_t pending;
 
@@ -156,7 +154,8 @@ struct Loader {
         auto& bc = loadRaw();
 
         debugf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
-        auto pool = QstrPool::create((const char*) qBufRaw.ptr(), qVec.length(), qBuf.length());
+        auto pool = QstrPool::create((const char*) qBufRaw.ptr(),
+                                        qVec.length(), qBuf.length());
         assert(pool != nullptr);
 
         qBuf.remove(0, qBuf.length()); // buffer no longer needed

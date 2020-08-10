@@ -3,8 +3,90 @@
 //CG: on op:print # set to "on" to enable per-opcode debug output
 
 struct PyVM {
+    enum Op : uint8_t {
+        //CG< opcodes ../../git/micropython/py/bc0.h
+        LoadConstString        = 0x10,
+        LoadName               = 0x11,
+        LoadGlobal             = 0x12,
+        LoadAttr               = 0x13,
+        LoadMethod             = 0x14,
+        LoadSuperMethod        = 0x15,
+        StoreName              = 0x16,
+        StoreGlobal            = 0x17,
+        StoreAttr              = 0x18,
+        DeleteName             = 0x19,
+        DeleteGlobal           = 0x1A,
+        ImportName             = 0x1B,
+        ImportFrom             = 0x1C,
+        MakeClosure            = 0x20,
+        MakeClosureDefargs     = 0x21,
+        LoadConstSmallInt      = 0x22,
+        LoadConstObj           = 0x23,
+        LoadFastN              = 0x24,
+        LoadDeref              = 0x25,
+        StoreFastN             = 0x26,
+        StoreDeref             = 0x27,
+        DeleteFast             = 0x28,
+        DeleteDeref            = 0x29,
+        BuildTuple             = 0x2A,
+        BuildList              = 0x2B,
+        BuildMap               = 0x2C,
+        BuildSet               = 0x2D,
+        BuildSlice             = 0x2E,
+        StoreComp              = 0x2F,
+        UnpackSequence         = 0x30,
+        UnpackEx               = 0x31,
+        MakeFunction           = 0x32,
+        MakeFunctionDefargs    = 0x33,
+        CallFunction           = 0x34,
+        CallFunctionVarKw      = 0x35,
+        CallMethod             = 0x36,
+        CallMethodVarKw        = 0x37,
+        UnwindJump             = 0x40,
+        Jump                   = 0x42,
+        PopJumpIfTrue          = 0x43,
+        PopJumpIfFalse         = 0x44,
+        JumpIfTrueOrPop        = 0x45,
+        JumpIfFalseOrPop       = 0x46,
+        SetupWith              = 0x47,
+        SetupExcept            = 0x48,
+        SetupFinally           = 0x49,
+        PopExceptJump          = 0x4A,
+        ForIter                = 0x4B,
+        LoadConstFalse         = 0x50,
+        LoadConstNone          = 0x51,
+        LoadConstTrue          = 0x52,
+        LoadNull               = 0x53,
+        LoadBuildClass         = 0x54,
+        LoadSubscr             = 0x55,
+        StoreSubscr            = 0x56,
+        DupTop                 = 0x57,
+        DupTopTwo              = 0x58,
+        PopTop                 = 0x59,
+        RotTwo                 = 0x5A,
+        RotThree               = 0x5B,
+        WithCleanup            = 0x5C,
+        EndFinally             = 0x5D,
+        GetIter                = 0x5E,
+        GetIterStack           = 0x5F,
+        StoreMap               = 0x62,
+        ReturnValue            = 0x63,
+        RaiseLast              = 0x64,
+        RaiseObj               = 0x65,
+        RaiseFrom              = 0x66,
+        YieldValue             = 0x67,
+        YieldFrom              = 0x68,
+        ImportStar             = 0x69,
+        //CG>
+        LoadConstSmallIntMulti = 0x70,
+        LoadFastMulti          = 0xB0,
+        StoreFastMulti         = 0xC0,
+        UnaryOpMulti           = 0xD0,
+        BinaryOpMulti          = 0xD7,
+    };
+
     Value* sp;
-    OpPtrRO ip;
+    uint8_t const* ip;
     Context& ctx;
 
     uint32_t fetchVarInt (uint32_t v =0) {
@@ -27,14 +109,14 @@ struct PyVM {
     }
 
     static bool opInRange (uint8_t op, Op from, int count) {
-        return (uint8_t) from <= op && op < (uint8_t) from + count;
+        return from <= op && op < from + count;
     }
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
         auto base = ctx.stack.begin() + ctx.Extra;
-        printf("\tip %p 0x%02x sp %2d e %d : ",
-                ip, (uint8_t) *ip, (int) (sp - base), (int) ctx.stack[ctx.Ep]);
+        printf("\tip %p sp %2d ", ip, (int) (sp - base));
+        printf("op 0x%02x e %d : ", (uint8_t) *ip, (int) ctx.stack[ctx.Ep]);
         if (sp >= base)
             sp->dump();
         printf("\n");
@@ -279,7 +361,7 @@ struct PyVM {
     PyVM (Context& context) : ctx (context) {
         size_t spOff = ctx.stack[ctx.Sp];
         sp = &ctx.stack[spOff];
-        ip = (OpPtrRO) ctx.ipBase() + ctx.stack[ctx.Ip];
+        ip = ctx.ipBase() + ctx.stack[ctx.Ip];
 
         do {
             instructionTrace();
@@ -375,22 +457,22 @@ struct PyVM {
                 //CG>
 
                 default: {
-                    auto v = (uint8_t) ip[-1];
+                    auto v = ip[-1];
                     if (opInRange(v, Op::LoadConstSmallIntMulti , 64)) {
-                        v -= (uint8_t) Op::LoadConstSmallIntMulti ;
+                        v -= Op::LoadConstSmallIntMulti ;
                         *++sp = v - 16;
                     } else if (opInRange(v, Op::LoadFastMulti, 16)) {
-                        v -= (uint8_t) Op::LoadFastMulti ;
+                        v -= Op::LoadFastMulti ;
                         assert(!ctx.fastSlot(v).isNil());
                         *++sp = ctx.fastSlot(v);
                     } else if (opInRange(v, Op::StoreFastMulti, 16)) {
-                        v -= (uint8_t) Op::StoreFastMulti;
+                        v -= Op::StoreFastMulti;
                         ctx.fastSlot(v) = *sp--;
                     } else if (opInRange(v, Op::UnaryOpMulti , 7)) {
-                        v -= (uint8_t) Op::UnaryOpMulti;
+                        v -= Op::UnaryOpMulti;
                         *sp = sp->unOp((UnOp) v);
                     } else if (opInRange(v, Op::BinaryOpMulti , 35)) {
-                        v -= (uint8_t) Op::BinaryOpMulti;
+                        v -= Op::BinaryOpMulti;
                         Value rhs = *sp--;
                         *sp = sp->binOp((BinOp) v, rhs);
                     } else
@@ -403,6 +485,6 @@ struct PyVM {
     void save (Context& ctx) const {
         // FIXME wrong when stack is not the same as on entry
         ctx.stack[ctx.Sp] = sp - &ctx.stack[0];
-        ctx.stack[ctx.Ip] = ip - (OpPtrRO) ctx.ipBase();
+        ctx.stack[ctx.Ip] = ip - ctx.ipBase();
     }
 };

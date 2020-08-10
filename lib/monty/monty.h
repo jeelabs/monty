@@ -59,10 +59,8 @@ struct VecOf : Vector {
 };
 
 // defined in defs.h
-enum class Op : uint8_t;
-enum class UnOp : uint8_t;
-enum class BinOp : uint8_t;
-typedef const Op* OpPtrRO;
+enum UnOp : uint8_t;
+enum BinOp : uint8_t;
 
 struct Object;    // forward decl
 struct TypeObj;   // forward decl
@@ -665,7 +663,7 @@ struct BytecodeObj : Object {
 
     ModuleObj& owner;
 
-    OpPtrRO code;
+    const uint8_t* code;
     VecOfValue constObjs;
     int16_t stackSz;
     int16_t flags;
@@ -773,7 +771,7 @@ struct FrameObj : DictObj {
 
 private:
     int16_t spOffset = -1;
-    OpPtrRO savedIp; // could be an offset
+    const uint8_t* savedIp; // could be an offset
 
     friend Context; // Context::flip() can access savedIp & spOffset
 };
@@ -816,7 +814,7 @@ struct Context : Object, private VecOfValue {
 protected:
     Context () {}
 
-    OpPtrRO ip = 0;
+    const uint8_t* ip = 0;
     Value* sp = 0;
     FrameObj* fp = 0;
 

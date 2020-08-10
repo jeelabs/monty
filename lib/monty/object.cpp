@@ -39,14 +39,14 @@ Value Value::unOp (UnOp op) const {
                 case UnOp::Neg:  return -n; // TODO overflow
                 case UnOp::Inv:  return ~n;
                 case UnOp::Not:  return Value::asBool(!n);
-                case UnOp::Bool: return Value::asBool(n);
+                case UnOp::Boln: return Value::asBool(n);
             }
             break;
         }
         case Str: {
             const char* s = *this;
             switch (op) {
-                case UnOp::Bool: return Value::asBool(*s);
+                case UnOp::Boln: return Value::asBool(*s);
                 case UnOp::Hash: return BytesObj::hash((const uint8_t*) s,
                                                                     strlen(s));
                 default:         break;
@@ -124,7 +124,7 @@ bool Value::truthy () const {
         case Value::Nil: return false;
         case Value::Int: return (int) *this != 0;
         case Value::Str: return *(const char*) *this != 0;
-        case Value::Obj: return obj().unop(UnOp::Bool).isTrue();
+        case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
     }
     assert(false);
 }
@@ -164,7 +164,7 @@ const BoolObj BoolObj::falseObj;
 
 Value BoolObj::create (const TypeObj&, int argc, Value argv[]) {
     if (argc == 1)
-        return argv[0].unOp(UnOp::Bool);
+        return argv[0].unOp(UnOp::Boln);
     assert(argc == 0);
     return Value::False;
 }
@@ -173,7 +173,7 @@ Value BoolObj::unop (UnOp op) const {
     switch (op) {
         case UnOp::Int:  // fall through
         case UnOp::Hash: return this == &trueObj;
-        case UnOp::Bool: return *this;
+        case UnOp::Boln: return *this;
         default:         break;
     }
     return Object::unop(op);
@@ -299,7 +299,7 @@ BytesObj::operator const uint8_t* () const {
 
 Value BytesObj::unop (UnOp op) const {
     switch (op) {
-        case UnOp::Bool: return Value::asBool(len());
+        case UnOp::Boln: return Value::asBool(len());
         case UnOp::Hash: return hash(*this, len());
         default:         break;
     }
