@@ -8,8 +8,6 @@
 
 #include "xmonty.h"
 
-extern "C" int printf (const char*, ...);
-
 using namespace Monty;
 
 // non-recursive version for debugging, does not affect the VM state
@@ -28,7 +26,7 @@ void Value::dump (const char* msg) const {
 
 void Buffer::write (uint8_t const* ptr, size_t len) const {
     for (size_t i = 0; i < len; ++i)
-        ::printf("%c", ptr[i]); // TODO yuck
+        printf("%c", ptr[i]); // TODO yuck
 }
 
 auto Buffer::operator<< (Value v) -> Buffer& {
@@ -36,9 +34,9 @@ auto Buffer::operator<< (Value v) -> Buffer& {
         putc(' ');
     sep = true;
     switch (v.tag()) {
-        case Value::Nil: printf("Nil"); break;
-        case Value::Int: printf("%d", (int) v); break;
-        case Value::Str: printf("\"%s\"", (const char*) v); break;
+        case Value::Nil: print("Nil"); break;
+        case Value::Int: print("%d", (int) v); break;
+        case Value::Str: print("\"%s\"", (const char*) v); break;
         case Value::Obj: v.obj().repr(*this); break;
     }
     return *this;
@@ -80,7 +78,7 @@ void Buffer::putInt (int val, int base, int width, char fill) {
     }
 }
 
-void Buffer::printf(const char* fmt, ...) {
+void Buffer::print(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -208,7 +206,7 @@ Value None::repr (Monty::Buffer& buf) const {
 }
 
 auto Object::repr (Buffer& buf) const -> Value {
-    buf.printf("<%s at %p>", type().name, this);
+    buf.print("<%s at %p>", type().name, this);
     return {};
 }
 
@@ -229,6 +227,6 @@ Value Tuple::repr (Monty::Buffer& buf) const {
 }
 
 Value Type::repr (Monty::Buffer& buf) const {
-    buf.printf("<type %s>", name);
+    buf.print("<type %s>", name);
     return {};
 }

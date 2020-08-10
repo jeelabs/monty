@@ -47,7 +47,7 @@ static void reprBasics () {
     { TestBuffer tb; TEST_ASSERT_EQUAL(buf, fill); }
     TEST_ASSERT_EQUAL_STRING("", buf);
 
-    { TestBuffer tb; tb.printf("<%d>", 42); }
+    { TestBuffer tb; tb.print("<%d>", 42); }
     TEST_ASSERT_EQUAL_STRING("<42>", buf);
 
     TestBuffer {} << Value () << 123 << "abc";

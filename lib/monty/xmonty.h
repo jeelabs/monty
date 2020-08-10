@@ -1,5 +1,7 @@
 namespace Monty {
 
+    extern "C" int printf (const char*, ...);
+
 // see mem.cpp - objects and vectors with garbage collection
 
     struct Obj {
@@ -411,7 +413,7 @@ namespace Monty {
 
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
-        void printf(const char* fmt, ...);
+        void print (const char* fmt, ...);
 
         auto operator<< (Value v) -> Buffer&;
 
