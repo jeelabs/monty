@@ -222,13 +222,13 @@ auto Inst::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
 Type const    BoundMeth::info ("<boundmeth>");
+Type const       Buffer::info ("<buffer>");
 Type const     Callable::info ("<callable>");
 Type const      Context::info ("<context>");
 Type const     Function::info ("<function>");
 Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
-Type const       Buffer::info ("<printer>");
 
 Type const    Array::info ("array", Array::create, &Array::attrs);
 Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
@@ -244,13 +244,13 @@ Type const    Tuple::info ("tuple", Tuple::create, &Tuple::attrs);
 Type const     Type::info ("type", Type::create, &Type::attrs);
 
 auto    BoundMeth::type () const -> Type const& { return info; }
+auto       Buffer::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
-auto       Buffer::type () const -> Type const& { return info; }
 auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }

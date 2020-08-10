@@ -402,22 +402,27 @@ namespace Monty {
 
 // see repr.cpp - repr, printing, and buffering
 
-    //CG< type <printer>
+    //CG< type <buffer>
     struct Buffer : Object {
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
 
-        virtual void write (uint8_t const* ptr, size_t len) const;
-
-        void putc (uint8_t v) { write(&v, 1); }
+        void putc (char v) { write((uint8_t const*) &v, 1); }
+        void puts (char const* s) { while (*s != 0) putc(*s++); }
         void printf(const char* fmt, ...);
 
+        auto operator<< (Value v) -> Buffer&;
+
+    protected:
+        virtual void write (uint8_t const* ptr, size_t len) const;
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
         void putInt (int val, int base, int width, char fill);
+
+        bool sep {false};
     };
 
 // see array.cpp - arrays, dicts, and other derived types

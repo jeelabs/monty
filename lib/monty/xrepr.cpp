@@ -31,6 +31,19 @@ void Buffer::write (uint8_t const* ptr, size_t len) const {
         ::printf("%c", ptr[i]); // TODO yuck
 }
 
+auto Buffer::operator<< (Value v) -> Buffer& {
+    if (sep)
+        putc(' ');
+    sep = true;
+    switch (v.tag()) {
+        case Value::Nil: printf("Nil"); break;
+        case Value::Int: printf("%d", (int) v); break;
+        case Value::Str: printf("\"%s\"", (const char*) v); break;
+        case Value::Obj: v.obj().repr(*this); break;
+    }
+    return *this;
+}
+
 // formatted output, adapted from JeeH
 
 int Buffer::splitInt (uint32_t val, int base, uint8_t* buf) {
@@ -128,112 +141,94 @@ void Buffer::printf(const char* fmt, ...) {
     va_end(ap);
 }
 
-Value Array::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
+Value Array::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Bool::repr (Monty::Buffer& buf) const {
+    buf.puts(this == &falseObj ? "false" : "true");
     return {};
 }
 
-Value Bool::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
+Value BoundMeth::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Buffer::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Bytes::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Callable::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Class::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Context::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf);
+}
+
+Value Dict::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Fixed::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Function::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Inst::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value List::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Lookup::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value Module::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
+Value None::repr (Monty::Buffer& buf) const {
+    buf.puts("null");
     return {};
 }
 
-Value BoundMeth::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
+auto Object::repr (Buffer& buf) const -> Value {
+    buf.printf("<%s at %p>", type().name, this);
     return {};
 }
 
-Value Buffer::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
+Value Set::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
-Value Bytes::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
+Value Slice::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
-Value Callable::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
+Value Str::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
-Value Class::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
+Value Tuple::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
-Value Context::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Dict::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Fixed::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Function::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Inst::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value List::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Lookup::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Module::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value None::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-auto Object::repr (Buffer&) const -> Value {
-    assert(false);
-    return {};
-}
-
-Value Set::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Slice::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Str::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Tuple::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
-    return {};
-}
-
-Value Type::repr (Monty::Buffer& pr) const {
-    assert(false); // TODO
+Value Type::repr (Monty::Buffer& buf) const {
+    buf.printf("<type %s>", name);
     return {};
 }
