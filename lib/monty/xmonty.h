@@ -287,9 +287,11 @@ namespace Monty {
         static const Type info;
         virtual auto type () const -> Type const&;
 
-        virtual auto repr (Buffer&) const -> Value;
+        virtual auto repr  (Buffer&) const -> Value;
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
+        virtual auto atget (Value) -> Value;
+        virtual auto atset (Value, Value) -> Value;
     };
 
     //CG< type <none>
@@ -474,6 +476,9 @@ namespace Monty {
         auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
         auto len () const -> size_t { return items.len(); }
 
+        auto atget (Value k) -> Value override;
+        auto atset (Value k, Value v) -> Value override;
+
         void marker () const override { mark(items); }
     protected:
         Vec vec;
@@ -494,6 +499,8 @@ namespace Monty {
 
         auto begin () const -> Value const* { return data(); }
         auto end () const -> Value const* { return data() + num; }
+
+        auto atget (Value k) -> Value override;
 
         static Tuple const emptyObj;
     private:
@@ -524,6 +531,9 @@ namespace Monty {
         auto begin () -> Value* { return items.begin(); }
         auto end () -> Value* { return items.end(); }
 
+        auto atget (Value k) -> Value override;
+        auto atset (Value k, Value v) -> Value override;
+
         void marker () const override { mark(items); }
 
     protected:
@@ -549,11 +559,14 @@ namespace Monty {
             auto operator= (bool) -> bool;
         };
 
+        // operator[] is problematic when the value is an int
+        auto has (Value key) -> Proxy { return {*this, key}; }
+
         void ins (size_t i, size_t n =1) = delete;
         void del (size_t i, size_t n =1) = delete;
 
-        // operator[] is problematic when the value is an int
-        auto has (Value key) -> Proxy { return {*this, key}; }
+        auto atget (Value k) -> Value override;
+        auto atset (Value k, Value v) -> Value override;
     };
 
     //CG< type dict
@@ -572,6 +585,9 @@ namespace Monty {
         };
 
         auto at (Value key) -> Proxy { return {*this, key}; }
+
+        auto atget (Value k) -> Value override { return (*this)[k]; }
+        auto atset (Value k, Value v) -> Value override { return (*this)[k] = v; }
 
         void marker () const override { Set::marker(); mark(chain); }
     protected:

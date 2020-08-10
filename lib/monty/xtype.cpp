@@ -175,6 +175,16 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
+auto Object::atget (Value) -> Value {
+    assert(false);
+    return {};
+}
+
+auto Object::atset (Value k, Value v) -> Value {
+    assert(false);
+    return {};
+}
+
 auto None::unop (UnOp) const -> Value {
     assert(false);
     return {}; // TODO

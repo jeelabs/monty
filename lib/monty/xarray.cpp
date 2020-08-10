@@ -9,12 +9,38 @@
 
 using namespace Monty;
 
+auto Array::atget (Value k) -> Value {
+    assert(k.isInt());
+    return (*this)[k];
+}
+
+auto Array::atset (Value k, Value v) -> Value {
+    assert(k.isInt());
+    (*this)[k] = v;
+    return {};
+}
+
 Tuple::Tuple (size_t n, Value const* vals) : num (n) {
     memcpy((Value*) data(), vals, n * sizeof *vals);
 }
 
+auto Tuple::atget (Value k) -> Value {
+    assert(k.isInt());
+    return data()[k];
+}
+
 List::List (size_t n, Value const* vals) {
     items.asVec().adj(n);
+}
+
+auto List::atget (Value k) -> Value {
+    assert(k.isInt());
+    return (*this)[k];
+}
+
+auto List::atset (Value k, Value v) -> Value {
+    assert(k.isInt());
+    return (*this)[k] = v;
 }
 
 Set::Set (size_t n, Value const* vals) {
@@ -42,6 +68,18 @@ auto Set::Proxy::operator= (bool f) -> bool {
         s.items[pos] = v;
     }
     return pos < n;
+}
+
+auto Set::atget (Value k) -> Value {
+    assert(k.isInt());
+    auto f = (*this)[k];
+    return Value::asBool(f);
+}
+
+auto Set::atset (Value k, Value v) -> Value {
+    assert(k.isInt());
+    auto f = (*this)[k] = v.truthy();
+    return Value::asBool(f);
 }
 
 Dict::Dict (size_t n) {
