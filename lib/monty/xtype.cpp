@@ -165,11 +165,6 @@ void Value::verify (Type const& t) const {
     assert(check(t));
 }
 
-auto Object::repr (Printer&) const -> Value {
-    assert(false);
-    return {};
-}
-
 auto Object::unop (UnOp) const -> Value {
     assert(false);
     return {};
@@ -233,7 +228,7 @@ Type const     Function::info ("<function>");
 Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
-Type const      Printer::info ("<printer>");
+Type const       Buffer::info ("<printer>");
 
 Type const    Array::info ("array", Array::create, &Array::attrs);
 Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
@@ -255,7 +250,7 @@ auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
-auto      Printer::type () const -> Type const& { return info; }
+auto       Buffer::type () const -> Type const& { return info; }
 auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }

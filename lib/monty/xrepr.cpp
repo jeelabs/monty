@@ -26,14 +26,14 @@ void Value::dump (const char* msg) const {
         printf("\n");
 }
 
-void Printer::write (uint8_t const* ptr, size_t len) const {
+void Buffer::write (uint8_t const* ptr, size_t len) const {
     for (size_t i = 0; i < len; ++i)
         ::printf("%c", ptr[i]); // TODO yuck
 }
 
 // formatted output, adapted from JeeH
 
-int Printer::splitInt (uint32_t val, int base, uint8_t* buf) {
+int Buffer::splitInt (uint32_t val, int base, uint8_t* buf) {
     int i = 0;
     do {
         buf[i++] = val % base;
@@ -42,12 +42,12 @@ int Printer::splitInt (uint32_t val, int base, uint8_t* buf) {
     return i;
 }
 
-void Printer::putFiller (int n, char fill) {
+void Buffer::putFiller (int n, char fill) {
     while (--n >= 0)
         putc(fill);
 }
 
-void Printer::putInt (int val, int base, int width, char fill) {
+void Buffer::putInt (int val, int base, int width, char fill) {
     uint8_t buf [33];
     int n;
     if (val < 0 && base == 10) {
@@ -67,7 +67,7 @@ void Printer::putInt (int val, int base, int width, char fill) {
     }
 }
 
-void Printer::printf(const char* fmt, ...) {
+void Buffer::printf(const char* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -128,102 +128,112 @@ void Printer::printf(const char* fmt, ...) {
     va_end(ap);
 }
 
-Value Array::repr (Monty::Printer& pr) const {
+Value Array::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Bool::repr (Monty::Printer& pr) const {
+Value Bool::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value BoundMeth::repr (Monty::Printer& pr) const {
+Value BoundMeth::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Bytes::repr (Monty::Printer& pr) const {
+Value Buffer::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Callable::repr (Monty::Printer& pr) const {
+Value Bytes::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Class::repr (Monty::Printer& pr) const {
+Value Callable::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Context::repr (Monty::Printer& pr) const {
+Value Class::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Dict::repr (Monty::Printer& pr) const {
+Value Context::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Fixed::repr (Monty::Printer& pr) const {
+Value Dict::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Function::repr (Monty::Printer& pr) const {
+Value Fixed::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value List::repr (Monty::Printer& pr) const {
+Value Function::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Lookup::repr (Monty::Printer& pr) const {
+Value Inst::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Module::repr (Monty::Printer& pr) const {
+Value List::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value None::repr (Monty::Printer& pr) const {
+Value Lookup::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Printer::repr (Monty::Printer& pr) const {
+Value Module::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Set::repr (Monty::Printer& pr) const {
+Value None::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Slice::repr (Monty::Printer& pr) const {
+auto Object::repr (Buffer&) const -> Value {
+    assert(false);
+    return {};
+}
+
+Value Set::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Str::repr (Monty::Printer& pr) const {
+Value Slice::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Tuple::repr (Monty::Printer& pr) const {
+Value Str::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }
 
-Value Type::repr (Monty::Printer& pr) const {
+Value Tuple::repr (Monty::Buffer& pr) const {
+    assert(false); // TODO
+    return {};
+}
+
+Value Type::repr (Monty::Buffer& pr) const {
     assert(false); // TODO
     return {};
 }

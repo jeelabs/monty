@@ -47,7 +47,7 @@ def xTYPE(block, tag, *_):
         '    static Lookup const attrs;',
         '    static Type const info;',
         '    auto type () const -> Type const& override;',
-        '    auto repr (Printer&) const -> Value override;',
+        '    auto repr (Buffer&) const -> Value override;',
     ]
     if tag.startswith('<'):
         del out[1:3] # can't construct from the VM

@@ -27,7 +27,7 @@ void smokeTest () {
 }
 
 void reprTypeSizes () {
-    TEST_ASSERT_EQUAL(1 * sizeof (void*), sizeof (Printer));
+    TEST_ASSERT_EQUAL(1 * sizeof (void*), sizeof (Buffer));
 }
 
 static void reprBasics () {
