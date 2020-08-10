@@ -244,14 +244,14 @@ struct PyVM {
         printf("LoadSubscr\n");
         --sp;
         assert(sp->isObj());
-        *sp = sp->obj().atget(sp[1]);
+        *sp = sp->obj().getAt(sp[1]);
     }
     //CG2 op
     void op_StoreSubscr () {
         printf("StoreSubscr\n");
         --sp; // val [obj] key
         assert(sp->isObj());
-        sp->obj().atset(sp[1], sp[-1]);
+        sp->obj().setAt(sp[1], sp[-1]);
         sp -= 2;
     }
 

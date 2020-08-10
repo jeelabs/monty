@@ -28,8 +28,8 @@ namespace Monty {
         ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
-        Vec& operator= (Vec const&) = delete;
-        // TODO Vec (Vec&& v); Vec& operator= (Vec&& v);
+        auto operator= (Vec const&) -> Vec& = delete;
+        // TODO Vec (Vec&& v); auto operator= (Vec&& v) -> Vec&;
 
         auto isResizable () const -> bool;
 
@@ -154,7 +154,7 @@ namespace Monty {
         virtual ~Segment () {}
 
         operator Value () const;
-        Segment& operator= (Value);
+        auto operator= (Value) -> Segment&;
 
         struct Proxy { Segment const& seg; size_t idx;
             inline operator Value () const;
@@ -298,8 +298,8 @@ namespace Monty {
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
         virtual auto attr  (const char*) const -> Value;
-        virtual auto atget (Value) const -> Value;
-        virtual auto atset (Value, Value) -> Value;
+        virtual auto getAt (Value) const -> Value;
+        virtual auto setAt (Value, Value) -> Value;
     };
 
     //CG< type <none>
@@ -479,8 +479,8 @@ namespace Monty {
         auto len () const -> size_t { return seg.len(); }
         auto operator[] (size_t i) const -> Segment::Proxy { return {seg, i}; }
 
-        auto atget (Value k) const -> Value override;
-        auto atset (Value k, Value v) -> Value override;
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
 
         void marker () const override { mark(seg); }
     protected:
@@ -503,7 +503,7 @@ namespace Monty {
         auto begin () const -> Value const* { return data(); }
         auto end () const -> Value const* { return data() + num; }
 
-        auto atget (Value k) const -> Value override;
+        auto getAt (Value k) const -> Value override;
 
         static Tuple const emptyObj;
     private:
@@ -535,8 +535,8 @@ namespace Monty {
         auto begin () -> Value* { return items.begin(); }
         auto end () -> Value* { return items.end(); }
 
-        auto atget (Value k) const -> Value override;
-        auto atset (Value k, Value v) -> Value override;
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
 
         void marker () const override { mark(items); }
     protected:
@@ -568,8 +568,8 @@ namespace Monty {
         void ins (size_t i, size_t n =1) = delete;
         void del (size_t i, size_t n =1) = delete;
 
-        auto atget (Value k) const -> Value override;
-        auto atset (Value k, Value v) -> Value override;
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
     };
 
     //CG< type dict
@@ -591,8 +591,8 @@ namespace Monty {
         auto at (Value key) const -> Value;
         auto at (Value key) -> Proxy { return {*this, key}; }
 
-        auto atget (Value k) const -> Value override { return at(k); }
-        auto atset (Value k, Value v) -> Value override { return at(k) = v; }
+        auto getAt (Value k) const -> Value override { return at(k); }
+        auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
 
         void marker () const override { Set::marker(); mark(chain); }
     protected:

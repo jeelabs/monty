@@ -15,7 +15,7 @@ Segment::operator Value () const {
     return *p;
 }
 
-Segment& Segment::operator= (Value v) {
+auto Segment::operator= (Value v) -> Segment& {
     //*this = v.asType<Array>().segment;
     return *this;
 }

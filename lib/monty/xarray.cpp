@@ -9,12 +9,12 @@
 
 using namespace Monty;
 
-auto Array::atget (Value k) const -> Value {
+auto Array::getAt (Value k) const -> Value {
     assert(k.isInt());
     return (*this)[k];
 }
 
-auto Array::atset (Value k, Value v) -> Value {
+auto Array::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     (*this)[k] = v;
     return {};
@@ -24,7 +24,7 @@ Tuple::Tuple (size_t n, Value const* vals) : num (n) {
     memcpy((Value*) data(), vals, n * sizeof *vals);
 }
 
-auto Tuple::atget (Value k) const -> Value {
+auto Tuple::getAt (Value k) const -> Value {
     assert(k.isInt());
     return data()[k];
 }
@@ -33,12 +33,12 @@ List::List (size_t n, Value const* vals) {
     items.asVec().adj(n);
 }
 
-auto List::atget (Value k) const -> Value {
+auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     return (*this)[k];
 }
 
-auto List::atset (Value k, Value v) -> Value {
+auto List::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     return (*this)[k] = v;
 }
@@ -66,13 +66,13 @@ auto Set::has (Value v) const -> bool {
     return find(v) < len();
 }
 
-auto Set::atget (Value k) const -> Value {
+auto Set::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto f = (*this)[k];
     return Value::asBool(f);
 }
 
-auto Set::atset (Value k, Value v) -> Value {
+auto Set::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     auto f = (*this)[k] = v.truthy();
     return Value::asBool(f);

@@ -180,12 +180,12 @@ auto Object::attr (const char*) const -> Value {
     return {};
 }
 
-auto Object::atget (Value) const -> Value {
+auto Object::getAt (Value) const -> Value {
     assert(false);
     return {};
 }
 
-auto Object::atset (Value k, Value v) -> Value {
+auto Object::setAt (Value k, Value v) -> Value {
     assert(false);
     return {};
 }
