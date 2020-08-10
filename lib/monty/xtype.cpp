@@ -217,7 +217,7 @@ Slice::Slice (Value a, Value b, Value c) {
     step = c.isInt() ? (int) c : 1;
 }
 
-auto Lookup::operator[] (char const* key) -> Value {
+auto Lookup::operator[] (char const* key) const -> Value {
     for (size_t i = 0; i < count; ++i)
         if (strcmp(key, items[i].k) == 0)
             return items[i].v;

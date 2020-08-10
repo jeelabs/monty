@@ -69,8 +69,7 @@ namespace Monty {
         auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
         auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
 
-        auto operator[] (size_t idx) const -> T { return ptr()[idx]; }
-        auto operator[] (size_t idx) -> T& { return ptr()[idx]; }
+        auto operator[] (size_t idx) const -> T& { return ptr()[idx]; }
 
         void move (size_t pos, size_t num, int off) {
             memmove((void*) (ptr() + pos + off),
@@ -116,11 +115,8 @@ namespace Monty {
             return asVec()[off+idx];
         }
 
-        auto begin () const -> T const* { return &asVec()[0]; }
-        auto end () const -> T const* { return begin() + length(); }
-
-        auto begin () -> T* { return &asVec()[0]; }
-        auto end () -> T* { return begin() + length(); }
+        auto begin () const -> T* { return &asVec()[0]; }
+        auto end () const -> T* { return begin() + length(); }
 
         void insert (size_t idx, size_t num =1) {
             auto& vot = asVec();
@@ -160,10 +156,17 @@ namespace Monty {
         operator Value () const;
         Segment& operator= (Value);
 
+        struct Proxy { Segment const& seg; size_t idx;
+            inline operator Value () const;
+            inline auto operator= (Value v) const -> Value;
+        };
+
+        auto operator[] (size_t idx) const -> Proxy { return {*this, idx}; }
+
         virtual auto typ () const -> char;
         virtual auto len () const -> size_t;
         virtual auto get (int idx) const -> Value;
-        virtual void set (int idx, Value val);
+        virtual void set (int idx, Value val) const;
         virtual void ins (size_t idx, size_t num =1);
         virtual void del (size_t idx, size_t num =1);
     };
@@ -175,7 +178,7 @@ namespace Monty {
         auto typ () const -> char override { return C; }
         auto len () const -> size_t override { return ccot().length(); }
         auto get (int i) const -> Value override;
-        void set (int i, Value v) override;
+        void set (int i, Value v) const override;
         void ins (size_t i, size_t n =1) override { cot().insert(i, n); }
         void del (size_t i, size_t n =1) override { cot().remove(i, n); }
 
@@ -273,15 +276,18 @@ namespace Monty {
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
+    // define Segment's operator[], now that Value type is complete
+    Segment::Proxy::operator Value () const { return seg.get(idx); }
+    auto Segment::Proxy::operator= (Value v) const -> Value {
+        seg.set(idx, v);
+        return v;
+    }
+
     // define SegmentOf<C,T>'s get & set, now that Value type is complete
     template< char C, typename T >
-    auto SegmentOf<C,T>::get (int i) const -> Value {
-        return ccot()[i];
-    }
+        auto SegmentOf<C,T>::get (int i) const -> Value { return ccot()[i]; }
     template< char C, typename T >
-    void SegmentOf<C,T>::set (int i, Value v) {
-        cot()[i] = v;
-    }
+        void SegmentOf<C,T>::set (int i, Value v) const { ccot()[i] = v; }
 
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
@@ -420,7 +426,7 @@ namespace Monty {
 
         constexpr Lookup (Item const* p, size_t n) : items (p), count (n) {}
 
-        auto operator[] (char const* key) -> Value;
+        auto operator[] (char const* key) const -> Value;
 
         void marker () const override;
     protected:
@@ -468,24 +474,18 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
 
-        Array (char type) : items (Segment::make(type, vec)) {}
+        Array (char type) : seg (Segment::make(type, vec)) {}
 
-        struct Proxy { Segment& seg; size_t idx;
-            operator Value () const { return seg.get(idx); }
-            Value operator= (Value v) { seg.set(idx, v); return v; }
-        };
-
-        auto len () const -> size_t { return items.len(); }
-        auto operator[] (size_t idx) const -> Value { return items.get(idx); }
-        auto operator[] (size_t idx) -> Proxy { return {items, idx}; }
+        auto len () const -> size_t { return seg.len(); }
+        auto operator[] (size_t i) const -> Segment::Proxy { return {seg, i}; }
 
         auto atget (Value k) const -> Value override;
         auto atset (Value k, Value v) -> Value override;
 
-        void marker () const override { mark(items); }
+        void marker () const override { mark(seg); }
     protected:
         Vec vec;
-        Segment items;
+        Segment seg;
     };
 
     //CG< type tuple
@@ -527,8 +527,7 @@ namespace Monty {
         List (size_t n, Value const* vals);
 
         auto len () const -> size_t { return items.length(); }
-        auto operator[] (size_t idx) const -> Value { return items[idx]; }
-        auto operator[] (size_t idx) -> Value& { return items[idx]; }
+        auto operator[] (size_t idx) const -> Value& { return items[idx]; }
 
         void ins (size_t i, size_t n =1) { items.insert(i, n); }
         void del (size_t i, size_t n =1) { items.remove(i, n); }
