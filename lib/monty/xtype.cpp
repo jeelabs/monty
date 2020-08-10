@@ -175,7 +175,12 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
-auto Object::atget (Value) -> Value {
+auto Object::attr (const char*) const -> Value {
+    assert(false);
+    return {};
+}
+
+auto Object::atget (Value) const -> Value {
     assert(false);
     return {};
 }

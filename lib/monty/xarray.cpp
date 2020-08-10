@@ -9,7 +9,7 @@
 
 using namespace Monty;
 
-auto Array::atget (Value k) -> Value {
+auto Array::atget (Value k) const -> Value {
     assert(k.isInt());
     return (*this)[k];
 }
@@ -24,7 +24,7 @@ Tuple::Tuple (size_t n, Value const* vals) : num (n) {
     memcpy((Value*) data(), vals, n * sizeof *vals);
 }
 
-auto Tuple::atget (Value k) -> Value {
+auto Tuple::atget (Value k) const -> Value {
     assert(k.isInt());
     return data()[k];
 }
@@ -33,7 +33,7 @@ List::List (size_t n, Value const* vals) {
     items.asVec().adj(n);
 }
 
-auto List::atget (Value k) -> Value {
+auto List::atget (Value k) const -> Value {
     assert(k.isInt());
     return (*this)[k];
 }
@@ -43,19 +43,11 @@ auto List::atset (Value k, Value v) -> Value {
     return (*this)[k] = v;
 }
 
-Set::Set (size_t n, Value const* vals) {
-    items.asVec().adj(n);
-}
-
 auto Set::find (Value v) const -> size_t {
     for (auto& e : items)
         if (v == e)
             return &e - &items[0];
     return len();
-}
-
-Set::Proxy::operator bool () const {
-    return s.find(v) < s.len();
 }
 
 auto Set::Proxy::operator= (bool f) -> bool {
@@ -70,7 +62,11 @@ auto Set::Proxy::operator= (bool f) -> bool {
     return pos < n;
 }
 
-auto Set::atget (Value k) -> Value {
+auto Set::has (Value v) const -> bool {
+    return find(v) < len();
+}
+
+auto Set::atget (Value k) const -> Value {
     assert(k.isInt());
     auto f = (*this)[k];
     return Value::asBool(f);
@@ -84,12 +80,6 @@ auto Set::atset (Value k, Value v) -> Value {
 
 Dict::Dict (size_t n) {
     items.asVec().adj(2*n);
-}
-
-Dict::Proxy::operator Value () const {
-    auto n = d.len();
-    auto pos = d.find(k);
-    return pos < n ? d.items[n+pos] : Value {};
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.len()
@@ -117,6 +107,12 @@ auto Dict::Proxy::operator= (Value v) -> Value {
         d.items[n+pos] = v;
     }
     return w;
+}
+
+auto Dict::at (Value k) const -> Value {
+    auto n = len();
+    auto pos = find(k);
+    return pos < n ? items[n+pos] : Value {};
 }
 
 auto Type::noFactory (CofV const&, const Type*) -> Value {
