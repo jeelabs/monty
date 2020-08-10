@@ -1,4 +1,4 @@
-// state.cpp - execution state, stacks, and callables
+// stack.cpp - execution state, stacks, and callables
 
 #include <cassert>
 #include <cstdint>

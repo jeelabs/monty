@@ -41,7 +41,7 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
-void memTypeSizes () {
+void gcTypeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Obj));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
 }
@@ -453,7 +453,7 @@ void outOfVecs () {
     TEST_ASSERT_EQUAL(a, avail());
 }
 
-void memRomOrRam () {
+void gcRomOrRam () {
 #if !NATIVE
     struct RomObj {
         virtual void blah () {} // virtual is romable
@@ -504,7 +504,7 @@ int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
-    RUN_TEST(memTypeSizes);
+    RUN_TEST(gcTypeSizes);
 
     RUN_TEST(initMem);
     RUN_TEST(newObj);
@@ -523,7 +523,7 @@ int main () {
     RUN_TEST(vecData);
     RUN_TEST(outOfVecs);
 
-    RUN_TEST(memRomOrRam);
+    RUN_TEST(gcRomOrRam);
 
     UNITY_END();
 }

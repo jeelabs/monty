@@ -1,4 +1,4 @@
-// mem.cpp - objects and vectors with garbage collection
+// gc.cpp - objects and vectors with garbage collection
 
 #include <cassert>
 #include <cstdint>

@@ -1,4 +1,4 @@
-// import.cpp - importing, loading, and bytecode objects
+// exec.cpp - importing, loading, and bytecode execution
 
 #define VERBOSE_LOAD   0 // show .mpy load progress with detailed file info
 #define SHOW_INSTR_PTR 1 // show instr ptr each time through loop (in pyvm.h)

@@ -26,7 +26,7 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
-void importTypeSizes () {
+void execTypeSizes () {
     TEST_ASSERT_EQUAL(8 * sizeof (void*), sizeof (Module));
     TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Callable));
 }
@@ -35,7 +35,7 @@ int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
-    RUN_TEST(importTypeSizes);
+    RUN_TEST(execTypeSizes);
 
     UNITY_END();
 }

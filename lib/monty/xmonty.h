@@ -2,7 +2,7 @@ namespace Monty {
 
     extern "C" int printf (const char*, ...);
 
-// see mem.cpp - objects and vectors with garbage collection
+// see gc.cpp - objects and vectors with garbage collection
 
     struct Obj {
         virtual ~Obj () {}
@@ -625,7 +625,7 @@ namespace Monty {
         Inst () {}
     };
 
-// see state.cpp - execution state, stacks, and callables
+// see stack.cpp - execution state, stacks, and callables
 
     //CG< type <function>
     struct Function : Object {
@@ -691,7 +691,7 @@ namespace Monty {
         Vec vec;
     };
 
-// see import.cpp - importing, loading, and bytecode objects
+// see exec.cpp - importing, loading, and bytecode execution
 
     extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
 
