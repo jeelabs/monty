@@ -365,6 +365,32 @@ namespace Monty {
         Str (char const*) {} // TODO
     };
 
+    //CG< type <iterator>
+    struct Iter : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+
+        Iter (Value arg) : seq (arg) {}
+
+        //Value next () override;
+
+    // TODO private:
+        Value seq;
+        size_t pos {0};
+    };
+
+    //CG< type range
+    struct Range : Object {
+        static auto create (ChunkOf<Value> const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+    };
+
     //CG< type slice
     struct Slice : Object {
         static auto create (ChunkOf<Value> const&,Type const* =nullptr) -> Value;

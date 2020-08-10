@@ -226,6 +226,7 @@ Type const       Buffer::info ("<buffer>");
 Type const     Callable::info ("<callable>");
 Type const      Context::info ("<context>");
 Type const     Function::info ("<function>");
+Type const         Iter::info ("<iterator>");
 Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
@@ -237,6 +238,7 @@ Type const    Class::info ("class", Class::create, &Class::attrs);
 Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
 Type const    Fixed::info ("int", Fixed::create, &Fixed::attrs);
 Type const     List::info ("list", List::create, &List::attrs);
+Type const    Range::info ("range", Range::create, &Range::attrs);
 Type const      Set::info ("set", Set::create, &Set::attrs);
 Type const    Slice::info ("slice", Slice::create, &Slice::attrs);
 Type const      Str::info ("str", Str::create, &Str::attrs);
@@ -248,6 +250,7 @@ auto       Buffer::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
+auto         Iter::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
@@ -258,6 +261,7 @@ auto        Class::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
 auto        Fixed::type () const -> Type const& { return info; }
 auto         List::type () const -> Type const& { return info; }
+auto        Range::type () const -> Type const& { return info; }
 auto          Set::type () const -> Type const& { return info; }
 auto        Slice::type () const -> Type const& { return info; }
 auto          Str::type () const -> Type const& { return info; }
@@ -274,6 +278,7 @@ static const Lookup::Item builtins [] = {
     { "dict", &Dict::info },
     { "int", &Fixed::info },
     { "list", &List::info },
+    { "range", &Range::info },
     { "set", &Set::info },
     { "slice", &Slice::info },
     { "str", &Str::info },
@@ -301,13 +306,14 @@ Lookup const     Bool::attrs {nullptr, 0};
 Lookup const    Fixed::attrs {nullptr, 0};
 Lookup const    Bytes::attrs {nullptr, 0};
 Lookup const      Str::attrs {nullptr, 0};
-Lookup const     Type::attrs {nullptr, 0};
+Lookup const    Range::attrs {nullptr, 0};
+Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Array::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
 Lookup const     List::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
-Lookup const    Slice::attrs {nullptr, 0};
 Lookup const     Dict::attrs {nullptr, 0};
+Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
@@ -340,6 +346,11 @@ auto Str::create (CofV const& args, Type const*) -> Value {
     return new Str (args[0]);
 }
 
+auto Range::create (CofV const& args, Type const*) -> Value {
+    assert(false);
+    return {}; // TODO
+}
+
 auto Slice::create (CofV const& args, Type const*) -> Value {
     auto n = args.length();
     assert(1 <= n && n <= 3);
@@ -347,11 +358,6 @@ auto Slice::create (CofV const& args, Type const*) -> Value {
     Value b = n == 1 ? args[0] : args[1];
     Value c = n > 2 ? args[2] : b;
     return new Slice (a, b, c);
-}
-
-auto Type::create (CofV const& args, Type const*) -> Value {
-    assert(false);
-    return {}; // TODO
 }
 
 auto Array::create (CofV const& args, Type const*) -> Value {
@@ -379,6 +385,11 @@ auto Set::create (CofV const& args, Type const*) -> Value {
 auto Dict::create (CofV const& args, Type const*) -> Value {
     // TODO
     return new Dict;
+}
+
+auto Type::create (CofV const& args, Type const*) -> Value {
+    assert(false);
+    return {}; // TODO
 }
 
 auto Class::create (CofV const& args, Type const*) -> Value {

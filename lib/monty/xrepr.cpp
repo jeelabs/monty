@@ -188,6 +188,10 @@ Value Inst::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
+Value Iter::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
 Value List::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
@@ -208,6 +212,10 @@ Value None::repr (Monty::Buffer& buf) const {
 auto Object::repr (Buffer& buf) const -> Value {
     buf.print("<%s at %p>", type().name, this);
     return {};
+}
+
+Value Range::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
 Value Set::repr (Monty::Buffer& buf) const {
