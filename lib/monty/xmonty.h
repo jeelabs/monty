@@ -197,6 +197,7 @@ namespace Monty {
     struct Callable;
     struct Object;
     struct Lookup;
+    struct Printer;
     struct Type;
 
     struct Value {
@@ -284,17 +285,18 @@ namespace Monty {
         static const Type info;
         virtual auto type () const -> Type const&;
 
-        // virtual auto repr (BufferObj&) const -> Value; // see builtin.h
+        virtual auto repr (Printer&) const -> Value;
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
     };
 
-    //CG3 type <none>
+    //CG< type <none>
     struct None : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
-        //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
         static None const nullObj;
@@ -308,9 +310,9 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
-        //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
 
         static Bool const trueObj;
@@ -325,13 +327,13 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
         constexpr Fixed (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
 
-        //auto repr (BufferObj&) const -> Value override; // see builtin.h
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
 
@@ -345,6 +347,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         Bytes (uint8_t const* =nullptr, size_t =0) {} // TODO
     };
@@ -355,6 +358,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         Str (char const*) {} // TODO
     };
@@ -365,6 +369,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         Slice (Value a, Value b, Value c);
 
@@ -372,10 +377,12 @@ namespace Monty {
         int32_t off, num, step;
     };
 
-    //CG3 type <lookup>
+    //CG< type <lookup>
     struct Lookup : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
         struct Item { char const* k; Value v; };
 
@@ -393,6 +400,26 @@ namespace Monty {
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
+// see repr.cpp - repr, printing, and buffering
+
+    //CG< type <printer>
+    struct Printer : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
+
+        virtual void write (uint8_t const* ptr, size_t len) const;
+
+        void putc (uint8_t v) { write(&v, 1); }
+        void printf(const char* fmt, ...);
+
+    private:
+        int splitInt (uint32_t val, int base, uint8_t* buf);
+        void putFiller (int n, char fill);
+        void putInt (int val, int base, int width, char fill);
+    };
+
 // see array.cpp - arrays, dicts, and other derived types
 
     //CG< type array
@@ -401,6 +428,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
         Array (char type) : items (Segment::make(type, vec)) {}
@@ -425,6 +453,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
         auto operator[] (size_t idx) const -> Value { return data()[idx]; }
@@ -448,6 +477,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         List () : List (0, nullptr) {}
         List (size_t n, Value const* vals);
@@ -474,6 +504,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         Set () : Set (0, nullptr) {}
         Set (size_t n, Value const* vals);
@@ -498,6 +529,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
         Dict (size_t n =0);
 
@@ -519,6 +551,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
         using Factory = auto (*)(CofV const&, Type const*) -> Value;
@@ -542,6 +575,7 @@ namespace Monty {
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
     //CG>
 
         Class () : Type (nullptr) {} // TODO
@@ -559,10 +593,12 @@ namespace Monty {
 
 // see state.cpp - execution state, stacks, and callables
 
-    //CG3 type <function>
+    //CG< type <function>
     struct Function : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
         using Prim = auto (*)(int,CofV const&) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
@@ -575,10 +611,12 @@ namespace Monty {
         Prim func;
     };
 
-    //CG3 type <boundmeth>
+    //CG< type <boundmeth>
     struct BoundMeth : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
@@ -590,10 +628,12 @@ namespace Monty {
         Value self;
     };
 
-    //CG3 type <context>
+    //CG< type <context>
     struct Context : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
         enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
 
@@ -621,10 +661,12 @@ namespace Monty {
 
     extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
 
-    //CG3 type <module>
+    //CG< type <module>
     struct Module : Dict {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
         Module (Value qpool) : qp (qpool) {}
 
@@ -633,10 +675,12 @@ namespace Monty {
         Value qp;
     };
 
-    //CG3 type <callable>
+    //CG< type <callable>
     struct Callable : Object {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Printer&) const -> Value override;
+    //CG>
 
         Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 

@@ -34,7 +34,7 @@ void arrayTypeSizes () {
     TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Dict));
     TEST_ASSERT_EQUAL(9 * sizeof (void*), sizeof (Type));
     TEST_ASSERT_EQUAL(9 * sizeof (void*), sizeof (Class));
-    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Instance));
+    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Inst));
 }
 
 static void listInsDel () {

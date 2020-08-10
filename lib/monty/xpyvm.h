@@ -1,5 +1,6 @@
 // pyvm.h - virtual machine for bytecodes emitted by MicroPython 1.12
 
+#define SHOW_INSTR_PTR  1 // show instr ptr & info each time through loop
 //CG: on op:print # set to "on" to enable per-opcode debug output
 
 struct PyVM {
@@ -31,7 +32,14 @@ struct PyVM {
     }
 
     void instructionTrace () {
-        assert(false);
+#if SHOW_INSTR_PTR
+        auto base = ctx.stack.begin() + ctx.Extra;
+        printf("\tip %p 0x%02x sp %2d e %d : ",
+                ip, (uint8_t) *ip, (int) (sp - base), (int) ctx.stack[ctx.Ep]);
+        if (sp >= base)
+            sp->dump();
+        printf("\n");
+#endif
     }
 
     //CG: op-init
