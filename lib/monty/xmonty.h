@@ -148,8 +148,6 @@ namespace Monty {
         }
     };
 
-    using CofV = ChunkOf<Value>;
-
     struct Segment : Chunk {
         static auto make (char type, Vec& vec) -> Segment;
 
@@ -184,6 +182,8 @@ namespace Monty {
             return *(ChunkOf<T> const*) this;
         }
     };
+
+    using CofV = ChunkOf<Value>;
 
     void mark (Segment const&);
     void mark (ChunkOf<Segment> const&);

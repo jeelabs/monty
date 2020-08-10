@@ -11,7 +11,7 @@ using namespace Monty;
 uintptr_t memory [1024];
 size_t memAvail;
 
-static char buf [1024];
+static char buf [250];
 static char* fill;
 
 struct TestBuffer : Buffer {
@@ -44,16 +44,10 @@ void reprTypeSizes () {
 }
 
 static void reprBasics () {
-    {
-        TestBuffer tb;
-        TEST_ASSERT_EQUAL(buf, fill);
-    }
+    { TestBuffer tb; TEST_ASSERT_EQUAL(buf, fill); }
     TEST_ASSERT_EQUAL_STRING("", buf);
 
-    {
-        TestBuffer tb;
-        tb.printf("<%d>", 42);
-    }
+    { TestBuffer tb; tb.printf("<%d>", 42); }
     TEST_ASSERT_EQUAL_STRING("<42>", buf);
 
     TestBuffer {} << Value () << 123 << "abc";
@@ -71,10 +65,7 @@ static void reprBasics () {
     TestBuffer {} << Buffer::info;
     TEST_ASSERT_EQUAL_STRING("<type <buffer>>", buf);
 
-    {
-        TestBuffer tb;
-        tb << tb;
-    }
+    { TestBuffer tb; tb << tb; }
     TEST_ASSERT_EQUAL_STRING_LEN("<<buffer> at ", buf, 13);
 }
 

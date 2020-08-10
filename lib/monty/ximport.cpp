@@ -1,5 +1,8 @@
 // import.cpp - importing, loading, and bytecode objects
 
+#define VERBOSE_LOAD   0 // show .mpy load progress with detailed file info
+#define SHOW_INSTR_PTR 1 // show instr ptr each time through loop (in pyvm.h)
+
 #include <cassert>
 #include <cstdint>
 #include <cstdlib>
@@ -8,10 +11,6 @@
 #include "xmonty.h"
 
 extern "C" int printf (const char*, ...);
-
-#if NATIVE
-#define VERBOSE_LOAD 0
-#endif
 
 #if VERBOSE_LOAD
 #define debugf printf
