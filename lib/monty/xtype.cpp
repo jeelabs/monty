@@ -217,8 +217,8 @@ void Lookup::marker () const {
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
-Type const Instance::info ("<instance>");
-auto Instance::type () const -> Type const& { return info; }
+Type const Inst::info ("<instance>");
+auto Inst::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
 Type const    BoundMeth::info ("<boundmeth>");
@@ -307,7 +307,7 @@ Lookup const      Set::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
 Lookup const     Dict::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
-Lookup const Instance::attrs {nullptr, 0};
+Lookup const     Inst::attrs {nullptr, 0};
 
 auto Bool::create (CofV const& args, Type const*) -> Value {
     auto n = args.length();
@@ -384,7 +384,7 @@ auto Class::create (CofV const& args, Type const*) -> Value {
     return new Class;
 }
 
-auto Instance::create (CofV const& args, Type const*) -> Value {
+auto Inst::create (CofV const& args, Type const*) -> Value {
     // TODO
-    return new Instance;
+    return new Inst;
 }

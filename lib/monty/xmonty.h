@@ -547,13 +547,14 @@ namespace Monty {
         Class () : Type (nullptr) {} // TODO
     };
 
-    struct Instance : Dict {
+    // can't use CG, because type() must not be auto-generated
+    struct Inst : Dict {
         static auto create (CofV const&,Type const*) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
 
-        Instance () {}
+        Inst () {}
     };
 
 // see state.cpp - execution state, stacks, and callables
