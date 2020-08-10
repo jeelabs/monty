@@ -378,11 +378,7 @@ auto Callable::codeStart () const -> uint8_t const* {
     return (uint8_t const*) (&bcode + 1) + bcode.code;
 }
 
-static Vec const blah;
-
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
-    printf("blah %p\n", &blah);
-
     Loader loader;
     auto* call = loader.load (addr);
 
