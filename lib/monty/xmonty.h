@@ -61,7 +61,7 @@ namespace Monty {
     struct Value; // forward decl
 
     template< typename T >
-    struct VecOf : Vec {
+    struct VecOf : private Vec {
         auto ptr () const -> T* { return (T*) Vec::ptr(); }
         auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
         auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
