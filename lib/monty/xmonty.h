@@ -99,6 +99,7 @@ namespace Monty {
         using Chunk::len; // make public
 
         constexpr ChunkOf (Vec& v) : Chunk (v) {}
+        constexpr ChunkOf (VecOf<T>& v) : Chunk ((Vec&) v) {}
 
         auto asVec () const -> VecOf<T>& { return asVecOf<T>(); }
 

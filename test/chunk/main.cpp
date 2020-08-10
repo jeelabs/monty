@@ -112,7 +112,7 @@ void chunkTypeSizes () {
 }
 
 void chunkOfItems () {
-    ChunkOf<int> c ((Vec&) v);
+    ChunkOf<int> c (v);
 
     static int m1 [] { 0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0, };
     for (int i = 0; i < 11; ++i)
@@ -136,7 +136,7 @@ void chunkOfItems () {
 }
 
 void chunkOfInsert () {
-    ChunkOf<int> c ((Vec&) v);
+    ChunkOf<int> c (v);
 
     auto n = v.cap();
     TEST_ASSERT_EQUAL(n, c.length());
