@@ -308,7 +308,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         auto unop (UnOp) const -> Value override;
 
         static None const nullObj;
@@ -324,7 +323,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         auto unop (UnOp) const -> Value override;
 
         static Bool const trueObj;
@@ -341,7 +339,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         constexpr Fixed (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
@@ -381,7 +378,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         Iter (Value arg) : seq (arg) {}
 
         //Value next () override;
@@ -421,7 +417,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         struct Item { char const* k; Value v; };
 
         constexpr Lookup (Item const* p, size_t n) : items (p), count (n) {}
@@ -446,7 +441,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (const char* fmt, ...);
@@ -473,7 +467,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         Array (char type) : seg (Segment::make(type, vec)) {}
 
         auto len () const -> size_t { return seg.len(); }
@@ -496,7 +489,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         auto len () const -> size_t { return num; }
         auto operator[] (size_t idx) const -> Value { return data()[idx]; }
 
@@ -630,7 +622,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         Class () : Type (nullptr) {} // TODO
     };
 
@@ -671,7 +662,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
         //auto call (int ac, CofV const& av) const -> Value override;
@@ -688,7 +678,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
 
         Context () {}
@@ -721,7 +710,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         Module (Value qpool) : qp (qpool) {}
 
         void marker () const override { Dict::marker(); mark(qp); }
@@ -735,7 +723,6 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-
         Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 
         auto frameSize () const -> size_t;
