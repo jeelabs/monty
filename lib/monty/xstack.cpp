@@ -42,22 +42,6 @@ Value Context::pop (Value v) {
     return r.isNil() ? v : r;   // return result if set, else arg
 }
 
-auto Context::getQstr (size_t i) const -> char const* {
-    auto& callee = frame().code.asType<Callable>();
-    return callee.qstrAt(i);
-}
-
-// TODO maybe this call will be a bottleneck?
-auto Context::fastSlot (size_t i) const -> Value& {
-    auto& callee = frame().code.asType<Callable>();
-    return frame().stack[callee.fastSlotTop() + ~i];
-}
-
-auto Context::ipBase () const -> uint8_t const* {
-    auto& callee = frame().code.asType<Callable>();
-    return callee.codeStart();
-}
-
 auto Context::excBase (int incr) const -> Value* {
     auto& callee = frame().code.asType<Callable>();
     size_t ep = frame().ep;
@@ -80,4 +64,8 @@ auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
     args.len = len;
     args.off = ptr - begin();
     return args;
+}
+
+void Context::raise (Value exc) const {
+    assert(false); // TODO
 }

@@ -554,43 +554,7 @@ namespace Monty {
         Value self;
     };
 
-    //CG< type <context>
-    struct Context : List {
-        static Type const info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
-        struct Frame {
-            Value link, sp, ip, ep, code, dicts [2], result, stack [];
-        };
-
-        Context () { insert(0); }
-
-        auto frame () const -> Frame& { return *(Frame*) end(); }
-        auto limit () const -> Value& { return begin()[0]; }
-
-        void push (Callable const&);
-        Value pop (Value v);
-
-        auto getQstr (size_t) const -> char const*;
-        auto fastSlot (size_t) const -> Value&;
-        auto spBase () const -> Value* { return frame().stack; }
-        auto ipBase () const -> uint8_t const*;
-
-        static constexpr int EXC_STEP = 3; // use 3 slots per exception
-        auto excBase (int incr =0) const -> Value*;
-
-        auto locals () const -> Dict& { return asDict(0); }
-        auto globals () const -> Dict& { return asDict(1); }
-        auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
-
-    private:
-        auto asDict (int) const -> Dict&;
-    };
-
 // see exec.cpp - importing, loading, and bytecode execution
-
-    extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
 
     //CG< type <module>
     struct Module : Dict {
@@ -614,6 +578,7 @@ namespace Monty {
         Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 
         auto qstrAt (size_t) const -> char const*;
+        auto constAt (size_t i) const -> Value;
         auto fastSlotTop () const -> size_t;
         auto excDepth () const -> size_t;
         auto isGenerator () const -> bool;
@@ -632,6 +597,63 @@ namespace Monty {
         Tuple* pos {nullptr};
         Dict* kw {nullptr};
     };
+
+    //CG< type <context>
+    struct Context : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        struct Frame {
+            Value link, sp, ip, ep, code, dicts [2], result, stack [];
+        };
+
+        Context () { insert(0); }
+
+        auto frame () const -> Frame& { return *(Frame*) end(); }
+        auto limit () const -> Value& { return begin()[0]; }
+
+        void push (Callable const&);
+        Value pop (Value v);
+
+        auto getQstr (size_t i) const -> char const* {
+            return callee().qstrAt(i);
+        }
+        auto getConst (size_t i) const -> Value {
+            return callee().constAt(i);
+        }
+        auto fastSlot (size_t i) const -> Value& {
+            return spBase()[callee().fastSlotTop() + ~i];
+        }
+        auto spBase () const -> Value* {
+            return frame().stack;
+        }
+        auto ipBase () const -> uint8_t const* {
+            return callee().codeStart();
+        }
+
+        static constexpr int EXC_STEP = 3; // use 3 slots per exception
+        auto excBase (int incr =0) const -> Value*;
+
+        auto locals () const -> Dict& { return asDict(0); }
+        auto globals () const -> Dict& { return asDict(1); }
+        auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
+
+        enum Reason { Fail, Func, FuncKw, Meth, MethKw, Yield, Return, };
+        void raise (Value exc ={}) const;
+        void raise (Reason r, uint16_t arg) const {
+            raise((~0U << 24) | (r << 16) | arg);
+        }
+
+    private:
+        auto asDict (int) const -> Dict&;
+        auto callee () const -> Callable& {
+            //return (Callable&) frame().code.obj();
+            return frame().code.asType<Callable>();
+        }
+    };
+
+    extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

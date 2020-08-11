@@ -157,7 +157,7 @@ struct PyVM {
     //CG2 op v
     void op_LoadConstObj (uint32_t arg) {
         printf("LoadConstObj %u\n", (unsigned) arg);
-        assert(false); // TODO
+        *++sp = ctx.getConst(arg);
     }
 
     //CG2 op
@@ -286,7 +286,8 @@ struct PyVM {
     //CG2 op
     void op_StoreMap () {
         printf("StoreMap\n");
-        assert(false); // TODO
+        sp -= 2;
+        sp->obj().setAt(sp[2], sp[1]); // TODO optimise later: no key check
     }
 
     //CG2 op o
@@ -300,17 +301,20 @@ struct PyVM {
     //CG2 op o
     void op_PopExceptJump (int arg) {
         printf("PopExceptJump %d\n", arg);
-        assert(false); // TODO
+        ctx.excBase(-1);
+        ip += arg;
     }
     //CG2 op
     void op_RaiseLast () {
         printf("RaiseLast\n");
-        assert(false); // TODO
+        ctx.raise(""); // TODO
     }
     //CG2 op s
     void op_UnwindJump (int arg) {
         printf("UnwindJump %d\n", arg);
-        assert(false); // TODO
+        int ep = ctx.frame().ep;
+        ctx.frame().ep = ep - *ip; // TODO hardwired for simplest case
+        ip += arg;
     }
 
     //CG2 op
@@ -326,7 +330,12 @@ struct PyVM {
     //CG2 op v
     void op_CallMethod (uint32_t arg) {
         printf("CallMethod %u\n", (unsigned) arg);
-        assert(false); // TODO
+        ctx.raise(ctx.Meth, arg);
+    }
+    //CG2 op v
+    void op_CallMethodVarKw (uint32_t arg) {
+        printf("CallMethodVarKw %u\n", (unsigned) arg);
+        ctx.raise(ctx.MethKw, arg);
     }
     //CG2 op v
     void op_MakeFunction (uint32_t arg) {
@@ -341,17 +350,22 @@ struct PyVM {
     //CG2 op v
     void op_CallFunction (uint32_t arg) {
         printf("CallFunction %u\n", (unsigned) arg);
-        assert(false); // TODO
+        ctx.raise(ctx.Func, arg);
     }
-    //CG2 op
-    void op_ReturnValue () {
-        printf("ReturnValue\n");
-        assert(false); // TODO
+    //CG2 op v
+    void op_CallFunctionVarKw (uint32_t arg) {
+        printf("CallFunctionVarKw %u\n", (unsigned) arg);
+        ctx.raise(ctx.FuncKw, arg);
     }
     //CG2 op
     void op_YieldValue () {
         printf("YieldValue\n");
-        assert(false); // TODO
+        ctx.raise(ctx.Yield, 0);
+    }
+    //CG2 op
+    void op_ReturnValue () {
+        printf("ReturnValue\n");
+        ctx.raise(ctx.Return, 0);
     }
 
     //CG2 op
@@ -446,16 +460,20 @@ struct PyVM {
                     op_LoadMethod(fetchQstr()); break;
                 case Op::CallMethod:
                     op_CallMethod(fetchVarInt()); break;
+                case Op::CallMethodVarKw:
+                    op_CallMethodVarKw(fetchVarInt()); break;
                 case Op::MakeFunction:
                     op_MakeFunction(fetchVarInt()); break;
                 case Op::MakeFunctionDefargs:
                     op_MakeFunctionDefargs(fetchVarInt()); break;
                 case Op::CallFunction:
                     op_CallFunction(fetchVarInt()); break;
-                case Op::ReturnValue:
-                    op_ReturnValue(); break;
+                case Op::CallFunctionVarKw:
+                    op_CallFunctionVarKw(fetchVarInt()); break;
                 case Op::YieldValue:
                     op_YieldValue(); break;
+                case Op::ReturnValue:
+                    op_ReturnValue(); break;
                 case Op::GetIterStack:
                     op_GetIterStack(); break;
                 case Op::ForIter:
@@ -486,10 +504,7 @@ struct PyVM {
                 }
             }
         } while (pending == 0);
-    }
 
-    void save (Context& ctx) const {
-        // FIXME wrong when stack is not the same as on entry
         ctx.frame().sp = sp - ctx.spBase();
         ctx.frame().ip = ip - ctx.ipBase();
     }

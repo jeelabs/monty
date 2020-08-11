@@ -360,6 +360,10 @@ auto Callable::qstrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
+auto Callable::constAt (size_t i) const -> Value {
+    return bc.asType<Bytecode>().constObjs[i];
+}
+
 auto Callable::fastSlotTop () const -> size_t {
     return bc.asType<Bytecode>().stackSz;
 }
