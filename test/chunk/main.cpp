@@ -188,13 +188,6 @@ void chunkOfInsert () {
         TEST_ASSERT(e.isNil());
 }
 
-void segmentTypeSizes () {
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Segment));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'l',int32_t>));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'V',Vec>));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (SegmentOf<'S',Segment>));
-}
-
 static void vecOfVal () {
 #if 0
     VecOf<Val> v;
@@ -223,12 +216,6 @@ static void vecOfVal () {
     TEST_ASSERT_EQUAL_INT(0,   v.get(0));
     TEST_ASSERT_EQUAL_INT(123, v.get(1));
 #endif
-    auto a = new Array ('B');
-    TEST_ASSERT_NOT_NULL(a);
-
-    //a->segment.vec().adj(100);
-    //a->segment.chunk.asVec<Value>().move(1,2,3);
-    //a->segment.chunk.asVec<Chunk>().move(1,2,3);
 }
 
 int main () {
@@ -243,8 +230,6 @@ int main () {
     RUN_TEST(chunkTypeSizes);
     RUN_TEST(chunkOfItems);
     RUN_TEST(chunkOfInsert);
-
-    RUN_TEST(segmentTypeSizes);
 
     RUN_TEST(vecOfVal);
 
