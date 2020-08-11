@@ -9,6 +9,12 @@
 
 using namespace Monty;
 
+void Monty::mark (Vector const& vec) {
+    for (auto e : vec)
+        if (e.isObj())
+            mark(e.obj());
+}
+
 Tuple::Tuple (size_t n, Value const* vals) : fill (n) {
     memcpy((Value*) data(), vals, n * sizeof *vals);
 }
@@ -36,11 +42,11 @@ auto Set::find (Value v) const -> size_t {
     for (auto& e : *this)
         if (v == e)
             return &e - begin();
-    return len();
+    return size();
 }
 
 auto Set::Proxy::operator= (bool f) -> bool {
-    auto n = s.len();
+    auto n = s.size();
     auto pos = s.find(v);
     if (pos < n && !f)
         s.remove(pos);
@@ -52,7 +58,7 @@ auto Set::Proxy::operator= (bool f) -> bool {
 }
 
 auto Set::has (Value v) const -> bool {
-    return find(v) < len();
+    return find(v) < size();
 }
 
 auto Set::getAt (Value k) const -> Value {
@@ -71,10 +77,10 @@ Dict::Dict (size_t n) {
     adj(2*n);
 }
 
-// dict invariant: items layout is: N keys, then N values, with N == d.len()
+// dict invariant: items layout is: N keys, then N values, with N == d.size()
 auto Dict::Proxy::operator= (Value v) -> Value {
     Value w;
-    auto n = d.len();
+    auto n = d.size();
     auto pos = d.find(k);
     if (v.isNil()) {
         if (pos < n) {
@@ -99,12 +105,12 @@ auto Dict::Proxy::operator= (Value v) -> Value {
 }
 
 auto Dict::at (Value k) const -> Value {
-    auto n = len();
+    auto n = size();
     auto pos = find(k);
     return pos < n ? (*this)[n+pos] : Value {};
 }
 
-auto Type::noFactory (CofV const&, const Type*) -> Value {
+auto Type::noFactory (Chunk const&, const Type*) -> Value {
     assert(false);
     return {};
 }

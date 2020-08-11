@@ -328,16 +328,16 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (CofV const& args, Type const*) -> Value {
-    auto n = args.length();
+auto Bool::create (Chunk const& args, Type const*) -> Value {
+    auto n = args.size();
     if (n == 1)
         return args[0].unOp(UnOp::Boln);
     assert(n == 0);
     return False;
 }
 
-auto Fixed::create (CofV const& args, Type const*) -> Value {
-    assert(args.length() == 1);
+auto Fixed::create (Chunk const& args, Type const*) -> Value {
+    assert(args.size() == 1);
     switch (args[0].tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return args[0];
@@ -347,23 +347,23 @@ auto Fixed::create (CofV const& args, Type const*) -> Value {
     return {};
 }
 
-auto Bytes::create (CofV const& args, Type const*) -> Value {
+auto Bytes::create (Chunk const& args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Str::create (CofV const& args, Type const*) -> Value {
-    assert(args.length() == 1 && args[0].isStr());
+auto Str::create (Chunk const& args, Type const*) -> Value {
+    assert(args.size() == 1 && args[0].isStr());
     return new Str (args[0]);
 }
 
-auto Range::create (CofV const& args, Type const*) -> Value {
+auto Range::create (Chunk const& args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (CofV const& args, Type const*) -> Value {
-    auto n = args.length();
+auto Slice::create (Chunk const& args, Type const*) -> Value {
+    auto n = args.size();
     assert(1 <= n && n <= 3);
     Value a = n > 1 ? args[0] : Value (0);
     Value b = n == 1 ? args[0] : args[1];
@@ -371,39 +371,39 @@ auto Slice::create (CofV const& args, Type const*) -> Value {
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (CofV const& args, Type const*) -> Value {
-    auto n = args.length();
+auto Tuple::create (Chunk const& args, Type const*) -> Value {
+    auto n = args.size();
     if (n == 0)
         return Empty; // there's one unique empty tuple
     return new (n * sizeof (Value)) Tuple (n, args.begin());
 }
 
-auto List::create (CofV const& args, Type const*) -> Value {
+auto List::create (Chunk const& args, Type const*) -> Value {
     // TODO
     return new List;
 }
 
-auto Set::create (CofV const& args, Type const*) -> Value {
+auto Set::create (Chunk const& args, Type const*) -> Value {
     // TODO
     return new Set;
 }
 
-auto Dict::create (CofV const& args, Type const*) -> Value {
+auto Dict::create (Chunk const& args, Type const*) -> Value {
     // TODO
     return new Dict;
 }
 
-auto Type::create (CofV const& args, Type const*) -> Value {
+auto Type::create (Chunk const& args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Class::create (CofV const& args, Type const*) -> Value {
+auto Class::create (Chunk const& args, Type const*) -> Value {
     // TODO
     return new Class;
 }
 
-auto Inst::create (CofV const& args, Type const*) -> Value {
+auto Inst::create (Chunk const& args, Type const*) -> Value {
     // TODO
     return new Inst;
 }

@@ -44,8 +44,8 @@ auto Context::asDict (Reg r) -> Dict& {
     return frame(r).asType<Dict>();
 }
 
-auto Context::asArgs (size_t len, Value const* ptr) -> CofV {
-    CofV args = *this;
+auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
+    Chunk args = *this;
     assert(&frame(0) <= ptr && ptr < end());
     args.off = ptr - begin();
     args.len = len;

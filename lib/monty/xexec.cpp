@@ -31,7 +31,7 @@ struct Bytecode : Object {
     void marker () const override {} // TODO
 
     uint16_t code;
-    VofV constObjs;
+    Vector constObjs;
     int16_t stackSz;
     int16_t flags;
     int8_t excDepth;
@@ -79,7 +79,7 @@ struct QstrPool : Object {
 struct Loader {
     const uint8_t* dp;
     VecOf<char> qBuf;
-    VofV qVec;
+    Vector qVec;
     VecOf<uint16_t> qWin;
     uint8_t* bcBuf;
     uint8_t* bcNext;

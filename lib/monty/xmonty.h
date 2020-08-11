@@ -61,61 +61,6 @@ namespace Monty {
 
 // see chunk.cpp - typed and chunked access to vectors
 
-    struct Value; // forward decl
-
-    template< typename T >
-    struct VecOf : private Vec {
-        using Vec::Vec;
-
-        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
-        auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
-
-        auto operator[] (size_t idx) const -> T& { return begin()[idx]; }
-
-        auto begin () const -> T* { return (T*) Vec::ptr(); }
-        auto end () const -> T* { return begin() + fill; }
-
-        void move (size_t pos, size_t num, int off) {
-            memmove((void*) (begin() + pos + off),
-                        (void const*) (begin() + pos), num * sizeof (T));
-        }
-        void wipe (size_t pos, size_t num) {
-            memset((void*) (begin() + pos), 0, num * sizeof (T));
-        }
-
-        void insert (size_t idx, size_t num =1) {
-            if (fill > cap())
-                fill = cap();
-            if (idx > fill) {
-                num += idx - fill;
-                idx = fill;
-            }
-            auto need = fill + num;
-            if (need > cap())
-                adj(need);
-            move(idx, fill - idx, num);
-            wipe(idx, num);
-            fill += num;
-        }
-
-        void remove (size_t idx, size_t num =1) {
-            if (fill > cap())
-                fill = cap();
-            if (idx >= fill)
-                return;
-            if (num > fill - idx)
-                num = fill - idx;
-            move(idx + num, fill - (idx + num), -num);
-            fill -= num;
-        }
-
-        uint32_t fill {0};
-    };
-
-    using VofV = VecOf<Value>;
-
-    void mark (VofV const&);
-
 // see type.cpp - basic object types and type system
 
     // forward decl's
@@ -197,25 +142,74 @@ namespace Monty {
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
-    struct CofV {
-        constexpr CofV (VofV& v) : vec (v) {}
+    template< typename T >
+    struct VecOf : private Vec {
+        using Vec::Vec;
 
-        auto length () const -> size_t {
+        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
+        auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
+
+        auto size () const -> size_t { return fill; }
+        auto begin () const -> T* { return (T*) Vec::ptr(); }
+        auto end () const -> T* { return begin() + fill; }
+        auto operator[] (size_t idx) const -> T& { return begin()[idx]; }
+
+        void move (size_t pos, size_t num, int off) {
+            memmove((void*) (begin() + pos + off),
+                        (void const*) (begin() + pos), num * sizeof (T));
+        }
+        void wipe (size_t pos, size_t num) {
+            memset((void*) (begin() + pos), 0, num * sizeof (T));
+        }
+
+        void insert (size_t idx, size_t num =1) {
+            if (fill > cap())
+                fill = cap();
+            if (idx > fill) {
+                num += idx - fill;
+                idx = fill;
+            }
+            auto need = fill + num;
+            if (need > cap())
+                adj(need);
+            move(idx, fill - idx, num);
+            wipe(idx, num);
+            fill += num;
+        }
+
+        void remove (size_t idx, size_t num =1) {
+            if (fill > cap())
+                fill = cap();
+            if (idx >= fill)
+                return;
+            if (num > fill - idx)
+                num = fill - idx;
+            move(idx + num, fill - (idx + num), -num);
+            fill -= num;
+        }
+
+        uint32_t fill {0};
+    };
+
+    using Vector = VecOf<Value>;
+
+    void mark (Vector const&);
+
+    struct Chunk {
+        constexpr Chunk (Vector& v) : vec (v) {}
+
+        auto size () const -> size_t {
             auto n = vec.cap() - off;
             return (int) n < 0 ? 0 : n < len ? n : len;
         }
-
-        auto operator[] (size_t idx) const -> Value& { return vec[off+idx]; }
-
         auto begin () const -> Value* { return vec.begin() + off; }
-        auto end () const -> Value* { return begin() + length(); }
+        auto end () const -> Value* { return begin() + size(); }
+        auto operator[] (size_t idx) const -> Value& { return begin()[idx]; }
 
         size_t len {~0U}; // maximum length, in typed units
         size_t off {0};   // starting offset, in typed units
-        VofV& vec;        // parent vector
+        Vector& vec;      // parent vector
     };
-
-    void mark (CofV const&);
 
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
@@ -245,7 +239,7 @@ namespace Monty {
 
     //CG< type bool
     struct Bool : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -261,7 +255,7 @@ namespace Monty {
 
     //CG< type int
     struct Fixed : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -280,7 +274,7 @@ namespace Monty {
 
     //CG< type bytes
     struct Bytes : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -291,7 +285,7 @@ namespace Monty {
 
     //CG< type str
     struct Str : Bytes {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -317,7 +311,7 @@ namespace Monty {
 
     //CG< type range
     struct Range : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -327,7 +321,7 @@ namespace Monty {
 
     //CG< type slice
     struct Slice : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -389,17 +383,16 @@ namespace Monty {
 
     //CG< type tuple
     struct Tuple : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        auto len () const -> size_t { return fill; }
-        auto operator[] (size_t idx) const -> Value { return data()[idx]; }
-
+        auto size () const -> size_t { return fill; }
         auto begin () const -> Value const* { return data(); }
-        auto end () const -> Value const* { return data() + fill; }
+        auto end () const -> Value const* { return begin() + size(); }
+        auto operator[] (size_t idx) const -> Value { return begin()[idx]; }
 
         auto getAt (Value k) const -> Value override;
 
@@ -414,8 +407,8 @@ namespace Monty {
     };
 
     //CG< type list
-    struct List : Object, VofV {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+    struct List : Object, Vector {
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -424,17 +417,15 @@ namespace Monty {
         constexpr List () {}
         List (size_t n, Value const* vals);
 
-        auto len () const -> size_t { return fill; }
-
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
-        void marker () const override { mark((VofV const&) *this); }
+        void marker () const override { mark((Vector const&) *this); }
     };
 
     //CG< type set
     struct Set : List {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -459,7 +450,7 @@ namespace Monty {
 
     //CG< type dict
     struct Dict : Set {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -486,30 +477,30 @@ namespace Monty {
 
     //CG< type type
     struct Type : Dict {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        using Factory = auto (*)(CofV const&, Type const*) -> Value;
+        using Factory = auto (*)(Chunk const&, Type const*) -> Value;
 
         constexpr Type (char const* s, Factory f =noFactory,
                                         Lookup const* a =nullptr)
             : Dict (a), name (s), factory (f) {}
 
-        //auto call (int ac, CofV const& av) const -> Value override;
+        //auto call (int ac, Chunk const& av) const -> Value override;
         //auto attr (char const*, Value&) const -> Value override;
 
         char const* name;
         Factory factory;
     private:
-        static auto noFactory (CofV const&,Type const*) -> Value;
+        static auto noFactory (Chunk const&,Type const*) -> Value;
     };
 
     //CG< type class
     struct Class : Type {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
+        static auto create (Chunk const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -520,7 +511,7 @@ namespace Monty {
 
     // can't use CG, because type() must not be auto-generated
     struct Inst : Dict {
-        static auto create (CofV const&,Type const*) -> Value;
+        static auto create (Chunk const&,Type const*) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -537,11 +528,11 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        using Prim = auto (*)(int,CofV const&) -> Value;
+        using Prim = auto (*)(int,Chunk const&) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
 
-        //auto call (int ac, CofV const& av) const -> Value override {
+        //auto call (int ac, Chunk const& av) const -> Value override {
         //    return func(ac, av);
         //}
 
@@ -557,7 +548,7 @@ namespace Monty {
     //CG>
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
-        //auto call (int ac, CofV const& av) const -> Value override;
+        //auto call (int ac, Chunk const& av) const -> Value override;
 
         void marker () const override { mark(meth); mark(self); }
     protected:
@@ -587,7 +578,7 @@ namespace Monty {
         auto asDict (Reg) -> Dict&;
         auto locals () -> Dict& { return asDict(Locals); }
         auto globals () -> Dict& { return asDict(Globals); }
-        auto asArgs (size_t len, Value const* ptr =nullptr) -> CofV;
+        auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
     };
 
 // see exec.cpp - importing, loading, and bytecode execution
@@ -620,7 +611,7 @@ namespace Monty {
         auto hasVarArgs () const -> bool;
         auto codeStart () const -> uint8_t const*;
 
-        //auto call (int ac, CofV const& av) const -> Value override;
+        //auto call (int ac, Chunk const& av) const -> Value override;
 
         void marker () const override {
             mo.marker(); mark(bc); mark(pos); mark(kw);
