@@ -577,8 +577,9 @@ namespace Monty {
     //CG>
         Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 
-        auto qstrAt (size_t) const -> char const*;
+        auto qStrAt (size_t) const -> char const*;
         auto constAt (size_t i) const -> Value;
+
         auto fastSlotTop () const -> size_t;
         auto excDepth () const -> size_t;
         auto isGenerator () const -> bool;
@@ -605,7 +606,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         struct Frame {
-            Value link, sp, ip, ep, code, dicts [2], result, stack [];
+            Value link, sp, ip, ep, code, locals, result, stack [];
         };
 
         Context () { insert(0); }
@@ -613,11 +614,11 @@ namespace Monty {
         auto frame () const -> Frame& { return *(Frame*) end(); }
         auto limit () const -> Value& { return begin()[0]; }
 
-        void push (Callable const&);
-        Value pop (Value v);
+        void enter (Callable const&, Chunk const&, Dict const* =nullptr);
+        Value leave (Value v);
 
         auto getQstr (size_t i) const -> char const* {
-            return callee().qstrAt(i);
+            return callee().qStrAt(i);
         }
         auto getConst (size_t i) const -> Value {
             return callee().constAt(i);
@@ -635,8 +636,8 @@ namespace Monty {
         static constexpr int EXC_STEP = 3; // use 3 slots per exception
         auto excBase (int incr =0) const -> Value*;
 
-        auto locals () const -> Dict& { return asDict(0); }
-        auto globals () const -> Dict& { return asDict(1); }
+        auto locals () const -> Object& { return frame().locals.obj(); }
+        auto globals () const -> Object& { return callee().mo; }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
         enum Reason { Fail, Func, FuncKw, Meth, MethKw, Yield, Return, };
@@ -646,7 +647,6 @@ namespace Monty {
         }
 
     private:
-        auto asDict (int) const -> Dict&;
         auto callee () const -> Callable& {
             //return (Callable&) frame().code.obj();
             return frame().code.asType<Callable>();

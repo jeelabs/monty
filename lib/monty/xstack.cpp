@@ -9,7 +9,7 @@
 
 using namespace Monty;
 
-void Context::push (Callable const& callee) {
+void Context::enter (Callable const& callee, Chunk const& av, Dict const* d) {
     auto frameSize = callee.fastSlotTop() + EXC_STEP * callee.excDepth();
     auto need = (frame().stack + frameSize) - end();
 
@@ -24,9 +24,12 @@ void Context::push (Callable const& callee) {
     f.ip = 0;                   // code starts at first opcode
     f.ep = 0;                   // no exceptions pending
     f.code = callee;            // actual bytecode object
+
+    // TODO maybe only allocate the locals dict on first store?
+    f.locals = d != nullptr ? d : new Dict (&globals());
 }
 
-Value Context::pop (Value v) {
+Value Context::leave (Value v) {
     auto r = frame().result;    // stored result
     int prev = frame().link;    // previous frame offset
     assert(prev > 0);
@@ -51,18 +54,12 @@ auto Context::excBase (int incr) const -> Value* {
     return frame().stack + callee.fastSlotTop() + EXC_STEP * ep;
 }
 
-auto Context::asDict (int n) const -> Dict& {
-    auto& d = frame().dicts[n];
-    if (d.isNil())
-        d = new Dict;
-    return d.asType<Dict>();
-}
-
 auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
-    assert(frame().stack <= ptr && ptr + len < begin() + limit());
+    assert((len == 0 && ptr == nullptr) ||
+            (frame().stack <= ptr && ptr + len < begin() + limit()));
     Chunk args (*this);
     args.len = len;
-    args.off = ptr - begin();
+    args.off = len == 0 ? 0 : ptr - begin();
     return args;
 }
 

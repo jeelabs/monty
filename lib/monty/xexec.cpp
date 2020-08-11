@@ -356,7 +356,7 @@ struct Loader {
 
 using namespace Monty;
 
-auto Callable::qstrAt (size_t i) const -> char const* {
+auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
@@ -389,13 +389,13 @@ auto Callable::codeStart () const -> uint8_t const* {
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Loader loader;
-    auto* call = loader.load (addr);
+    auto* init = loader.load(addr);
+    if (init == nullptr)
+        return nullptr;
 
     Context ctx;
-    // FIXME crashes ...
-    ctx.push(*call);
-    ctx.frame().dicts[0]= call->mo;
+    ctx.enter(*init, ctx.asArgs(0), &init->mo);
 
     PyVM vm (ctx);
-    return &call->mo;
+    return &init->mo;
 }

@@ -127,7 +127,7 @@ struct PyVM {
     //CG2 op
     void op_LoadNull () {
         printf("LoadNull\n");
-        *++sp = Value {};
+        *++sp = {};
     }
     //CG2 op
     void op_LoadConstNone () {
@@ -172,7 +172,7 @@ struct PyVM {
     //CG2 op v
     void op_DeleteFast (uint32_t arg) {
         printf("DeleteFast %u\n", (unsigned) arg);
-        ctx.fastSlot(arg) = Value {};
+        ctx.fastSlot(arg) = {};
     }
 
     //CG2 op
@@ -240,34 +240,34 @@ struct PyVM {
     //CG2 op q
     void op_LoadName (char const* arg) {
         printf("LoadName %s\n", arg);
-        *++sp = ctx.locals().at(arg);
+        *++sp = ctx.locals().getAt(arg);
         assert(!sp->isNil());
     }
     //CG2 op q
     void op_StoreName (char const* arg) {
         printf("StoreName %s\n", arg);
-        ctx.locals().at(arg) = *sp--;
+        ctx.locals().setAt(arg, *sp--);
     }
     //CG2 op q
     void op_DeleteName (char const* arg) {
         printf("DeleteName %s\n", arg);
-        ctx.locals().at(arg) = Value {};
+        ctx.locals().setAt(arg, {});
     }
     //CG2 op q
     void op_LoadGlobal (char const* arg) {
         printf("LoadGlobal %s\n", arg);
-        *++sp = ctx.globals().at(arg);
+        *++sp = ctx.globals().getAt(arg);
         assert(!sp->isNil());
     }
     //CG2 op q
     void op_StoreGlobal (char const* arg) {
         printf("StoreGlobal %s\n", arg);
-        ctx.globals().at(arg) = *sp--;
+        ctx.globals().setAt(arg, *sp--);
     }
     //CG2 op q
     void op_DeleteGlobal (char const* arg) {
         printf("DeleteGlobal %s\n", arg);
-        ctx.globals().at(arg) = Value {};
+        ctx.globals().setAt(arg, {});
     }
     //CG2 op q
     void op_LoadAttr (char const* arg) {
@@ -337,7 +337,7 @@ struct PyVM {
         auto exc = ctx.excBase(1);
         exc[0] = ip - ctx.ipBase() + arg;
         exc[1] = sp - ctx.spBase();
-        exc[2] = Value {};
+        exc[2] = {};
     }
     //CG2 op o
     void op_PopExceptJump (int arg) {
