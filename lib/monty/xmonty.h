@@ -112,30 +112,14 @@ namespace Monty {
         uint32_t fill {0};
     };
 
-    struct Chunk {
-        constexpr Chunk (Vec& v) : vec (v) {}
+    template< typename T >
+    struct ChunkOf {
+        constexpr ChunkOf (Vec& v) : vec (v) {}
+        constexpr ChunkOf (VecOf<T>& v) : vec ((Vec&) v) {}
 
         auto isValid () const -> bool { return (void*) &vec != nullptr; }
 
-        template< typename T >
-        auto asVecOf () const -> VecOf<T>& { return (VecOf<T>&) vec; }
-
-    protected:
-        size_t off {0};   // starting offset, in typed units
-        size_t len {~0U}; // maximum length, in typed units
-    private:
-        Vec& vec;         // parent vector
-    };
-
-    template< typename T >
-    struct ChunkOf : Chunk {
-        using Chunk::off; // make public
-        using Chunk::len; // make public
-
-        constexpr ChunkOf (Vec& v) : Chunk (v) {}
-        constexpr ChunkOf (VecOf<T>& v) : Chunk ((Vec&) v) {}
-
-        auto asVec () const -> VecOf<T>& { return asVecOf<T>(); }
+        auto asVec () const -> VecOf<T>& { return (VecOf<T>&) vec; }
 
         auto length () const -> size_t {
             auto n = asVec().cap() - off;
@@ -150,33 +134,10 @@ namespace Monty {
         auto begin () const -> T* { return &asVec()[0]; }
         auto end () const -> T* { return begin() + length(); }
 
-        void insert (size_t idx, size_t num =1) {
-            auto& vot = asVec();
-            if (len > vot.cap())
-                len = vot.cap();
-            if (idx > len) {
-                num += idx - len;
-                idx = len;
-            }
-            auto need = off + len + num;
-            if (need > vot.cap())
-                vot.adj(need);
-            vot.move(off + idx, len - idx, num);
-            vot.wipe(off + idx, num);
-            len += num;
-        }
-
-        void remove (size_t idx, size_t num =1) {
-            auto& vot = asVec();
-            if (len > vot.cap())
-                len = vot.cap();
-            if (idx >= len)
-                return;
-            if (num > len - idx)
-                num = len - idx;
-            vot.move(off + idx + num, len - (idx + num), -num);
-            len -= num;
-        }
+        size_t off {0};   // starting offset, in typed units
+        size_t len {~0U}; // maximum length, in typed units
+    private:
+        Vec& vec;         // parent vector
     };
 
     using VofV = VecOf<Value>;

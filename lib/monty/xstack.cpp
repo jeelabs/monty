@@ -11,7 +11,7 @@ using namespace Monty;
 
 void Context::push (Callable const& callee) {
     auto diff = Extra + callee.frameSize();
-    stack.insert(stack.length(), diff);
+    assert(false); // TODO stack.insert(stack.length(), diff);
     stack.off += diff;
     stack.len = diff;
 

@@ -45,7 +45,6 @@ void vecTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<int>));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<Vec>));
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<Chunk>));
 }
 
 void vecOfInited () {
@@ -104,10 +103,8 @@ void vecCopyMove () {
 }
 
 void chunkTypeSizes () {
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Chunk));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<int>));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<Vec>));
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (ChunkOf<Chunk>));
 }
 
 void chunkOfItems () {
@@ -155,6 +152,7 @@ void chunkOfInsert () {
     for (size_t i = 0; i < c.length(); ++i)
         TEST_ASSERT_EQUAL(120 + i, c[i]);
 
+#if 0
     c.insert(1, 2);
     TEST_ASSERT_EQUAL(n, v.cap());
     TEST_ASSERT_EQUAL(5, c.length());
@@ -186,6 +184,7 @@ void chunkOfInsert () {
 
     for (auto e : cov)
         TEST_ASSERT(e.isNil());
+#endif
 }
 
 static void vecOfVal () {
