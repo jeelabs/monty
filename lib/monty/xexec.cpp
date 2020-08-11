@@ -18,7 +18,7 @@
 
 namespace Monty {
     #include "xpyvm.h"
-    #include "qstr.h"
+    #include "xqstr.h"
 
 volatile uint32_t pending;
 
