@@ -23,9 +23,8 @@ void setUp () {
         TEST_ASSERT_EQUAL(0, v[i]);
 
     TEST_ASSERT_EQUAL(0, v[10]);
-    auto p = v.ptr();
     for (int i = 0; i < 10; ++i)
-        p[i] = 11 * i;
+        v.begin()[i] = 11 * i;
 }
 
 void tearDown () {
@@ -44,9 +43,9 @@ void smokeTest () {
 
 void vecTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
-    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<int>));
-    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<Vec>));
-    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (VecOf<Chunk>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<int>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<Vec>));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<Chunk>));
 }
 
 void vecOfInited () {
