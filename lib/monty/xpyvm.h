@@ -578,20 +578,19 @@ struct PyVM {
 
                 default: {
                     auto v = ip[-1];
-                    if (opInRange(v, Op::LoadConstSmallIntMulti , 64)) {
+                    if (opInRange(v, Op::LoadConstSmallIntMulti, 64)) {
                         v -= Op::LoadConstSmallIntMulti ;
                         *++sp = v - 16;
                     } else if (opInRange(v, Op::LoadFastMulti, 16)) {
                         v -= Op::LoadFastMulti ;
-                        assert(!ctx.fastSlot(v).isNil());
                         *++sp = ctx.fastSlot(v);
                     } else if (opInRange(v, Op::StoreFastMulti, 16)) {
                         v -= Op::StoreFastMulti;
                         ctx.fastSlot(v) = *sp--;
-                    } else if (opInRange(v, Op::UnaryOpMulti , 7)) {
+                    } else if (opInRange(v, Op::UnaryOpMulti, 7)) {
                         v -= Op::UnaryOpMulti;
                         *sp = sp->unOp((UnOp) v);
-                    } else if (opInRange(v, Op::BinaryOpMulti , 35)) {
+                    } else if (opInRange(v, Op::BinaryOpMulti, 35)) {
                         v -= Op::BinaryOpMulti;
                         Value rhs = *sp--;
                         *sp = sp->binOp((BinOp) v, rhs);
