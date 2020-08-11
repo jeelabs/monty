@@ -224,6 +224,11 @@ auto Lookup::operator[] (char const* key) const -> Value {
     return {};
 }
 
+auto Lookup::getAt (Value k) const -> Value {
+    assert(k.isStr());
+    return (*this)[k];
+}
+
 void Lookup::marker () const {
     for (size_t i = 0; i < count; ++i)
         mark(items[i].v);
@@ -282,7 +287,7 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-static const Lookup::Item builtins [] = {
+static const Lookup::Item bi_items [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
     { "bytes", &Bytes::info },
@@ -309,7 +314,7 @@ static const Lookup::Item builtins [] = {
 #endif
 };
 
-Lookup const builtinDict (builtins, sizeof builtins / sizeof *builtins);
+Lookup const Monty::builtins (bi_items, sizeof bi_items / sizeof *bi_items);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker

@@ -343,6 +343,8 @@ namespace Monty {
 
         auto operator[] (char const* key) const -> Value;
 
+        auto getAt (Value k) const -> Value override;
+
         void marker () const override;
     protected:
         Item const* items;
@@ -469,7 +471,7 @@ namespace Monty {
         auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
 
         void marker () const override { Set::marker(); mark(chain); }
-    protected:
+    // TODO protected:
         Object const* chain {nullptr};
     };
 
@@ -517,6 +519,8 @@ namespace Monty {
 
         Inst () {}
     };
+
+    extern Lookup const builtins;
 
 // see stack.cpp - execution state, stacks, and callables
 
