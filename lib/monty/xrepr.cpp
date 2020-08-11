@@ -139,10 +139,6 @@ void Buffer::print(const char* fmt, ...) {
     va_end(ap);
 }
 
-Value Array::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value Bool::repr (Monty::Buffer& buf) const {
     buf.puts(this == &falseObj ? "false" : "true");
     return {};

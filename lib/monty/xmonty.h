@@ -179,54 +179,10 @@ namespace Monty {
         }
     };
 
-    struct Segment : Chunk {
-        static auto make (char type, Vec& vec) -> Segment;
-
-        using Chunk::Chunk;
-        virtual ~Segment () {}
-
-        operator Value () const;
-        auto operator= (Value) -> Segment&;
-
-        struct Proxy { Segment const& seg; size_t idx;
-            inline operator Value () const;
-            inline auto operator= (Value v) const -> Value;
-        };
-
-        auto operator[] (size_t idx) const -> Proxy { return {*this, idx}; }
-
-        virtual auto typ () const -> char;
-        virtual auto len () const -> size_t;
-        virtual auto get (int idx) const -> Value;
-        virtual void set (int idx, Value val) const;
-        virtual void ins (size_t idx, size_t num =1);
-        virtual void del (size_t idx, size_t num =1);
-    };
-
-    template< char C, typename T >
-    struct SegmentOf : Segment {
-        using Segment::Segment;
-
-        auto typ () const -> char override { return C; }
-        auto len () const -> size_t override { return ccot().length(); }
-        auto get (int i) const -> Value override;
-        void set (int i, Value v) const override;
-        void ins (size_t i, size_t n =1) override { cot().insert(i, n); }
-        void del (size_t i, size_t n =1) override { cot().remove(i, n); }
-
-    private:
-        auto cot () -> ChunkOf<T>& { return *(ChunkOf<T>*) this; }
-        auto ccot () const -> ChunkOf<T> const& {
-            return *(ChunkOf<T> const*) this;
-        }
-    };
-
     using VofV = VecOf<Value>;
     using CofV = ChunkOf<Value>;
 
     void mark (VofV const&);
-    void mark (Segment const&);
-    void mark (ChunkOf<Segment> const&);
     void mark (CofV const&);
 
 // see type.cpp - basic object types and type system
@@ -309,19 +265,6 @@ namespace Monty {
     extern Value const Empty; // Tuple
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
-
-    // define Segment's operator[], now that Value type is complete
-    Segment::Proxy::operator Value () const { return seg.get(idx); }
-    auto Segment::Proxy::operator= (Value v) const -> Value {
-        seg.set(idx, v);
-        return v;
-    }
-
-    // define SegmentOf<C,T>'s get & set, now that Value type is complete
-    template< char C, typename T >
-        auto SegmentOf<C,T>::get (int i) const -> Value { return ccot()[i]; }
-    template< char C, typename T >
-        void SegmentOf<C,T>::set (int i, Value v) const { ccot()[i] = v; }
 
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
@@ -492,28 +435,6 @@ namespace Monty {
     };
 
 // see array.cpp - arrays, dicts, and other derived types
-
-    //CG< type array
-    struct Array : Object {
-        static auto create (CofV const&,Type const* =nullptr) -> Value;
-        static Lookup const attrs;
-        static Type const info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
-        Array (char type) : seg (Segment::make(type, vec)) {}
-
-        auto len () const -> size_t { return seg.len(); }
-        auto operator[] (size_t i) const -> Segment::Proxy { return {seg, i}; }
-
-        auto getAt (Value k) const -> Value override;
-        auto setAt (Value k, Value v) -> Value override;
-
-        void marker () const override { mark(seg); }
-    protected:
-        Vec vec;
-        Segment seg;
-    };
 
     //CG< type tuple
     struct Tuple : Object {

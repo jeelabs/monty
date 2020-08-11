@@ -246,7 +246,6 @@ Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
 
-Type const    Array::info ("array", Array::create, &Array::attrs);
 Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
 Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
 Type const    Class::info ("class", Class::create, &Class::attrs);
@@ -269,7 +268,6 @@ auto         Iter::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
-auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto        Class::type () const -> Type const& { return info; }
@@ -286,7 +284,6 @@ auto         Type::type () const -> Type const& { return info; }
 
 static const Lookup::Item builtins [] = {
     //CG< builtin-emit 1
-    { "array", &Array::info },
     { "bool", &Bool::info },
     { "bytes", &Bytes::info },
     { "class", &Class::info },
@@ -323,7 +320,6 @@ Lookup const    Bytes::attrs {nullptr, 0};
 Lookup const      Str::attrs {nullptr, 0};
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
-Lookup const    Array::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
 Lookup const     List::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
@@ -373,11 +369,6 @@ auto Slice::create (CofV const& args, Type const*) -> Value {
     Value b = n == 1 ? args[0] : args[1];
     Value c = n > 2 ? args[2] : b;
     return new Slice (a, b, c);
-}
-
-auto Array::create (CofV const& args, Type const*) -> Value {
-    // TODO
-    return new Array ('B');
 }
 
 auto Tuple::create (CofV const& args, Type const*) -> Value {
