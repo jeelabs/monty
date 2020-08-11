@@ -523,26 +523,26 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        auto len () const -> size_t { return num; }
+        auto len () const -> size_t { return fill; }
         auto operator[] (size_t idx) const -> Value { return data()[idx]; }
 
         auto begin () const -> Value const* { return data(); }
-        auto end () const -> Value const* { return data() + num; }
+        auto end () const -> Value const* { return data() + fill; }
 
         auto getAt (Value k) const -> Value override;
 
+        size_t const fill;
+
         static Tuple const emptyObj;
     private:
-        constexpr Tuple () : num (0) {}
+        constexpr Tuple () : fill (0) {}
         Tuple (size_t n, Value const* vals =nullptr);
 
         auto data () const -> Value const* { return (Value const*) (this + 1); }
-
-        size_t num;
     };
 
     //CG< type list
-    struct List : Object {
+    struct List : Object, VofV {
         static auto create (CofV const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
@@ -552,21 +552,12 @@ namespace Monty {
         constexpr List () {}
         List (size_t n, Value const* vals);
 
-        auto len () const -> size_t { return items.fill; }
-        auto operator[] (size_t idx) const -> Value& { return items[idx]; }
-
-        void ins (size_t i, size_t n =1) { items.insert(i, n); }
-        void del (size_t i, size_t n =1) { items.remove(i, n); }
-
-        auto begin () -> Value* { return items.begin(); }
-        auto end () -> Value* { return items.end(); }
+        auto len () const -> size_t { return fill; }
 
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
-        void marker () const override { mark(items); }
-    protected:
-        VofV items;
+        void marker () const override { mark((VofV const&) *this); }
     };
 
     //CG< type set
@@ -589,9 +580,6 @@ namespace Monty {
         // operator[] is problematic when the value is an int
         auto has (Value key) const -> bool;
         auto has (Value key) -> Proxy { return {*this, key}; }
-
-        void ins (size_t i, size_t n =1) = delete;
-        void del (size_t i, size_t n =1) = delete;
 
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
@@ -766,7 +754,7 @@ namespace Monty {
         //auto call (int ac, CofV const& av) const -> Value override;
 
         void marker () const override {
-            mark(mo); mark(bc); mark(pos); mark(kw);
+            mo.marker(); mark(bc); mark(pos); mark(kw);
         }
 
     // TODO private:

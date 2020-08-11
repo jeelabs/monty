@@ -20,7 +20,7 @@ auto Array::setAt (Value k, Value v) -> Value {
     return {};
 }
 
-Tuple::Tuple (size_t n, Value const* vals) : num (n) {
+Tuple::Tuple (size_t n, Value const* vals) : fill (n) {
     memcpy((Value*) data(), vals, n * sizeof *vals);
 }
 
@@ -30,7 +30,7 @@ auto Tuple::getAt (Value k) const -> Value {
 }
 
 List::List (size_t n, Value const* vals) {
-    items.adj(n);
+    adj(n);
 }
 
 auto List::getAt (Value k) const -> Value {
@@ -44,9 +44,9 @@ auto List::setAt (Value k, Value v) -> Value {
 }
 
 auto Set::find (Value v) const -> size_t {
-    for (auto& e : items)
+    for (auto& e : *this)
         if (v == e)
-            return &e - &items[0];
+            return &e - begin();
     return len();
 }
 
@@ -54,10 +54,10 @@ auto Set::Proxy::operator= (bool f) -> bool {
     auto n = s.len();
     auto pos = s.find(v);
     if (pos < n && !f)
-        s.items.remove(pos);
+        s.remove(pos);
     else if (pos == n && f) {
-        s.items.insert(pos);
-        s.items[pos] = v;
+        s.insert(pos);
+        s[pos] = v;
     }
     return pos < n;
 }
@@ -79,7 +79,7 @@ auto Set::setAt (Value k, Value v) -> Value {
 }
 
 Dict::Dict (size_t n) {
-    items.adj(2*n);
+    adj(2*n);
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.len()
@@ -89,22 +89,22 @@ auto Dict::Proxy::operator= (Value v) -> Value {
     auto pos = d.find(k);
     if (v.isNil()) {
         if (pos < n) {
-            d.items.fill = 2*n;     // don't wipe existing vals
-            d.items.remove(n+pos);  // remove value
-            d.items.remove(pos);    // remove key
-            d.items.fill = --n;     // set length to new key count
+            d.fill = 2*n;     // don't wipe existing vals
+            d.remove(n+pos);  // remove value
+            d.remove(pos);    // remove key
+            d.fill = --n;     // set length to new key count
         }
     } else {
         if (pos == n) { // move all values up and create new gaps
-            d.items.fill = 2*n;     // don't wipe existing vals
-            d.items.insert(2*n);    // create slot for new value
-            d.items.insert(n);      // same for key, moves all vals one up
-            d.items.fill = ++n;     // set length to new key count
-            d.items[pos] = k;       // store the key
+            d.fill = 2*n;     // don't wipe existing vals
+            d.insert(2*n);    // create slot for new value
+            d.insert(n);      // same for key, moves all vals one up
+            d.fill = ++n;     // set length to new key count
+            d[pos] = k;       // store the key
         } else
-            w = d.items[n+pos];
-        assert(d.items.cap() >= 2*n);
-        d.items[n+pos] = v;
+            w = d[n+pos];
+        assert(d.cap() >= 2*n);
+        d[n+pos] = v;
     }
     return w;
 }
@@ -112,7 +112,7 @@ auto Dict::Proxy::operator= (Value v) -> Value {
 auto Dict::at (Value k) const -> Value {
     auto n = len();
     auto pos = find(k);
-    return pos < n ? items[n+pos] : Value {};
+    return pos < n ? (*this)[n+pos] : Value {};
 }
 
 auto Type::noFactory (CofV const&, const Type*) -> Value {

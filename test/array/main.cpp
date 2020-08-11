@@ -41,7 +41,7 @@ static void listInsDel () {
     List l;
     TEST_ASSERT_EQUAL(0, l.len());
 
-    l.ins(0, 5);
+    l.insert(0, 5);
     TEST_ASSERT_EQUAL(5, l.len());
 
     for (auto e : l)
@@ -55,7 +55,7 @@ static void listInsDel () {
         TEST_ASSERT_EQUAL(10 + i, e);
     }
 
-    l.ins(2, 3);
+    l.insert(2, 3);
     TEST_ASSERT_EQUAL(8, l.len());
 
     static int m1 [] { 10, 11, 0, 0, 0, 12, 13, 14, };
@@ -64,7 +64,7 @@ static void listInsDel () {
         TEST_ASSERT_EQUAL(e, l[i]);
     }
 
-    l.del(1, 5);
+    l.remove(1, 5);
     TEST_ASSERT_EQUAL(3, l.len());
 
     static int m2 [] { 10, 13, 14, };
