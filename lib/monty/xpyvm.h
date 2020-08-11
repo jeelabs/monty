@@ -114,10 +114,10 @@ struct PyVM {
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        auto stack = ctx.frame().stack;
-        printf("\tip %p sp %2d ", ip, (int) (sp - stack));
-        printf("op 0x%02x e %d : ", (uint8_t) *ip, (int) ctx.frame().ep);
-        if (sp >= stack)
+        printf("\tip %p sp %2d e %d ",
+                ip, (int) (sp - ctx.spBase()), (int) ctx.frame().ep);
+        printf("op 0x%02x : ", (uint8_t) *ip);
+        if (sp >= ctx.spBase())
             sp->dump();
         printf("\n");
 #endif
