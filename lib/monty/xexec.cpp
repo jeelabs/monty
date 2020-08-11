@@ -31,8 +31,7 @@ struct Bytecode : Object {
     void marker () const override {} // TODO
 
     uint16_t code;
-    Vec constObjsVec;
-    CofV constObjs {constObjsVec};
+    VofV constObjs;
     int16_t stackSz;
     int16_t flags;
     int8_t excDepth;
@@ -79,10 +78,9 @@ struct QstrPool : Object {
 
 struct Loader {
     const uint8_t* dp;
-    Vec qBufRaw, qVecRaw, qWinRaw;
-    ChunkOf<char> qBuf {qBufRaw};
-    CofV qVec {qVecRaw};
-    ChunkOf<uint16_t> qWin {qWinRaw};
+    VecOf<char> qBuf;
+    VofV qVec;
+    VecOf<uint16_t> qWin;
     uint8_t* bcBuf;
     uint8_t* bcNext;
     uint8_t* bcLimit;
@@ -149,16 +147,16 @@ struct Loader {
         debugf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
-        qBufRaw.adj(500); // TODO avoid large over-alloc
+        qBuf.adj(500); // TODO avoid large over-alloc
 
         auto& bc = loadRaw();
 
-        debugf("qUsed #%d %db\n", (int) qVec.length(), (int) qBuf.length());
-        auto pool = QstrPool::create((const char*) qBufRaw.ptr(),
-                                        qVec.length(), qBuf.length());
+        debugf("qUsed #%d %db\n", (int) qVec.fill, (int) qBuf.fill);
+        auto pool = QstrPool::create((const char*) qBuf.begin(),
+                                        qVec.fill, qBuf.fill);
         assert(pool != nullptr);
 
-        qBuf.remove(0, qBuf.length()); // buffer no longer needed
+        qBuf.adj(0); // buffer no longer needed
 
         auto mod = new Module (*pool);
         return new Callable (*mod, bc);
@@ -187,17 +185,17 @@ struct Loader {
         if (len & 1)
             return winQstr(len>>1);
         len >>= 1;
-        auto o = qBuf.length();
+        auto o = qBuf.fill;
         qBuf.insert(o, len + 1);
-        auto s = (char*) qBufRaw.ptr() + o; // TODO careful, can move
+        auto s = (char*) qBuf.begin() + o; // TODO careful, can move
         for (int i = 0; i < len; ++i)
             s[i] = *dp++;
         s[len] = 0;
         debugf("q:%s\n", s);
-        int n = qVec.length();
+        int n = qVec.fill;
         qVec.insert(n, 1); // make room
         qVec[n] = s;
-        qWin.remove(qWin.length()-1);
+        qWin.remove(qWin.fill-1);
         qWin.insert(0);
         n += qstrNext;
         qWin[0] = n;

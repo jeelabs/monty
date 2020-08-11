@@ -224,6 +224,7 @@ namespace Monty {
     using VofV = VecOf<Value>;
     using CofV = ChunkOf<Value>;
 
+    void mark (VofV const&);
     void mark (Segment const&);
     void mark (ChunkOf<Segment> const&);
     void mark (CofV const&);
@@ -551,7 +552,7 @@ namespace Monty {
         constexpr List () {}
         List (size_t n, Value const* vals);
 
-        auto len () const -> size_t { return items.length(); }
+        auto len () const -> size_t { return items.fill; }
         auto operator[] (size_t idx) const -> Value& { return items[idx]; }
 
         void ins (size_t i, size_t n =1) { items.insert(i, n); }
@@ -565,8 +566,7 @@ namespace Monty {
 
         void marker () const override { mark(items); }
     protected:
-        Vec vec;
-        CofV items {vec};
+        VofV items;
     };
 
     //CG< type set

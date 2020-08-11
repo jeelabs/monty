@@ -56,6 +56,12 @@ auto Segment::make (char c, Vec& v) -> Segment {
     assert(false);
 }
 
+void Monty::mark (VofV const& vec) {
+    for (size_t i = 0; i < vec.cap(); ++i)
+        if (vec[i].isObj())
+            mark(vec[i].obj());
+}
+
 void Monty::mark (Segment const& seg) {
     switch (seg.typ()) {
         case 'S':

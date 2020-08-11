@@ -27,7 +27,7 @@ void smokeTest () {
 }
 
 void execTypeSizes () {
-    TEST_ASSERT_EQUAL(8 * sizeof (void*), sizeof (Module));
+    TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (Module));
     TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Callable));
 }
 

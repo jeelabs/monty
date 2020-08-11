@@ -30,7 +30,7 @@ auto Tuple::getAt (Value k) const -> Value {
 }
 
 List::List (size_t n, Value const* vals) {
-    items.asVec().adj(n);
+    items.adj(n);
 }
 
 auto List::getAt (Value k) const -> Value {
@@ -79,7 +79,7 @@ auto Set::setAt (Value k, Value v) -> Value {
 }
 
 Dict::Dict (size_t n) {
-    items.asVec().adj(2*n);
+    items.adj(2*n);
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.len()
@@ -89,21 +89,21 @@ auto Dict::Proxy::operator= (Value v) -> Value {
     auto pos = d.find(k);
     if (v.isNil()) {
         if (pos < n) {
-            d.items.len = 2*n;      // don't wipe existing vals
+            d.items.fill = 2*n;     // don't wipe existing vals
             d.items.remove(n+pos);  // remove value
             d.items.remove(pos);    // remove key
-            d.items.len = --n;      // set length to new key count
+            d.items.fill = --n;     // set length to new key count
         }
     } else {
         if (pos == n) { // move all values up and create new gaps
-            d.items.len = 2*n;      // don't wipe existing vals
+            d.items.fill = 2*n;     // don't wipe existing vals
             d.items.insert(2*n);    // create slot for new value
             d.items.insert(n);      // same for key, moves all vals one up
-            d.items.len = ++n;      // set length to new key count
+            d.items.fill = ++n;     // set length to new key count
             d.items[pos] = k;       // store the key
         } else
             w = d.items[n+pos];
-        assert(d.items.asVec().cap() >= 2*n);
+        assert(d.items.cap() >= 2*n);
         d.items[n+pos] = v;
     }
     return w;
