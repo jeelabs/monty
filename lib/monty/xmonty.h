@@ -572,9 +572,13 @@ namespace Monty {
         void push (Callable const&);
         Value pop (Value v);
 
+        auto getQstr (size_t) const -> char const*;
+        auto fastSlot (size_t) const -> Value&;
         auto spBase () const -> Value* { return frame().stack; }
         auto ipBase () const -> uint8_t const*;
-        auto fastSlot (size_t) const -> Value&;
+
+        static constexpr int EXC_STEP = 3; // use 3 slots per exception
+        auto excBase (int incr =0) const -> Value*;
 
         auto locals () const -> Dict& { return asDict(0); }
         auto globals () const -> Dict& { return asDict(1); }
@@ -609,7 +613,9 @@ namespace Monty {
     //CG>
         Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
 
-        auto frameSize () const -> size_t;
+        auto qstrAt (size_t) const -> char const*;
+        auto fastSlotTop () const -> size_t;
+        auto excDepth () const -> size_t;
         auto isGenerator () const -> bool;
         auto hasVarArgs () const -> bool;
         auto codeStart () const -> uint8_t const*;

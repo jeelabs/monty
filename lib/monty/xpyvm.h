@@ -104,8 +104,7 @@ struct PyVM {
     }
 
     const char* fetchQstr () {
-        //return qPool->atIdx(fetchOffset() + 1);
-        assert(false); return nullptr;
+        return ctx.getQstr(fetchOffset() + 1);
     }
 
     static bool opInRange (uint8_t op, Op from, int count) {
@@ -293,7 +292,10 @@ struct PyVM {
     //CG2 op o
     void op_SetupExcept (int arg) {
         printf("SetupExcept %d\n", arg);
-        assert(false); // TODO
+        auto exc = ctx.excBase(1);
+        exc[0] = ip - ctx.ipBase() + arg;
+        exc[1] = sp - ctx.spBase();
+        exc[2] = Value {};
     }
     //CG2 op o
     void op_PopExceptJump (int arg) {

@@ -10,7 +10,8 @@
 using namespace Monty;
 
 void Context::push (Callable const& callee) {
-    auto need = (frame().stack + callee.frameSize()) - end();
+    auto frameSize = callee.fastSlotTop() + EXC_STEP * callee.excDepth();
+    auto need = (frame().stack + frameSize) - end();
 
     auto curr = fill;           // current frame offset
     fill = begin()[0];          // current limit
@@ -41,13 +42,29 @@ Value Context::pop (Value v) {
     return r.isNil() ? v : r;   // return result if set, else arg
 }
 
-auto Context::ipBase () const -> uint8_t const* {
-    return frame().code.asType<Callable>().codeStart();
+auto Context::getQstr (size_t i) const -> char const* {
+    auto& callee = frame().code.asType<Callable>();
+    return callee.qstrAt(i);
 }
 
+// TODO maybe this call will be a bottleneck?
 auto Context::fastSlot (size_t i) const -> Value& {
-    auto fastBase = 0; // FIXME
-    return frame().stack[fastBase + ~i];
+    auto& callee = frame().code.asType<Callable>();
+    return frame().stack[callee.fastSlotTop() + ~i];
+}
+
+auto Context::ipBase () const -> uint8_t const* {
+    auto& callee = frame().code.asType<Callable>();
+    return callee.codeStart();
+}
+
+auto Context::excBase (int incr) const -> Value* {
+    auto& callee = frame().code.asType<Callable>();
+    size_t ep = frame().ep;
+    frame().ep = ep + incr;
+    if (incr <= 0)
+        --ep;
+    return frame().stack + callee.fastSlotTop() + EXC_STEP * ep;
 }
 
 auto Context::asDict (int n) const -> Dict& {

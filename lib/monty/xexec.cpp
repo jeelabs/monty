@@ -51,7 +51,7 @@ struct QstrPool : Object {
     int len;
     uint16_t off [];
 
-    static const QstrPool* create (const char* d, int n, int b) {
+    static auto create (const char* d, int n, int b) -> QstrPool const* {
         static_assert (sizeof *off == 2, "off is not a uint16_t ?");
         return new (2*(n+1)+b) QstrPool (d, n, b);
     }
@@ -66,13 +66,13 @@ struct QstrPool : Object {
         }
     }
 
-    const char* atIdx (int idx) const {
+    auto atIdx (int idx) const -> char const* {
         assert(idx >= qstrFrom);
         if (idx < (int) qstrNext)
             return qstrData + qstrPos[idx-qstrFrom];
         idx -= qstrNext;
         assert(idx < len);
-        return (const char*) off + off[idx];
+        return (char const*) off + off[idx];
     }
 };
 
@@ -356,9 +356,16 @@ struct Loader {
 
 using namespace Monty;
 
-auto Callable::frameSize () const -> size_t {
-    auto& bcode = bc.asType<Bytecode>();
-    return bcode.stackSz + 3 * bcode.excDepth; // TODO hard-coded 3 ?
+auto Callable::qstrAt (size_t i) const -> char const* {
+    return mo.qp.asType<QstrPool>().atIdx(i);
+}
+
+auto Callable::fastSlotTop () const -> size_t {
+    return bc.asType<Bytecode>().stackSz;
+}
+
+auto Callable::excDepth () const -> size_t {
+    return bc.asType<Bytecode>().excDepth;
 }
 
 auto Callable::isGenerator () const -> bool {
@@ -383,7 +390,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     // FIXME crashes ...
     ctx.push(*call);
-    ctx.frame().dicts[1]= call->mo;
+    ctx.frame().dicts[0]= call->mo;
 
     PyVM vm (ctx);
     return &call->mo;
