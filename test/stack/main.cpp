@@ -29,7 +29,7 @@ void smokeTest () {
 void stackTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Function));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (BoundMeth));
-    TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (Context));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Context));
 }
 
 int main () {

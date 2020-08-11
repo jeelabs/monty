@@ -10,41 +10,44 @@
 using namespace Monty;
 
 void Context::push (Callable const& callee) {
-    auto diff = Extra + callee.frameSize();
-    assert(false); // TODO stack.insert(stack.length(), diff);
-    stack.off += diff;
-    stack.len = diff;
+    auto prev = fill - base();
+    begin()[0] = fill;
 
-    stack[Sp] = Result;
-    stack[Code] = callee;
+    auto need = Extra + callee.frameSize();
+    insert(fill, need);
+
+    frame(Link) = prev;
+    frame(Sp) = base() + Result;
+    frame(Code) = callee;
 }
 
 void Context::pop () {
-    int diff = stack[Link];
-    assert(diff > 0);
-    stack.len = diff;
-    stack.off -= diff;
+    int prev = frame(Link);
+    assert(prev > 0);
+    auto off = base();
+    remove(off, fill - off);
+    begin()[0] = off - prev;
 }
 
-auto Context::ipBase () const -> uint8_t const* {
-    return stack[Code].asType<Callable>().codeStart();
+auto Context::ipBase () -> uint8_t const* {
+    return frame(Code).asType<Callable>().codeStart();
 }
 
 auto Context::fastSlot (size_t i) -> Value& {
     auto fastBase = 0; // FIXME
-    return stack[fastBase + ~i];
+    return frame(fastBase + ~i);
 }
 
 auto Context::asDict (Reg r) -> Dict& {
-    if (stack[r].isNil())
-        stack[r] = new Dict;
-    return stack[r].asType<Dict>();
+    if (frame(r).isNil())
+        frame(r) = new Dict;
+    return frame(r).asType<Dict>();
 }
 
-auto Context::asArgs (size_t len, Value const* ptr) const -> CofV {
-    CofV args = stack;
-    assert(args.begin() <= ptr && ptr < args.end());
-    args.off = ptr - args.begin();
+auto Context::asArgs (size_t len, Value const* ptr) -> CofV {
+    CofV args = *this;
+    assert(&frame(0) <= ptr && ptr < end());
+    args.off = ptr - begin();
     args.len = len;
-    return stack;
+    return args;
 }

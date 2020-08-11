@@ -576,31 +576,28 @@ namespace Monty {
     };
 
     //CG< type <context>
-    struct Context : Object {
+    struct Context : List {
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
         enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
 
-        Context () {}
+        Context () { insert(0); }
+
+        auto base () const -> int { return begin()[0]; }
+        auto frame (size_t idx) -> Value& { return begin()[idx + base()]; }
 
         void push (Callable const&);
         void pop ();
 
-        auto ipBase () const -> uint8_t const*;
+        auto ipBase () -> uint8_t const*;
         auto fastSlot (size_t) -> Value&;
 
         auto asDict (Reg) -> Dict&;
         auto locals () -> Dict& { return asDict(Locals); }
         auto globals () -> Dict& { return asDict(Globals); }
-        auto asArgs (size_t len, Value const* ptr =nullptr) const -> CofV;
-
-        void marker () const override { mark(stack); } // TODO mark more items!
-
-        CofV stack {vec};
-    private:
-        Vec vec;
+        auto asArgs (size_t len, Value const* ptr =nullptr) -> CofV;
     };
 
 // see exec.cpp - importing, loading, and bytecode execution
