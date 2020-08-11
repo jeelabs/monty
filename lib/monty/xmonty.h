@@ -59,8 +59,6 @@ namespace Monty {
 
     extern void (*panicOutOfMemory)(); // triggers an assertion by default
 
-// see chunk.cpp - typed and chunked access to vectors
-
 // see type.cpp - basic object types and type system
 
     // forward decl's
@@ -562,23 +560,28 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        enum Reg { Link, Sp, Ip, Ep, Code, Locals, Globals, Result, Extra };
+        struct Frame {
+            Value link, sp, ip, ep, code, dicts [2], result, stack [];
+        };
 
         Context () { insert(0); }
 
-        auto base () const -> int { return begin()[0]; }
-        auto frame (size_t idx) -> Value& { return begin()[idx + base()]; }
+        auto frame () const -> Frame& { return *(Frame*) end(); }
+        auto limit () const -> Value& { return begin()[0]; }
 
         void push (Callable const&);
-        void pop ();
+        Value pop (Value v);
 
-        auto ipBase () -> uint8_t const*;
-        auto fastSlot (size_t) -> Value&;
+        auto spBase () const -> Value* { return frame().stack; }
+        auto ipBase () const -> uint8_t const*;
+        auto fastSlot (size_t) const -> Value&;
 
-        auto asDict (Reg) -> Dict&;
-        auto locals () -> Dict& { return asDict(Locals); }
-        auto globals () -> Dict& { return asDict(Globals); }
+        auto locals () const -> Dict& { return asDict(0); }
+        auto globals () const -> Dict& { return asDict(1); }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
+
+    private:
+        auto asDict (int) const -> Dict&;
     };
 
 // see exec.cpp - importing, loading, and bytecode execution

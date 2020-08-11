@@ -114,10 +114,10 @@ struct PyVM {
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        auto base = &ctx.frame(ctx.Extra);
-        printf("\tip %p sp %2d ", ip, (int) (sp - base));
-        printf("op 0x%02x e %d : ", (uint8_t) *ip, (int) ctx.frame(ctx.Ep));
-        if (sp >= base)
+        auto stack = ctx.frame().stack;
+        printf("\tip %p sp %2d ", ip, (int) (sp - stack));
+        printf("op 0x%02x e %d : ", (uint8_t) *ip, (int) ctx.frame().ep);
+        if (sp >= stack)
             sp->dump();
         printf("\n");
 #endif
@@ -364,8 +364,8 @@ struct PyVM {
     }
 
     PyVM (Context& context) : ctx (context) {
-        sp = ctx.begin() + ctx.frame(ctx.Sp);
-        ip = ctx.ipBase() + ctx.frame(ctx.Ip);
+        sp = ctx.spBase() + ctx.frame().sp;
+        ip = ctx.ipBase() + ctx.frame().ip;
 
         do {
             instructionTrace();
@@ -488,7 +488,7 @@ struct PyVM {
 
     void save (Context& ctx) const {
         // FIXME wrong when stack is not the same as on entry
-        ctx.frame(ctx.Sp) = sp - ctx.begin();
-        ctx.frame(ctx.Ip) = ip - ctx.ipBase();
+        ctx.frame().sp = sp - ctx.spBase();
+        ctx.frame().ip = ip - ctx.ipBase();
     }
 };

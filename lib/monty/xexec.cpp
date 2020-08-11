@@ -383,7 +383,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     // FIXME crashes ...
     ctx.push(*call);
-    ctx.frame(ctx.Globals) = call->mo;
+    ctx.frame().dicts[1]= call->mo;
 
     PyVM vm (ctx);
     return &call->mo;
