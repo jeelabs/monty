@@ -112,39 +112,9 @@ namespace Monty {
         uint32_t fill {0};
     };
 
-    template< typename T >
-    struct ChunkOf {
-        constexpr ChunkOf (Vec& v) : vec (v) {}
-        constexpr ChunkOf (VecOf<T>& v) : vec ((Vec&) v) {}
-
-        auto isValid () const -> bool { return (void*) &vec != nullptr; }
-
-        auto asVec () const -> VecOf<T>& { return (VecOf<T>&) vec; }
-
-        auto length () const -> size_t {
-            auto n = asVec().cap() - off;
-            return (int) n < 0 ? 0 : n < len ? n : len;
-        }
-
-        auto operator[] (size_t idx) const -> T& {
-            // assert(idx < length());
-            return asVec()[off+idx];
-        }
-
-        auto begin () const -> T* { return &asVec()[0]; }
-        auto end () const -> T* { return begin() + length(); }
-
-        size_t off {0};   // starting offset, in typed units
-        size_t len {~0U}; // maximum length, in typed units
-    private:
-        Vec& vec;         // parent vector
-    };
-
     using VofV = VecOf<Value>;
-    using CofV = ChunkOf<Value>;
 
     void mark (VofV const&);
-    void mark (CofV const&);
 
 // see type.cpp - basic object types and type system
 
@@ -226,6 +196,26 @@ namespace Monty {
     extern Value const Empty; // Tuple
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
+
+    struct CofV {
+        constexpr CofV (VofV& v) : vec (v) {}
+
+        auto length () const -> size_t {
+            auto n = vec.cap() - off;
+            return (int) n < 0 ? 0 : n < len ? n : len;
+        }
+
+        auto operator[] (size_t idx) const -> Value& { return vec[off+idx]; }
+
+        auto begin () const -> Value* { return vec.begin() + off; }
+        auto end () const -> Value* { return begin() + length(); }
+
+        size_t len {~0U}; // maximum length, in typed units
+        size_t off {0};   // starting offset, in typed units
+        VofV& vec;        // parent vector
+    };
+
+    void mark (CofV const&);
 
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
