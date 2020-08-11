@@ -159,6 +159,21 @@ struct PyVM {
         printf("LoadConstObj %u\n", (unsigned) arg);
         *++sp = ctx.getConst(arg);
     }
+    //CG2 op v
+    void op_LoadFastN (uint32_t arg) {
+        printf("LoadFastN %u\n", (unsigned) arg);
+        *++sp = ctx.fastSlot(arg);
+    }
+    //CG2 op v
+    void op_StoreFastN (uint32_t arg) {
+        printf("StoreFastN %u\n", (unsigned) arg);
+        ctx.fastSlot(arg) = *sp--;
+    }
+    //CG2 op v
+    void op_DeleteFast (uint32_t arg) {
+        printf("DeleteFast %u\n", (unsigned) arg);
+        ctx.fastSlot(arg) = Value {};
+    }
 
     //CG2 op
     void op_DupTop () {
@@ -199,11 +214,27 @@ struct PyVM {
         --sp;
     }
     //CG2 op s
+    void op_JumpIfFalseOrPop (int arg) {
+        printf("JumpIfFalseOrPop %d\n", arg);
+        if (!sp->truthy())
+            ip += arg;
+        else
+            --sp;
+    }
+    //CG2 op s
     void op_PopJumpIfTrue (int arg) {
         printf("PopJumpIfTrue %d\n", arg);
         if (sp->truthy())
             ip += arg;
         --sp;
+    }
+    //CG2 op s
+    void op_JumpIfTrueOrPop (int arg) {
+        printf("JumpIfTrueOrPop %d\n", arg);
+        if (sp->truthy())
+            ip += arg;
+        else
+            --sp;
     }
 
     //CG2 op q
@@ -218,6 +249,11 @@ struct PyVM {
         ctx.locals().at(arg) = *sp--;
     }
     //CG2 op q
+    void op_DeleteName (char const* arg) {
+        printf("DeleteName %s\n", arg);
+        ctx.locals().at(arg) = Value {};
+    }
+    //CG2 op q
     void op_LoadGlobal (char const* arg) {
         printf("LoadGlobal %s\n", arg);
         *++sp = ctx.globals().at(arg);
@@ -227,6 +263,11 @@ struct PyVM {
     void op_StoreGlobal (char const* arg) {
         printf("StoreGlobal %s\n", arg);
         ctx.globals().at(arg) = *sp--;
+    }
+    //CG2 op q
+    void op_DeleteGlobal (char const* arg) {
+        printf("DeleteGlobal %s\n", arg);
+        ctx.globals().at(arg) = Value {};
     }
     //CG2 op q
     void op_LoadAttr (char const* arg) {
@@ -309,6 +350,17 @@ struct PyVM {
         printf("RaiseLast\n");
         ctx.raise(""); // TODO
     }
+    //CG2 op
+    void op_RaiseObj () {
+        printf("RaiseObj\n");
+        ctx.raise(*sp);
+    }
+    //CG2 op
+    void op_RaiseFrom () {
+        printf("RaiseFrom\n");
+        // TODO exception chaining
+        ctx.raise(*--sp);
+    }
     //CG2 op s
     void op_UnwindJump (int arg) {
         printf("UnwindJump %d\n", arg);
@@ -369,6 +421,11 @@ struct PyVM {
     }
 
     //CG2 op
+    void op_GetIter () {
+        printf("GetIter\n");
+        assert(false); // TODO
+    }
+    //CG2 op
     void op_GetIterStack () {
         printf("GetIterStack\n");
         assert(false); // TODO
@@ -385,7 +442,7 @@ struct PyVM {
 
         do {
             instructionTrace();
-            switch (*ip++) {
+            switch ((Op) *ip++) {
 
                 //CG< op-emit
                 case Op::LoadNull:
@@ -402,6 +459,12 @@ struct PyVM {
                     op_LoadConstSmallInt(); break;
                 case Op::LoadConstObj:
                     op_LoadConstObj(fetchVarInt()); break;
+                case Op::LoadFastN:
+                    op_LoadFastN(fetchVarInt()); break;
+                case Op::StoreFastN:
+                    op_StoreFastN(fetchVarInt()); break;
+                case Op::DeleteFast:
+                    op_DeleteFast(fetchVarInt()); break;
                 case Op::DupTop:
                     op_DupTop(); break;
                 case Op::DupTopTwo:
@@ -416,16 +479,24 @@ struct PyVM {
                     op_Jump(fetchOffset()-0x8000); break;
                 case Op::PopJumpIfFalse:
                     op_PopJumpIfFalse(fetchOffset()-0x8000); break;
+                case Op::JumpIfFalseOrPop:
+                    op_JumpIfFalseOrPop(fetchOffset()-0x8000); break;
                 case Op::PopJumpIfTrue:
                     op_PopJumpIfTrue(fetchOffset()-0x8000); break;
+                case Op::JumpIfTrueOrPop:
+                    op_JumpIfTrueOrPop(fetchOffset()-0x8000); break;
                 case Op::LoadName:
                     op_LoadName(fetchQstr()); break;
                 case Op::StoreName:
                     op_StoreName(fetchQstr()); break;
+                case Op::DeleteName:
+                    op_DeleteName(fetchQstr()); break;
                 case Op::LoadGlobal:
                     op_LoadGlobal(fetchQstr()); break;
                 case Op::StoreGlobal:
                     op_StoreGlobal(fetchQstr()); break;
+                case Op::DeleteGlobal:
+                    op_DeleteGlobal(fetchQstr()); break;
                 case Op::LoadAttr:
                     op_LoadAttr(fetchQstr()); break;
                 case Op::StoreAttr:
@@ -452,6 +523,10 @@ struct PyVM {
                     op_PopExceptJump(fetchOffset()); break;
                 case Op::RaiseLast:
                     op_RaiseLast(); break;
+                case Op::RaiseObj:
+                    op_RaiseObj(); break;
+                case Op::RaiseFrom:
+                    op_RaiseFrom(); break;
                 case Op::UnwindJump:
                     op_UnwindJump(fetchOffset()-0x8000); break;
                 case Op::LoadBuildClass:
@@ -474,11 +549,32 @@ struct PyVM {
                     op_YieldValue(); break;
                 case Op::ReturnValue:
                     op_ReturnValue(); break;
+                case Op::GetIter:
+                    op_GetIter(); break;
                 case Op::GetIterStack:
                     op_GetIterStack(); break;
                 case Op::ForIter:
                     op_ForIter(fetchOffset()); break;
                 //CG>
+
+                // TODO
+                case Op::DeleteDeref:
+                case Op::EndFinally:
+                case Op::ImportFrom:
+                case Op::ImportName:
+                case Op::ImportStar:
+                case Op::LoadDeref:
+                case Op::LoadSuperMethod:
+                case Op::MakeClosure:
+                case Op::MakeClosureDefargs:
+                case Op::SetupFinally:
+                case Op::SetupWith:
+                case Op::StoreComp:
+                case Op::StoreDeref:
+                case Op::UnpackEx:
+                case Op::UnpackSequence:
+                case Op::WithCleanup:
+                case Op::YieldFrom:
 
                 default: {
                     auto v = ip[-1];
