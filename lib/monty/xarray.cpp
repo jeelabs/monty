@@ -107,7 +107,8 @@ auto Dict::Proxy::operator= (Value v) -> Value {
 auto Dict::at (Value k) const -> Value {
     auto n = size();
     auto pos = find(k);
-    return pos < n ? (*this)[n+pos] : Value {};
+    return pos < n ? (*this)[n+pos] :
+            chain != nullptr ? chain->getAt(k) : Value {};
 }
 
 auto Type::noFactory (Chunk const&, const Type*) -> Value {

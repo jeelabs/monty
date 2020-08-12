@@ -217,7 +217,7 @@ namespace Monty {
 
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
-        virtual auto attr  (const char*) const -> Value;
+        virtual auto attr  (const char*, Value&) const -> Value;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
     };
@@ -302,6 +302,7 @@ namespace Monty {
 
         //Value next () override;
 
+        void marker () const override { mark(seq); }
     // TODO private:
         Value seq;
         size_t pos {0};
@@ -490,7 +491,9 @@ namespace Monty {
             : Dict (a), name (s), factory (f) {}
 
         //auto call (int ac, Chunk const& av) const -> Value override;
-        //auto attr (char const*, Value&) const -> Value override;
+        auto attr (char const* name, Value& self) const -> Value override {
+            return getAt(name);
+        }
 
         char const* name;
         Factory factory;
@@ -566,7 +569,9 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Module (Value qpool) : qp (qpool) {}
+        Module (Value qpool) : Dict (&builtins), qp (qpool) {}
+
+        Value attr (const char* s, Value&) const override { return getAt(s); }
 
         void marker () const override { Dict::marker(); mark(qp); }
 
@@ -613,10 +618,11 @@ namespace Monty {
             Value link, sp, ip, ep, code, locals, result, stack [];
         };
 
-        Context () { insert(0); }
+        Context () { insert(0, 2); }
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
         auto limit () const -> Value& { return begin()[0]; }
+        auto caller () const -> Value& { return begin()[1]; }
 
         void enter (Callable const&, Chunk const&, Dict const* =nullptr);
         Value leave (Value v);

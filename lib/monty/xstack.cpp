@@ -14,18 +14,18 @@ void Context::enter (Callable const& callee, Chunk const& av, Dict const* d) {
     auto need = (frame().stack + frameSize) - end();
 
     auto curr = fill;           // current frame offset
-    fill = begin()[0];          // current limit
+    fill = limit();             // current limit
     insert(fill, need);         // make room
-    fill = begin()[0];          // frame offset is old limit
+    fill = limit();             // frame offset is old limit
 
     auto& f = frame();
     f.link = curr;              // index of (now previous) frame
-    f.sp = -1; // stack is empty
+    f.sp = -1;                  // stack is empty
     f.ip = 0;                   // code starts at first opcode
     f.ep = 0;                   // no exceptions pending
     f.code = callee;            // actual bytecode object
 
-    // TODO maybe only allocate the locals dict on first store?
+    // TODO only allocate the locals dict on first store
     f.locals = d != nullptr ? d : new Dict (&globals());
 }
 
@@ -35,11 +35,11 @@ Value Context::leave (Value v) {
     assert(prev > 0);
 
     size_t base = fill;         // current frame offset
-    fill = begin()[0];          // current limit
+    fill = limit();             // current limit
     assert(fill > base);
     remove(fill, fill - base);  // delete current frame
     assert(fill == base);
-    begin()[0] = base;          // new limit
+    limit() = base;             // new limit
     fill = prev;                // new lower frame offset
 
     return r.isNil() ? v : r;   // return result if set, else arg

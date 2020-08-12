@@ -175,7 +175,7 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
-auto Object::attr (const char*) const -> Value {
+auto Object::attr (const char*, Value&) const -> Value {
     assert(false);
     return {};
 }

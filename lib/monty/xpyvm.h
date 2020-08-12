@@ -272,7 +272,11 @@ struct PyVM {
     //CG2 op q
     void op_LoadAttr (char const* arg) {
         printf("LoadAttr %s\n", arg);
-        assert(false); // TODO
+        Value self;
+        *sp = sp->obj().attr(arg, self);
+        assert(!sp->isNil());
+        if (!self.isNil() && sp->ifType<Callable>() != 0)
+            *sp = new BoundMeth (*sp, self);
     }
     //CG2 op q
     void op_StoreAttr (char const* arg) {
