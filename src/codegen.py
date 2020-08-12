@@ -161,9 +161,72 @@ def BUILTIN(block, name):
 
 # generate opcode switch entries
 opdefs = []
+opmulti = []
+opraises = []
 
-def OP_INIT(block): opdefs.clear()
-def OP_EMIT(block): return opdefs
+def OP_INIT(block):
+    opdefs.clear()
+    opmulti.clear()
+    opraises.clear()
+def OP_EMIT(block, sel=0):
+    if sel == 'd':
+        return opdefs
+    if sel == 'm':
+        return opmulti
+    else:
+        return opraises
+
+def xOP(block, typ='', multi=0):
+    op = block[0].split()[1][3:]
+    if 'q' in typ:
+        fmt, arg, decl = ' %s', 'fetchQstr()', 'char const* arg'
+    elif 'v' in typ:
+        fmt, arg, decl = ' %u', 'fetchVarInt()', 'int arg'
+    elif 'o' in typ:
+        fmt, arg, decl = ' %d', 'fetchOffset()', 'int arg'
+    elif 's' in typ:
+        fmt, arg, decl = ' %d', 'fetchOffset()-0x8000', 'int arg'
+    elif 'm' in typ:
+        fmt, arg, decl = ' %d', 'ip[-1]', 'uint32_t arg'
+    else:
+        fmt, arg, decl = '', '', ''
+    name = 'op_' + op
+
+    if 'm' in typ:
+        opmulti.append('if ((uint32_t) (ip[-1] - Op::%s) < %d) {' % (op, multi))
+        opmulti.append('    %s = ip[-1] - Op::%s;' % (decl, op))
+        if 'op:print' in flags:
+            opmulti.append('    printf("%s%s\\n", (int) arg);' % (op, fmt))
+        opmulti.append('    %s(arg);' % name)
+        opmulti.append('    break;')
+        opmulti.append('}')
+    else:
+        opdefs.append('case Op::%s: %s' % (op, '{' if arg else ''))
+        if arg:
+            opdefs.append('    %s = %s;' % (decl, arg))
+        info = ', arg' if arg else ''
+        if 'op:print' in flags:
+            if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
+            opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
+        if 'r' in typ:
+            a = 'arg' if arg else '0'
+            opdefs.append('    ctx.raise(Op::%s, %s);' % (op, a))
+        else:
+            a = 'arg' if arg else ''
+            opdefs.append('    %s(%s);' % (name, a))
+        opdefs.append('    break;')
+        if arg:
+            opdefs.append('}')
+
+    out = ['void %s (%s) {' % (name, decl)]
+
+    if 'r' in typ:
+        out.append('    // note: called from outer loop')
+        opraises.append('case Op::%s:' % op)
+        a = 'arg' if arg else ''
+        opraises.append('    %s(%s); break;' % (name, a))
+
+    return out
 
 def OP(block, typ=''):
     op = block[0].split()[1][3:]

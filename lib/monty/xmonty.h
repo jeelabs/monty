@@ -653,10 +653,9 @@ namespace Monty {
         auto globals () const -> Object& { return callee().mo; }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
-        enum Reason { Fail, Func, FuncKw, Meth, MethKw, Yield, Return, };
         void raise (Value exc ={}) const;
-        void raise (Reason r, uint16_t arg) const {
-            raise((~0U << 24) | (r << 16) | arg);
+        void raise (uint8_t op, uint16_t arg) const {
+            raise((~0U << 24) | (op << 16) | arg);
         }
 
     private:
