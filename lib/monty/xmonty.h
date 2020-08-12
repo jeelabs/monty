@@ -619,11 +619,10 @@ namespace Monty {
             Value link, sp, ip, ep, code, locals, result, stack [];
         };
 
-        Context () { insert(0, 3); }
+        Context () { insert(0, NumSlots); slot(Limit) = NumSlots; }
 
-        auto limit  () const -> Value& { return slot(0); }
-        auto event  () const -> Value& { return slot(1); }
-        auto caller () const -> Value& { return slot(2); }
+        enum Slot { Limit, Event, Caller, NumSlots };
+        auto slot (Slot s) const -> Value& { return begin()[s]; }
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
 
@@ -659,8 +658,6 @@ namespace Monty {
         }
 
     private:
-        auto slot (size_t i) const -> Value& { return begin()[i]; }
-
         auto callee () const -> Callable& {
             //return (Callable&) frame().code.obj();
             return frame().code.asType<Callable>();

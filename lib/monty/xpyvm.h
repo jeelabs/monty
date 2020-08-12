@@ -342,10 +342,12 @@ struct PyVM {
     //CG2 op vr
     void op_CallMethod (int arg) {
         // note: called from outer loop
+        assert(false); // TODO
     }
     //CG2 op vr
     void op_CallMethodVarKw (int arg) {
         // note: called from outer loop
+        assert(false); // TODO
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
@@ -358,18 +360,22 @@ struct PyVM {
     //CG2 op vr
     void op_CallFunction (int arg) {
         // note: called from outer loop
+        assert(false); // TODO
     }
     //CG2 op vr
     void op_CallFunctionVarKw (int arg) {
         // note: called from outer loop
+        assert(false); // TODO
     }
     //CG2 op r
     void op_YieldValue () {
         // note: called from outer loop
+        assert(false); // TODO
     }
     //CG2 op r
     void op_ReturnValue () {
         // note: called from outer loop
+        assert(false); // TODO
     }
 
     //CG1 op
@@ -765,6 +771,14 @@ struct PyVM {
 
         ctx.frame().sp = sp - ctx.spBase();
         ctx.frame().ip = ip - ctx.ipBase();
+
+        if ((pending & 1) && ctx.slot(ctx.Event).isInt()) {
+            int e = ctx.slot(ctx.Event);
+            if (e < 0) { // raised opcode, process it now, outside the loop
+                ctx.slot(ctx.Event) = {};
+                dispatch((Op) (e >> 16), e);
+            }
+        }
     }
 
     void dispatch (Op op, uint16_t arg) {

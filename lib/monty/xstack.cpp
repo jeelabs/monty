@@ -14,9 +14,9 @@ void Context::enter (Callable const& callee, Chunk const& av, Dict const* d) {
     auto need = (frame().stack + frameSize) - end();
 
     auto curr = fill;           // current frame offset
-    fill = limit();             // current limit
+    fill = slot(Limit);         // current limit
     insert(fill, need);         // make room
-    fill = limit();             // frame offset is old limit
+    fill = slot(Limit);         // frame offset is old limit
 
     auto& f = frame();
     f.link = curr;              // index of (now previous) frame
@@ -35,11 +35,11 @@ Value Context::leave (Value v) {
     assert(prev > 0);
 
     size_t base = fill;         // current frame offset
-    fill = limit();             // current limit
+    fill = slot(Limit);         // current limit
     assert(fill > base);
     remove(fill, fill - base);  // delete current frame
     assert(fill == base);
-    limit() = base;             // new limit
+    slot(Limit) = base;         // new limit
     fill = prev;                // new lower frame offset
 
     return r.isNil() ? v : r;   // return result if set, else arg
@@ -56,7 +56,7 @@ auto Context::excBase (int incr) const -> Value* {
 
 auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
     assert((len == 0 && ptr == nullptr) ||
-            (frame().stack <= ptr && ptr + len < begin() + limit()));
+            (frame().stack <= ptr && ptr + len < begin() + slot(Limit)));
     Chunk args (*this);
     args.len = len;
     args.off = len == 0 ? 0 : ptr - begin();
@@ -64,17 +64,17 @@ auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
 }
 
 void Context::raise (Value exc) const {
-    size_t slot = 0;
+    size_t flag = 0;
     if (exc.isInt()) {
         int n = exc;
-        if (1 <= n && n < 32)
-            slot = n;       // trigger soft-irq 1..32, this is interrupt-safe
+        if (0 <= n && n < 32)
+            flag = n;           // trigger soft-irq 1..31 (interrupt-safe)
         else
-            event() = exc;  // trigger an exception or other outer-loop request
+            slot(Event) = exc;  // trigger exception or other outer-loop req
     }
 
     // this spinloop correctly sets one bit in volatile "pending" state
     do // avoid potential race when an irq raises inside the "pending |= ..."
-        pending |= 1<<slot;
-    while ((pending & (1<<slot)) == 0);
+        pending |= 1<<flag;
+    while ((pending & (1<<flag)) == 0);
 }
