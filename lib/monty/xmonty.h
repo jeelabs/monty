@@ -340,7 +340,8 @@ namespace Monty {
     //CG>
         struct Item { char const* k; Value v; };
 
-        constexpr Lookup (Item const* p, size_t n) : items (p), count (n) {}
+        constexpr Lookup (Item const* p, size_t sz)
+            : items (p), count (sz / sizeof (Item)) {}
 
         auto operator[] (char const* key) const -> Value;
 
@@ -618,11 +619,13 @@ namespace Monty {
             Value link, sp, ip, ep, code, locals, result, stack [];
         };
 
-        Context () { insert(0, 2); }
+        Context () { insert(0, 3); }
+
+        auto limit  () const -> Value& { return slot(0); }
+        auto event  () const -> Value& { return slot(1); }
+        auto caller () const -> Value& { return slot(2); }
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
-        auto limit () const -> Value& { return begin()[0]; }
-        auto caller () const -> Value& { return begin()[1]; }
 
         void enter (Callable const&, Chunk const&, Dict const* =nullptr);
         Value leave (Value v);
@@ -657,6 +660,8 @@ namespace Monty {
         }
 
     private:
+        auto slot (size_t i) const -> Value& { return begin()[i]; }
+
         auto callee () const -> Callable& {
             //return (Callable&) frame().code.obj();
             return frame().code.asType<Callable>();

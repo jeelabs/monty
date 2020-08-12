@@ -64,5 +64,17 @@ auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
 }
 
 void Context::raise (Value exc) const {
-    assert(false); // TODO
+    size_t slot = 0;
+    if (exc.isInt()) {
+        int n = exc;
+        if (1 <= n && n < 32)
+            slot = n;       // trigger soft-irq 1..32, this is interrupt-safe
+        else
+            event() = exc;  // trigger an exception or other outer-loop request
+    }
+
+    // this spinloop correctly sets one bit in volatile "pending" state
+    do // avoid potential race when an irq raises inside the "pending |= ..."
+        pending |= 1<<slot;
+    while ((pending & (1<<slot)) == 0);
 }

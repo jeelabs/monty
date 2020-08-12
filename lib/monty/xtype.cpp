@@ -287,6 +287,14 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
+static auto bi_print (int ac,Chunk const& av) -> Value {
+    printf("print %d %d\n", ac, av.len);
+    assert(false);
+    return {};
+}
+
+static Function const f_print (bi_print);
+
 static const Lookup::Item bi_items [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
@@ -302,6 +310,7 @@ static const Lookup::Item bi_items [] = {
     { "tuple", &Tuple::info },
     { "type", &Type::info },
     //CG>
+    { "print", &f_print },
 #if 0
     { "monty", &m_monty },
     { "machine", &m_machine },
@@ -314,7 +323,15 @@ static const Lookup::Item bi_items [] = {
 #endif
 };
 
-Lookup const Monty::builtins (bi_items, sizeof bi_items / sizeof *bi_items);
+Lookup const Monty::builtins (bi_items, sizeof bi_items);
+
+static Str m_count ("blah"); // TODO
+
+static const Lookup::Item strMap [] = {
+    { "count", &m_count },
+};
+
+const Lookup Str::attrs (strMap, sizeof strMap);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
@@ -322,7 +339,6 @@ Lookup const Monty::builtins (bi_items, sizeof bi_items / sizeof *bi_items);
 Lookup const     Bool::attrs {nullptr, 0};
 Lookup const    Fixed::attrs {nullptr, 0};
 Lookup const    Bytes::attrs {nullptr, 0};
-Lookup const      Str::attrs {nullptr, 0};
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
