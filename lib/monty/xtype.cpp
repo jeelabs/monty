@@ -165,6 +165,11 @@ void Value::verify (Type const& t) const {
     assert(check(t));
 }
 
+auto Object::call (Context&, int, int) const -> Value {
+    assert(false);
+    return {};
+}
+
 auto Object::unop (UnOp) const -> Value {
     assert(false);
     return {};
@@ -287,9 +292,13 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-static auto bi_print (int ac,Chunk const& av) -> Value {
-    printf("print %d %d\n", ac, av.len);
-    assert(false);
+static auto bi_print (Context& ctx, int argc, int args) -> Value {
+    {
+        Buffer buf;
+        for (int i = 0; i < argc; ++i)
+            buf << ctx[args+i];
+    }
+    printf("\n");
     return {};
 }
 

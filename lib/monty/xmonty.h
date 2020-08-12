@@ -69,6 +69,7 @@ namespace Monty {
     struct Lookup;
     struct Buffer;
     struct Type;
+    struct Context;
 
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
@@ -215,6 +216,7 @@ namespace Monty {
         virtual auto type () const -> Type const&;
         virtual auto repr  (Buffer&) const -> Value;
 
+        virtual auto call  (Context&, int, int) const -> Value;
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
         virtual auto attr  (const char*, Value&) const -> Value;
@@ -491,7 +493,7 @@ namespace Monty {
                                         Lookup const* a =nullptr)
             : Dict (a), name (s), factory (f) {}
 
-        //auto call (int ac, Chunk const& av) const -> Value override;
+        auto call (Context& ctx, int argc, int args) const -> Value override;
         auto attr (char const* name, Value& self) const -> Value override {
             return getAt(name);
         }
@@ -534,13 +536,13 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        using Prim = auto (*)(int,Chunk const&) -> Value;
+        using Prim = auto (*)(Context&,int,int) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
 
-        //auto call (int ac, Chunk const& av) const -> Value override {
-        //    return func(ac, av);
-        //}
+        auto call (Context& ctx, int argc, int args) const -> Value override {
+            return func(ctx, argc, args);
+        }
 
     protected:
         Prim func;

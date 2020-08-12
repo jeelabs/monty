@@ -210,7 +210,7 @@ def xOP(block, typ='', multi=0):
             opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
         if 'r' in typ:
             a = 'arg' if arg else '0'
-            opdefs.append('    ctx.raise(Op::%s, %s);' % (op, a))
+            opdefs.append('    ctx->raise(Op::%s, %s);' % (op, a))
         else:
             a = 'arg' if arg else ''
             opdefs.append('    %s(%s);' % (name, a))
@@ -221,7 +221,7 @@ def xOP(block, typ='', multi=0):
     out = ['void %s (%s) {' % (name, decl)]
 
     if 'r' in typ:
-        out.append('    // note: called from outer loop')
+        out.append('    // note: called outside inner loop')
         opraises.append('case Op::%s:' % op)
         a = 'arg' if arg else ''
         opraises.append('    %s(%s); break;' % (name, a))

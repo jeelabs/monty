@@ -1,7 +1,6 @@
 // exec.cpp - importing, loading, and bytecode execution
 
-#define VERBOSE_LOAD   0 // show .mpy load progress with detailed file info
-#define SHOW_INSTR_PTR 1 // show instr ptr each time through loop (in pyvm.h)
+#define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
 #include <cassert>
 #include <cstdint>
@@ -396,6 +395,8 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     ctx.enter(*init, ctx.asArgs(0), &init->mo);
 
-    PyVM vm (ctx);
+    while (true) {
+        PyVM vm (ctx);
+    }
     return &init->mo;
 }

@@ -1,5 +1,7 @@
 // pyvm.h - virtual machine for bytecodes emitted by MicroPython 1.12
 
+#define SHOW_INSTR_PTR 1 // show instr ptr each time through loop (in pyvm.h)
+
 //CG: on op:print # set to "on" to enable per-opcode debug output
 
 struct PyVM {
@@ -87,7 +89,7 @@ struct PyVM {
 
     Value* sp;
     uint8_t const* ip;
-    Context& ctx;
+    Context* ctx;
 
     uint32_t fetchVarInt (uint32_t v =0) {
         uint8_t b = 0x80;
@@ -104,7 +106,7 @@ struct PyVM {
     }
 
     const char* fetchQstr () {
-        return ctx.getQstr(fetchOffset() + 1);
+        return ctx->getQstr(fetchOffset() + 1);
     }
 
     static bool opInRange (uint8_t op, Op from, int count) {
@@ -114,9 +116,9 @@ struct PyVM {
     void instructionTrace () {
 #if SHOW_INSTR_PTR
         printf("\tip %p sp %2d e %d ",
-                ip, (int) (sp - ctx.spBase()), (int) ctx.frame().ep);
+                ip, (int) (sp - ctx->spBase()), (int) ctx->frame().ep);
         printf("op 0x%02x : ", (uint8_t) *ip);
-        if (sp >= ctx.spBase())
+        if (sp >= ctx->spBase())
             sp->dump();
         printf("\n");
 #endif
@@ -150,19 +152,19 @@ struct PyVM {
     }
     //CG1 op v
     void op_LoadConstObj (int arg) {
-        *++sp = ctx.getConst(arg);
+        *++sp = ctx->getConst(arg);
     }
     //CG1 op v
     void op_LoadFastN (int arg) {
-        *++sp = ctx.fastSlot(arg);
+        *++sp = ctx->fastSlot(arg);
     }
     //CG1 op v
     void op_StoreFastN (int arg) {
-        ctx.fastSlot(arg) = *sp--;
+        ctx->fastSlot(arg) = *sp--;
     }
     //CG1 op v
     void op_DeleteFast (int arg) {
-        ctx.fastSlot(arg) = {};
+        ctx->fastSlot(arg) = {};
     }
 
     //CG1 op
@@ -219,29 +221,29 @@ struct PyVM {
 
     //CG1 op q
     void op_LoadName (char const* arg) {
-        *++sp = ctx.locals().getAt(arg);
+        *++sp = ctx->locals().getAt(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
-        ctx.locals().setAt(arg, *sp--);
+        ctx->locals().setAt(arg, *sp--);
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
-        ctx.locals().setAt(arg, {});
+        ctx->locals().setAt(arg, {});
     }
     //CG1 op q
     void op_LoadGlobal (char const* arg) {
-        *++sp = ctx.globals().getAt(arg);
+        *++sp = ctx->globals().getAt(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreGlobal (char const* arg) {
-        ctx.globals().setAt(arg, *sp--);
+        ctx->globals().setAt(arg, *sp--);
     }
     //CG1 op q
     void op_DeleteGlobal (char const* arg) {
-        ctx.globals().setAt(arg, {});
+        ctx->globals().setAt(arg, {});
     }
     //CG1 op q
     void op_LoadAttr (char const* arg) {
@@ -272,26 +274,26 @@ struct PyVM {
     //CG1 op v
     void op_BuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(ctx.asArgs(arg, sp));
+        *sp = Slice::create(ctx->asArgs(arg, sp));
     }
     //CG1 op v
     void op_BuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(ctx.asArgs(arg, sp));
+        *sp = Tuple::create(ctx->asArgs(arg, sp));
     }
     //CG1 op v
     void op_BuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(ctx.asArgs(arg, sp));
+        *sp = List::create(ctx->asArgs(arg, sp));
     }
     //CG1 op v
     void op_BuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(ctx.asArgs(arg, sp));
+        *sp = Set::create(ctx->asArgs(arg, sp));
     }
     //CG1 op v
     void op_BuildMap (int arg) {
-        *++sp = Dict::create(ctx.asArgs(arg));
+        *++sp = Dict::create(ctx->asArgs(arg));
     }
     //CG1 op
     void op_StoreMap () {
@@ -301,33 +303,33 @@ struct PyVM {
 
     //CG1 op o
     void op_SetupExcept (int arg) {
-        auto exc = ctx.excBase(1);
-        exc[0] = ip - ctx.ipBase() + arg;
-        exc[1] = sp - ctx.spBase();
+        auto exc = ctx->excBase(1);
+        exc[0] = ip - ctx->ipBase() + arg;
+        exc[1] = sp - ctx->spBase();
         exc[2] = {};
     }
     //CG1 op o
     void op_PopExceptJump (int arg) {
-        ctx.excBase(-1);
+        ctx->excBase(-1);
         ip += arg;
     }
     //CG1 op
     void op_RaiseLast () {
-        ctx.raise(""); // TODO
+        ctx->raise(""); // TODO
     }
     //CG1 op
     void op_RaiseObj () {
-        ctx.raise(*sp);
+        ctx->raise(*sp);
     }
     //CG1 op
     void op_RaiseFrom () {
         // TODO exception chaining
-        ctx.raise(*--sp);
+        ctx->raise(*--sp);
     }
     //CG1 op s
     void op_UnwindJump (int arg) {
-        int ep = ctx.frame().ep;
-        ctx.frame().ep = ep - *ip; // TODO hardwired for simplest case
+        int ep = ctx->frame().ep;
+        ctx->frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
     }
 
@@ -341,12 +343,12 @@ struct PyVM {
     }
     //CG2 op vr
     void op_CallMethod (int arg) {
-        // note: called from outer loop
+        // note: called outside inner loop
         assert(false); // TODO
     }
     //CG2 op vr
     void op_CallMethodVarKw (int arg) {
-        // note: called from outer loop
+        // note: called outside inner loop
         assert(false); // TODO
     }
     //CG1 op v
@@ -359,22 +361,27 @@ struct PyVM {
     }
     //CG2 op vr
     void op_CallFunction (int arg) {
-        // note: called from outer loop
-        assert(false); // TODO
+        // note: called outside inner loop
+        uint8_t nargs = arg, nkw = arg >> 8;
+        sp -= nargs + 2 * nkw;
+ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
+        auto v = sp->obj().call(*ctx, arg, sp + 1 - ctx->begin());
+        if (!v.isNil())
+            *sp = v;
     }
     //CG2 op vr
     void op_CallFunctionVarKw (int arg) {
-        // note: called from outer loop
+        // note: called outside inner loop
         assert(false); // TODO
     }
     //CG2 op r
     void op_YieldValue () {
-        // note: called from outer loop
+        // note: called outside inner loop
         assert(false); // TODO
     }
     //CG2 op r
     void op_ReturnValue () {
-        // note: called from outer loop
+        // note: called outside inner loop
         assert(false); // TODO
     }
 
@@ -397,11 +404,11 @@ struct PyVM {
     }
     //CG1 op m 16
     void op_LoadFastMulti (uint32_t arg) {
-        *++sp = ctx.fastSlot(arg);
+        *++sp = ctx->fastSlot(arg);
     }
     //CG1 op m 16
     void op_StoreFastMulti (uint32_t arg) {
-        ctx.fastSlot(arg) = *sp--;
+        ctx->fastSlot(arg) = *sp--;
     }
     //CG1 op m 7
     void op_UnaryOpMulti (uint32_t arg) {
@@ -413,9 +420,9 @@ struct PyVM {
         *sp = sp->binOp((BinOp) arg, sp[1]);
     }
 
-    PyVM (Context& context) : ctx (context) {
-        sp = ctx.spBase() + ctx.frame().sp;
-        ip = ctx.ipBase() + ctx.frame().ip;
+    PyVM (Context& context) : ctx (&context) {
+        sp = ctx->spBase() + ctx->frame().sp;
+        ip = ctx->ipBase() + ctx->frame().ip;
 
         do {
             instructionTrace();
@@ -655,13 +662,13 @@ struct PyVM {
                 case Op::CallMethod: {
                     int arg = fetchVarInt();
                     printf("CallMethod %u\n", (unsigned) arg);
-                    ctx.raise(Op::CallMethod, arg);
+                    ctx->raise(Op::CallMethod, arg);
                     break;
                 }
                 case Op::CallMethodVarKw: {
                     int arg = fetchVarInt();
                     printf("CallMethodVarKw %u\n", (unsigned) arg);
-                    ctx.raise(Op::CallMethodVarKw, arg);
+                    ctx->raise(Op::CallMethodVarKw, arg);
                     break;
                 }
                 case Op::MakeFunction: {
@@ -679,22 +686,22 @@ struct PyVM {
                 case Op::CallFunction: {
                     int arg = fetchVarInt();
                     printf("CallFunction %u\n", (unsigned) arg);
-                    ctx.raise(Op::CallFunction, arg);
+                    ctx->raise(Op::CallFunction, arg);
                     break;
                 }
                 case Op::CallFunctionVarKw: {
                     int arg = fetchVarInt();
                     printf("CallFunctionVarKw %u\n", (unsigned) arg);
-                    ctx.raise(Op::CallFunctionVarKw, arg);
+                    ctx->raise(Op::CallFunctionVarKw, arg);
                     break;
                 }
                 case Op::YieldValue: 
                     printf("YieldValue\n");
-                    ctx.raise(Op::YieldValue, 0);
+                    ctx->raise(Op::YieldValue, 0);
                     break;
                 case Op::ReturnValue: 
                     printf("ReturnValue\n");
-                    ctx.raise(Op::ReturnValue, 0);
+                    ctx->raise(Op::ReturnValue, 0);
                     break;
                 case Op::GetIter: 
                     printf("GetIter\n");
@@ -769,35 +776,33 @@ struct PyVM {
             }
         } while (pending == 0);
 
-        ctx.frame().sp = sp - ctx.spBase();
-        ctx.frame().ip = ip - ctx.ipBase();
+        ctx->frame().sp = sp - ctx->spBase();
+        ctx->frame().ip = ip - ctx->ipBase();
 
-        if ((pending & 1) && ctx.slot(ctx.Event).isInt()) {
-            int e = ctx.slot(ctx.Event);
-            if (e < 0) { // raised opcode, process it now, outside the loop
-                ctx.slot(ctx.Event) = {};
-                dispatch((Op) (e >> 16), e);
+        if ((pending & 1) && ctx->slot(ctx->Event).isInt()) {
+            int e = ctx->slot(ctx->Event);
+            if (e < 0) { // raised opcode, process it now, outside inner loop
+                ctx->slot(ctx->Event) = {};
+
+                uint16_t arg = e;
+                switch ((Op) (e >> 16)) {
+                    //CG< op-emit r
+                    case Op::CallMethod:
+                        op_CallMethod(arg); break;
+                    case Op::CallMethodVarKw:
+                        op_CallMethodVarKw(arg); break;
+                    case Op::CallFunction:
+                        op_CallFunction(arg); break;
+                    case Op::CallFunctionVarKw:
+                        op_CallFunctionVarKw(arg); break;
+                    case Op::YieldValue:
+                        op_YieldValue(); break;
+                    case Op::ReturnValue:
+                        op_ReturnValue(); break;
+                    //CG>
+                    default: assert(false);
+                }
             }
-        }
-    }
-
-    void dispatch (Op op, uint16_t arg) {
-        switch (op) {
-            //CG< op-emit r
-            case Op::CallMethod:
-                op_CallMethod(arg); break;
-            case Op::CallMethodVarKw:
-                op_CallMethodVarKw(arg); break;
-            case Op::CallFunction:
-                op_CallFunction(arg); break;
-            case Op::CallFunctionVarKw:
-                op_CallFunctionVarKw(arg); break;
-            case Op::YieldValue:
-                op_YieldValue(); break;
-            case Op::ReturnValue:
-                op_ReturnValue(); break;
-            //CG>
-            default: assert(false);
         }
     }
 };

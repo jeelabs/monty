@@ -9,7 +9,7 @@
 
 using namespace Monty;
 
-void Context::enter (Callable const& callee, Chunk const& av, Dict const* d) {
+void Context::enter (Callable const& callee, Chunk const& args, Dict const* d) {
     auto frameSize = callee.fastSlotTop() + EXC_STEP * callee.excDepth();
     auto need = (frame().stack + frameSize) - end();
 
