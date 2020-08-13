@@ -19,8 +19,6 @@ namespace Monty {
     #include "xpyvm.h"
     #include "xqstr.h"
 
-volatile uint32_t pending;
-
 struct QstrPool : Object {
     int len;
     uint16_t off [];
@@ -335,10 +333,12 @@ auto Callable::qStrAt (size_t i) const -> char const* {
 }
 
 auto Callable::call (Context& ctx, int argc, int args) const -> Value {
-    ctx.enter(*this);
+    auto coro = code.isGenerator();
+    auto nextCtx = coro ? new Context (&ctx) : &ctx;
+    nextCtx->enter(*this);
     for (int i = 0; i < argc; ++i)
-        ctx.fastSlot(i) = ctx[args+i];
-    return {}; // TODO ???
+        nextCtx->fastSlot(i) = ctx[args+i];
+    return coro ? nextCtx : Value {};
 }
 
 void Callable::marker () const {
@@ -354,9 +354,11 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     ctx.enter(*init);
     ctx.locals = &init->mo;
+    active = &ctx;
 
-    while (true) {
-        PyVM vm (ctx);
+    while (active != nullptr) {
+        PyVM vm (*active);
     }
+
     return &init->mo;
 }

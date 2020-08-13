@@ -208,6 +208,7 @@ namespace Monty {
         virtual auto attr  (const char*, Value&) const -> Value;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
+        virtual auto next  () -> Value;
     };
 
     //CG< type <none>
@@ -636,7 +637,7 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Context () {}
+        Context (Context* from =nullptr) : caller (from) {}
 
         void enter (Callable const&);
         Value leave (Value v);
@@ -667,9 +668,9 @@ namespace Monty {
             raise((~0U << 24) | (op << 16) | arg);
         }
 
-        void marker () const override {
-            List::marker(); mark(event); mark(callee); mark(locals);
-        }
+        auto next () -> Value override;
+
+        void marker () const override;
 
         // previous values are saved in current stack frame
         size_t spIdx {0};
@@ -680,6 +681,7 @@ namespace Monty {
 
         size_t limit {0};
         Value event;
+        Context* caller;
     private:
         struct Frame {
             Value link, sp, ip, ep, callee, locals, result, stack [];
@@ -689,6 +691,7 @@ namespace Monty {
     };
 
     extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
+    extern Context* active;
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

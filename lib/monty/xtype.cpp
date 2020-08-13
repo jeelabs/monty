@@ -203,6 +203,11 @@ auto Object::getAt (Value) const -> Value {
     return {};
 }
 
+auto Object::next  () -> Value {
+    assert(false);
+    return {};
+}
+
 auto Object::setAt (Value k, Value v) -> Value {
     assert(false);
     return {};
@@ -334,6 +339,13 @@ static auto bi_print (Context& ctx, int argc, int args) -> Value {
 
 static Function const f_print (bi_print);
 
+static auto bi_next (Context& ctx, int argc, int args) -> Value {
+    assert(argc == 1 && ctx[args].isObj());
+    return ctx[args].obj().next();
+}
+
+static Function const f_next (bi_next);
+
 static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
@@ -350,6 +362,7 @@ static const Lookup::Item builtinsMap [] = {
     { "type", &Type::info },
     //CG>
     { "print", &f_print },
+    { "next", &f_next },
 #if 0
     { "monty", &m_monty },
     { "machine", &m_machine },
