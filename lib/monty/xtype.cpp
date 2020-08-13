@@ -140,6 +140,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 auto l = (const char*) *this, r = (const char*) rhs;
                 switch (op) {
                     case BinOp::Add: {
+                        // TODO no malloc, please
                         auto buf = (char*) malloc(strlen(l) + strlen(r) + 1);
                         strcpy(buf, l);
                         strcat(buf, r);

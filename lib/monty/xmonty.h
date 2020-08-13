@@ -667,6 +667,11 @@ namespace Monty {
             List::marker(); mark(event); mark(caller);
         }
 
+        size_t spIdx {0};
+        size_t ipIdx {0};
+        size_t excIdx {0};
+        Callable* currCall {nullptr};
+
         size_t limit {0};
         Value event;
         Context* caller {nullptr};

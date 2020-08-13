@@ -32,7 +32,7 @@ void objTypeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bytes));
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Str));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Str));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Iter));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Range));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Lookup));

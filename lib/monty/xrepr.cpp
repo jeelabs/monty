@@ -17,7 +17,7 @@ void Value::dump (const char* msg) const {
     switch (tag()) {
         case Value::Nil: printf("<N>"); break;
         case Value::Int: printf("<I %d>", (int) *this); break;
-        case Value::Str: printf("<S '%s'>", (const char*) *this); break;
+        case Value::Str: printf("<S \"%s\">", (const char*) *this); break;
         case Value::Obj: printf("<O %s at %p>", obj().type().name, &obj()); break;
     }
     if (msg != 0)
