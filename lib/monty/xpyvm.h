@@ -789,10 +789,10 @@ sp = ctx->spBase() + ctx->frame().sp; // TODO yuck
         ctx->frame().sp = sp - ctx->spBase();
         ctx->frame().ip = ip - ctx->ipBase();
 
-        if ((pending & 1) && ctx->slot(ctx->Event).isInt()) {
-            int e = ctx->slot(ctx->Event);
+        if ((pending & 1) && ctx->event.isInt()) {
+            int e = ctx->event;
             if (e < 0) { // raised opcode, process it now, outside inner loop
-                ctx->slot(ctx->Event) = {};
+                ctx->event = {};
 
                 uint16_t arg = e;
                 switch ((Op) (e >> 16)) {

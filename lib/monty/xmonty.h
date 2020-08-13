@@ -621,10 +621,7 @@ namespace Monty {
             Value link, sp, ip, ep, code, locals, result, stack [];
         };
 
-        Context () { insert(0, NumSlots); slot(Limit) = NumSlots; }
-
-        enum Slot { Limit, Event, Caller, NumSlots };
-        auto slot (Slot s) const -> Value& { return begin()[s]; }
+        Context () {}
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
 
@@ -654,11 +651,18 @@ namespace Monty {
         auto globals () const -> Module& { return callee().mo; }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
-        void raise (Value exc ={}) const;
-        void raise (uint8_t op, uint16_t arg) const {
+        void raise (Value exc ={});
+        void raise (uint8_t op, uint16_t arg) {
             raise((~0U << 24) | (op << 16) | arg);
         }
 
+        void marker () const override {
+            List::marker(); mark(event); mark(caller);
+        }
+
+        size_t limit {0};
+        Value event;
+        Context* caller {nullptr};
     private:
         auto callee () const -> Callable& {
             //return (Callable&) frame().code.obj();

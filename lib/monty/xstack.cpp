@@ -14,9 +14,9 @@ void Context::enter (Callable const& callee, Chunk const& args, Dict const* d) {
     auto need = (frame().stack + frameSize) - end();
 
     auto curr = fill;           // current frame offset
-    fill = slot(Limit);         // current limit
+    fill = limit;               // current limit
     insert(fill, need);         // make room
-    fill = slot(Limit);         // frame offset is old limit
+    fill = limit;               // frame offset is old limit
 
     auto& f = frame();
     f.link = curr;              // index of (now previous) frame
@@ -35,11 +35,11 @@ Value Context::leave (Value v) {
     assert(prev > 0);
 
     size_t base = fill;         // current frame offset
-    fill = slot(Limit);         // current limit
+    fill = limit;               // current limit
     assert(fill > base);
     remove(fill, fill - base);  // delete current frame
     assert(fill == base);
-    slot(Limit) = base;         // new limit
+    limit = base;               // new limit
     fill = prev;                // new lower frame offset
 
     return r.isNil() ? v : r;   // return result if set, else arg
@@ -56,21 +56,21 @@ auto Context::excBase (int incr) const -> Value* {
 
 auto Context::asArgs (size_t len, Value const* ptr) -> Chunk {
     assert((len == 0 && ptr == nullptr) ||
-            (frame().stack <= ptr && ptr + len < begin() + slot(Limit)));
+            (frame().stack <= ptr && ptr + len < begin() + limit));
     Chunk args (*this);
     args.len = len;
     args.off = len == 0 ? 0 : ptr - begin();
     return args;
 }
 
-void Context::raise (Value exc) const {
+void Context::raise (Value exc) {
     size_t flag = 0;
     if (exc.isInt()) {
         int n = exc;
         if (0 <= n && n < 32)
-            flag = n;           // trigger soft-irq 1..31 (interrupt-safe)
+            flag = n;    // trigger soft-irq 1..31 (interrupt-safe)
         else
-            slot(Event) = exc;  // trigger exception or other outer-loop req
+            event = exc; // trigger exception or other outer-loop req
     }
 
     // this spinloop correctly sets one bit in volatile "pending" state
