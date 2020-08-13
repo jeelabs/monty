@@ -286,22 +286,6 @@ namespace Monty {
         char const* ptr;
     };
 
-    //CG< type <iterator>
-    struct Iter : Object {
-        static Type const info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
-        Iter (Value arg) : seq (arg) {}
-
-        //Value next () override;
-
-        void marker () const override { mark(seq); }
-    // TODO private:
-        Value seq;
-        size_t pos {0};
-    };
-
     //CG< type range
     struct Range : Object {
         static auto create (Context&,int,int,Type const* =nullptr) -> Value;

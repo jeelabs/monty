@@ -188,10 +188,6 @@ Value Inst::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Iter::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value List::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }

@@ -285,7 +285,6 @@ Type const     Bytecode::info ("<bytecode>");
 Type const     Callable::info ("<callable>");
 Type const      Context::info ("<context>");
 Type const     Function::info ("<function>");
-Type const         Iter::info ("<iterator>");
 Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
@@ -309,7 +308,6 @@ auto     Bytecode::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
-auto         Iter::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
