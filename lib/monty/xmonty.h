@@ -671,7 +671,7 @@ namespace Monty {
         Value event;
     private:
         struct Frame {
-            Value link, sp, ip, ep, code, locals, result, stack [];
+            Value link, sp, ip, ep, callee, locals, result, stack [];
         };
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
