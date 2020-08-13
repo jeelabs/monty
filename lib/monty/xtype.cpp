@@ -412,82 +412,80 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (Vector& vec, int argc, int args, Type const*) -> Value {
-    auto n = args.size();
-    if (n == 1)
-        return args[0].unOp(UnOp::Boln);
-    assert(n == 0);
+auto Bool::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    if (argc == 1)
+        return vec[args].unOp(UnOp::Boln);
+    assert(argc == 0);
     return False;
 }
 
-auto Fixed::create (Vector& vec, int argc, int args, Type const*) -> Value {
-    assert(args.size() == 1);
-    switch (args[0].tag()) {
+auto Fixed::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc == 1);
+    auto v = vec[args];
+    switch (v.tag()) {
         case Value::Nil: assert(false); break;
-        case Value::Int: return args[0];
-        case Value::Str: return atoi(args[0]);
-        case Value::Obj: return args[0].unOp(UnOp::Int);
+        case Value::Int: return v;
+        case Value::Str: return atoi(v);
+        case Value::Obj: return v.unOp(UnOp::Int);
     }
     return {};
 }
 
-auto Bytes::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Str::create (Vector& vec, int argc, int args, Type const*) -> Value {
-    assert(args.size() == 1 && args[0].isStr());
-    return new Str (args[0]);
+auto Str::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc == 1 && vec[args].isStr());
+    return new Str (vec[args]);
 }
 
-auto Range::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Range::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (Vector& vec, int argc, int args, Type const*) -> Value {
-    auto n = args.size();
-    assert(1 <= n && n <= 3);
-    Value a = n > 1 ? args[0] : Value (0);
-    Value b = n == 1 ? args[0] : args[1];
-    Value c = n > 2 ? args[2] : b;
+auto Slice::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(1 <= argc && argc <= 3);
+    Value a = argc > 1 ? vec[args] : Value (0);
+    Value b = argc == 1 ? vec[args] : vec[args+1];
+    Value c = argc > 2 ? vec[args+2] : b;
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (Vector& vec, int argc, int args, Type const*) -> Value {
-    auto n = args.size();
-    if (n == 0)
+auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    if (argc == 0)
         return Empty; // there's one unique empty tuple
-    return new (n * sizeof (Value)) Tuple (n, args.begin());
+    return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
 }
 
-auto List::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new List;
 }
 
-auto Set::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Set;
 }
 
-auto Dict::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Dict::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Dict;
 }
 
-auto Type::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Class::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Class;
 }
 
-auto Inst::create (Vector& vec, int argc, int args, Type const*) -> Value {
+auto Inst::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Inst;
 }

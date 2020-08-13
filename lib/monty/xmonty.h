@@ -196,22 +196,6 @@ namespace Monty {
 
     void mark (Vector const&);
 
-    struct Chunk {
-        constexpr Chunk (Vector& v) : vec (v) {}
-
-        auto size () const -> size_t {
-            auto n = vec.cap() - off;
-            return (int) n < 0 ? 0 : n < len ? n : len;
-        }
-        auto begin () const -> Value* { return vec.begin() + off; }
-        auto end () const -> Value* { return begin() + size(); }
-        auto operator[] (size_t idx) const -> Value& { return begin()[idx]; }
-
-        size_t len {~0U}; // maximum length, in typed units
-        size_t off {0};   // starting offset, in typed units
-        Vector& vec;      // parent vector
-    };
-
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
         static const Type info;
@@ -241,7 +225,7 @@ namespace Monty {
 
     //CG< type bool
     struct Bool : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -257,7 +241,7 @@ namespace Monty {
 
     //CG< type int
     struct Fixed : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -276,7 +260,7 @@ namespace Monty {
 
     //CG< type bytes
     struct Bytes : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -287,7 +271,7 @@ namespace Monty {
 
     //CG< type str
     struct Str : Bytes {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -319,7 +303,7 @@ namespace Monty {
 
     //CG< type range
     struct Range : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -329,7 +313,7 @@ namespace Monty {
 
     //CG< type slice
     struct Slice : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -394,7 +378,7 @@ namespace Monty {
 
     //CG< type tuple
     struct Tuple : Object {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -419,7 +403,7 @@ namespace Monty {
 
     //CG< type list
     struct List : Object, Vector {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -436,7 +420,7 @@ namespace Monty {
 
     //CG< type set
     struct Set : List {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -461,7 +445,7 @@ namespace Monty {
 
     //CG< type dict
     struct Dict : Set {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -488,13 +472,13 @@ namespace Monty {
 
     //CG< type type
     struct Type : Dict {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        using Factory = auto (*)(Chunk const&, Type const*) -> Value;
+        using Factory = auto (*)(Vector const&,int,int,Type const*) -> Value;
 
         constexpr Type (char const* s, Factory f =noFactory,
                                         Lookup const* a =nullptr)
@@ -508,12 +492,12 @@ namespace Monty {
         char const* name;
         Factory factory;
     private:
-        static auto noFactory (Chunk const&,Type const*) -> Value;
+        static auto noFactory (Vector const&, int, int, Type const*) -> Value;
     };
 
     //CG< type class
     struct Class : Type {
-        static auto create (Chunk const&,Type const* =nullptr) -> Value;
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -524,7 +508,7 @@ namespace Monty {
 
     // can't use CG, because type() must not be auto-generated
     struct Inst : Dict {
-        static auto create (Chunk const&,Type const*) -> Value;
+        static auto create (Vector const&, int, int, Type const*) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
@@ -563,10 +547,8 @@ namespace Monty {
     //CG>
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
-        //auto call (int ac, Chunk const& av) const -> Value override;
-
         void marker () const override { mark(meth); mark(self); }
-    protected:
+
         Value meth;
         Value self;
     };
@@ -626,7 +608,7 @@ namespace Monty {
     //CG>
         Context () {}
 
-        void enter (Callable const&, Chunk const&, Dict* =nullptr);
+        void enter (Callable const&, Vector const&, int, int, Dict* =nullptr);
         Value leave (Value v);
 
         auto getQstr (size_t i) const -> char const* {
@@ -649,7 +631,6 @@ namespace Monty {
         auto excBase (int incr =0) -> Value*;
 
         auto globals () const -> Module& { return callee->mo; }
-        auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
         void raise (Value exc ={});
         void raise (uint8_t op, uint16_t arg) {

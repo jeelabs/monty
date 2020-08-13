@@ -112,13 +112,10 @@ auto Dict::at (Value k) const -> Value {
 }
 
 auto Type::call (Context& ctx, int argc, int args) const -> Value {
-    Chunk av (ctx); // TODO get rid of this "Chunk" stuff
-    av.len = argc;  //  need to change create() to handle argc+args (anum/aoff)
-    av.off = args;
-    return factory(av, this);
+    return factory(ctx, argc, args, this);
 }
 
-auto Type::noFactory (Chunk const&, const Type*) -> Value {
+auto Type::noFactory (Vector const&, int, int, const Type*) -> Value {
     assert(false);
     return {};
 }

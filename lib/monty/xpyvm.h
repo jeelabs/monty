@@ -273,26 +273,26 @@ struct PyVM {
     //CG1 op v
     void op_BuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(ctx->asArgs(arg, sp));
+        *sp = Slice::create(*ctx, arg, sp - ctx->begin());
     }
     //CG1 op v
     void op_BuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(ctx->asArgs(arg, sp));
+        *sp = Tuple::create(*ctx, arg, sp - ctx->begin());
     }
     //CG1 op v
     void op_BuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(ctx->asArgs(arg, sp));
+        *sp = List::create(*ctx, arg, sp - ctx->begin());
     }
     //CG1 op v
     void op_BuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(ctx->asArgs(arg, sp));
+        *sp = Set::create(*ctx, arg, sp - ctx->begin());
     }
     //CG1 op v
     void op_BuildMap (int arg) {
-        *++sp = Dict::create(ctx->asArgs(arg));
+        *++sp = Dict::create(*ctx, arg, 0);
     }
     //CG1 op
     void op_StoreMap () {

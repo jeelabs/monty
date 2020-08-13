@@ -102,92 +102,6 @@ void vecOfCopyMove () {
 #endif
 }
 
-void chunkTypeSizes () {
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Chunk));
-}
-
-void chunkOfItems () {
-#if 0
-    ChunkOf<int> c (v);
-
-    static int m1 [] { 0, 11, 22, 33, 44, 55, 66, 77, 88, 99, 0, };
-    for (int i = 0; i < 11; ++i)
-        TEST_ASSERT_EQUAL(m1[i], c[i]);
-
-    auto n = c.length();
-    TEST_ASSERT_GREATER_OR_EQUAL(25, n);
-    TEST_ASSERT_LESS_THAN(30, n);
-
-    c.off = 3;
-    TEST_ASSERT_EQUAL(n - 3, c.length());
-
-    for (int i = 3; i < 11; ++i)
-        TEST_ASSERT_EQUAL(m1[i], c[i-3]);
-
-    c.len = 5;
-    TEST_ASSERT_EQUAL(5, c.length());
-
-    c.len = 100;
-    TEST_ASSERT_EQUAL(n - 3, c.length());
-#endif
-}
-
-void chunkOfInsert () {
-#if 0
-    ChunkOf<int> c (v);
-
-    auto n = v.cap();
-    TEST_ASSERT_EQUAL(n, c.length());
-
-    for (size_t i = 10; i < c.length(); ++i)
-        c[i] = 100 + i;
-
-    for (size_t i = 0; i < 10; ++i) {
-        TEST_ASSERT_EQUAL(11 * i, v[i]);
-        TEST_ASSERT_EQUAL(11 * i, c[i]);
-    }
-    for (size_t i = 10; i < n; ++i)
-        TEST_ASSERT_EQUAL(100 + i, v[i]);
-
-    c.off = 20;
-    c.len = 3;
-    for (size_t i = 0; i < c.length(); ++i)
-        TEST_ASSERT_EQUAL(120 + i, c[i]);
-
-    c.insert(1, 2);
-    TEST_ASSERT_EQUAL(n, v.cap());
-    TEST_ASSERT_EQUAL(5, c.length());
-
-    static int m1 [] { 120, 0, 0, 121, 122, };
-    for (auto& e : m1) {
-        auto i = &e - m1;
-        TEST_ASSERT_EQUAL(e, v[i+20]);
-        TEST_ASSERT_EQUAL(e, c[i]);
-    }
-
-    c.insert(4, 5);
-    TEST_ASSERT_EQUAL(10, c.length());
-    TEST_ASSERT_EQUAL(10, c.len);
-    TEST_ASSERT_GREATER_THAN(n, v.cap());
-    TEST_ASSERT_GREATER_OR_EQUAL(c.off + c.len, v.cap());
-
-    static int m2 [] { 120, 0, 0, 121, 0, 0, 0, 0, 0, 122, };
-    for (auto& e : m2) {
-        auto i = &e - m2;
-        TEST_ASSERT_EQUAL(e, v[i+20]);
-        TEST_ASSERT_EQUAL(e, c[i]);
-    }
-
-    Vec v2;
-    Chunk cov {v2};
-    cov.insert(0, 10);
-    TEST_ASSERT_EQUAL(10, cov.length());
-
-    for (auto e : cov)
-        TEST_ASSERT(e.isNil());
-#endif
-}
-
 void arrayTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Tuple));
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (List));
@@ -366,10 +280,6 @@ int main () {
     RUN_TEST(vecOfInited);
     RUN_TEST(vecOfMoveAndWipe);
     RUN_TEST(vecOfCopyMove);
-
-    RUN_TEST(chunkTypeSizes);
-    RUN_TEST(chunkOfItems);
-    RUN_TEST(chunkOfInsert);
 
     RUN_TEST(arrayTypeSizes);
     RUN_TEST(listInsDel);

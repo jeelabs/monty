@@ -387,10 +387,7 @@ auto Callable::codeStart () const -> uint8_t const* {
 }
 
 auto Callable::call (Context& ctx, int argc, int args) const -> Value {
-    Chunk av (ctx); // TODO get rid of this "Chunk" stuff
-    av.len = argc;  //  need to change create() to handle argc+args (anum/aoff)
-    av.off = args;
-    ctx.enter(*this, av);
+    ctx.enter(*this, ctx, argc, args);
     return {}; // TODO ???
 }
 
@@ -401,7 +398,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
         return nullptr;
 
     Context ctx;
-    ctx.enter(*init, ctx.asArgs(0), &init->mo);
+    ctx.enter(*init, ctx, 0, 0, &init->mo);
 
     while (true) {
         PyVM vm (ctx);
