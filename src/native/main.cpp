@@ -71,7 +71,7 @@ int main (int argc, const char* argv []) {
 
     auto ok = true; (void) runInterp; // XXX runInterp(bcData);
 
-    static uintptr_t myMem [16*1024]; // TODO don't gc too soon ...
+    static uintptr_t myMem [32*1024]; // TODO don't gc too soon ...
     Monty::setup(myMem, sizeof myMem);
     printf("new load %p\n", Monty::loadModule(bcData));
 

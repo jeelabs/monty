@@ -221,15 +221,19 @@ struct PyVM {
 
     //CG1 op q
     void op_LoadName (char const* arg) {
+        assert(ctx->locals != nullptr);
         *++sp = ctx->locals->at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
+        if (ctx->locals == nullptr)
+            ctx->locals = new Dict (&ctx->globals());
         ctx->locals->at(arg) = *sp--;
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
+        assert(ctx->locals != nullptr);
         ctx->locals->at(arg) = {};
     }
     //CG1 op q
@@ -255,7 +259,9 @@ struct PyVM {
     }
     //CG1 op q
     void op_StoreAttr (char const* arg) {
-        assert(false); // TODO
+        assert(&sp->obj().type().type() == &Class::info);
+        sp->obj().setAt(arg, sp[-1]);
+        sp -= 2;
     }
     //CG1 op
     void op_LoadSubscr () {
@@ -346,9 +352,10 @@ struct PyVM {
     void op_CallMethod (int arg) {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
-        sp -= nargs + 2 * nkw + 1;
-ctx->spIdx = sp - ctx->begin(); // TODO yuck
-        auto v = sp->obj().call(*ctx, arg + 1, sp + 1 - ctx->begin());
+        ctx->spIdx -= nargs + 2 * nkw + 1;
+auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+        auto v = sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
+sp = ctx->begin() + ctx->spIdx; // TODO yuck
         if (!v.isNil())
             *sp = v;
     }
@@ -370,14 +377,11 @@ ctx->spIdx = sp - ctx->begin(); // TODO yuck
     void op_CallFunction (int arg) {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
-        sp -= nargs + 2 * nkw;
-printf("cf1 %p\n", sp);
-ctx->spIdx = sp - ctx->begin(); // TODO yuck
-        auto v = sp->obj().call(*ctx, arg, sp + 1 - ctx->begin());
-printf("cf2 %p\n", sp);
+        ctx->spIdx -= nargs + 2 * nkw;
+auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+        auto v = sp->obj().call(*ctx, arg, ctx->spIdx + 1);
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
-printf("cf3 %p\n", sp);
-        if (!v.isNil())
+        if (!v.isNil() && sp >= ctx->spBase())
             *sp = v;
     }
     //CG2 op vr
@@ -393,10 +397,8 @@ printf("cf3 %p\n", sp);
     //CG2 op r
     void op_ReturnValue () {
         // note: called outside inner loop
-printf("rv1 %p\n", sp);
         auto v = ctx->leave(*sp);
-printf("rv2 %p\n", sp);
-sp = ctx->begin() + ctx->spIdx; // TODO yuck
+auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         *sp = v;
     }
 

@@ -125,8 +125,18 @@ Class::Class (Context& ctx, int argc, int args)
     assert(argc >= 2);
     at("__name__") = ctx[args+1];
     auto& init = ctx[args].asType<Callable>();
-printf("create %s %d\n", (char const*) ctx[args+1], ctx.fill);
-    init.call(ctx, argc - 2, args + 2);
-printf("class %s %d\n", (char const*) ctx[args+1], ctx.fill);
+    init.call(ctx, argc - 2, args + 2); // TODO *in-arg* ctx vs *curr* ctx!
+    ctx.locals = this;
     ctx.end()[6] = this; // TODO yuck, setting "result" in frame
+}
+
+Inst::Inst (Context& ctx, int argc, int args, Class const& cls) {
+    chain = &cls;
+    Value self;
+    Value init = attr("__init__", self);
+    if (!init.isNil()) {
+        ctx[args-1] = this; // TODO is this alwats ok ???
+        auto& co = init.asType<Callable>();
+        co.call(ctx, argc + 1, args - 1);
+    }
 }

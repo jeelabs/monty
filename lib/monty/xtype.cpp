@@ -53,15 +53,17 @@ bool Value::truthy () const {
 }
 
 auto Value::operator== (Value rhs) const -> bool {
+#if 0 // TODO redundant?
     if (v == rhs.v)
         return true;
-#if 0 // TODO redundant?
+#else
     if (tag() == rhs.tag())
         switch (tag()) {
             case Nil: assert(false); // handled above
             case Int: return false;  // handled above
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs);
+        }
 #endif
     // TODO return binOp(BinOp::Equal, rhs);
     return false;
@@ -270,7 +272,6 @@ Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
 Type const Inst::info ("<instance>");
-auto Inst::type () const -> Type const& { return info; }
 
 //CG< builtin-types lib/monty/xmonty.h
 Type const    BoundMeth::info ("<boundmeth>");
@@ -487,7 +488,7 @@ auto Class::create (Context& ctx, int argc, int args, Type const*) -> Value {
     return new Class (ctx, argc, args);
 }
 
-auto Inst::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    // TODO
-    return new Inst;
+auto Inst::create (Context& ctx, int argc, int args, Type const* t) -> Value {
+    Value v = t;
+    return new Inst (ctx, argc, args, v.asType<Class>());
 }

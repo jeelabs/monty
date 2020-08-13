@@ -511,10 +511,12 @@ namespace Monty {
         static auto create (Context&, int, int, Type const*) -> Value;
         static Lookup const attrs;
         static Type const info;
-        auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
-        Inst () {}
+        auto type () const -> Type const& override { return *(Type*) chain; }
+
+    private:
+        Inst (Context& ctx, int argc, int args, Class const& cls);
     };
 
     extern Lookup const builtins;
@@ -636,7 +638,7 @@ namespace Monty {
     //CG>
         Context () {}
 
-        void enter (Callable const&, Dict* =nullptr);
+        void enter (Callable const&);
         Value leave (Value v);
 
         auto getQstr (size_t i) const -> char const* {

@@ -9,7 +9,7 @@
 
 using namespace Monty;
 
-void Context::enter (Callable const& func, Dict* d) {
+void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
     auto need = (frame().stack + frameSize) - end();
 
@@ -31,7 +31,7 @@ void Context::enter (Callable const& func, Dict* d) {
     ipIdx = 0;                  // code starts at first opcode
     epIdx = 0;                  // no exceptions pending
     callee = &func;             // new callable context
-    locals = d != nullptr ? d : new Dict (&globals());
+    locals = 0;                 // create a new dict on demand
 }
 
 Value Context::leave (Value v) {
