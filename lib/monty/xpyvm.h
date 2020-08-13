@@ -448,290 +448,235 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
 
                 //CG< op-emit d
                 case Op::LoadNull: 
-                    printf("LoadNull\n");
                     op_LoadNull();
                     break;
                 case Op::LoadConstNone: 
-                    printf("LoadConstNone\n");
                     op_LoadConstNone();
                     break;
                 case Op::LoadConstFalse: 
-                    printf("LoadConstFalse\n");
                     op_LoadConstFalse();
                     break;
                 case Op::LoadConstTrue: 
-                    printf("LoadConstTrue\n");
                     op_LoadConstTrue();
                     break;
                 case Op::LoadConstString: {
                     char const* arg = fetchQstr();
-                    printf("LoadConstString %s\n", arg);
                     op_LoadConstString(arg);
                     break;
                 }
                 case Op::LoadConstSmallInt: 
-                    printf("LoadConstSmallInt\n");
                     op_LoadConstSmallInt();
                     break;
                 case Op::LoadConstObj: {
                     int arg = fetchVarInt();
-                    printf("LoadConstObj %u\n", (unsigned) arg);
                     op_LoadConstObj(arg);
                     break;
                 }
                 case Op::LoadFastN: {
                     int arg = fetchVarInt();
-                    printf("LoadFastN %u\n", (unsigned) arg);
                     op_LoadFastN(arg);
                     break;
                 }
                 case Op::StoreFastN: {
                     int arg = fetchVarInt();
-                    printf("StoreFastN %u\n", (unsigned) arg);
                     op_StoreFastN(arg);
                     break;
                 }
                 case Op::DeleteFast: {
                     int arg = fetchVarInt();
-                    printf("DeleteFast %u\n", (unsigned) arg);
                     op_DeleteFast(arg);
                     break;
                 }
                 case Op::DupTop: 
-                    printf("DupTop\n");
                     op_DupTop();
                     break;
                 case Op::DupTopTwo: 
-                    printf("DupTopTwo\n");
                     op_DupTopTwo();
                     break;
                 case Op::PopTop: 
-                    printf("PopTop\n");
                     op_PopTop();
                     break;
                 case Op::RotTwo: 
-                    printf("RotTwo\n");
                     op_RotTwo();
                     break;
                 case Op::RotThree: 
-                    printf("RotThree\n");
                     op_RotThree();
                     break;
                 case Op::Jump: {
                     int arg = fetchOffset()-0x8000;
-                    printf("Jump %d\n", arg);
                     op_Jump(arg);
                     break;
                 }
                 case Op::PopJumpIfFalse: {
                     int arg = fetchOffset()-0x8000;
-                    printf("PopJumpIfFalse %d\n", arg);
                     op_PopJumpIfFalse(arg);
                     break;
                 }
                 case Op::JumpIfFalseOrPop: {
                     int arg = fetchOffset()-0x8000;
-                    printf("JumpIfFalseOrPop %d\n", arg);
                     op_JumpIfFalseOrPop(arg);
                     break;
                 }
                 case Op::PopJumpIfTrue: {
                     int arg = fetchOffset()-0x8000;
-                    printf("PopJumpIfTrue %d\n", arg);
                     op_PopJumpIfTrue(arg);
                     break;
                 }
                 case Op::JumpIfTrueOrPop: {
                     int arg = fetchOffset()-0x8000;
-                    printf("JumpIfTrueOrPop %d\n", arg);
                     op_JumpIfTrueOrPop(arg);
                     break;
                 }
                 case Op::LoadName: {
                     char const* arg = fetchQstr();
-                    printf("LoadName %s\n", arg);
                     op_LoadName(arg);
                     break;
                 }
                 case Op::StoreName: {
                     char const* arg = fetchQstr();
-                    printf("StoreName %s\n", arg);
                     op_StoreName(arg);
                     break;
                 }
                 case Op::DeleteName: {
                     char const* arg = fetchQstr();
-                    printf("DeleteName %s\n", arg);
                     op_DeleteName(arg);
                     break;
                 }
                 case Op::LoadGlobal: {
                     char const* arg = fetchQstr();
-                    printf("LoadGlobal %s\n", arg);
                     op_LoadGlobal(arg);
                     break;
                 }
                 case Op::StoreGlobal: {
                     char const* arg = fetchQstr();
-                    printf("StoreGlobal %s\n", arg);
                     op_StoreGlobal(arg);
                     break;
                 }
                 case Op::DeleteGlobal: {
                     char const* arg = fetchQstr();
-                    printf("DeleteGlobal %s\n", arg);
                     op_DeleteGlobal(arg);
                     break;
                 }
                 case Op::LoadAttr: {
                     char const* arg = fetchQstr();
-                    printf("LoadAttr %s\n", arg);
                     op_LoadAttr(arg);
                     break;
                 }
                 case Op::StoreAttr: {
                     char const* arg = fetchQstr();
-                    printf("StoreAttr %s\n", arg);
                     op_StoreAttr(arg);
                     break;
                 }
                 case Op::LoadSubscr: 
-                    printf("LoadSubscr\n");
                     op_LoadSubscr();
                     break;
                 case Op::StoreSubscr: 
-                    printf("StoreSubscr\n");
                     op_StoreSubscr();
                     break;
                 case Op::BuildSlice: {
                     int arg = fetchVarInt();
-                    printf("BuildSlice %u\n", (unsigned) arg);
                     op_BuildSlice(arg);
                     break;
                 }
                 case Op::BuildTuple: {
                     int arg = fetchVarInt();
-                    printf("BuildTuple %u\n", (unsigned) arg);
                     op_BuildTuple(arg);
                     break;
                 }
                 case Op::BuildList: {
                     int arg = fetchVarInt();
-                    printf("BuildList %u\n", (unsigned) arg);
                     op_BuildList(arg);
                     break;
                 }
                 case Op::BuildSet: {
                     int arg = fetchVarInt();
-                    printf("BuildSet %u\n", (unsigned) arg);
                     op_BuildSet(arg);
                     break;
                 }
                 case Op::BuildMap: {
                     int arg = fetchVarInt();
-                    printf("BuildMap %u\n", (unsigned) arg);
                     op_BuildMap(arg);
                     break;
                 }
                 case Op::StoreMap: 
-                    printf("StoreMap\n");
                     op_StoreMap();
                     break;
                 case Op::SetupExcept: {
                     int arg = fetchOffset();
-                    printf("SetupExcept %d\n", arg);
                     op_SetupExcept(arg);
                     break;
                 }
                 case Op::PopExceptJump: {
                     int arg = fetchOffset();
-                    printf("PopExceptJump %d\n", arg);
                     op_PopExceptJump(arg);
                     break;
                 }
                 case Op::RaiseLast: 
-                    printf("RaiseLast\n");
                     op_RaiseLast();
                     break;
                 case Op::RaiseObj: 
-                    printf("RaiseObj\n");
                     op_RaiseObj();
                     break;
                 case Op::RaiseFrom: 
-                    printf("RaiseFrom\n");
                     op_RaiseFrom();
                     break;
                 case Op::UnwindJump: {
                     int arg = fetchOffset()-0x8000;
-                    printf("UnwindJump %d\n", arg);
                     op_UnwindJump(arg);
                     break;
                 }
                 case Op::LoadBuildClass: 
-                    printf("LoadBuildClass\n");
                     op_LoadBuildClass();
                     break;
                 case Op::LoadMethod: {
                     char const* arg = fetchQstr();
-                    printf("LoadMethod %s\n", arg);
                     op_LoadMethod(arg);
                     break;
                 }
                 case Op::CallMethod: {
                     int arg = fetchVarInt();
-                    printf("CallMethod %u\n", (unsigned) arg);
                     ctx->raise(Op::CallMethod, arg);
                     break;
                 }
                 case Op::CallMethodVarKw: {
                     int arg = fetchVarInt();
-                    printf("CallMethodVarKw %u\n", (unsigned) arg);
                     ctx->raise(Op::CallMethodVarKw, arg);
                     break;
                 }
                 case Op::MakeFunction: {
                     int arg = fetchVarInt();
-                    printf("MakeFunction %u\n", (unsigned) arg);
                     op_MakeFunction(arg);
                     break;
                 }
                 case Op::MakeFunctionDefargs: {
                     int arg = fetchVarInt();
-                    printf("MakeFunctionDefargs %u\n", (unsigned) arg);
                     op_MakeFunctionDefargs(arg);
                     break;
                 }
                 case Op::CallFunction: {
                     int arg = fetchVarInt();
-                    printf("CallFunction %u\n", (unsigned) arg);
                     ctx->raise(Op::CallFunction, arg);
                     break;
                 }
                 case Op::CallFunctionVarKw: {
                     int arg = fetchVarInt();
-                    printf("CallFunctionVarKw %u\n", (unsigned) arg);
                     ctx->raise(Op::CallFunctionVarKw, arg);
                     break;
                 }
                 case Op::YieldValue: 
-                    printf("YieldValue\n");
                     ctx->raise(Op::YieldValue, 0);
                     break;
                 case Op::ReturnValue: 
-                    printf("ReturnValue\n");
                     ctx->raise(Op::ReturnValue, 0);
                     break;
                 case Op::GetIter: 
-                    printf("GetIter\n");
                     op_GetIter();
                     break;
                 case Op::GetIterStack: 
-                    printf("GetIterStack\n");
                     op_GetIterStack();
                     break;
                 case Op::ForIter: {
                     int arg = fetchOffset();
-                    printf("ForIter %d\n", arg);
                     op_ForIter(arg);
                     break;
                 }
@@ -760,31 +705,26 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
                     //CG< op-emit m
                     if ((uint32_t) (ip[-1] - Op::LoadConstSmallIntMulti) < 64) {
                         uint32_t arg = ip[-1] - Op::LoadConstSmallIntMulti;
-                        printf("LoadConstSmallIntMulti %d\n", (int) arg);
                         op_LoadConstSmallIntMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::LoadFastMulti) < 16) {
                         uint32_t arg = ip[-1] - Op::LoadFastMulti;
-                        printf("LoadFastMulti %d\n", (int) arg);
                         op_LoadFastMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::StoreFastMulti) < 16) {
                         uint32_t arg = ip[-1] - Op::StoreFastMulti;
-                        printf("StoreFastMulti %d\n", (int) arg);
                         op_StoreFastMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::UnaryOpMulti) < 7) {
                         uint32_t arg = ip[-1] - Op::UnaryOpMulti;
-                        printf("UnaryOpMulti %d\n", (int) arg);
                         op_UnaryOpMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::BinaryOpMulti) < 35) {
                         uint32_t arg = ip[-1] - Op::BinaryOpMulti;
-                        printf("BinaryOpMulti %d\n", (int) arg);
                         op_BinaryOpMulti(arg);
                         break;
                     }

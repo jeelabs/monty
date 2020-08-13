@@ -138,5 +138,6 @@ Inst::Inst (Context& ctx, int argc, int args, Class const& cls) {
         ctx[args-1] = this; // TODO is this alwats ok ???
         auto& co = init.asType<Callable>();
         co.call(ctx, argc + 1, args - 1);
+        ctx.end()[6] = this; // TODO yuck, setting "result" in frame
     }
 }
