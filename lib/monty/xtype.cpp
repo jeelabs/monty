@@ -414,16 +414,16 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Bool::create (Context& ctx, int argc, int args, Type const*) -> Value {
     if (argc == 1)
-        return vec[args].unOp(UnOp::Boln);
+        return ctx[args].unOp(UnOp::Boln);
     assert(argc == 0);
     return False;
 }
 
-auto Fixed::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Fixed::create (Context& ctx, int argc, int args, Type const*) -> Value {
     assert(argc == 1);
-    auto v = vec[args];
+    auto v = ctx[args];
     switch (v.tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return v;
@@ -433,61 +433,61 @@ auto Fixed::create (Vector const& vec, int argc, int args, Type const*) -> Value
     return {};
 }
 
-auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Bytes::create (Context& ctx, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Str::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 1 && vec[args].isStr());
-    return new Str (vec[args]);
+auto Str::create (Context& ctx, int argc, int args, Type const*) -> Value {
+    assert(argc == 1 && ctx[args].isStr());
+    return new Str (ctx[args]);
 }
 
-auto Range::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Range::create (Context& ctx, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Slice::create (Context& ctx, int argc, int args, Type const*) -> Value {
     assert(1 <= argc && argc <= 3);
-    Value a = argc > 1 ? vec[args] : Value (0);
-    Value b = argc == 1 ? vec[args] : vec[args+1];
-    Value c = argc > 2 ? vec[args+2] : b;
+    Value a = argc > 1 ? ctx[args] : Value (0);
+    Value b = argc == 1 ? ctx[args] : ctx[args+1];
+    Value c = argc > 2 ? ctx[args+2] : b;
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Tuple::create (Context& ctx, int argc, int args, Type const*) -> Value {
     if (argc == 0)
         return Empty; // there's one unique empty tuple
-    return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
+    return new (argc * sizeof (Value)) Tuple (argc, ctx.begin() + args);
 }
 
-auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto List::create (Context& ctx, int argc, int args, Type const*) -> Value {
     // TODO
     return new List;
 }
 
-auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Set::create (Context& ctx, int argc, int args, Type const*) -> Value {
     // TODO
     return new Set;
 }
 
-auto Dict::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Dict::create (Context& ctx, int argc, int args, Type const*) -> Value {
     // TODO
     return new Dict;
 }
 
-auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Type::create (Context& ctx, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    // TODO
-    return new Class;
+auto Class::create (Context& ctx, int argc, int args, Type const*) -> Value {
+    assert(argc == 2 && ctx[args].isObj() && ctx[args+1].isStr());
+    return new Class (ctx, argc, args);
 }
 
-auto Inst::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Inst::create (Context& ctx, int argc, int args, Type const*) -> Value {
     // TODO
     return new Inst;
 }

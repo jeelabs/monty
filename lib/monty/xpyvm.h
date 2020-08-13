@@ -371,8 +371,12 @@ ctx->spIdx = sp - ctx->begin(); // TODO yuck
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
+printf("cf1 %p\n", sp);
 ctx->spIdx = sp - ctx->begin(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg, sp + 1 - ctx->begin());
+printf("cf2 %p\n", sp);
+sp = ctx->begin() + ctx->spIdx; // TODO yuck
+printf("cf3 %p\n", sp);
         if (!v.isNil())
             *sp = v;
     }
@@ -389,7 +393,9 @@ ctx->spIdx = sp - ctx->begin(); // TODO yuck
     //CG2 op r
     void op_ReturnValue () {
         // note: called outside inner loop
+printf("rv1 %p\n", sp);
         auto v = ctx->leave(*sp);
+printf("rv2 %p\n", sp);
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
         *sp = v;
     }

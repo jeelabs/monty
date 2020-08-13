@@ -115,7 +115,18 @@ auto Type::call (Context& ctx, int argc, int args) const -> Value {
     return factory(ctx, argc, args, this);
 }
 
-auto Type::noFactory (Vector const&, int, int, const Type*) -> Value {
+auto Type::noFactory (Context&, int, int, const Type*) -> Value {
     assert(false);
     return {};
+}
+
+Class::Class (Context& ctx, int argc, int args)
+        : Type (ctx[args+1], Inst::create) {
+    assert(argc >= 2);
+    at("__name__") = ctx[args+1];
+    auto& init = ctx[args].asType<Callable>();
+printf("create %s %d\n", (char const*) ctx[args+1], ctx.fill);
+    init.call(ctx, argc - 2, args + 2);
+printf("class %s %d\n", (char const*) ctx[args+1], ctx.fill);
+    ctx.end()[6] = this; // TODO yuck, setting "result" in frame
 }

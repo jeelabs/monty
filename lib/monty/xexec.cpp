@@ -335,7 +335,9 @@ auto Callable::qStrAt (size_t i) const -> char const* {
 }
 
 auto Callable::call (Context& ctx, int argc, int args) const -> Value {
-    ctx.enter(*this, ctx, argc, args);
+    ctx.enter(*this);
+    for (int i = 0; i < argc; ++i)
+        ctx.fastSlot(i) = ctx[args+i];
     return {}; // TODO ???
 }
 
@@ -350,7 +352,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
         return nullptr;
 
     Context ctx;
-    ctx.enter(*init, ctx, 0, 0, &init->mo);
+    ctx.enter(*init, &init->mo);
 
     while (true) {
         PyVM vm (ctx);
