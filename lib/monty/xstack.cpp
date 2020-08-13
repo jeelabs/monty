@@ -11,7 +11,7 @@ using namespace Monty;
 
 void Context::enter (Callable const& func,
                         Vector const& vec, int argc, int args, Dict* d) {
-    auto frameSize = func.fastSlotTop() + EXC_STEP * func.excDepth();
+    auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
     auto need = (frame().stack + frameSize) - end();
 
     auto curr = fill;           // current frame offset
@@ -75,7 +75,7 @@ auto Context::excBase (int incr) -> Value* {
     epIdx = ep + incr;
     if (incr <= 0)
         --ep;
-    return frame().stack + callee->fastSlotTop() + EXC_STEP * ep;
+    return frame().stack + callee->code.fastSlotTop() + EXC_STEP * ep;
 }
 
 void Context::raise (Value exc) {

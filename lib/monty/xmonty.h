@@ -570,32 +570,60 @@ namespace Monty {
         Value qp;
     };
 
+    //CG< type <bytecode>
+    struct Bytecode : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Bytecode () {}
+
+        auto constAt (size_t i) const -> Value { return constObjs[i]; }
+        auto fastSlotTop () const -> size_t { return stackSz; }
+        auto excLevel () const -> size_t { return excDepth; }
+        auto isGenerator () const -> bool { return (flags & 1) != 0; }
+        auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
+
+        auto codeStart () const -> uint8_t const* {
+            return (uint8_t const*) (this + 1) + code;
+        }
+
+        void marker () const override {} // TODO
+    private:
+        Vector constObjs;
+        int16_t code;
+        int16_t stackSz;
+        int16_t flags;
+        int16_t hdrSz;
+        int16_t size;
+        int16_t nData;
+        int16_t nCode;
+        int8_t excDepth;
+        int8_t n_pos;
+        int8_t n_kwonly;
+        int8_t n_def_pos;
+
+        friend struct Loader;
+    };
+
     //CG< type <callable>
     struct Callable : Object {
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Callable (Module& mod, Value callee) : mo (mod), bc (callee) {}
+        Callable (Module& mod, Bytecode const& callee)
+            : mo (mod), code (callee) {}
 
         auto qStrAt (size_t) const -> char const*;
-        auto constAt (size_t i) const -> Value;
-
-        auto fastSlotTop () const -> size_t;
-        auto excDepth () const -> size_t;
-        auto isGenerator () const -> bool;
-        auto hasVarArgs () const -> bool;
-        auto codeStart () const -> uint8_t const*;
 
         auto call (Context& ctx, int argc, int args) const -> Value override;
 
-        void marker () const override {
-            mo.marker(); mark(bc); mark(pos); mark(kw);
-        }
+        void marker () const override;
 
     // TODO private:
         Module& mo;
-        Value bc; // don't expose actual type
+        Bytecode const& code;
         Tuple* pos {nullptr};
         Dict* kw {nullptr};
     };
@@ -615,16 +643,16 @@ namespace Monty {
             return callee->qStrAt(i);
         }
         auto getConst (size_t i) const -> Value {
-            return callee->constAt(i);
+            return callee->code.constAt(i);
         }
         auto fastSlot (size_t i) const -> Value& {
-            return spBase()[callee->fastSlotTop() + ~i];
+            return spBase()[callee->code.fastSlotTop() + ~i];
         }
         auto spBase () const -> Value* {
             return frame().stack;
         }
         auto ipBase () const -> uint8_t const* {
-            return callee->codeStart();
+            return callee->code.codeStart();
         }
 
         static constexpr int EXC_STEP = 3; // use 3 slots per exception

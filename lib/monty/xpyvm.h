@@ -359,7 +359,8 @@ ctx->spIdx = sp - ctx->begin(); // TODO yuck
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
-        *++sp = new Callable (ctx->globals(), ctx->getConst(arg));
+        auto v = ctx->getConst(arg);
+        *++sp = new Callable (ctx->globals(), v.asType<Bytecode>());
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
@@ -413,6 +414,7 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
     //CG1 op m 16
     void op_LoadFastMulti (uint32_t arg) {
         *++sp = ctx->fastSlot(arg);
+        assert(!sp->isNil());
     }
     //CG1 op m 16
     void op_StoreFastMulti (uint32_t arg) {

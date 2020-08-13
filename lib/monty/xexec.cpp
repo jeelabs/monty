@@ -21,31 +21,6 @@ namespace Monty {
 
 volatile uint32_t pending;
 
-struct Bytecode : Object {
-    static Type const info;
-    auto type () const -> Type const& override;
-
-    Bytecode () {}
-
-    void marker () const override {} // TODO
-
-    uint16_t code;
-    Vector constObjs;
-    int16_t stackSz;
-    int16_t flags;
-    int8_t excDepth;
-    int8_t n_pos;
-    int8_t n_kwonly;
-    int8_t n_def_pos;
-    int16_t hdrSz;
-    int16_t size;
-    int16_t nData;
-    int16_t nCode;
-};
-
-Type const Bytecode::info ("<bytecode>");
-auto Bytecode::type () const -> Type const& { return info; }
-
 struct QstrPool : Object {
     int len;
     uint16_t off [];
@@ -359,36 +334,13 @@ auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
-auto Callable::constAt (size_t i) const -> Value {
-    return bc.asType<Bytecode>().constObjs[i];
-}
-
-auto Callable::fastSlotTop () const -> size_t {
-    return bc.asType<Bytecode>().stackSz;
-}
-
-auto Callable::excDepth () const -> size_t {
-    return bc.asType<Bytecode>().excDepth;
-}
-
-auto Callable::isGenerator () const -> bool {
-    auto& bcode = bc.asType<Bytecode>();
-    return (bcode.flags & 1) != 0;
-}
-
-auto Callable::hasVarArgs () const -> bool {
-    auto& bcode = bc.asType<Bytecode>();
-    return (bcode.flags & 4) != 0;
-}
-
-auto Callable::codeStart () const -> uint8_t const* {
-    auto& bcode = bc.asType<Bytecode>();
-    return (uint8_t const*) (&bcode + 1) + bcode.code;
-}
-
 auto Callable::call (Context& ctx, int argc, int args) const -> Value {
     ctx.enter(*this, ctx, argc, args);
     return {}; // TODO ???
+}
+
+void Callable::marker () const {
+    mo.marker(); mark(code); mark(pos); mark(kw);
 }
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {

@@ -152,6 +152,10 @@ Value Buffer::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
+Value Bytecode::repr (Monty::Buffer& buf) const {
+    return Object::repr(buf); // TODO
+}
+
 Value Bytes::repr (Monty::Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
