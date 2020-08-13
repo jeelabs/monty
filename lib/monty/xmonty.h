@@ -83,7 +83,7 @@ namespace Monty {
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const { return (char const*) (v >> 2); }
         auto obj () const -> Object& { return *(Object*) v; }
-        // TODO inline auto objPtr () const -> ForceObj;
+        auto asObj () -> Object&; // convert int/str to object, in-place
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
@@ -598,7 +598,7 @@ namespace Monty {
         auto hasVarArgs () const -> bool;
         auto codeStart () const -> uint8_t const*;
 
-        //auto call (int ac, Chunk const& av) const -> Value override;
+        auto call (Context& ctx, int argc, int args) const -> Value override;
 
         void marker () const override {
             mo.marker(); mark(bc); mark(pos); mark(kw);
@@ -651,7 +651,7 @@ namespace Monty {
         auto excBase (int incr =0) const -> Value*;
 
         auto locals () const -> Object& { return frame().locals.obj(); }
-        auto globals () const -> Object& { return callee().mo; }
+        auto globals () const -> Module& { return callee().mo; }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
         void raise (Value exc ={}) const;

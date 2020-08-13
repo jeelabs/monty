@@ -339,12 +339,20 @@ struct PyVM {
     }
     //CG1 op q
     void op_LoadMethod (char const* arg) {
-        assert(false); // TODO
+        sp[1] = *sp;
+        *sp = sp->asObj().attr(arg, sp[1]);
+        ++sp;
+        assert(!sp->isNil());
     }
     //CG2 op vr
     void op_CallMethod (int arg) {
         // note: called outside inner loop
-        assert(false); // TODO
+        uint8_t nargs = arg, nkw = arg >> 8;
+        sp -= nargs + 2 * nkw + 1;
+ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
+        auto v = sp->obj().call(*ctx, arg + 1, sp + 1 - ctx->begin());
+        if (!v.isNil())
+            *sp = v;
     }
     //CG2 op vr
     void op_CallMethodVarKw (int arg) {
@@ -353,7 +361,7 @@ struct PyVM {
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
-        assert(false); // TODO
+        *++sp = new Callable (ctx->globals(), ctx->getConst(arg));
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
@@ -382,7 +390,9 @@ ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
     //CG2 op r
     void op_ReturnValue () {
         // note: called outside inner loop
-        assert(false); // TODO
+        auto v = ctx->leave(*sp);
+sp = ctx->spBase() + ctx->frame().sp; // TODO yuck
+        *sp = v;
     }
 
     //CG1 op

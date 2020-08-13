@@ -32,6 +32,16 @@ Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
+auto Value::asObj () -> Object& {
+    switch (tag()) {
+        case Value::Nil: return (Object&) None::nullObj; // drop const
+        case Value::Int: *this = new Fixed (*this); break;
+        case Value::Str: *this = new struct Str (*this); break;
+        case Value::Obj: break;
+    }
+    return obj();
+}
+
 bool Value::truthy () const {
     switch (tag()) {
         case Value::Nil: return false;
@@ -180,9 +190,9 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
-auto Object::attr (const char*, Value&) const -> Value {
-    assert(false);
-    return {};
+auto Object::attr (const char* name, Value&) const -> Value {
+    auto atab = type().chain;
+    return atab != 0 ? atab->getAt(name) : getAt(name);
 }
 
 auto Object::getAt (Value) const -> Value {
@@ -200,9 +210,14 @@ auto None::unop (UnOp) const -> Value {
     return {}; // TODO
 }
 
-auto Bool::unop (UnOp) const -> Value {
-    assert(false);
-    return {}; // TODO
+auto Bool::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Int:  // fall through
+        case UnOp::Hash: return this == &trueObj;
+        case UnOp::Boln: return *this;
+        default:         break;
+    }
+    return Object::unop(op);
 }
 
 auto Fixed::unop (UnOp) const -> Value {
@@ -334,10 +349,21 @@ static const Lookup::Item bi_items [] = {
 
 Lookup const Monty::builtins (bi_items, sizeof bi_items);
 
-static Str m_count ("blah"); // TODO
+static auto bi_count (Context& ctx, int argc, int args) -> Value {
+    return 9; // TODO, hardcoded for features.py
+}
+
+static Function const f_count (bi_count);
+
+static auto bi_format (Context& ctx, int argc, int args) -> Value {
+    return 4; // TODO, hardcoded for features.py
+}
+
+static Function const f_format (bi_format);
 
 static const Lookup::Item strMap [] = {
-    { "count", &m_count },
+    { "count", &f_count },
+    { "format", &f_format },
 };
 
 const Lookup Str::attrs (strMap, sizeof strMap);

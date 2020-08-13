@@ -386,6 +386,14 @@ auto Callable::codeStart () const -> uint8_t const* {
     return (uint8_t const*) (&bcode + 1) + bcode.code;
 }
 
+auto Callable::call (Context& ctx, int argc, int args) const -> Value {
+    Chunk av (ctx); // TODO get rid of this "Chunk" stuff
+    av.len = argc;  //  need to change create() to handle argc+args (anum/aoff)
+    av.off = args;
+    ctx.enter(*this, av);
+    return {}; // TODO ???
+}
+
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Loader loader;
     auto* init = loader.load(addr);
