@@ -24,13 +24,16 @@ auto Tuple::getAt (Value k) const -> Value {
     return data()[k];
 }
 
-List::List (size_t n, Value const* vals) {
-    adj(n);
+List::List (Context& ctx, int argc, int args) {
+    insert(0, argc);
+    for (int i = 0; i < argc; ++i)
+        (*this)[i] = ctx[args+i];
 }
 
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
-    return (*this)[relPos(k)];
+    auto n = relPos(k);
+    return n < fill ? (*this)[n] : Value {};
 }
 
 auto List::setAt (Value k, Value v) -> Value {

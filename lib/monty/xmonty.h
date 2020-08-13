@@ -410,7 +410,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr List () {}
-        List (size_t n, Value const* vals);
+        List (Context& ctx, int argc, int args);
 
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;

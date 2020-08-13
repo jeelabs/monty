@@ -464,8 +464,7 @@ auto Tuple::create (Context& ctx, int argc, int args, Type const*) -> Value {
 }
 
 auto List::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    // TODO
-    return new List;
+    return new List (ctx, argc, args);
 }
 
 auto Set::create (Context& ctx, int argc, int args, Type const*) -> Value {
