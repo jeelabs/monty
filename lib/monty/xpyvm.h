@@ -260,8 +260,7 @@ struct PyVM {
     //CG1 op
     void op_LoadSubscr () {
         --sp;
-        assert(sp->isObj());
-        *sp = sp->obj().getAt(sp[1]);
+        *sp = sp->asObj().getAt(sp[1]);
     }
     //CG1 op
     void op_StoreSubscr () {
@@ -305,7 +304,7 @@ struct PyVM {
     void op_SetupExcept (int arg) {
         auto exc = ctx->excBase(1);
         exc[0] = ip - ctx->ipBase() + arg;
-        exc[1] = sp - ctx->spBase();
+        exc[1] = sp - ctx->begin();
         exc[2] = {};
     }
     //CG1 op o
@@ -349,7 +348,7 @@ struct PyVM {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
-ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
+ctx->frame().sp = sp - ctx->begin(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg + 1, sp + 1 - ctx->begin());
         if (!v.isNil())
             *sp = v;
@@ -372,7 +371,7 @@ ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
+ctx->frame().sp = sp - ctx->begin(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg, sp + 1 - ctx->begin());
         if (!v.isNil())
             *sp = v;
@@ -391,7 +390,7 @@ ctx->frame().sp = sp - ctx->spBase(); // TODO yuck
     void op_ReturnValue () {
         // note: called outside inner loop
         auto v = ctx->leave(*sp);
-sp = ctx->spBase() + ctx->frame().sp; // TODO yuck
+sp = ctx->begin() + ctx->frame().sp; // TODO yuck
         *sp = v;
     }
 
@@ -431,7 +430,7 @@ sp = ctx->spBase() + ctx->frame().sp; // TODO yuck
     }
 
     PyVM (Context& context) : ctx (&context) {
-        sp = ctx->spBase() + ctx->frame().sp;
+        sp = ctx->begin() + ctx->frame().sp;
         ip = ctx->ipBase() + ctx->frame().ip;
 
         do {
@@ -786,7 +785,7 @@ sp = ctx->spBase() + ctx->frame().sp; // TODO yuck
             }
         } while (pending == 0);
 
-        ctx->frame().sp = sp - ctx->spBase();
+        ctx->frame().sp = sp - ctx->begin();
         ctx->frame().ip = ip - ctx->ipBase();
 
         if ((pending & 1) && ctx->event.isInt()) {

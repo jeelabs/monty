@@ -17,10 +17,11 @@ void Context::enter (Callable const& callee, Chunk const& args, Dict const* d) {
     fill = limit;               // current limit
     insert(fill, need);         // make room
     fill = limit;               // frame offset is old limit
+    limit += need;              // new limit of vector use
 
     auto& f = frame();
     f.link = curr;              // index of (now previous) frame
-    f.sp = -1;                  // stack is empty
+    f.sp = fill + 7 - 1; // FIXME Frame   // stack is empty
     f.ip = 0;                   // code starts at first opcode
     f.ep = 0;                   // no exceptions pending
     f.code = callee;            // actual bytecode object
@@ -32,12 +33,12 @@ void Context::enter (Callable const& callee, Chunk const& args, Dict const* d) {
 Value Context::leave (Value v) {
     auto r = frame().result;    // stored result
     int prev = frame().link;    // previous frame offset
-    assert(prev > 0);
+    assert(prev >= 0);
 
     size_t base = fill;         // current frame offset
     fill = limit;               // current limit
     assert(fill > base);
-    remove(fill, fill - base);  // delete current frame
+    remove(base, fill - base);  // delete current frame
     assert(fill == base);
     limit = base;               // new limit
     fill = prev;                // new lower frame offset

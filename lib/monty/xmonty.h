@@ -153,6 +153,8 @@ namespace Monty {
         auto end () const -> T* { return begin() + fill; }
         auto operator[] (size_t idx) const -> T& { return begin()[idx]; }
 
+        auto relPos (int i) const -> uint32_t { return i < 0 ? i + fill : i; }
+
         void move (size_t pos, size_t num, int off) {
             memmove((void*) (begin() + pos + off),
                         (void const*) (begin() + pos), num * sizeof (T));
@@ -291,7 +293,12 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Str (char const*) {} // TODO
+        Str (char const* s) : ptr (s) {}
+
+        auto getAt (Value k) const -> Value override;
+
+    private:
+        char const* ptr;
     };
 
     //CG< type <iterator>

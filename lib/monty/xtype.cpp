@@ -230,6 +230,17 @@ auto Fixed::binop (BinOp, Value) const -> Value {
     return {}; // TODO
 }
 
+auto Str::getAt (Value k) const -> Value {
+    assert(k.isInt());
+    int idx = k;
+    if (idx < 0)
+        idx += strlen(ptr);
+    auto buf = (char*) malloc(2); // TODO no malloc, please
+    buf[0] = ptr[idx];
+    buf[1] = 0;
+    return buf;
+}
+
 Slice::Slice (Value a, Value b, Value c) {
     assert(a.isInt() && b.isInt());
     off = a;
@@ -319,7 +330,7 @@ static auto bi_print (Context& ctx, int argc, int args) -> Value {
 
 static Function const f_print (bi_print);
 
-static const Lookup::Item bi_items [] = {
+static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
     { "bytes", &Bytes::info },
@@ -347,26 +358,43 @@ static const Lookup::Item bi_items [] = {
 #endif
 };
 
-Lookup const Monty::builtins (bi_items, sizeof bi_items);
+Lookup const Monty::builtins (builtinsMap, sizeof builtinsMap);
 
-static auto bi_count (Context& ctx, int argc, int args) -> Value {
+static auto str_count (Context& ctx, int argc, int args) -> Value {
     return 9; // TODO, hardcoded for features.py
 }
 
-static Function const f_count (bi_count);
+static Function const f_str_count (str_count);
 
-static auto bi_format (Context& ctx, int argc, int args) -> Value {
+static auto str_format (Context& ctx, int argc, int args) -> Value {
     return 4; // TODO, hardcoded for features.py
 }
 
-static Function const f_format (bi_format);
+static Function const f_str_format (str_format);
 
 static const Lookup::Item strMap [] = {
-    { "count", &f_count },
-    { "format", &f_format },
+    { "count", &f_str_count },
+    { "format", &f_str_format },
 };
 
 const Lookup Str::attrs (strMap, sizeof strMap);
+
+static auto list_append (Context& ctx, int argc, int args) -> Value {
+    assert(argc == 2);
+    auto& l = ctx[args].asType<List>();
+    auto n = l.size();
+    l.insert(n);
+    l[n] = ctx[args+1];
+    return {};
+}
+
+static Function const f_list_append (list_append);
+
+static const Lookup::Item listMap [] = {
+    { "append", &f_list_append },
+};
+
+const Lookup List::attrs (listMap, sizeof listMap);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
@@ -377,7 +405,6 @@ Lookup const    Bytes::attrs {nullptr, 0};
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
-Lookup const     List::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
 Lookup const     Dict::attrs {nullptr, 0};
 Lookup const     Type::attrs {nullptr, 0};

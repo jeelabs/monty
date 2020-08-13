@@ -30,12 +30,12 @@ List::List (size_t n, Value const* vals) {
 
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
-    return (*this)[k];
+    return (*this)[relPos(k)];
 }
 
 auto List::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
-    return (*this)[k] = v;
+    return (*this)[relPos(k)] = v;
 }
 
 auto Set::find (Value v) const -> size_t {
