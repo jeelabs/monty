@@ -116,7 +116,7 @@ struct PyVM {
     void instructionTrace () {
 #if SHOW_INSTR_PTR
         printf("\tip %p sp %2d e %d ",
-                ip, (int) (sp - ctx->spBase()), (int) ctx->frame().ep);
+                ip, (int) (sp - ctx->spBase()), (int) ctx->epIdx);
         printf("op 0x%02x : ", (uint8_t) *ip);
         if (sp >= ctx->spBase())
             sp->dump();
@@ -221,29 +221,29 @@ struct PyVM {
 
     //CG1 op q
     void op_LoadName (char const* arg) {
-        *++sp = ctx->locals().getAt(arg);
+        *++sp = ctx->locals->at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
-        ctx->locals().setAt(arg, *sp--);
+        ctx->locals->at(arg) = *sp--;
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
-        ctx->locals().setAt(arg, {});
+        ctx->locals->at(arg) = {};
     }
     //CG1 op q
     void op_LoadGlobal (char const* arg) {
-        *++sp = ctx->globals().getAt(arg);
+        *++sp = ctx->globals().at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreGlobal (char const* arg) {
-        ctx->globals().setAt(arg, *sp--);
+        ctx->globals().at(arg) = *sp--;
     }
     //CG1 op q
     void op_DeleteGlobal (char const* arg) {
-        ctx->globals().setAt(arg, {});
+        ctx->globals().at(arg) = {};
     }
     //CG1 op q
     void op_LoadAttr (char const* arg) {
@@ -327,8 +327,7 @@ struct PyVM {
     }
     //CG1 op s
     void op_UnwindJump (int arg) {
-        int ep = ctx->frame().ep;
-        ctx->frame().ep = ep - *ip; // TODO hardwired for simplest case
+        ctx->epIdx -= *ip; // TODO hardwired for simplest case
         ip += arg;
     }
 
@@ -348,7 +347,7 @@ struct PyVM {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
-ctx->frame().sp = sp - ctx->begin(); // TODO yuck
+ctx->spIdx = sp - ctx->begin(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg + 1, sp + 1 - ctx->begin());
         if (!v.isNil())
             *sp = v;
@@ -371,7 +370,7 @@ ctx->frame().sp = sp - ctx->begin(); // TODO yuck
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-ctx->frame().sp = sp - ctx->begin(); // TODO yuck
+ctx->spIdx = sp - ctx->begin(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg, sp + 1 - ctx->begin());
         if (!v.isNil())
             *sp = v;
@@ -390,7 +389,7 @@ ctx->frame().sp = sp - ctx->begin(); // TODO yuck
     void op_ReturnValue () {
         // note: called outside inner loop
         auto v = ctx->leave(*sp);
-sp = ctx->begin() + ctx->frame().sp; // TODO yuck
+sp = ctx->begin() + ctx->spIdx; // TODO yuck
         *sp = v;
     }
 
@@ -430,8 +429,8 @@ sp = ctx->begin() + ctx->frame().sp; // TODO yuck
     }
 
     PyVM (Context& context) : ctx (&context) {
-        sp = ctx->begin() + ctx->frame().sp;
-        ip = ctx->ipBase() + ctx->frame().ip;
+        sp = ctx->begin() + ctx->spIdx;
+        ip = ctx->ipBase() + ctx->ipIdx;
 
         do {
             instructionTrace();
@@ -785,8 +784,8 @@ sp = ctx->begin() + ctx->frame().sp; // TODO yuck
             }
         } while (pending == 0);
 
-        ctx->frame().sp = sp - ctx->begin();
-        ctx->frame().ip = ip - ctx->ipBase();
+        ctx->spIdx = sp - ctx->begin();
+        ctx->ipIdx = ip - ctx->ipBase();
 
         if ((pending & 1) && ctx->event.isInt()) {
             int e = ctx->event;

@@ -624,38 +624,31 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        struct Frame {
-            Value link, sp, ip, ep, code, locals, result, stack [];
-        };
-
         Context () {}
 
-        auto frame () const -> Frame& { return *(Frame*) end(); }
-
-        void enter (Callable const&, Chunk const&, Dict const* =nullptr);
+        void enter (Callable const&, Chunk const&, Dict* =nullptr);
         Value leave (Value v);
 
         auto getQstr (size_t i) const -> char const* {
-            return callee().qStrAt(i);
+            return callee->qStrAt(i);
         }
         auto getConst (size_t i) const -> Value {
-            return callee().constAt(i);
+            return callee->constAt(i);
         }
         auto fastSlot (size_t i) const -> Value& {
-            return spBase()[callee().fastSlotTop() + ~i];
+            return spBase()[callee->fastSlotTop() + ~i];
         }
         auto spBase () const -> Value* {
             return frame().stack;
         }
         auto ipBase () const -> uint8_t const* {
-            return callee().codeStart();
+            return callee->codeStart();
         }
 
         static constexpr int EXC_STEP = 3; // use 3 slots per exception
-        auto excBase (int incr =0) const -> Value*;
+        auto excBase (int incr =0) -> Value*;
 
-        auto locals () const -> Object& { return frame().locals.obj(); }
-        auto globals () const -> Module& { return callee().mo; }
+        auto globals () const -> Module& { return callee->mo; }
         auto asArgs (size_t len, Value const* ptr =nullptr) -> Chunk;
 
         void raise (Value exc ={});
@@ -664,22 +657,24 @@ namespace Monty {
         }
 
         void marker () const override {
-            List::marker(); mark(event); mark(caller);
+            List::marker(); mark(event); mark(callee); mark(locals);
         }
 
+        // previous values are saved in current stack frame
         size_t spIdx {0};
         size_t ipIdx {0};
-        size_t excIdx {0};
-        Callable* currCall {nullptr};
+        size_t epIdx {0};
+        Callable const* callee {nullptr};
+        Dict* locals {nullptr};
 
         size_t limit {0};
         Value event;
-        Context* caller {nullptr};
     private:
-        auto callee () const -> Callable& {
-            //return (Callable&) frame().code.obj();
-            return frame().code.asType<Callable>();
-        }
+        struct Frame {
+            Value link, sp, ip, ep, code, locals, result, stack [];
+        };
+
+        auto frame () const -> Frame& { return *(Frame*) end(); }
     };
 
     extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
