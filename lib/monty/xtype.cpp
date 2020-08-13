@@ -412,7 +412,7 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (Chunk const& args, Type const*) -> Value {
+auto Bool::create (Vector& vec, int argc, int args, Type const*) -> Value {
     auto n = args.size();
     if (n == 1)
         return args[0].unOp(UnOp::Boln);
@@ -420,7 +420,7 @@ auto Bool::create (Chunk const& args, Type const*) -> Value {
     return False;
 }
 
-auto Fixed::create (Chunk const& args, Type const*) -> Value {
+auto Fixed::create (Vector& vec, int argc, int args, Type const*) -> Value {
     assert(args.size() == 1);
     switch (args[0].tag()) {
         case Value::Nil: assert(false); break;
@@ -431,22 +431,22 @@ auto Fixed::create (Chunk const& args, Type const*) -> Value {
     return {};
 }
 
-auto Bytes::create (Chunk const& args, Type const*) -> Value {
+auto Bytes::create (Vector& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Str::create (Chunk const& args, Type const*) -> Value {
+auto Str::create (Vector& vec, int argc, int args, Type const*) -> Value {
     assert(args.size() == 1 && args[0].isStr());
     return new Str (args[0]);
 }
 
-auto Range::create (Chunk const& args, Type const*) -> Value {
+auto Range::create (Vector& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (Chunk const& args, Type const*) -> Value {
+auto Slice::create (Vector& vec, int argc, int args, Type const*) -> Value {
     auto n = args.size();
     assert(1 <= n && n <= 3);
     Value a = n > 1 ? args[0] : Value (0);
@@ -455,39 +455,39 @@ auto Slice::create (Chunk const& args, Type const*) -> Value {
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (Chunk const& args, Type const*) -> Value {
+auto Tuple::create (Vector& vec, int argc, int args, Type const*) -> Value {
     auto n = args.size();
     if (n == 0)
         return Empty; // there's one unique empty tuple
     return new (n * sizeof (Value)) Tuple (n, args.begin());
 }
 
-auto List::create (Chunk const& args, Type const*) -> Value {
+auto List::create (Vector& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new List;
 }
 
-auto Set::create (Chunk const& args, Type const*) -> Value {
+auto Set::create (Vector& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Set;
 }
 
-auto Dict::create (Chunk const& args, Type const*) -> Value {
+auto Dict::create (Vector& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Dict;
 }
 
-auto Type::create (Chunk const& args, Type const*) -> Value {
+auto Type::create (Vector& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Class::create (Chunk const& args, Type const*) -> Value {
+auto Class::create (Vector& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Class;
 }
 
-auto Inst::create (Chunk const& args, Type const*) -> Value {
+auto Inst::create (Vector& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Inst;
 }
