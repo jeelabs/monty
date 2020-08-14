@@ -137,11 +137,13 @@ void Context::exception (Value v) {
 
 void Context::interrupt (uint32_t num) {
     assert(num < 8 * sizeof pending);
-    __atomic_fetch_or(&pending, 1 << num, __ATOMIC_RELAXED);
+    // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+    __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
 auto Context::wasPending (uint32_t num) -> bool {
     assert(num < 8 * sizeof pending);
     auto mask = 1U << num;
+    // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     return (__atomic_fetch_nand(&pending, mask, __ATOMIC_RELAXED) & mask) != 0;
 }
