@@ -14,8 +14,12 @@ int main () {
     //showAllocInfo();      // show mem allocator behaviour for small allocs
     //showObjSizes();       // show sizeof information for the main classes
 
+#if STM32F1 // won't fit on a Blue Pill
+    static uintptr_t myMem [3072];
+#else
     static uintptr_t myMem [4096];
-    Monty::setup(myMem, sizeof myMem);
+#endif
+    Monty::setup(myMem);
 
     extern uint8_t _estack [];
     (void) Monty::loadModule(_estack - 0x1000);

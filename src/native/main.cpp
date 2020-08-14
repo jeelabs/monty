@@ -38,7 +38,7 @@ int main (int argc, const char* argv []) {
     }
 
     static uintptr_t myMem [32*1024]; // TODO don't gc too soon ...
-    Monty::setup(myMem, sizeof myMem);
+    Monty::setup(myMem);
 
     if (Monty::loadModule(bcData) == nullptr) {
         printf("can't load module\n");
