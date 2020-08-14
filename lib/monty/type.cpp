@@ -381,6 +381,20 @@ static auto bi_len (Context& ctx, int argc, int args) -> Value {
 
 static Function const f_len (bi_len);
 
+static auto bi_abs (Context& ctx, int argc, int args) -> Value {
+    assert(argc == 1);
+    return ctx[args].unOp(UnOp::Abs);
+}
+
+static Function const f_abs (bi_abs);
+
+static auto bi_hash (Context& ctx, int argc, int args) -> Value {
+    assert(argc == 1);
+    return ctx[args].unOp(UnOp::Hash);
+}
+
+static Function const f_hash (bi_hash);
+
 static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
@@ -399,6 +413,8 @@ static const Lookup::Item builtinsMap [] = {
     { "print", &f_print },
     { "next", &f_next },
     { "len", &f_len },
+    { "abs", &f_abs },
+    { "hash", &f_hash },
 #if 0
     { "monty", &m_monty },
     { "machine", &m_machine },
@@ -540,8 +556,7 @@ auto List::create (Context& ctx, int argc, int args, Type const*) -> Value {
 }
 
 auto Set::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    // TODO
-    return new Set;
+    return new Set (ctx, argc, args);
 }
 
 auto Dict::create (Context& ctx, int argc, int args, Type const*) -> Value {
