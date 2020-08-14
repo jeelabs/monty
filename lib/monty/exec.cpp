@@ -2,12 +2,8 @@
 
 #define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
+#include "monty.h"
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
 
 #if VERBOSE_LOAD
 #define debugf printf
@@ -16,8 +12,8 @@
 #endif
 
 namespace Monty {
-    #include "xpyvm.h"
-    #include "xqstr.h"
+    #include "pyvm.h"
+    #include "qstr.h"
 
 struct QstrPool : Object {
     int len;

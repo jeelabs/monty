@@ -3,10 +3,9 @@
 
 #if INCLUDE_NETWORK
 
-#include <assert.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
+#include <cassert>
+#include <cstdio>
+#include <cunistd>
 
 #include <sys/ioctl.h>
 #include <sys/types.h>

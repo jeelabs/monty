@@ -37,7 +37,7 @@ def TAG(block, *args):
     return [(76-len(text)) * ' ' + '// ' + text]
 
 # generate the header of an exposed type
-def xTYPE(block, tag, *_):
+def TYPE(block, tag, *_):
     line = block[0].split()
     name, base = line[1], line[3:-1]
     base = ' '.join(base) # accept multi-word, e.g. protected
@@ -48,22 +48,6 @@ def xTYPE(block, tag, *_):
         '    static Type const info;',
         '    auto type () const -> Type const& override;',
         '    auto repr (Buffer&) const -> Value override;',
-    ]
-    if tag.startswith('<'):
-        del out[1:3] # can't construct from the VM
-    return out
-
-# generate the header of an exposed type
-def TYPE(block, tag, *_):
-    line = block[0].split()
-    name, base = line[1], line[3:-1]
-    base = ' '.join(base) # accept multi-word, e.g. protected
-    out = [
-        'struct %s : %s {' % (name, base),
-        '    static Value create (const TypeObj&, int argc, Value argv[]);',
-        '    static const LookupObj attrs;',
-        '    static const TypeObj info;',
-        '    const TypeObj& type () const override;',
     ]
     if tag.startswith('<'):
         del out[1:3] # can't construct from the VM
@@ -85,7 +69,7 @@ def OFF(block, *args):
 builtins = [[], []]
 
 # parse the src/defs.h header
-def xBUILTIN_TYPES(block, fname):
+def BUILTIN_TYPES(block, fname):
     builtins[0].clear()
     builtins[1].clear()
     info = []
@@ -102,39 +86,6 @@ def xBUILTIN_TYPES(block, fname):
     fmt1a = 'Type const %12s::info ("%s");'
     fmt1b = 'Type const %8s::info ("%s", %s::create, &%s::attrs);'
     fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
-    sep = True
-    for tag, name, base in info:
-        if tag.startswith('<'):
-            out.append(fmt1a % (name, tag))
-        else:
-            if sep: out.append('')
-            sep = False
-            out.append(fmt1b % (name, tag, name, name))
-    out.append('')
-    for tag, name, base in info:
-        out.append(fmt2 % name)
-        if not tag.startswith('<'):
-            builtins[1].append('{ "%s", &%s::info },' % (tag, name))
-    return out
-
-# parse the src/defs.h header
-def BUILTIN_TYPES(block, fname):
-    builtins[0].clear()
-    builtins[1].clear()
-    info = []
-    with open(fname, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('//CG'):
-                f1 = line.split()
-                if len(f1) > 1 and f1[1] == 'type':
-                    f2 = next(f).split()
-                    info.append([f1[2], f2[1], f2[3]])
-    info.sort()
-    out = []
-    fmt1a = 'const TypeObj %12s::info ("%s");'
-    fmt1b = 'const TypeObj %8s::info ("%s", %s::create, &%s::attrs);'
-    fmt2 = 'const TypeObj& %12s::type () const { return info; }'
     sep = True
     for tag, name, base in info:
         if tag.startswith('<'):
@@ -176,7 +127,7 @@ def OP_EMIT(block, sel=0):
     else:
         return opraises
 
-def xOP(block, typ='', multi=0):
+def OP(block, typ='', multi=0):
     op = block[0].split()[1][3:]
     if 'q' in typ:
         fmt, arg, decl = ' %s', 'fetchQstr()', 'char const* arg'
@@ -226,28 +177,6 @@ def xOP(block, typ='', multi=0):
         a = 'arg' if arg else ''
         opraises.append('    %s(%s); break;' % (name, a))
 
-    return out
-
-def OP(block, typ=''):
-    op = block[0].split()[1][3:]
-    opdefs.append('case Op::%s:' % op)
-    if typ == 'q':
-        fmt, arg, decl = ' %s', 'fetchQstr()', 'char const* arg'
-    elif typ == 'v':
-        fmt, arg, decl = ' %u', 'fetchVarInt()', 'uint32_t arg'
-    elif typ == 'o':
-        fmt, arg, decl = ' %d', 'fetchOffset()', 'int arg'
-    elif typ == 's':
-        fmt, arg, decl = ' %d', 'fetchOffset()-0x8000', 'int arg'
-    else:
-        fmt, arg, decl = '', '', ''
-    name = 'op_' + op
-    opdefs.append('    %s(%s); break;' % (name, arg))
-    out = ['void %s (%s) {' % (name, decl)]
-    if 'op:print' in flags:
-        info = ', arg' if arg else ''
-        if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
-        out.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
     return out
 
 # parse the py/runtime0.h header

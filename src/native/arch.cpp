@@ -1,8 +1,4 @@
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
+#include "monty.h"
 #include "arch.h"
 
 #include <cstdarg>

@@ -1,14 +1,10 @@
 // type.cpp - basic object types and type system
 
+#include "monty.h"
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
 
 namespace Monty { // TODO move ns into defs.h
-#include "xdefs.h"
+#include "defs.h"
 }
 
 using namespace Monty;
@@ -273,7 +269,7 @@ auto Object::type () const -> Type const& { return info; }
 
 Type const Inst::info ("<instance>");
 
-//CG< builtin-types lib/monty/xmonty.h
+//CG< builtin-types lib/monty/monty.h
 Type const    BoundMeth::info ("<boundmeth>");
 Type const       Buffer::info ("<buffer>");
 Type const     Bytecode::info ("<bytecode>");

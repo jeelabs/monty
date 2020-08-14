@@ -1,11 +1,7 @@
 // stack.cpp - execution state, stacks, and callables
 
+#include "monty.h"
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
 
 using namespace Monty;
 

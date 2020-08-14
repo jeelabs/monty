@@ -1,11 +1,7 @@
 // array.cpp - arrays, dicts, and other derived types
 
+#include "monty.h"
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
 
 using namespace Monty;
 

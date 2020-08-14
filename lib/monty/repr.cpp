@@ -1,12 +1,8 @@
 // repr.cpp - repr, printing, and buffering
 
+#include "monty.h"
 #include <cassert>
 #include <cstdarg>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
 
 using namespace Monty;
 

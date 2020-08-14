@@ -3,20 +3,14 @@
 #define SHOW_INSTR_PTR  0 // show instr ptr each time through loop (interp.h)
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
-#include <assert.h>
-
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
+#include "monty.h"
 #include "arch.h"
 
 #include <cstdarg>
+#include <cstdio>
 
 extern "C" int debugf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);

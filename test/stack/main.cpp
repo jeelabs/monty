@@ -1,9 +1,4 @@
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
-
+#include "monty.h"
 #include <unity.h>
 
 using namespace Monty;

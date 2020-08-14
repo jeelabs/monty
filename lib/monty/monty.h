@@ -1,833 +1,699 @@
-// This is the public header for Monty, everything needed by add-ons is in here.
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
 
-#include <stdint.h>
-#include <stdlib.h>
+namespace Monty {
 
-struct Vector {
-#if 0
-    constexpr Vector (size_t bits) : logBits (0), capacity (0) {
-        while (bits > (1U << logBits))
-            ++logBits;
-    }
-#else
-    constexpr static uint8_t log2 (size_t b) {
-        return b <= 1 ? 0 : b <= 2 ? 1 : b <= 4 ? 2 : b <= 8 ? 3 : b <= 16 ? 4 :
-                b <= 32 ? 5 : b <= 64 ? 6 : b <= 128 ? 7 : b <= 256 ? 8 :
-                 b <= 512 ? 9 : b <= 1024 ? 10 : b <= 2048 ? 11 : 12;
-    }
-    constexpr Vector (size_t bits) : logBits (log2(bits)), capacity (0) {}
-#endif
+    extern "C" int printf (const char*, ...);
 
-    ~Vector () { alloc(0); }
+// see gc.cpp - objects and vectors with garbage collection
 
-    size_t length () const { return fill; }
-    int width () const { auto b = 1<<logBits; return b < 8 ? -b : b/8; }
-    int widthOf (int num) const { return (num << logBits) >> 3; }
+    struct Obj {
+        virtual ~Obj () {}
 
-    int getInt (int idx) const;
-    uint32_t getIntU (int idx) const;
-    void* getPtr (int idx) const;
+        auto isCollectable () const -> bool;
 
-    void set (int idx, int val);
-    void set (int idx, const void* ptr);
+        auto operator new (size_t bytes) -> void*;
+        auto operator new (size_t bytes, size_t extra) -> void* {
+            return operator new (bytes + extra);
+        }
+        void operator delete (void*);
+    protected:
+        constexpr Obj () {} // only derived objects can be instantiated
 
-    void ins (int idx, int num =1);
-    void del (int idx, int num =1);
-
-    static void gcCompact ();   // see gc.c
-protected:
-    struct Data {
-        Vector* v;
-        union { uint32_t n; uint8_t d [1]; };
-        Data* next () const;
+        virtual void marker () const {} // called to mark all ref'd objects
+        friend void mark (Obj const&);
     };
 
-    Data* data = 0;
-    uint32_t logBits :8;
-    uint32_t capacity :24;      // in bytes
-    uint32_t fill = 0;          // in elements
-private:
-    void alloc (size_t sz);     // see gc.c
-};
+    struct Vec {
+        constexpr Vec () : caps (0), data (nullptr) {}
+        constexpr Vec (void const* ptr, size_t len =0) // TODO caps b
+            : caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
+        ~Vec () { (void) adj(0); }
 
-template< typename T >
-struct VecOf : Vector {
-    constexpr VecOf () : Vector (8 * sizeof (T)) {}
+        Vec (Vec const&) = delete;
+        auto operator= (Vec const&) -> Vec& = delete;
+        // TODO Vec (Vec&& v); auto operator= (Vec&& v) -> Vec&;
 
-    T get (int idx) const { return *(T*) getPtr(idx); }
-    void set (int idx, T val) { Vector::set(idx, &val); }
-};
+        auto isResizable () const -> bool;
 
-// defined in defs.h
-enum UnOp : uint8_t;
-enum BinOp : uint8_t;
+        auto ptr () const -> uint8_t* { return data; }
+        auto cap () const -> size_t;
+        auto adj (size_t bytes) -> bool;
 
-struct Object;    // forward decl
-struct TypeObj;   // forward decl
-struct ModuleObj; // forward decl
-struct LookupObj; // forward decl
-struct SeqObj;    // forward decl
-struct ForceObj;  // forward decl
-struct Context;   // forward decl
-struct BufferObj; // forward decl
+    private:
+        uint32_t caps; // capacity in slots, see cap() TODO in bytes
+        uint8_t* data; // points into memory pool when cap() > 0
 
-struct Value {
-    enum Tag { Nil, Int, Str, Obj };
-
-    constexpr Value ()                  : v (0) {}
-    constexpr Value (int arg)           : v ((arg << 1) | 1) {}
-              Value (const char* arg)   : v (((uintptr_t) arg << 2) | 2) {}
-    constexpr Value (const Object* arg) : p (arg) {}
-    constexpr Value (const Object& arg) : p (&arg) {}
-
-    operator int () const { return (intptr_t) v >> 1; }
-    operator const char* () const { return (const char*) (v >> 2); }
-    Object& obj () const { return *(Object*) p; }
-    inline ForceObj objPtr () const;
-
-    template< typename T > // return null pointer if not of required type
-    T* ifType () const { return check(T::info) ? (T*) &obj() : 0; }
-
-    template< typename T > // type-asserted safe cast via Object::type()
-    T& asType () const { verify(T::info); return *(T*) &obj(); }
-
-    enum Tag tag () const {
-        return (v & 1) ? Int : // bit 0 set
-                v == 0 ? Nil : // all bits 0
-               (v & 2) ? Str : // bit 1 set, ptr shifted 2 up
-                         Obj;  // bits 0 and 1 clear, ptr stored as is
-    }
-
-    uintptr_t id () const { return v; }
-
-    bool isNil () const { return v == 0; }
-    bool isInt () const { return v & 1; }
-    bool isStr () const { return (v & 3) == 2; }
-    bool isObj () const { return (v & 3) == 0 && v != 0; }
-
-    inline bool isNone  () const;
-    inline bool isFalse () const;
-    inline bool isTrue  () const;
-           bool isBool  () const { return isFalse() || isTrue(); }
-
-    bool truthy () const;
-
-    bool isEq (Value) const;
-    Value unOp (UnOp op) const;
-    Value binOp (BinOp op, Value rhs) const;
-    void dump (const char* msg =0) const; // see builtin.h
-
-    static Value asBool (int f) { return f ? True : False; }
-    Value invert () const { return asBool(!truthy()); }
-
-    static const Value None;
-    static const Value False;
-    static const Value True;
-
-    static Value invalid; // special value, see DictObj::atKey
-private:
-    bool check (const TypeObj& t) const;
-    void verify (const TypeObj& t) const;
-
-    union {
-        uintptr_t v;
-        const void* p;
+        auto findSpace (size_t) -> void*; // hidden private type
+        friend void compact ();
     };
 
-    friend Context; // TODO yuck, just so Context::handlers [] can be inited
-};
-
-struct VecOfValue : VecOf<Value> {
-    void markVec (void (*gc)(const Object&)) const;
-};
-
-struct Object {
-    virtual ~Object () {}
-
-    static const TypeObj info;
-    virtual const TypeObj& type () const;
-
-    virtual void mark (void (*gc)(const Object&)) const {}
-
-    virtual Value repr  (BufferObj&) const; // see builtin.h
-    virtual Value call  (int, Value[]) const;
-    virtual Value unop  (UnOp) const;
-    virtual Value binop (BinOp, Value) const;
-    virtual Value attr  (const char*, Value&) const;
-    virtual Value at    (Value) const;
-    virtual Value iter  () const;
-    virtual Value next  ();
-
-    virtual const SeqObj& asSeq () const;
-
-    void* operator new (size_t);
-    void operator delete (void*);
-
-    static void gcStats ();
-protected:
-    void* operator new (size_t, size_t);
-};
-
-//CG3 type <none>
-struct NoneObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    Value repr  (BufferObj&) const override; // see builtin.h
-
-    static const NoneObj noneObj;
-private:
-    constexpr NoneObj () {} // can't construct more instances
-};
-
-bool Value::isNone  () const { return &obj() == &NoneObj::noneObj; }
-
-//CG< type bool
-struct BoolObj : Object {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    Value repr (BufferObj&) const override; // see builtin.h
-    Value unop (UnOp) const override;
-
-    static const BoolObj trueObj;
-    static const BoolObj falseObj;
-private:
-    constexpr BoolObj () {} // can't construct more instances
-};
-
-bool Value::isFalse () const { return &obj() == &BoolObj::falseObj; }
-bool Value::isTrue  () const { return &obj() == &BoolObj::trueObj; }
-
-//CG< type int
-struct IntObj : Object {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    IntObj (int v) : i (v) {}
-    IntObj (unsigned v) : i (v) {}
-
-private:
-    int64_t i;
-};
-
-//CG< type slice
-struct SliceObj : Object {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    SliceObj (Value a, Value b, Value c);
-
-private:
-    int32_t off, num, cap;
-};
-
-//CG3 type <iterator>
-struct IterObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    IterObj (Value arg) : seq (arg) {}
-
-    Value next () override;
-
-private:
-    Value seq;
-    int pos = 0;
-};
-
-//CG3 type <sequence>
-struct SeqObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    const SeqObj& asSeq () const override { return *this; }
-
-    virtual Value  isIn  (Value) const;
-    virtual Value  plus  (Value) const;
-    virtual Value  times (Value) const;
-    virtual size_t len   ()      const;
-    virtual Value  min   ()      const;
-    virtual Value  max   ()      const;
-    virtual Value  index (Value) const;
-    virtual Value  count (Value) const;
-
-    static const SeqObj dummy;
-protected:
-    constexpr SeqObj () {} // cannot be instantiated directly
-};
-
-//CG< type bytes
-struct BytesObj : SeqObj, protected Vector {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    BytesObj (const void* p, size_t n);
-    ~BytesObj () override;
-    operator const uint8_t* () const;
-
-    Value repr (BufferObj&) const override; // see builtin.h
-    Value unop (UnOp) const override;
-    Value binop (BinOp, Value) const override;
-    Value at (Value) const override;
-    size_t len () const override { return hasVec() ? length() : noVec().size; }
-
-    Value decode () const;
-
-    void* operator new (size_t, size_t);
-
-    static uint32_t hash (const uint8_t* p, size_t n);
-protected:
-    static constexpr int MAX_NOVEC = 16;
-    struct NoVec { uint8_t flag, size; uint8_t bytes [MAX_NOVEC]; };
-    static_assert (sizeof (NoVec) >= sizeof (Vector), "MAX_NOVEC is too small");
-
-    bool hasVec () const { return ((uintptr_t) data & 1) == 0; }
-    NoVec& noVec () const { return *(NoVec*) (const Vector*) this; }
-};
-
-//CG< type str
-struct StrObj : SeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    constexpr StrObj (const char* v) : s (v) {}
-    operator const char* () const { return s; }
-
-    Value repr (BufferObj&) const override; // see builtin.h
-    Value at (Value) const override;
-    size_t len () const override;
-    Value count (Value) const override { return 9; } // TODO
-
-    Value encode () const;
-    Value format (int argc, Value argv[]) { return 4; } // TODO
-
-private:
-    const char* s;
-};
-
-struct ForceObj : Value {
-    ForceObj (const Value* p) : Value (*p), i (*p), s (*p) {}
-    Object& operator* () const;
-    Object* operator-> () const { return & operator*(); }
-
-private:
-    IntObj i;
-    StrObj s;
-};
+    void setup (uintptr_t* base, size_t bytes); // configure the memory pool
 
-ForceObj Value::objPtr () const { return this; }
+    template< size_t N > // convenience wrapper
+    void setup (uintptr_t (&array)[N]) { setup(array, sizeof array); }
 
-//CG< type tuple
-struct TupleObj : SeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-    void mark (void (*gc)(const Object&)) const override;
+    auto avail () -> size_t; // free bytes between the object & vector areas
 
-    Value repr (BufferObj&) const override; // see builtin.h
-    size_t len () const override { return length; }
-    Value at (Value) const override;
+    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
+    void mark (Obj const&);
+    void sweep ();   // reclaim all unmarked objects
+    void compact (); // reclaim and compact unused vector space
 
-private:
-    TupleObj (int argc, Value argv[]);
-
-    uint16_t length;
-    Value vec [];
-};
-
-//CG3 type <lookup>
-struct LookupObj : SeqObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    struct Item { const char* k; const Object* v; };
-
-    constexpr LookupObj (const Item* p, size_t n) : vec (p), len (n) {}
-
-    void mark (void (*gc)(const Object&)) const override;
-    Value at (Value) const override;
-
-private:
-    const Item* vec;
-    size_t len;
-};
-
-//CG3 type <mut-seq>
-struct MutSeqObj : SeqObj, protected VecOfValue {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    size_t len () const override { return length(); }
-
-    virtual void insert (int, Value);
-    virtual Value pop (int =-1);
-    virtual void remove (Value);
-    virtual void reverse ();
-
-    void append (Value v) { insert(length(), v); }
-
-    static MutSeqObj dummy;
-protected:
-    constexpr MutSeqObj () {} // cannot be instantiated directly
-};
-
-//CG< type array
-struct ArrayObj : MutSeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    ArrayObj (char t, size_t sz =0);
-
-    Value repr (BufferObj&) const override; // see builtin.h
-    size_t len () const override { return length(); }
-    Value at (Value i) const override { return get(i); }
-
-    bool isBuffer () const { return logBits == 3; }
-    size_t write (const void* p, size_t n);
-
-    Value get (int idx) const;
-    void set (int idx, Value val);
-
-    char atype;
-    static int typeBits (char typecode);
-};
-
-//CG3 type <buffer>
-struct BufferObj : Object, private VecOf<uint8_t> {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    BufferObj (Value wfun);
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    bool need (size_t bytes);
-    void putc (uint8_t v) ;// TODO { base[fill++] = v; }
-    //void put (const void* p, size_t n);
-
-    void printf(const char* fmt, ...);
-
-private:
-    int splitInt (uint32_t val, int base, uint8_t* buf);
-    void putFiller (int n, char fill);
-    void putInt (int val, int base, int width, char fill);
-
-    size_t room () const { return capacity - fill; }
-    bool flush ();
-
-    Value writer;
-    uint8_t* base = 0;
-};
-
-//CG< type list
-struct ListObj : MutSeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
+    extern void (*panicOutOfMemory)(); // triggers an assertion by default
 
-    ListObj (int argc, Value argv[]);
+// see type.cpp - basic object types and type system
 
-    Value repr (BufferObj&) const override; // see builtin.h
-    Value at (Value) const override;
-};
+    // forward decl's
+    enum UnOp : uint8_t;
+    enum BinOp : uint8_t;
+    struct Callable;
+    struct Object;
+    struct Lookup;
+    struct Buffer;
+    struct Type;
+    struct Context;
 
-//CG< type set
-struct SetObj : ListObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
+    struct Value {
+        enum Tag { Nil, Int, Str, Obj };
 
-    SetObj (int argc, Value argv[]) : ListObj (argc, argv) {}
+        constexpr Value () : v (0) {}
+                  Value (int arg);
+                  Value (char const* arg);
+        constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
+        constexpr Value (Object const& arg) : p (&arg) {}
 
-    Value repr (BufferObj&) const override; // see builtin.h
-};
+        operator int () const { return (intptr_t) v >> 1; }
+        operator char const* () const { return (char const*) (v >> 2); }
+        auto obj () const -> Object& { return *(Object*) v; }
+        auto asObj () -> Object&; // convert int/str to object, in-place
 
-//CG< type dict
-struct DictObj : MutSeqObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
-    enum Mode { Get, Set, Del };
-    const Object* chain = 0; // TODO hide
+        template< typename T > // return null pointer if not of required type
+        auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
 
-    constexpr DictObj (const Object* ch =nullptr) : chain (ch) {}
-    DictObj (int size);
+        template< typename T > // type-asserted safe cast via Object::type()
+        auto asType () const -> T& { verify(T::info); return *(T*) &obj(); }
 
-    void mark (void (*gc)(const Object&)) const override;
+        auto tag () const -> Tag {
+            return (v&1) != 0 ? Int : // bit 0 set
+                       v == 0 ? Nil : // all bits 0
+                   (v&2) != 0 ? Str : // bit 1 set, ptr shifted 2 up
+                                Obj;  // bits 0 and 1 clear, ptr stored as is
+        }
 
-    Value repr (BufferObj&) const override; // see builtin.h
-    size_t len () const override { return length() / 2; }
-    Value at (Value key) const override;
-    Value& atKey (Value key, Mode =Get);
+        auto id () const -> uintptr_t { return v; }
 
-    void addPair (Value k, Value v);
-};
+        auto isNil () const -> bool { return v == 0; }
+        auto isInt () const -> bool { return (v&1) == Int; }
+        auto isStr () const -> bool { return (v&3) == Str; }
+        auto isObj () const -> bool { return (v&3) == Nil && v != 0; }
 
-//CG3 type <type>
-struct TypeObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
+        inline auto isNull  () const -> bool;
+        inline auto isFalse () const -> bool;
+        inline auto isTrue  () const -> bool;
+               auto isBool  () const -> bool { return isFalse() || isTrue(); }
 
-    typedef Value (*Factory)(const TypeObj&,int,Value[]);
+        auto truthy () const -> bool;
 
-    const char* name;
-    const Factory factory;
+        auto operator== (Value) const -> bool;
+        auto operator< (Value) const -> bool;
 
-    constexpr TypeObj (const char* s, Factory f =noFactory, const LookupObj* a =0)
-        : DictObj (a), name (s), factory (f) {}
+        auto unOp (UnOp op) const -> Value;
+        auto binOp (BinOp op, Value rhs) const -> Value;
+        void dump (char const* msg =nullptr) const;
 
-    Value call (int argc, Value argv[]) const override;
-    Value attr (const char*, Value&) const override;
+        static inline auto asBool (bool f) -> Value;
+        auto invert () const -> Value { return asBool(!truthy()); }
 
-private:
-    static Value noFactory (const TypeObj&, int, Value[]);
-};
+    private:
+        auto check (Type const& t) const -> bool;
+        void verify (Type const& t) const;
 
-//CG< type class
-struct ClassObj : TypeObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static const TypeObj info;
-    const TypeObj& type () const override;
-//CG>
+        union {
+            uintptr_t v;
+            const void* p;
+        };
+    };
 
-    ClassObj (int argc, Value argv[]);
+    inline void mark (Value v) { if (v.isObj()) mark(v.obj()); }
 
-    Value repr (BufferObj&) const override; // see builtin.h
-};
+    extern Value const Null;
+    extern Value const False;
+    extern Value const True;
+    extern Value const Empty; // Tuple
 
-// can't be generated, too different
-struct InstanceObj : DictObj {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-
-    TypeObj& type () const override { return *(TypeObj*) chain; }
-    Value attr (const char*, Value&) const override;
-
-private:
-    InstanceObj (const ClassObj& parent, int argc, Value argv[]);
-
-    Value repr (BufferObj&) const override; // see builtin.h
-};
-
-//CG3 type <function>
-struct FunObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    typedef Value (*Func)(int,Value[]);
-
-    constexpr FunObj (Func f) : func (f) {}
-
-    Value call (int argc, Value argv[]) const override {
-        return func(argc, argv);
-    }
-
-private:
-    const Func func;
-};
-
-struct MethodBase {
-    virtual Value call (Value self, int argc, Value argv[]) const =0;
+    auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
     template< typename T >
-    static Value argConv (Value (T::*meth)() const,
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)();
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(),
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)();
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(Value) const,
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)(argv[1]);
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(Value),
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)(argv[1]);
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(int),
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)(argv[1]);
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(const char *),
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)(argv[1]);
-    }
-
-    template< typename T >
-    static Value argConv (Value (T::*meth)(int, Value[]),
-                            Value self, int argc, Value argv[]) {
-        return (((T&) self.obj()).*meth)(argc, argv);
-    }
-
-    template< typename T >
-    static Value argConv (void (T::*meth)(Value),
-                            Value self, int argc, Value argv[]) {
-        (((T&) self.obj()).*meth)(argv[1]);
-        return Value ();
-    }
-};
-
-template< typename M >
-struct Method : MethodBase {
-    constexpr Method (M memberPtr) : methPtr (memberPtr) {}
-
-    Value call (Value self, int argc, Value argv[]) const override {
-        return MethodBase::argConv(methPtr, *self.objPtr(), argc, argv);
-    }
-
-private:
-    const M methPtr;
-};
-
-//CG3 type <method>
-struct MethObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    constexpr MethObj (const MethodBase& m) : meth (m) {}
-
-    Value call (int argc, Value argv[]) const override {
-        return meth.call(argv[0], argc, argv);
-    }
-
-    template< typename M >
-    constexpr static Method<M> wrap (M memberPtr) {
-        return memberPtr;
-    }
-
-private:
-    const MethodBase& meth;
-};
-
-//CG3 type <bound-meth>
-struct BoundMethObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    constexpr BoundMethObj (Value f, Value o) : meth (f), self (o) {}
-
-    Value call (int argc, Value argv[]) const override;
-
-private:
-    Value meth;
-    Value self;
-};
-
-//CG3 type <bytecode>
-struct BytecodeObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    ModuleObj& owner;
-
-    const uint8_t* code;
-    VecOfValue constObjs;
-    int16_t stackSz;
-    int16_t flags;
-    int8_t excDepth;
-    int8_t n_pos;
-    int8_t n_kwonly;
-    int8_t n_def_pos;
-    int16_t hdrSz;
-    int16_t size;
-    int16_t nData;
-    int16_t nCode;
-
-    static BytecodeObj& create (ModuleObj& mo, int bytes);
-    BytecodeObj (ModuleObj& mo) : owner (mo) {}
-
-    bool isCoro () const { return (flags & 1) != 0; } // TODO see CallArgsObj
-    int frameSize () const { return stackSz + 3 * excDepth; } // TODO three?
-
-    void mark (void (*gc)(const Object&)) const override;
-};
-
-//CG3 type <callargs>
-struct CallArgsObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    CallArgsObj (Value bc, TupleObj* pos =0, DictObj* kw =0)
-        : bytecode (bc.asType<BytecodeObj>()), posArgs (pos), kwArgs (kw) {}
-
-    bool isCoro () const { return (bytecode.flags & 1) != 0; }
-    bool hasVarArgs () const { return (bytecode.flags & 4) != 0; }
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    Value call (int argc, Value argv[]) const override;
-    Value call (int argc, Value argv[], DictObj* dp, const Object* retVal) const;
-
-private:
-    const BytecodeObj& bytecode;
-    const TupleObj* posArgs; // TODO: better: empty tuple
-    const DictObj* kwArgs;   // TODO: better: empty dict
-};
-
-//CG3 type <module>
-struct ModuleObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    const BytecodeObj* init = 0;
-
-    constexpr ModuleObj (const LookupObj* lu =0) : DictObj (lu) {}
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    Value attr (const char*, Value&) const override;
-};
-
-//CG3 type <resumable>
-struct ResumableObj : Object {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    virtual bool step (Value v) =0;
-
-    Value retVal;
-    ResumableObj* chain = 0;
-protected:
-    ResumableObj (int argc, Value argv[]) : nargs (argc), args (argv) {}
-
-    int nargs;
-    Value* args; // TODO how about vector compaction? always len 1 ? use tuple?
-};
-
-//CG3 type <frame>
-struct FrameObj : DictObj {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    const BytecodeObj& bcObj;
-    FrameObj* caller = 0;
-    Context* ctx = 0;
-    DictObj* locals;
-    const Object* result; // module/class init & resumable, TODO Value?
-    uint8_t excTop = 0;
-
-    FrameObj (const BytecodeObj& bc, DictObj* dp, const Object* retVal);
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    Value next () override;
-
-    // TODO careful: bottom is only correct when this frame is the top one
-    Value* bottom () const;
-    void leave ();
-
-    bool isCoro () const { return bcObj.isCoro(); }
-    Value& fastSlot (int n) const { return bottom()[bcObj.stackSz + ~n]; }
-
-    Value* exceptionPushPop (int inc) {
-        excTop += inc; // TODO 3 = # of stack entries per exception
-        return bottom() + bcObj.stackSz + 3 * (inc < 0 ? excTop : excTop - 1);
-    }
-
-private:
-    int16_t spOffset = -1;
-    const uint8_t* savedIp; // could be an offset
-
-    friend Context; // Context::flip() can access savedIp & spOffset
-};
-
-//CG3 type <context>
-struct Context : Object, private VecOfValue {
-    static const TypeObj info;
-    const TypeObj& type () const override;
-
-    Value* base () const { return (Value*) getPtr(0); }
-    Value* limit () const { return base() + length(); }
-
-    int extend (int num);
-    void shrink (int num);
-
-    void start (ModuleObj& mod, const LookupObj& builtins);
-
-    static Value print (BufferObj&, Value);
-
-    Value nextPending ();
-    static void raise (Value =Value ());
-    static int setHandler (Value);
-
-    FrameObj* flip (FrameObj*);
-
-    static void suspend (ListObj& queue);
-    static void wakeUp (Value task, Value retVal =Value ());
-    void resume (Value);
-
-    void doCall (Value func, int argc, Value argv []);
-    static Context* prepare (bool coro);
-
-    static void gcCheck (bool =false); // see gc.c
-    static void gcTrigger (); // may not be called from inner vm loop
-
-    static ListObj tasks;
-    bool isAlive () const;
-
-    static DictObj modules; // see builtin.h
-protected:
-    Context () {}
-
-    const uint8_t* ip = 0;
-    Value* sp = 0;
-    FrameObj* fp = 0;
-
-    void popState ();
-    void saveState ();
-    void restoreState ();
-
-    void mark (void (*gc)(const Object&)) const override;
-
-    static Context* vm;
-    static volatile uint32_t pending;
-private:
-    static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
-
-    static Value handlers [];
-};
+    struct VecOf : private Vec {
+        using Vec::Vec;
+
+        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
+        auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
+
+        auto size () const -> size_t { return fill; }
+        auto begin () const -> T* { return (T*) Vec::ptr(); }
+        auto end () const -> T* { return begin() + fill; }
+        auto operator[] (size_t idx) const -> T& { return begin()[idx]; }
+
+        auto relPos (int i) const -> uint32_t { return i < 0 ? i + fill : i; }
+
+        void move (size_t pos, size_t num, int off) {
+            memmove((void*) (begin() + pos + off),
+                        (void const*) (begin() + pos), num * sizeof (T));
+        }
+        void wipe (size_t pos, size_t num) {
+            memset((void*) (begin() + pos), 0, num * sizeof (T));
+        }
+
+        void insert (size_t idx, size_t num =1) {
+            if (fill > cap())
+                fill = cap();
+            if (idx > fill) {
+                num += idx - fill;
+                idx = fill;
+            }
+            auto need = fill + num;
+            if (need > cap())
+                adj(need);
+            move(idx, fill - idx, num);
+            wipe(idx, num);
+            fill += num;
+        }
+
+        void remove (size_t idx, size_t num =1) {
+            if (fill > cap())
+                fill = cap();
+            if (idx >= fill)
+                return;
+            if (num > fill - idx)
+                num = fill - idx;
+            move(idx + num, fill - (idx + num), -num);
+            fill -= num;
+        }
+
+        uint32_t fill {0};
+    };
+
+    using Vector = VecOf<Value>;
+
+    void mark (Vector const&);
+
+    // can't use "CG type <object>", as type/repr are virtual iso override
+    struct Object : Obj {
+        static const Type info;
+        virtual auto type () const -> Type const&;
+        virtual auto repr  (Buffer&) const -> Value;
+
+        virtual auto call  (Context&, int, int) const -> Value;
+        virtual auto unop  (UnOp) const -> Value;
+        virtual auto binop (BinOp, Value) const -> Value;
+        virtual auto attr  (const char*, Value&) const -> Value;
+        virtual auto getAt (Value) const -> Value;
+        virtual auto setAt (Value, Value) -> Value;
+        virtual auto next  () -> Value;
+    };
+
+    //CG< type <none>
+    struct None : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto unop (UnOp) const -> Value override;
+
+        static None const nullObj;
+    private:
+        constexpr None () {} // can't construct more instances
+    };
+
+    //CG< type bool
+    struct Bool : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto unop (UnOp) const -> Value override;
+
+        static Bool const trueObj;
+        static Bool const falseObj;
+    private:
+        constexpr Bool () {} // can't construct more instances
+    };
+
+    //CG< type int
+    struct Fixed : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr Fixed (int64_t v) : i (v) {}
+
+        operator int64_t () const { return i; }
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+
+    private:
+        int64_t i __attribute__((packed));
+    }; // packing gives a better fit on 32b arch, and has no effect on 64b
+
+    //CG< type bytes
+    struct Bytes : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Bytes (uint8_t const* =nullptr, size_t =0) {} // TODO
+    };
+
+    //CG< type str
+    struct Str : Bytes {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Str (char const* s) : ptr (s) {}
+
+        auto getAt (Value k) const -> Value override;
+
+    private:
+        char const* ptr;
+    };
+
+    //CG< type range
+    struct Range : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+    };
+
+    //CG< type slice
+    struct Slice : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Slice (Value a, Value b, Value c);
+
+    private:
+        int32_t off, num, step;
+    };
+
+    //CG< type <lookup>
+    struct Lookup : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        struct Item { char const* k; Value v; };
+
+        constexpr Lookup (Item const* p, size_t sz)
+            : items (p), count (sz / sizeof (Item)) {}
+
+        auto operator[] (char const* key) const -> Value;
+
+        auto getAt (Value k) const -> Value override;
+
+        void marker () const override;
+    protected:
+        Item const* items;
+        size_t count;
+    };
+
+    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
+    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
+    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
+
+// see repr.cpp - repr, printing, and buffering
+
+    //CG< type <buffer>
+    struct Buffer : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        void putc (char v) { write((uint8_t const*) &v, 1); }
+        void puts (char const* s) { while (*s != 0) putc(*s++); }
+        void print (const char* fmt, ...);
+
+        auto operator<< (Value v) -> Buffer&;
+
+    protected:
+        virtual void write (uint8_t const* ptr, size_t len) const;
+    private:
+        int splitInt (uint32_t val, int base, uint8_t* buf);
+        void putFiller (int n, char fill);
+        void putInt (int val, int base, int width, char fill);
+
+        bool sep {false};
+    };
+
+// see array.cpp - arrays, dicts, and other derived types
+
+    //CG< type tuple
+    struct Tuple : Object {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto size () const -> size_t { return fill; }
+        auto begin () const -> Value const* { return data(); }
+        auto end () const -> Value const* { return begin() + size(); }
+        auto operator[] (size_t idx) const -> Value { return begin()[idx]; }
+
+        auto getAt (Value k) const -> Value override;
+
+        size_t const fill;
+
+        static Tuple const emptyObj;
+    private:
+        constexpr Tuple () : fill (0) {}
+        Tuple (size_t n, Value const* vals =nullptr);
+
+        auto data () const -> Value const* { return (Value const*) (this + 1); }
+    };
+
+    //CG< type list
+    struct List : Object, Vector {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr List () {}
+        List (Context& ctx, int argc, int args);
+
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
+
+        void marker () const override { mark((Vector const&) *this); }
+    };
+
+    //CG< type set
+    struct Set : List {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        using List::List;
+
+        auto find (Value v) const -> size_t;
+
+        struct Proxy { Set& s; Value v;
+            operator bool () const { return ((Set const&) s).has(v); }
+            auto operator= (bool) -> bool;
+        };
+
+        // operator[] is problematic when the value is an int
+        auto has (Value key) const -> bool;
+        auto has (Value key) -> Proxy { return {*this, key}; }
+
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
+    };
+
+    //CG< type dict
+    struct Dict : Set {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr Dict (Object const* ch =nullptr) : chain (ch) {}
+        Dict (size_t n);
+
+        struct Proxy { Dict& d; Value k;
+            operator Value () const { return ((Dict const&) d).at(k); }
+            auto operator= (Value v) -> Value;
+        };
+
+        auto at (Value key) const -> Value;
+        auto at (Value key) -> Proxy { return {*this, key}; }
+
+        auto getAt (Value k) const -> Value override { return at(k); }
+        auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
+
+        void marker () const override { Set::marker(); mark(chain); }
+    // TODO protected:
+        Object const* chain {nullptr};
+    };
+
+    //CG< type type
+    struct Type : Dict {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        using Factory = auto (*)(Context&,int,int,Type const*) -> Value;
+
+        constexpr Type (char const* s, Factory f =noFactory,
+                                        Lookup const* a =nullptr)
+            : Dict (a), name (s), factory (f) {}
+
+        auto call (Context& ctx, int argc, int args) const -> Value override;
+        auto attr (char const* name, Value& self) const -> Value override {
+            return getAt(name);
+        }
+
+        char const* name;
+        Factory factory;
+    private:
+        static auto noFactory (Context&, int, int, Type const*) -> Value;
+    };
+
+    //CG< type class
+    struct Class : Type {
+        static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Class (Context& ctx, int argc, int args);
+    };
+
+    // can't use CG, because type() must not be auto-generated
+    struct Inst : Dict {
+        static auto create (Context&, int, int, Type const*) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto repr (Buffer&) const -> Value override;
+
+        auto type () const -> Type const& override { return *(Type*) chain; }
+
+    private:
+        Inst (Context& ctx, int argc, int args, Class const& cls);
+    };
+
+    extern Lookup const builtins;
+
+// see stack.cpp - execution state, stacks, and callables
+
+    //CG< type <function>
+    struct Function : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        using Prim = auto (*)(Context&,int,int) -> Value;
+
+        constexpr Function (Prim f) : func (f) {}
+
+        auto call (Context& ctx, int argc, int args) const -> Value override {
+            return func(ctx, argc, args);
+        }
+
+    protected:
+        Prim func;
+    };
+
+    //CG< type <boundmeth>
+    struct BoundMeth : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
+
+        void marker () const override { mark(meth); mark(self); }
+
+        Value meth;
+        Value self;
+    };
+
+// see exec.cpp - importing, loading, and bytecode execution
+
+    //CG< type <module>
+    struct Module : Dict {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Module (Value qpool) : Dict (&builtins), qp (qpool) {}
+
+        Value attr (const char* s, Value&) const override { return getAt(s); }
+
+        void marker () const override { Dict::marker(); mark(qp); }
+
+        Value qp;
+    };
+
+    //CG< type <bytecode>
+    struct Bytecode : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto constAt (size_t i) const -> Value { return constObjs[i]; }
+        auto fastSlotTop () const -> size_t { return stackSz; }
+        auto excLevel () const -> size_t { return excDepth; }
+        auto isGenerator () const -> bool { return (flags & 1) != 0; }
+        auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
+
+        auto numArgs (int t) const -> uint32_t {
+            return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
+        }
+
+        auto codeStart () const -> uint8_t const* {
+            return (uint8_t const*) (this + 1) + code;
+        }
+
+        void marker () const override {} // TODO
+    private:
+        Bytecode () {}
+
+        Vector constObjs;
+        int16_t code;
+        int16_t stackSz;
+        int16_t flags;
+        int16_t hdrSz;
+        int16_t size;
+        int16_t nData;
+        int16_t nCode;
+        int8_t excDepth;
+        int8_t n_pos;
+        int8_t n_kwonly;
+        int8_t n_def_pos;
+
+        friend struct Loader;
+    };
+
+    //CG< type <callable>
+    struct Callable : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Callable (Module& mod, Bytecode const& callee,
+                    Tuple* t =nullptr, Dict* d =nullptr)
+            : mo (mod), code (callee), pos (t), kw (d) {}
+
+        auto qStrAt (size_t) const -> char const*;
+
+        auto call (Context& ctx, int argc, int args) const -> Value override;
+
+        void marker () const override;
+
+    // TODO private:
+        Module& mo;
+        Bytecode const& code;
+        Tuple* pos;
+        Dict* kw;
+    };
+
+    //CG< type <context>
+    struct Context : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Context (Context* from =nullptr) : caller (from) {}
+
+        void enter (Callable const&);
+        Value leave (Value v);
+
+        auto getQstr (size_t i) const -> char const* {
+            return callee->qStrAt(i);
+        }
+        auto getConst (size_t i) const -> Value {
+            return callee->code.constAt(i);
+        }
+        auto fastSlot (size_t i) const -> Value& {
+            return spBase()[callee->code.fastSlotTop() + ~i];
+        }
+        auto spBase () const -> Value* {
+            return frame().stack;
+        }
+        auto ipBase () const -> uint8_t const* {
+            return callee->code.codeStart();
+        }
+
+        static constexpr int EXC_STEP = 3; // use 3 slots per exception
+        auto excBase (int incr =0) -> Value*;
+
+        auto globals () const -> Module& { return callee->mo; }
+
+        void raise (Value exc ={});
+        void raise (uint8_t op, uint16_t arg) {
+            raise((~0U << 24) | (op << 16) | arg);
+        }
+
+        void caught (Value e ={});
+
+        auto next () -> Value override;
+
+        void marker () const override;
+
+        // previous values are saved in current stack frame
+        size_t spIdx {0};
+        size_t ipIdx {0};
+        size_t epIdx {0};
+        Callable const* callee {nullptr};
+        Dict* locals {nullptr};
+        Value result;
+
+        size_t limit {0};
+        Value event;
+        Context* caller;
+
+        static void exception (Value exc);  // throw exception in curr context
+        static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
+        static auto nextPending () -> int;  // next pending or -1 (irq-safe)
+        static auto wasPending (uint32_t) -> bool; // test and clear bit
+
+        static volatile uint32_t pending;   // for irq-safe inner loop exit
+        static Context* active;             // current active context, if any
+    private:
+        struct Frame {
+            Value link, sp, ip, ep, callee, locals, result, stack [];
+        };
+
+        auto frame () const -> Frame& { return *(Frame*) end(); }
+    };
+
+    auto loadModule (uint8_t const* addr) -> Module*;
+
+} // namespace Monty

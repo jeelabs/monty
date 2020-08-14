@@ -1,399 +1,300 @@
-// Memory allocation, garbage collection of objects, and compaction of vectors.
+// gc.cpp - objects and vectors with garbage collection
 
 #include "monty.h"
-#include "config.h"
+#include <cassert>
 
-#include <assert.h>
-#include <string.h>
+using namespace Monty;
 
-#ifndef GC_VERBOSE
-#define GC_VERBOSE      0 // gc info & stats: 0 = off, 1 = stats, 2 = detailed
-#endif
-#ifndef GC_ALWAYS
-#define GC_ALWAYS       0 // triggers a gc cycle after each alloc when set
-#endif
-#ifndef GC_MALLOCS
-#define GC_MALLOCS      0 // use standard allocator, no garbage collection
-#endif
-#ifndef GC_REPORTS
-#define GC_REPORTS   1000 // print a gc stats report every 1000 allocs
-#endif
+struct ObjSlot {
+    auto next () const -> ObjSlot* { return (ObjSlot*) (flag & ~1); }
+    auto isFree () const -> bool   { return vt == nullptr; }
+    auto isLast () const -> bool   { return chain == nullptr; }
+    auto isMarked () const -> bool { return (flag & 1) != 0; }
+    void setMark ()                { flag |= 1; }
+    void clearMark ()              { flag &= ~1; }
 
-#ifndef GC_MEM_BYTES
-#define GC_MEM_BYTES (20*1024)  // 20 Kb total memory
-#endif
-#ifndef GC_VEC_BYTES
-#define GC_VEC_BYTES (4*1024)   // enough for basic testing on 32-/64-bit arch
-#endif
-#ifndef GC_MEM_ALIGN
-#define GC_MEM_ALIGN 16         // 16-byte slot boundaries
-#endif
+    // field order is essential, obj must be last
+    union {
+        ObjSlot* chain;
+        uintptr_t flag; // bit 0 set for marked objects
+    };
+    union {
+        Obj obj;
+        void* vt; // null for deleted objects
+    };
+};
 
-#if GC_VERBOSE
-extern "C" int debugf (const char*, ...);
-#endif
+struct VecSlot {
+    auto isFree () const -> bool { return vec == nullptr; }
 
-#if GC_VERBOSE < 2
-#define debugf(...)
-#endif
+    Vec* vec;
+    union {
+        VecSlot* next;
+        uint8_t buf [1];
+    };
+};
 
-#define PREFIX "\t\tgc "
+constexpr auto PTR_SZ = sizeof (void*);
+constexpr auto VS_SZ  = sizeof (VecSlot);
+constexpr auto OS_SZ  = sizeof (ObjSlot);
 
-// use 16- or 32-bit int headers: sign bit set for allocated blocks
-// the remaining 15 or 31 bits are the slot size, in alignment units
-// with 16-bit headers and 8-byte alignment, memory can be up to 256 KB
+static_assert (OS_SZ == 2 * PTR_SZ, "wrong ObjSlot size");
+static_assert (VS_SZ == 2 * PTR_SZ, "wrong VecSlot size");
+static_assert (OS_SZ == VS_SZ, "mismatched slot sizes");
 
-#if 1
-typedef int16_t hdr_t;                  // header precedes pointer to block
-constexpr int   HBYT = 2;               // header size in bytes
-constexpr hdr_t USED = 0x8000;          // sign bit, set if in use
-constexpr hdr_t MASK = 0x7FFF;          // size mask, in alignment units
-#else
-typedef int32_t hdr_t;                  // header precedes pointer to block
-constexpr int   HBYT = 4;               // header size in bytes
-constexpr hdr_t USED = 0x80000000;      // sign bit, set if in use
-constexpr hdr_t MASK = 0x7FFFFFFF;      // size mask, in alignment units
-#endif
+static uintptr_t* start;    // start of memory pool, aligned to VS_SZ-PTR_SZ
+static uintptr_t* limit;    // limit of memory pool, aligned to OS_SZ-PTR_SZ
 
-static_assert (HBYT == sizeof (hdr_t), "HBYT does not match hdr_t");
-static_assert (USED < 0,               "USED is not the sign of hdr_t");
-static_assert (MASK == ~USED,          "MASK does not match USED");
+static ObjSlot* objLow;     // low water mark of object memory pool
+static VecSlot* vecHigh;    // high water mark of vector memory pool
 
-constexpr int HPS = GC_MEM_ALIGN / HBYT;   // headers per alignment slot
-constexpr int MAX = GC_MEM_BYTES / HBYT;   // memory size as header count
-
-struct {
-    uint32_t toa, tob, tva, tvb, // totalObjAllocs/Bytes, totalVecAllocs/Bytes
-             coa, cob, cva, cvb, // currObjAllocs/Bytes,  currVecAllocs/Bytes
-             moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
-} stats;
-
-// use a fixed memory pool for now, indexed as headers and aligned to slots
-static hdr_t mem [MAX] __attribute__ ((aligned (GC_MEM_ALIGN)));
-
-// convert an alloc pointer to the header reference which precedes it
-static hdr_t& p2h (void *p) {
-    assert(((uintptr_t) p) % GC_MEM_ALIGN == 0);
-    assert(mem < p && p <= mem + MAX);
-    return ((hdr_t*) p)[-1];
+template< typename T >
+static auto roundUp (size_t n) -> size_t {
+    constexpr auto mask = sizeof (T) - 1;
+    static_assert ((sizeof (T) & mask) == 0, "must be power of 2");
+    return (n + mask) & ~mask;
 }
 
-// convert a header pointer to an alloc pointer
-static void* h2p (hdr_t* h) { return h + 1; }
-
-// true if this is an allocated block
-static bool inUse (hdr_t h) { return h < 0; }
-
-// header size in slots
-static size_t h2s (hdr_t h) { return h & MASK; }
-
-// header size in bytes
-static size_t h2b (hdr_t h) { return h2s(h) * GC_MEM_ALIGN - HBYT; }
-
-// round bytes upwards to number of slots, leave room for next header
-static int b2s (size_t bytes) {
-    // with 8-byte alignment, up to 6 bytes will fit in the first slot
-    return (bytes + HBYT + GC_MEM_ALIGN - 1) / GC_MEM_ALIGN;
+template< typename T >
+static auto multipleOf (size_t n) -> size_t {
+    return roundUp<T>(n) / sizeof (T);
 }
 
-// return a reference to the next block
-static hdr_t& nextObj (hdr_t* h) {
-    return *(h + h2b(*h) / HBYT + 1);
+static auto obj2slot (Obj const& o) -> ObjSlot* {
+    return o.isCollectable() ? (ObjSlot*) ((uintptr_t) &o - PTR_SZ) : 0;
 }
 
-// init pool to 1 partial slot, max-1 free slots, 1 allocated header
-static void initMem () {
-    constexpr auto slots = MAX / HPS; // aka GC_MEM_BYTES / GC_MEM_ALIGN
-    debugf("ma %d hps %d max %d slots %d mem %p\n",
-            GC_MEM_ALIGN, HPS, MAX, slots, mem);
-    mem[HPS-1] = slots - 1;
-    mem[MAX-1] = USED; // special end marker: used, but size 0
+static void mergeFreeObjs (ObjSlot& slot) {
+    while (true) {
+        auto nextSlot = slot.chain;
+        assert(nextSlot != nullptr);
+        if (!nextSlot->isFree() || nextSlot->isLast())
+            break;
+        slot.chain = nextSlot->chain;
+    }
 }
 
-// merge any following free blocks into this one
-static void coalesce (hdr_t* h) {
-    if (!inUse(*h))
-        while (!inUse(nextObj(h)))
-            *h += nextObj(h); // free headers are positive and can be added
+// combine this free vec with all following free vecs
+// return true if vecHigh has been lowered, i.e. this free vec is now gone
+static auto mergeVecs (VecSlot& slot) -> bool {
+    assert(slot.isFree());
+    auto& tail = slot.next;
+    while (tail < vecHigh && tail->isFree())
+        tail = tail->next;
+    if (tail < vecHigh)
+        return false;
+    vecHigh = &slot;
+    return true;
 }
 
-static void* allocate (size_t sz) {
-#if GC_MALLOCS
-    return malloc(sz);
-#else
-    if (mem[MAX-1] == 0)
-        initMem();
+// turn a vec slot into a free slot, ending at tail
+static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
+    if (tail <= &slot)
+        return; // no room for a free slot
+    slot.vec = nullptr;
+    slot.next = tail;
+}
 
-    auto ns = b2s(sz);
-    debugf("  alloc %d slots %d\n", (int) sz, ns);
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &nextObj(h))
-        if (!inUse(*h)) {
-            //debugf("    b %d ns %d h %p *h %04x\n", (int) sz, ns, h, *h);
-            coalesce(h);
-            if (*h >= ns) {
-                auto os = *h;
-                *h = ns;
-                //debugf("    h %p next h %p end %p\n", h, &nextObj(h), mem + MAX);
-                if (os > ns)
-                    nextObj(h) = os - ns;
-                *h |= USED;
-                auto p = h2p(h);
-                debugf("    -> %p *h %04x next %04x\n",
-                        p, (uint16_t) *h, (uint16_t) nextObj(h));
+// don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
+// (hmmm, perhaps the assert macro is trying to obtain a function name ...)
+//void (*panicOutOfMemory)() = []() { assert(false); };
+static void defaultOutOfMemoryHandler () { assert(false); }
 
-                if (++stats.toa % GC_REPORTS == 0)
-                    Object::gcStats();
-                if (++stats.coa > stats.moa)
-                    stats.moa = stats.coa;
+namespace Monty {
+    void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
-                stats.tob += ns * GC_MEM_ALIGN;
-                stats.cob += ns * GC_MEM_ALIGN;
-                if (stats.mob < stats.cob)
-                    stats.mob = stats.cob;
+    auto Obj::isCollectable () const -> bool {
+        auto p = (void const*) this;
+        return objLow <= p && p < limit;
+    }
 
-                Context::gcCheck(); // exit inner loop after each new allocation
-                return p;
+    auto Obj::operator new (size_t sz) -> void* {
+        auto needs = multipleOf<ObjSlot>(sz + PTR_SZ);
+
+        // traverse object pool, merge free slots, loop until first fit
+        for (auto slot = objLow; !slot->isLast(); slot = slot->next())
+            if (slot->isFree()) {
+                mergeFreeObjs(*slot);
+                auto space = slot->chain - slot;
+                if (space >= (int) needs)
+                    return &slot->obj;
             }
-        }
 
-    assert(false);
-    return 0; // ouch, ran out of memory
-#endif
-}
+        if (objLow - needs < (void*) vecHigh)
+            return panicOutOfMemory(), malloc(sz); // give up, last resort
 
-static void release (void* p) {
-#if GC_MALLOCS
-    free(p);
-#else
-    if (p != 0) {
-        auto& h = p2h(p);
-        assert(inUse(h));
-        h &= ~USED;
-        --stats.coa;
-        stats.cob -= h2s(h) * GC_MEM_ALIGN;
-    }
-#endif
-}
+        objLow -= needs;
+        objLow->chain = objLow + needs;
 
-static uint8_t vecs [GC_VEC_BYTES] __attribute__ ((aligned (GC_MEM_ALIGN)));
-static uint8_t* vecTop = vecs;
-
-static size_t roundUp (size_t n, size_t unit) {
-    auto mask = unit - 1;
-    assert((unit & mask) == 0); // must be power of 2
-    return (n + mask) & ~ mask;
-}
-
-// used only to alloc/resize/free variable data vectors
-void Vector::alloc (size_t sz) {
-    debugf(PREFIX "resize %5d -> %d   @ %p (u %d) d %p\n",
-            (int) capacity, (int) sz, this, (int) (vecTop - vecs), data);
-#if GC_MALLOCS
-    data = (Data*) realloc(data, sizeof (void*) + sz);
-    data->v = this;
-#else
-    assert(vecs <= vecTop && vecTop < vecs + sizeof vecs);
-
-    constexpr auto PSZ = sizeof (void*);
-    constexpr auto DSZ = sizeof (Data);
-    static_assert (2 * PSZ == DSZ, "unexpected Vector::Data size");
-
-    auto osz = roundUp(PSZ + capacity, DSZ);
-    auto nsz = roundUp(PSZ + sz, DSZ);
-
-    if (nsz > osz)
-        stats.tvb += nsz - osz;
-    stats.cvb += nsz - osz;
-    if (stats.mvb < stats.cvb)
-        stats.mvb = stats.cvb;
-
-    if (sz == 0) {
-        if (data != 0) {
-            --stats.cva;
-            //debugf("resize gap %p #%d\n", data, (int) capacity);
-            assert(data->v == this);
-            data->v = 0;
-            data->n = capacity;
-            data = 0;
-        }
-        return;
+        // new objects are always at least ObjSlot-aligned, i.e. 8-/16-byte
+        assert((uintptr_t) &objLow->obj % OS_SZ == 0);
+        return &objLow->obj;
     }
 
-    assert(nsz >= osz); // no need to support shrinking, gcCompact will do that
+    void Obj::operator delete (void* p) {
+        assert(p != nullptr);
+        auto slot = obj2slot(*(Obj*) p);
+        assert(slot != nullptr);
 
-    if (data == 0) {
-        ++stats.tva;
-        if (++stats.cva > stats.mva)
-            stats.mva = stats.cva;
-        assert(capacity == 0);
-        data = (Data*) vecTop;
-        vecTop += DSZ;
-        data->v = this;
-        //debugf("new data %p vecTop %p\n", data, vecTop);
+        slot->vt = nullptr; // mark this object as free and make it unusable
+
+        mergeFreeObjs(*slot);
+
+        // try to raise objLow, this will cascade when freeing during a sweep
+        if (slot == objLow)
+            objLow = objLow->chain;
     }
 
-    if (nsz == osz)
-        return; // it already fits
-
-    //debugf("  incr sz %d to %d top %p\n", (int) osz, (int) nsz, vecTop);
-    assert(data->v == this);
-    assert((uint8_t*) data->next() <= vecTop);
-
-    if ((uint8_t*) data + osz == vecTop) {
-        //debugf("    last vector, expanding in-place\n");
-        vecTop = (uint8_t*) data + nsz;
-        return;
+    auto Vec::isResizable () const -> bool {
+        auto p = (void*) data;
+        return p == nullptr || (start < p && p < vecHigh);
     }
 
-    auto p = (Data*) vecTop;
-    vecTop += nsz;
-    p->v = this;
-    memcpy(p->d, data->d, fill * width());
-
-    data->v = 0;
-    data->n = capacity;
-
-    data = p;
-#endif
-}
-
-void* Object::operator new (size_t sz) {
-    auto p = allocate(sz);
-    debugf(PREFIX "new    %5d -> %p (used %d)\n", (int) sz, p, stats.cob);
-    return p;
-}
-
-void* Object::operator new (size_t sz, size_t extra) {
-    auto p = allocate(sz + extra);
-    debugf(PREFIX "new #  %d + %d -> %p (used %d)\n",
-            (int) sz, (int) extra, p, stats.cob);
-    return p;
-}
-
-void Object::operator delete (void* p) {
-    auto& obj = *(const Object*) p;
-    (void) obj;
-    debugf(PREFIX "delete        : %p %s\n", p, obj.type().name);
-    release(p);
-}
-
-#undef debugf
-
-void Object::gcStats () {
-#if GC_VERBOSE
-    debugf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
-            stats.toa, stats.tob, stats.tva, stats.tvb);
-    debugf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
-            stats.coa, stats.cob, stats.cva, stats.cvb);
-    debugf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
-            stats.moa, stats.mob, stats.mva, stats.mvb);
-#endif
-}
-
-void Context::gcCheck (bool actNow) {
-    if (vm == 0)
-        return;
-#if !GC_ALWAYS
-    // TODO 10? 1000? magic values ...
-    if ((GC_MEM_BYTES - stats.cob) > (GC_MEM_BYTES / 10) &&
-            (vecTop - vecs < (int) sizeof vecs - 1000))
-        return;
-#endif
-    if (actNow)
-        gcTrigger();
-    else
-        raise(); // exit inner loop
-}
-
-static uint32_t tagBits [MAX/HPS/32];
-
-static bool tagged (size_t n) {
-    return (tagBits[n/32] & (1 << (n % 32))) != 0;
-}
-
-static void setTag (size_t n) {
-    tagBits[n/32] |= 1 << (n % 32);
-}
-
-static void gcMarker (const Object& obj) {
-    auto& vt = *(const void**) &obj;
-    (void) vt;
-    auto off = ((const hdr_t*) &obj - mem) / HPS;
-    if (0 <= off && off < MAX/HPS) {
-        if (tagged(off))
-            return;
-#if GC_VERBOSE > 1
-        debugf("\t\t\t\tmark %p ...%p %s\n", &obj, vt, obj.type().name);
-#endif
-        setTag(off);
+    auto Vec::cap () const -> size_t {
+        return caps > 0 ? (2 * caps - 1) * PTR_SZ : 0;
     }
-    obj.mark(gcMarker);
-}
 
-static void gcSweeper () {
-    for (auto h = &mem[HPS-1]; h2s(*h) > 0; h = &nextObj(h)) {
-        //const char* s = "*FREE*";
-        if (inUse(*h)) {
-            auto obj = (Object*) h2p(h);
-            auto off = ((const hdr_t*) obj - mem) / HPS;
-            assert(0 <= off && off < MAX/HPS);
-            if (!tagged(off)) {
-                //debugf("deleting %p %s\n", obj, obj->type().name);
-                delete obj;
-                *(void**) obj = 0; // clear vtable to make Object* unusable
+    auto Vec::findSpace (size_t needs) -> void* {
+        auto slot = (VecSlot*) start;               // scan all vectors
+        while (slot < vecHigh)
+            if (!slot->isFree())                    // skip used slots
+                slot += slot->vec->caps;
+            else if (mergeVecs(*slot))              // no more free slots
+                break;
+            else if (slot + needs > slot->next)     // won't fit
+                slot = slot->next;
+            else {                                  // fits, may need to split
+                splitFreeVec(slot[needs], slot->next);
+                break;                              // found existing space
             }
-        }
-    }
-}
-
-Vector::Data* Vector::Data::next () const {
-    auto off = sizeof (void*) + (v != 0 ? v->capacity : n);
-    auto p = (Data*) ((uint8_t*) this + roundUp(off, sizeof (Data)));
-    assert(vecs <= (uint8_t*) p && (uint8_t*) p <= vecs + sizeof vecs);
-    return p;
-}
-
-void Vector::gcCompact () {
-    auto newTop = (Data*) vecs;
-    for (auto p = newTop; (uint8_t*) p < vecTop; p = p->next()) {
-        int n = p->next() - p;
-#if GC_VERBOSE > 1
-        debugf("\t\t\t\tvec %p v %p size %d (%d b)\n", p, p->v,
-                (int) (p->v != 0 ? p->v->capacity : -1),
-                (int) (n * sizeof (Data)));
-#endif
-        if (p->v != 0) {
-#if GC_VERBOSE > 1
-            debugf("\tcompact %p -> %p #%d\n",
-                    p, newTop, (int) (n * sizeof (Data)));
-#endif
-            if (newTop < p->v->data) {
-                p->v->data = newTop; // adjust now, p->v may get clobbered
-                memmove(newTop, p, n * sizeof (Data));
+        if (slot == vecHigh) {
+            if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow) {
+                panicOutOfMemory();
+                return 0; // no space found, and no room to expand
             }
-            newTop += n;
+            vecHigh += needs;
         }
+        slot->vec = this;
+        return slot;
     }
-    vecTop = (uint8_t*) newTop;
-}
 
-void Context::gcTrigger () {
-#if GC_VERBOSE
-    debugf("gc start, used b: %7d obj + %7d vec (gap %d)\n",
-            (int) stats.cob, (int) stats.cvb,
-            (int) (vecs + sizeof vecs - vecTop));
-#endif
-    memset(tagBits, 0, sizeof tagBits);
-    if (vm != 0) {
-        gcMarker(*vm);
-        gcMarker(modules);
+    // many tricky cases, to merge/reuse free slots as much as possible
+    auto Vec::adj (size_t sz) -> bool {
+        if (!isResizable())
+            return false;
+        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
+        if (caps != needs) {
+            auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
+            if (slot == nullptr) {                  // new alloc
+                slot = (VecSlot*) findSpace(needs);
+                if (slot == nullptr)                // no room
+                    return false;
+                data = slot->buf;
+            } else if (needs == 0) {                // delete
+                slot->vec = nullptr;
+                slot->next = slot + caps;
+                mergeVecs(*slot);
+                data = nullptr;
+            } else {                                // resize
+                auto tail = slot + caps;
+                if (tail < vecHigh && tail->isFree())
+                    mergeVecs(*tail);
+                if (tail == vecHigh) {              // easy resize
+                    if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
+                        return panicOutOfMemory(), false;
+                    vecHigh += needs - caps;
+                } else if (needs < caps)            // split, free at end
+                    splitFreeVec(slot[needs], slot + caps);
+                else if (!tail->isFree() || slot + needs > tail->next) {
+                    // realloc, i.e. del + new
+                    auto nslot = (VecSlot*) findSpace(needs);
+                    if (nslot == nullptr)                 // no room
+                        return false;
+                    memcpy(nslot->buf, data, cap()); // copy data over
+                    data = nslot->buf;
+                    slot->vec = nullptr;
+                    slot->next = slot + caps;
+                } else                              // use (part of) next free
+                    splitFreeVec(slot[needs], tail->next);
+            }
+            // clear newly added bytes
+            auto obytes = cap();
+            caps = needs;
+            auto nbytes = cap();
+            if (nbytes > obytes)                    // clear added bytes
+                memset(data + obytes, 0, nbytes - obytes);
+        }
+        assert((uintptr_t) data % VS_SZ == 0);
+        return true;
     }
-    gcSweeper();
-    Vector::gcCompact();
-#if GC_VERBOSE
-    debugf("gc done,  free b: %7d obj + %7d vec (max %d+%d)\n",
-            (int) (GC_MEM_BYTES - stats.cob),
-            (int) (sizeof vecs - stats.cvb),
-            GC_MEM_BYTES, (int) sizeof vecs);
-#endif
-}
+
+    void setup (uintptr_t* base, size_t size) {
+        assert((uintptr_t) base % PTR_SZ == 0);
+        assert(size % PTR_SZ == 0);
+
+        start = base;
+        limit = base + size / sizeof *base;
+
+        // start & limit must not be exact multiples of ObjSlot/VecSlot sizes
+        // when they are, simply increase start and/or decrease limit a bit
+        // as a result, the allocated data itself sits on an xxxSlot boundary
+        // this way no extra alignment is needed when setting up a memory pool
+        if ((uintptr_t) start % VS_SZ == 0)
+            ++start;
+        if ((uintptr_t) limit % VS_SZ == 0)
+            --limit;
+        assert(start < limit); // need room for at least the objLow setup
+
+        vecHigh = (VecSlot*) start;
+
+        objLow = (ObjSlot*) limit - 1;
+        objLow->chain = nullptr;
+        objLow->vt = nullptr;
+
+        assert((uintptr_t) &vecHigh->next % VS_SZ == 0);
+        assert((uintptr_t) &objLow->obj % OS_SZ == 0);
+    }
+
+    auto avail () -> size_t {
+        return (uintptr_t) objLow - (uintptr_t) vecHigh;
+    }
+
+    void mark (Obj const& obj) {
+        auto p = obj2slot(obj);
+        if (p != nullptr) {
+            if (p->isMarked())
+                return;
+            p->setMark();
+        }
+        obj.marker();
+    }
+
+    void sweep () {
+        for (auto slot = objLow; slot != nullptr; slot = slot->chain)
+            if (slot->isMarked())
+                slot->clearMark();
+            else if (!slot->isFree()) {
+                auto q = &slot->obj;
+                delete q; // weird: must be a ptr *variable* for stm32 builds
+                assert(slot->isFree());
+            }
+    }
+
+    void compact () {
+        auto newHigh = (VecSlot*) start;
+        size_t n;
+        for (auto slot = newHigh; slot < vecHigh; slot += n)
+            if (slot->isFree())
+                n = slot->next - slot;
+            else {
+                n = slot->vec->caps;
+                if (newHigh < slot) {
+                    slot->vec->data = newHigh->buf;
+                    memmove(newHigh, slot, n * VS_SZ);
+                }
+                newHigh += n;
+            }
+        vecHigh = newHigh;
+    }
+
+} // namespace Monty

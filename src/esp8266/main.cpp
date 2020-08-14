@@ -19,15 +19,9 @@ extern "C" int debugf (const char* fmt, ...) {
     return 0;
 }
 
-#include <assert.h>
-
-#include <cstdint>
-#include <cstdio>
-#include <cstdlib>
-#include <cstring>
-
-#include "xmonty.h"
+#include "monty.h"
 #include "arch.h"
+#include <cstdio>
 
 static const uint8_t* loadBytecode (const char* fname) {
     File f = LittleFS.open(fname, "r");
@@ -51,6 +45,8 @@ void setup () {
 #if 0
     if (initWifi())
         printf("Wifi connected\n");
+#else
+    (void) initWifi;
 #endif
     if (LittleFS.begin())
         printf("LittleFS mounted\n");
