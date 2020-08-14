@@ -51,6 +51,7 @@ def TYPE(block, tag, *_):
     ]
     if tag.startswith('<'):
         del out[1:3] # can't construct from the VM
+        del out[-1]  # no need for default repr override
     return out
 
 # enable/disable flags for current file

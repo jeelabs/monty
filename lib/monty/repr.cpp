@@ -163,32 +163,13 @@ Value Bool::repr (Buffer& buf) const {
     return {};
 }
 
-Value BoundMeth::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Buffer::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Bytecode::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value Bytes::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Callable::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value Class::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Context::repr (Buffer& buf) const {
-    return Object::repr(buf);
+    buf.print("<class %s>", (const char*) at("__name__"));
+    return {};
 }
 
 Value Dict::repr (Buffer& buf) const {
@@ -211,12 +192,9 @@ Value Fixed::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Function::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value Inst::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
+    buf.print("<%s object at %p>", type().name, this);
+    return {};
 }
 
 Value List::repr (Buffer& buf) const {
@@ -230,14 +208,6 @@ Value List::repr (Buffer& buf) const {
     }
     buf.putc(']');
     return {};
-}
-
-Value Lookup::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Module::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
 }
 
 Value None::repr (Buffer& buf) const {

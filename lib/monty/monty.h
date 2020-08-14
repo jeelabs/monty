@@ -215,12 +215,12 @@ namespace Monty {
         virtual auto next  () -> Value;
     };
 
-    //CG< type <none>
+    //CG3 type <none>
     struct None : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         auto repr (Buffer&) const -> Value override;
-    //CG>
         auto unop (UnOp) const -> Value override;
 
         static None const nullObj;
@@ -313,12 +313,10 @@ namespace Monty {
         int32_t off, num, step;
     };
 
-    //CG< type <lookup>
+    //CG3 type <lookup>
     struct Lookup : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         struct Item { char const* k; Value v; };
 
         constexpr Lookup (Item const* p, size_t sz)
@@ -340,12 +338,10 @@ namespace Monty {
 
 // see repr.cpp - repr, printing, and buffering
 
-    //CG< type <buffer>
+    //CG3 type <buffer>
     struct Buffer : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (const char* fmt, ...);
@@ -510,12 +506,10 @@ namespace Monty {
 
 // see stack.cpp - execution state, stacks, and callables
 
-    //CG< type <function>
+    //CG3 type <function>
     struct Function : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         using Prim = auto (*)(Context&,int,int) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
@@ -528,12 +522,10 @@ namespace Monty {
         Prim func;
     };
 
-    //CG< type <boundmeth>
+    //CG3 type <boundmeth>
     struct BoundMeth : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
         void marker () const override { mark(meth); mark(self); }
@@ -544,12 +536,10 @@ namespace Monty {
 
 // see exec.cpp - importing, loading, and bytecode execution
 
-    //CG< type <module>
+    //CG3 type <module>
     struct Module : Dict {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         Module (Value qpool) : Dict (&builtins), qp (qpool) {}
 
         Value attr (const char* s, Value&) const override { return getAt(s); }
@@ -559,12 +549,10 @@ namespace Monty {
         Value qp;
     };
 
-    //CG< type <bytecode>
+    //CG3 type <bytecode>
     struct Bytecode : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         auto constAt (size_t i) const -> Value { return constObjs[i]; }
         auto fastSlotTop () const -> size_t { return stackSz; }
         auto excLevel () const -> size_t { return excDepth; }
@@ -599,12 +587,10 @@ namespace Monty {
         friend struct Loader;
     };
 
-    //CG< type <callable>
+    //CG3 type <callable>
     struct Callable : Object {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         Callable (Module& mod, Bytecode const& callee,
                     Tuple* t =nullptr, Dict* d =nullptr)
             : mo (mod), code (callee), pos (t), kw (d) {}
@@ -622,12 +608,10 @@ namespace Monty {
         Dict* kw;
     };
 
-    //CG< type <context>
+    //CG3 type <context>
     struct Context : List {
         static Type const info;
         auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
         Context (Context* from =nullptr) : caller (from) {}
 
         void enter (Callable const&);
