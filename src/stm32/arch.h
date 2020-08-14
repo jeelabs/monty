@@ -7,4 +7,4 @@ extern int archDone ();
 extern "C" int printf(const char*, ...);
 extern "C" int debugf (const char*, ...);
 
-extern const ModuleObj m_machine;
+extern const Monty::Module m_machine;

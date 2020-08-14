@@ -7,8 +7,8 @@
 
 #include "xmonty.h"
 
-namespace Monty { // TODO move into defs.h
-#include "defs.h"
+namespace Monty { // TODO move ns into defs.h
+#include "xdefs.h"
 }
 
 using namespace Monty;
