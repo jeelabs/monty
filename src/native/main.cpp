@@ -73,7 +73,7 @@ int main (int argc, const char* argv []) {
 
     static uintptr_t myMem [32*1024]; // TODO don't gc too soon ...
     Monty::setup(myMem, sizeof myMem);
-    printf("new load %p\n", Monty::loadModule(bcData));
+    (void) Monty::loadModule(bcData);
 
     free((void*) bcData);
 

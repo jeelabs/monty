@@ -345,7 +345,8 @@ auto Callable::call (Context& ctx, int argc, int args) const -> Value {
         if ((int) i < argc)
             ctx2->fastSlot(i) = ctx[args+i];
         else if (pos != nullptr && i < nDef + pos->fill)
-            ctx2->fastSlot(i) = (*pos)[(int) (i-nDef)]; // FIXME verify/args.py
+            //ctx2->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
+            ctx2->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
 
     if (code.hasVarArgs())
         ctx2->fastSlot(nPos+nKwo) = Tuple::create(ctx, argc-nPos, args+nPos);

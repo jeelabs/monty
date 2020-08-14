@@ -354,6 +354,7 @@ struct PyVM {
         ctx->spIdx -= nargs + 2 * nkw + 1;
 auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         auto v = sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
+ctx = Context::active; // may have changed!
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
         if (!v.isNil())
             *sp = v;
@@ -382,6 +383,7 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
         ctx->spIdx -= nargs + 2 * nkw;
 auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         auto v = sp->obj().call(*ctx, arg, ctx->spIdx + 1);
+ctx = Context::active; // may have changed!
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
         if (!v.isNil() && sp >= ctx->spBase())
             *sp = v;
