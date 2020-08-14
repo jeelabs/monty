@@ -98,9 +98,8 @@ auto Value::unOp (UnOp op) const -> Value {
         }
         default: break;
     }
-    // TODO return objPtr()->unop(op);
-    assert(false);
-    return {}; // TODO
+    Value v = *this; // bypass const-ness
+    return v.asObj().unop(op);
 }
 
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
