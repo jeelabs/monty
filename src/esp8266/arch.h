@@ -1,3 +1,3 @@
 #include "../version.h"
 
-extern const ModuleObj m_machine;
+extern const Monty::Module m_machine;

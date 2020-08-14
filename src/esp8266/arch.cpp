@@ -1,18 +1,24 @@
-#include "monty.h"
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+
+#include "xmonty.h"
 #include "arch.h"
 
-static Value bi_blah (int argc, Value argv []) {
+using namespace Monty;
+
+static Value bi_blah (Context& ctx, int argc, int args) {
     return argc;
 }
 
-static const FunObj f_blah (bi_blah);
+static const Function f_blah (bi_blah);
 
-static const LookupObj::Item lo_machine [] = {
+static const Lookup::Item lo_machine [] = {
     { "blah", &f_blah },
 };
 
-static const LookupObj ma_machine (lo_machine, sizeof lo_machine / sizeof *lo_machine);
-const ModuleObj m_machine (&ma_machine);
+static const Lookup ma_machine (lo_machine, sizeof lo_machine);
+const Module m_machine (&ma_machine);
 
 extern "C" uint32_t __atomic_fetch_or_4 (void volatile* p, uint32_t v, int o) {
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

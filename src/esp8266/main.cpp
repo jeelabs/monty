@@ -20,18 +20,14 @@ extern "C" int debugf (const char* fmt, ...) {
 }
 
 #include <assert.h>
-#include <string.h>
 
-#include "monty.h"
-#include "arch.h"
-
-#include "defs.h"
-#include "qstr.h"
-#include "builtin.h"
-#include "interp.h"
-#include "loader.h"
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "xmonty.h"
+#include "arch.h"
 
 static const uint8_t* loadBytecode (const char* fname) {
     File f = LittleFS.open(fname, "r");
@@ -48,37 +44,14 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-static bool runInterp (const uint8_t* data) {
-    Interp vm;
-
-    ModuleObj* mainMod = 0;
-    if (data[0] == 'M' && data[1] == 5) {
-        Loader loader;
-        mainMod = loader.load (data);
-        vm.qPool = loader.qPool;
-    }
-
-    if (mainMod == 0)
-        return false;
-
-    vm.start(*mainMod, builtinDict);
-
-    while (vm.isAlive())
-        vm.run();
-
-    // must be placed here, before the vm destructor is called
-    Object::gcStats();
-    Context::gcTrigger();
-    return true;
-}
-
 void setup () {
     Serial.begin(115200);
-    printf("main qstr #%d %db %s\n",
-            (int) qstrNext, (int) sizeof qstrData, VERSION);
+    printf("main\n");
 
+#if 0
     if (initWifi())
         printf("Wifi connected\n");
+#endif
     if (LittleFS.begin())
         printf("LittleFS mounted\n");
 
@@ -90,15 +63,9 @@ void setup () {
         return;
     }
 
-    if (!runInterp(bcData)) {
-        printf("can't load bytecode\n");
-        return;
-    }
-
-    // TODO load using the new code ...
     static uintptr_t myMem [4096];
     Monty::setup(myMem, sizeof myMem);
-    printf("new load %p\n", Monty::loadModule(bcData));
+    (void) Monty::loadModule(bcData);
 
     printf("done\n");
 }
