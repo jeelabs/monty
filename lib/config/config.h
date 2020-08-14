@@ -9,9 +9,9 @@
 #endif
 
 #if INCLUDE_NETWORK
-extern const ModuleObj m_network;
+extern const Monty::Module m_network;
 #endif
 
 #if INCLUDE_SDCARD
-extern const ModuleObj m_sdcard;
+extern const Monty::Module m_sdcard;
 #endif

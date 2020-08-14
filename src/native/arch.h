@@ -11,4 +11,4 @@ extern "C" int debugf (const char*, ...);
 #define INNER_HOOK  { timerHook(); }
 extern void timerHook ();
 
-extern const ModuleObj m_machine;
+extern const Monty::Module m_machine;

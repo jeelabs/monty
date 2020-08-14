@@ -2,41 +2,14 @@
 #define VERBOSE_LOAD    0 // show .mpy load progress with detailed file info
 
 #include <assert.h>
-#include <string.h>
 
-#include "monty.h"
-#include "arch.h"
-#include "defs.h"
-#include "qstr.h"
-#include "builtin.h"
-#include "interp.h"
-#include "loader.h"
-#include "util.h"
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 
 #include "xmonty.h"
-
-static bool runInterp (const uint8_t* data) {
-    Interp vm;
-
-    ModuleObj* mainMod = 0;
-    if (data[0] == 'M' && data[1] == 5) {
-        Loader loader;
-        mainMod = loader.load (data);
-        vm.qPool = loader.qPool;
-    }
-
-    if (mainMod == 0)
-        return false;
-
-    vm.start(*mainMod, builtinDict);
-
-    while (vm.isAlive()) {
-        vm.run();
-        INNER_HOOK // make sure this runs, even when there is no work to do
-    }
-
-    return true;
-}
+#include "arch.h"
 
 static const uint8_t* loadBytecode (const char* fname) {
     FILE* fp = fopen(fname, "rb");
@@ -57,7 +30,7 @@ static const uint8_t* loadBytecode (const char* fname) {
 
 int main (int argc, const char* argv []) {
     archInit();
-    printf("main qstr #%d %db\n", (int) qstrNext, (int) sizeof qstrData);
+    printf("main\n");
 
     //showAlignment();      // show string address details in flash and ram
     //showAllocInfo();      // show mem allocator behaviour for small allocs
@@ -69,15 +42,10 @@ int main (int argc, const char* argv []) {
         return 1;
     }
 
-    auto ok = true; (void) runInterp; // XXX runInterp(bcData);
-
     static uintptr_t myMem [32*1024]; // TODO don't gc too soon ...
     Monty::setup(myMem, sizeof myMem);
-    (void) Monty::loadModule(bcData);
 
-    free((void*) bcData);
-
-    if (!ok) {
+    if (Monty::loadModule(bcData) == nullptr) {
         printf("can't load module\n");
         return 2;
     }

@@ -1,8 +1,14 @@
-#include "monty.h"
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+
+#include "xmonty.h"
 #include "arch.h"
 
-#include <stdarg.h>
+#include <cstdarg>
 #include <time.h>
+
+using namespace Monty;
 
 int debugf (const char* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -15,16 +21,16 @@ void archInit () {
 }
 
 int archDone () {
-    Context::gcTrigger();
-    Object::gcStats();
+    //Context::gcTrigger();
+    //Object::gcStats();
     return 0;
 }
 
-static Value bi_blah (int argc, Value argv []) {
+static Value bi_blah (Context& ctx, int argc, int args) {
     return argc;
 }
 
-static const FunObj f_blah (bi_blah);
+static const Function f_blah (bi_blah);
 
 static int ms, id;
 static uint32_t start, begin, last;
@@ -43,39 +49,39 @@ void timerHook () {
     if (ms > 0 && (t - start) / ms != last) {
         last = (t - start) / ms;
         if (id > 0)
-            Context::raise(id);
+            Context::interrupt(id);
     }
 }
 
-static Value f_ticker (int argc, Value argv []) {
+static Value f_ticker (Context& ctx, int argc, int args) {
     Value h = id;
     if (argc > 1) {
-        if (argc != 3 || !argv[1].isInt())
+        if (argc != 3 || !ctx[args+1].isInt())
             return -1;
-        ms = argv[1];
-        h = argv[2];
+        ms = ctx[args+1];
+        h = ctx[args+2];
         start = getTime(); // set first timeout relative to now
         last = 0;
     }
-    id = Context::setHandler(h);
+    // TODO id = Context::setHandler(h);
     return id;
 }
 
-static Value f_ticks (int argc, Value argv []) {
+static Value f_ticks (Context& ctx, int argc, int args) {
     uint32_t t = getTime();
     if (begin == 0)
         begin = t;
     return t - begin; // make all runs start out the same way
 }
 
-static const FunObj fo_ticker (f_ticker);
-static const FunObj fo_ticks (f_ticks);
+static const Function fo_ticker (f_ticker);
+static const Function fo_ticks (f_ticks);
 
-static const LookupObj::Item lo_machine [] = {
+static const Lookup::Item lo_machine [] = {
     { "blah", &f_blah },
     { "ticker", &fo_ticker },
     { "ticks", &fo_ticks },
 };
 
-static const LookupObj ma_machine (lo_machine, sizeof lo_machine / sizeof *lo_machine);
-const ModuleObj m_machine (&ma_machine);
+static const Lookup ma_machine (lo_machine, sizeof lo_machine);
+const Module m_machine (&ma_machine);
