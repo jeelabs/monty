@@ -354,10 +354,10 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     ctx.enter(*init);
     ctx.locals = &init->mo;
-    active = &ctx;
+    Context::active = &ctx;
 
-    while (active != nullptr) {
-        PyVM vm (*active);
+    while (Context::active != nullptr) {
+        PyVM vm;
     }
 
     return &init->mo;

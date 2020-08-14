@@ -130,7 +130,7 @@ Class::Class (Context& ctx, int argc, int args)
     auto& init = ctx[args].asType<Callable>();
     init.call(ctx, argc - 2, args + 2); // TODO *in-arg* ctx vs *curr* ctx!
     ctx.locals = this;
-    ctx.end()[6] = this; // TODO yuck, setting "result" in frame
+    ctx.result = this;
 }
 
 Inst::Inst (Context& ctx, int argc, int args, Class const& cls) {
@@ -141,6 +141,6 @@ Inst::Inst (Context& ctx, int argc, int args, Class const& cls) {
         ctx[args-1] = this; // TODO is this alwats ok ???
         auto& co = init.asType<Callable>();
         co.call(ctx, argc + 1, args - 1);
-        ctx.end()[6] = this; // TODO yuck, setting "result" in frame
     }
+    ctx.result = this;
 }

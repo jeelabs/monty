@@ -9,8 +9,8 @@
 
 using namespace Monty;
 
-volatile uint32_t Monty::pending;
-Context* Monty::active;
+volatile uint32_t Context::pending;
+Context* Context::active;
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
@@ -29,21 +29,23 @@ void Context::enter (Callable const& func) {
     f.ep = epIdx;               // previous exception level
     f.callee = callee;          // previous callable
     f.locals = locals;          // previous locals dict
+    f.result = result;          // previous result
 
     spIdx = f.stack-begin()-1;  // stack starts out empty
     ipIdx = 0;                  // code starts at first opcode
     epIdx = 0;                  // no exceptions pending
     callee = &func;             // new callable context
     locals = 0;                 // create a new dict on demand
+    result = {};                // start with no result
 }
 
 Value Context::leave (Value v) {
-    auto& f = frame();          // restore values before popping frame
-    auto r = f.result;          // stored result
+    auto r = result;            // stored result
     if (r.isNil())              // use return result if set
         r = v;                  // ... else arg
 
     if (fill > 0) {
+        auto& f = frame();      // restore values before popping frame
         int prev = f.link;      // previous frame offset
         assert(prev >= 0);
 
@@ -51,6 +53,7 @@ Value Context::leave (Value v) {
         ipIdx = f.ip;
         epIdx = f.ep;
         callee = &f.callee.asType<Callable>();
+        result = f.result;
 
         // TODO ifType & asType don't know anything about derived classes
 #if 0
@@ -71,7 +74,7 @@ Value Context::leave (Value v) {
         limit = fill;           // new limit
         fill = prev;            // new lower frame offset
     } else
-        active = caller;        // pop entire stack context, restore caller
+        active = caller; // last frame, drop this stack context, restore caller
 
     return r;
 }

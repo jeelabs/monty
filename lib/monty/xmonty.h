@@ -662,10 +662,14 @@ namespace Monty {
         size_t epIdx {0};
         Callable const* callee {nullptr};
         Dict* locals {nullptr};
+        Value result;
 
         size_t limit {0};
         Value event;
         Context* caller;
+
+        static volatile uint32_t pending;   // for irq-safe inner loop exit
+        static Context* active;             // current active context, if any
     private:
         struct Frame {
             Value link, sp, ip, ep, callee, locals, result, stack [];
@@ -673,9 +677,6 @@ namespace Monty {
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
     };
-
-    extern volatile uint32_t pending; // used for irq-safe inner loop exit bits
-    extern Context* active;
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

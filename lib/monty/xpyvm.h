@@ -392,14 +392,19 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
     //CG2 op r
     void op_YieldValue () {
         // note: called outside inner loop
-        auto v = ctx->leave(*sp);
+        auto v = *sp;
+        Context::active = ctx->caller;
+ctx = Context::active; // may have changed!
+        if (ctx != nullptr) {
 auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
-        *sp = v;
+            *sp = v;
+        }
     }
     //CG2 op r
     void op_ReturnValue () {
         // note: called outside inner loop
         auto v = ctx->leave(*sp);
+ctx = Context::active; // may have changed!
 auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         *sp = v;
     }
@@ -453,7 +458,9 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         *sp = sp->binOp((BinOp) arg, sp[1]);
     }
 
-    PyVM (Context& context) : ctx (&context) {
+    PyVM () {
+        ctx = Context::active;
+        assert(ctx != nullptr);
         sp = ctx->begin() + ctx->spIdx;
         ip = ctx->ipBase() + ctx->ipIdx;
 
@@ -807,12 +814,12 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
                     assert(false);
                 }
             }
-        } while (pending == 0);
+        } while (Context::pending == 0);
 
         ctx->spIdx = sp - ctx->begin();
         ctx->ipIdx = ip - ctx->ipBase();
 
-        if ((pending & 1) && ctx->event.isInt()) {
+        if ((Context::pending & 1) && ctx->event.isInt()) {
             int e = ctx->event;
             if (e < 0) { // raised opcode, process it now, outside inner loop
                 ctx->event = {};
