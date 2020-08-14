@@ -563,13 +563,15 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Bytecode () {}
-
         auto constAt (size_t i) const -> Value { return constObjs[i]; }
         auto fastSlotTop () const -> size_t { return stackSz; }
         auto excLevel () const -> size_t { return excDepth; }
         auto isGenerator () const -> bool { return (flags & 1) != 0; }
         auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
+
+        auto numArgs (int t) const -> uint32_t {
+            return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
+        }
 
         auto codeStart () const -> uint8_t const* {
             return (uint8_t const*) (this + 1) + code;
@@ -577,6 +579,8 @@ namespace Monty {
 
         void marker () const override {} // TODO
     private:
+        Bytecode () {}
+
         Vector constObjs;
         int16_t code;
         int16_t stackSz;
@@ -599,8 +603,9 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Callable (Module& mod, Bytecode const& callee)
-            : mo (mod), code (callee) {}
+        Callable (Module& mod, Bytecode const& callee,
+                    Tuple* t =nullptr, Dict* d =nullptr)
+            : mo (mod), code (callee), pos (t), kw (d) {}
 
         auto qStrAt (size_t) const -> char const*;
 
@@ -611,8 +616,8 @@ namespace Monty {
     // TODO private:
         Module& mo;
         Bytecode const& code;
-        Tuple* pos {nullptr};
-        Dict* kw {nullptr};
+        Tuple* pos;
+        Dict* kw;
     };
 
     //CG< type <context>
@@ -652,6 +657,8 @@ namespace Monty {
             raise((~0U << 24) | (op << 16) | arg);
         }
 
+        void caught (Value e ={});
+
         auto next () -> Value override;
 
         void marker () const override;
@@ -677,6 +684,9 @@ namespace Monty {
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
     };
+
+    void interrupt (uint32_t num);  // trigger a soft-irq (interrupt-safe)
+    void exception (Value exc);     // throw an exception in current context
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

@@ -334,15 +334,30 @@ auto Callable::qStrAt (size_t i) const -> char const* {
 
 auto Callable::call (Context& ctx, int argc, int args) const -> Value {
     auto coro = code.isGenerator();
-    auto nextCtx = coro ? new Context (&ctx) : &ctx;
-    nextCtx->enter(*this);
-    for (int i = 0; i < argc; ++i)
-        nextCtx->fastSlot(i) = ctx[args+i];
-    return coro ? nextCtx : Value {};
+    auto ctx2 = coro ? new Context (&ctx) : &ctx;
+    ctx2->enter(*this);
+
+    auto nPos = code.numArgs(0);
+    auto nDef = code.numArgs(1);
+    auto nKwo = code.numArgs(2);
+
+    for (uint32_t i = 0; i < nPos; ++i)
+        if ((int) i < argc)
+            ctx2->fastSlot(i) = ctx[args+i];
+        else if (pos != nullptr && i < nDef + pos->fill)
+            ctx2->fastSlot(i) = (*pos)[(int) (i-nDef)]; // FIXME verify/args.py
+
+    if (code.hasVarArgs())
+        ctx2->fastSlot(nPos+nKwo) = Tuple::create(ctx, argc-nPos, args+nPos);
+
+    return coro ? ctx2 : Value {};
 }
 
 void Callable::marker () const {
-    mo.marker(); mark(code); mark(pos); mark(kw);
+    mo.marker();
+    mark(code);
+    mark(pos);
+    mark(kw);
 }
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {

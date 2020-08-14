@@ -88,19 +88,24 @@ auto Context::excBase (int incr) -> Value* {
 }
 
 void Context::raise (Value exc) {
-    size_t flag = 0;
+    uint32_t num = 0;
     if (exc.isInt()) {
-        int n = exc;
-        if (0 <= n && n < 32)
-            flag = n;    // trigger soft-irq 1..31 (interrupt-safe)
+        uint32_t n = exc;
+        if (n < 8 * sizeof pending)
+            num = n;     // trigger soft-irq 1..31 (interrupt-safe)
         else
             event = exc; // trigger exception or other outer-loop req
     }
 
-    // this spinloop correctly sets one bit in volatile "pending" state
-    do // avoid potential race when an irq raises inside the "pending |= ..."
-        pending |= 1<<flag;
-    while ((pending & (1<<flag)) == 0);
+    interrupt(num); // set pending, to force inner loop exit
+}
+
+void Context::caught (Value e) {
+    assert(epIdx > 0); // simple exception, no stack unwind
+    auto ep = excBase(0);
+    ipIdx = ep[0];
+    spIdx = ep[1];
+    begin()[spIdx] = e.isNil() ? ep[3] : e;
 }
 
 auto Context::next () -> Value {
@@ -116,4 +121,15 @@ void Context::marker () const {
     mark(locals);
     mark(event);
     mark(caller);
+}
+
+void Monty::interrupt (uint32_t num) {
+    assert(num < 8 * sizeof Context::pending);
+    __atomic_or_fetch(&Context::pending, 1 << num, __ATOMIC_RELAXED);
+}
+
+void Monty::exception (Value v) {
+    assert(!v.isInt());
+    assert(Context::active != nullptr);
+    Context::active->raise(v);
 }

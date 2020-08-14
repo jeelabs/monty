@@ -126,7 +126,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::InplaceMultiply: return l * r;
                     case BinOp::FloorDivide:
                         if (r == 0) {
-                            // TODO Context::raise("blah"); // TODO
+                            exception("blah"); // TODO
                             return 0;
                         }
                         return l / r;
