@@ -675,6 +675,11 @@ namespace Monty {
         Value event;
         Context* caller;
 
+        static void exception (Value exc);  // throw exception in curr context
+        static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
+        static auto nextPending () -> int;  // next pending or -1 (irq-safe)
+        static auto wasPending (uint32_t) -> bool; // test and clear bit
+
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* active;             // current active context, if any
     private:
@@ -684,9 +689,6 @@ namespace Monty {
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
     };
-
-    void interrupt (uint32_t num);  // trigger a soft-irq (interrupt-safe)
-    void exception (Value exc);     // throw an exception in current context
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

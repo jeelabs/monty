@@ -89,15 +89,21 @@ auto Context::excBase (int incr) -> Value* {
 
 void Context::raise (Value exc) {
     uint32_t num = 0;
-    if (exc.isInt()) {
-        uint32_t n = exc;
-        if (n < 8 * sizeof pending)
-            num = n;     // trigger soft-irq 1..31 (interrupt-safe)
-        else
-            event = exc; // trigger exception or other outer-loop req
-    }
+    if (exc.isInt() && (int) exc >= 0) {
+        num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
+        assert(num < 8 * sizeof pending);
+    } else
+        event = exc;    // trigger exception or other outer-loop req
 
-    interrupt(num); // set pending, to force inner loop exit
+    interrupt(num);     // set pending, to force inner loop exit
+}
+
+auto Context::nextPending () -> int {
+    if (pending != 0)
+        for (size_t num = 0; num < 8 * sizeof pending; ++num)
+            if (wasPending(num))
+                return num;
+    return -1;
 }
 
 void Context::caught (Value e) {
@@ -105,14 +111,14 @@ void Context::caught (Value e) {
     auto ep = excBase(0);
     ipIdx = ep[0];
     spIdx = ep[1];
-    begin()[spIdx] = e.isNil() ? ep[3] : e;
+    begin()[++spIdx] = e.isNil() ? ep[3] : e;
 }
 
 auto Context::next () -> Value {
     assert(active != this);
     raise(); // force inner loop exit
     active = this;
-    return {};
+    return {}; // no result yet
 }
 
 void Context::marker () const {
@@ -123,13 +129,19 @@ void Context::marker () const {
     mark(caller);
 }
 
-void Monty::interrupt (uint32_t num) {
-    assert(num < 8 * sizeof Context::pending);
-    __atomic_or_fetch(&Context::pending, 1 << num, __ATOMIC_RELAXED);
-}
-
-void Monty::exception (Value v) {
+void Context::exception (Value v) {
     assert(!v.isInt());
     assert(Context::active != nullptr);
     Context::active->raise(v);
+}
+
+void Context::interrupt (uint32_t num) {
+    assert(num < 8 * sizeof pending);
+    __atomic_fetch_or(&pending, 1 << num, __ATOMIC_RELAXED);
+}
+
+auto Context::wasPending (uint32_t num) -> bool {
+    assert(num < 8 * sizeof pending);
+    auto mask = 1U << num;
+    return (__atomic_fetch_nand(&pending, mask, __ATOMIC_RELAXED) & mask) != 0;
 }

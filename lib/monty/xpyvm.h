@@ -1,7 +1,6 @@
 // pyvm.h - virtual machine for bytecodes emitted by MicroPython 1.12
 
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
-
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
 struct PyVM {
@@ -764,30 +763,35 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         ctx->spIdx = sp - ctx->begin();
         ctx->ipIdx = ip - ctx->ipBase();
 
-        if ((Context::pending & 1) && ctx->event.isInt()) {
-            int e = ctx->event;
-            if (e < 0) { // raised opcode, process it now, outside inner loop
-                ctx->event = {};
+        if (Context::wasPending(0)) {
+            auto e = ctx->event;
+            ctx->event = {};
+            if (e.isInt()) {
+                int n = e;
+                assert(n < 0);
+                raisedOp((Op) (n >> 16), n);
+            } else if (!e.isNil())
+                ctx->caught(e);
+        }
+    }
 
-                uint16_t arg = e;
-                switch ((Op) (e >> 16)) {
-                    //CG< op-emit r
-                    case Op::CallMethod:
-                        op_CallMethod(arg); break;
-                    case Op::CallMethodVarKw:
-                        op_CallMethodVarKw(arg); break;
-                    case Op::CallFunction:
-                        op_CallFunction(arg); break;
-                    case Op::CallFunctionVarKw:
-                        op_CallFunctionVarKw(arg); break;
-                    case Op::YieldValue:
-                        op_YieldValue(); break;
-                    case Op::ReturnValue:
-                        op_ReturnValue(); break;
-                    //CG>
-                    default: assert(false);
-                }
-            }
+    void raisedOp (Op op, uint16_t arg) {
+        switch (op) {
+            //CG< op-emit r
+            case Op::CallMethod:
+                op_CallMethod(arg); break;
+            case Op::CallMethodVarKw:
+                op_CallMethodVarKw(arg); break;
+            case Op::CallFunction:
+                op_CallFunction(arg); break;
+            case Op::CallFunctionVarKw:
+                op_CallFunctionVarKw(arg); break;
+            case Op::YieldValue:
+                op_YieldValue(); break;
+            case Op::ReturnValue:
+                op_ReturnValue(); break;
+            //CG>
+            default: assert(false);
         }
     }
 };

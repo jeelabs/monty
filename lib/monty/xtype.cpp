@@ -126,7 +126,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::InplaceMultiply: return l * r;
                     case BinOp::FloorDivide:
                         if (r == 0) {
-                            exception("blah"); // TODO
+                            Context::exception("blah"); // TODO
                             return 0;
                         }
                         return l / r;
@@ -161,9 +161,8 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 }
                 break;
         }
-    // TODO return objPtr()->binop(op, rhs);
-    assert(false);
-    return {}; // TODO
+    Value v = *this; // bypass const-ness
+    return v.obj().binop(op, rhs);
 }
 
 auto Value::check (Type const& t) const -> bool {
