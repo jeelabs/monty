@@ -286,7 +286,6 @@ namespace Monty {
 
         auto getAt (Value k) const -> Value override;
 
-    private:
         char const* ptr;
     };
 
@@ -353,14 +352,13 @@ namespace Monty {
 
         auto operator<< (Value v) -> Buffer&;
 
+        bool sep {false};
     protected:
         virtual void write (uint8_t const* ptr, size_t len) const;
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
         void putInt (int val, int base, int width, char fill);
-
-        bool sep {false};
     };
 
 // see array.cpp - arrays, dicts, and other derived types
@@ -425,7 +423,7 @@ namespace Monty {
         };
 
         // operator[] is problematic when the value is an int
-        auto has (Value key) const -> bool;
+        auto has (Value key) const -> bool { return find(key) < size(); }
         auto has (Value key) -> Proxy { return {*this, key}; }
 
         auto getAt (Value k) const -> Value override;
@@ -441,7 +439,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr Dict (Object const* ch =nullptr) : chain (ch) {}
-        Dict (size_t n);
+        Dict (size_t n) { adj(2*n); }
 
         struct Proxy { Dict& d; Value k;
             operator Value () const { return ((Dict const&) d).at(k); }

@@ -317,12 +317,10 @@ auto         Type::type () const -> Type const& { return info; }
 //CG>
 
 static auto bi_print (Context& ctx, int argc, int args) -> Value {
-    {
-        Buffer buf;
-        for (int i = 0; i < argc; ++i)
-            buf << ctx[args+i];
-    }
-    printf("\n");
+    Buffer buf; // TODO
+    for (int i = 0; i < argc; ++i)
+        buf << ctx[args+i];
+    buf.putc('\n');
     return {};
 }
 

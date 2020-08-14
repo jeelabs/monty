@@ -56,10 +56,6 @@ auto Set::Proxy::operator= (bool f) -> bool {
     return pos < n;
 }
 
-auto Set::has (Value v) const -> bool {
-    return find(v) < size();
-}
-
 auto Set::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto f = (*this)[k];
@@ -70,10 +66,6 @@ auto Set::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     auto f = (*this)[k] = v.truthy();
     return Value::asBool(f);
-}
-
-Dict::Dict (size_t n) {
-    adj(2*n);
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()

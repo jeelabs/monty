@@ -93,34 +93,33 @@ struct PyVM {
     uint32_t fetchVarInt (uint32_t v =0) {
         uint8_t b = 0x80;
         while (b & 0x80) {
-            b = (uint8_t) *ip++;
+            b = *ip++;
             v = (v << 7) | (b & 0x7F);
         }
         return v;
     }
 
     int fetchOffset () {
-        int n = (uint8_t) *ip++;
-        return n | ((uint8_t) *ip++ << 8);
+        int n = *ip++;
+        return n | (*ip++ << 8);
     }
 
-    const char* fetchQstr () {
-        return ctx->getQstr(fetchOffset() + 1);
-    }
+    const char* fetchQstr () { return ctx->getQstr(fetchOffset() + 1); }
 
-    static bool opInRange (uint8_t op, Op from, int count) {
-        return from <= op && op < from + count;
-    }
+    auto spAsPtr () const -> Value* { return ctx->begin() + ctx->spIdx; }
+    auto spAsOff () const -> uint32_t { return sp - ctx->begin(); }
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        printf("\tip %p sp %2d e %d ",
-                ip, (int) (sp - ctx->spBase()), (int) ctx->epIdx);
-        printf("op 0x%02x : ", (uint8_t) *ip);
+        printf("\tip %04d sp %2d e %d ", (int) (ip - ctx->ipBase()),
+                                         (int) (sp - ctx->spBase()),
+                                         (int) ctx->epIdx);
+        printf("op 0x%02x : ", *ip);
         if (sp >= ctx->spBase())
             sp->dump();
         printf("\n");
 #endif
+        assert(ip >= ctx->ipBase() && sp >= ctx->spBase() - 1);
     }
 
     //CG: op-init
@@ -147,7 +146,7 @@ struct PyVM {
     }
     //CG1 op
     void op_LoadConstSmallInt () {
-        *++sp = fetchVarInt(((uint8_t) *ip & 0x40) ? ~0 : 0);
+        *++sp = fetchVarInt((*ip & 0x40) ? ~0 : 0);
     }
     //CG1 op v
     void op_LoadConstObj (int arg) {
@@ -278,22 +277,22 @@ struct PyVM {
     //CG1 op v
     void op_BuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(*ctx, arg, sp - ctx->begin());
+        *sp = Slice::create(*ctx, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(*ctx, arg, sp - ctx->begin());
+        *sp = Tuple::create(*ctx, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(*ctx, arg, sp - ctx->begin());
+        *sp = List::create(*ctx, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(*ctx, arg, sp - ctx->begin());
+        *sp = Set::create(*ctx, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildMap (int arg) {
@@ -309,7 +308,7 @@ struct PyVM {
     void op_SetupExcept (int arg) {
         auto exc = ctx->excBase(1);
         exc[0] = ip - ctx->ipBase() + arg;
-        exc[1] = sp - ctx->begin();
+        exc[1] = spAsOff();
         exc[2] = {};
     }
     //CG1 op o
@@ -352,7 +351,7 @@ struct PyVM {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         ctx->spIdx -= nargs + 2 * nkw + 1;
-auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+auto sp = spAsPtr(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
 ctx = Context::active; // may have changed!
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
@@ -381,7 +380,7 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         ctx->spIdx -= nargs + 2 * nkw;
-auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+auto sp = spAsPtr(); // TODO yuck
         auto v = sp->obj().call(*ctx, arg, ctx->spIdx + 1);
 ctx = Context::active; // may have changed!
 sp = ctx->begin() + ctx->spIdx; // TODO yuck
@@ -400,7 +399,7 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
         Context::active = ctx->caller;
 ctx = Context::active; // may have changed!
         if (ctx != nullptr) {
-auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+auto sp = spAsPtr(); // TODO yuck
             *sp = v;
         }
     }
@@ -410,7 +409,7 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
         auto v = ctx->leave(*sp);
 ctx = Context::active; // may have changed!
         if (ctx != nullptr) {
-auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
+auto sp = spAsPtr(); // TODO yuck
             *sp = v;
         }
     }
@@ -467,7 +466,7 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
     PyVM () {
         ctx = Context::active;
         assert(ctx != nullptr);
-        sp = ctx->begin() + ctx->spIdx;
+        sp = spAsPtr();
         ip = ctx->ipBase() + ctx->ipIdx;
 
         do {
@@ -762,7 +761,7 @@ auto sp = ctx->begin() + ctx->spIdx; // TODO yuck
             }
         } while (Context::pending == 0);
 
-        ctx->spIdx = sp - ctx->begin();
+        ctx->spIdx = spAsOff();
         ctx->ipIdx = ip - ctx->ipBase();
 
         if (Context::wasPending(0)) {

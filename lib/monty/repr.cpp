@@ -20,6 +20,29 @@ void Value::dump (const char* msg) const {
         printf("\n");
 }
 
+static void putcEsc (Buffer& buf, char const* fmt, uint8_t ch) {
+    buf.putc('\\');
+    switch (ch) {
+        case '\t': buf.putc('t'); break;
+        case '\n': buf.putc('n'); break;
+        case '\r': buf.putc('r'); break;
+        default:   buf.print(fmt, ch); break;
+    }
+}
+
+static void putsEsc (Buffer& buf, char const* s) {
+    buf.putc('"');
+    for (auto p = (const uint8_t*) s; *p != 0; ++p) {
+        if (*p == '\\' || *p == '"')
+            buf.putc('\\');
+        if (*p >= ' ')
+            buf.putc(*p);
+        else
+            putcEsc(buf, "u%04x", *p);
+    }
+    buf.putc('"');
+}
+
 void Buffer::write (uint8_t const* ptr, size_t len) const {
     for (size_t i = 0; i < len; ++i)
         printf("%c", ptr[i]); // TODO yuck
@@ -30,9 +53,9 @@ auto Buffer::operator<< (Value v) -> Buffer& {
         putc(' ');
     sep = true;
     switch (v.tag()) {
-        case Value::Nil: print("Nil"); break;
+        case Value::Nil: print("_"); break;
         case Value::Int: print("%d", (int) v); break;
-        case Value::Str: print("\"%s\"", (const char*) v); break;
+        case Value::Str: putsEsc(*this, v); break;
         case Value::Obj: v.obj().repr(*this); break;
     }
     return *this;
@@ -135,68 +158,89 @@ void Buffer::print(const char* fmt, ...) {
     va_end(ap);
 }
 
-Value Bool::repr (Monty::Buffer& buf) const {
+Value Bool::repr (Buffer& buf) const {
     buf.puts(this == &falseObj ? "false" : "true");
     return {};
 }
 
-Value BoundMeth::repr (Monty::Buffer& buf) const {
+Value BoundMeth::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Buffer::repr (Monty::Buffer& buf) const {
+Value Buffer::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Bytecode::repr (Monty::Buffer& buf) const {
+Value Bytecode::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Bytes::repr (Monty::Buffer& buf) const {
+Value Bytes::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Callable::repr (Monty::Buffer& buf) const {
+Value Callable::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Class::repr (Monty::Buffer& buf) const {
+Value Class::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Context::repr (Monty::Buffer& buf) const {
+Value Context::repr (Buffer& buf) const {
     return Object::repr(buf);
 }
 
-Value Dict::repr (Monty::Buffer& buf) const {
+Value Dict::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    buf.putc('{');
+    for (size_t i = 0; i < fill; ++i) {
+        if (i > 0)
+            buf.putc(',');
+        buf.sep = false;
+        buf << (*this)[i];
+        buf.putc(':');
+        buf.sep = false;
+        buf << (*this)[fill+i];
+    }
+    buf.putc('}');
+    return {};
+}
+
+Value Fixed::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Fixed::repr (Monty::Buffer& buf) const {
+Value Function::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Function::repr (Monty::Buffer& buf) const {
+Value Inst::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Inst::repr (Monty::Buffer& buf) const {
+Value List::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    buf.putc('[');
+    for (size_t i = 0; i < fill; ++i) {
+        if (i > 0)
+            buf.putc(',');
+        buf.sep = false;
+        buf << (*this)[i];
+    }
+    buf.putc(']');
+    return {};
+}
+
+Value Lookup::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value List::repr (Monty::Buffer& buf) const {
+Value Module::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Lookup::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Module::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value None::repr (Monty::Buffer& buf) const {
+Value None::repr (Buffer& buf) const {
     buf.puts("null");
     return {};
 }
@@ -206,27 +250,46 @@ auto Object::repr (Buffer& buf) const -> Value {
     return {};
 }
 
-Value Range::repr (Monty::Buffer& buf) const {
+Value Range::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Set::repr (Monty::Buffer& buf) const {
+Value Set::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    buf.putc('{');
+    for (size_t i = 0; i < fill; ++i) {
+        if (i > 0)
+            buf.putc(',');
+        buf.sep = false;
+        buf << (*this)[i];
+    }
+    buf.putc('}');
+    return {};
+}
+
+Value Slice::repr (Buffer& buf) const {
     return Object::repr(buf); // TODO
 }
 
-Value Slice::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
+Value Str::repr (Buffer& buf) const {
+    putsEsc(buf, ptr);
+    return {};
 }
 
-Value Str::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
+Value Tuple::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    buf.putc('(');
+    for (size_t i = 0; i < fill; ++i) {
+        if (i > 0)
+            buf.putc(',');
+        buf.sep = false;
+        buf << (*this)[i];
+    }
+    buf.putc(')');
+    return {};
 }
 
-Value Tuple::repr (Monty::Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
-Value Type::repr (Monty::Buffer& buf) const {
+Value Type::repr (Buffer& buf) const {
     buf.print("<type %s>", name);
     return {};
 }
