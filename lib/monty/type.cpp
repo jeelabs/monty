@@ -189,6 +189,11 @@ auto Object::attr (const char* name, Value&) const -> Value {
     return atab != 0 ? atab->getAt(name) : getAt(name);
 }
 
+auto Object::len () const -> size_t {
+    assert(false);
+    return {};
+}
+
 auto Object::getAt (Value) const -> Value {
     assert(false);
     return {};
@@ -227,6 +232,41 @@ auto Fixed::unop (UnOp) const -> Value {
 auto Fixed::binop (BinOp, Value) const -> Value {
     assert(false);
     return {}; // TODO
+}
+
+Bytes::Bytes (void const* ptr, size_t len) {
+    insert(0, len);
+    memcpy(begin(), ptr, len);
+}
+
+auto Bytes::hash (const uint8_t* p, size_t n) const -> uint32_t {
+    // see http://www.cse.yorku.ca/~oz/hash.html
+    uint32_t h = 5381;
+    for (auto b : *this)
+        h = ((h<<5) + h) ^ b;
+    return h;
+}
+
+auto Bytes::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Boln: return Value::asBool(size());
+        case UnOp::Hash: return hash(begin(), size());
+        default:         break;
+    }
+    return Object::unop(op);
+}
+
+auto Bytes::binop (BinOp op, Value rhs) const -> Value {
+    auto& val = rhs.asType<Bytes>();
+    assert(size() == val.size());
+    switch (op) {
+        case BinOp::Equal:
+            return Value::asBool(size() == val.size() &&
+                                    memcmp(begin(), val.begin(), size()) == 0);
+        default:
+            break;
+    }
+    return Object::binop(op, rhs);
 }
 
 auto Str::getAt (Value k) const -> Value {
@@ -333,6 +373,14 @@ static auto bi_next (Context& ctx, int argc, int args) -> Value {
 
 static Function const f_next (bi_next);
 
+static auto bi_len (Context& ctx, int argc, int args) -> Value {
+    assert(argc == 1);
+    Value v = ctx[args];
+    return v.asObj().len();
+}
+
+static Function const f_len (bi_len);
+
 static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
     { "bool", &Bool::info },
@@ -350,6 +398,7 @@ static const Lookup::Item builtinsMap [] = {
     //CG>
     { "print", &f_print },
     { "next", &f_next },
+    { "len", &f_len },
 #if 0
     { "monty", &m_monty },
     { "machine", &m_machine },
@@ -435,8 +484,31 @@ auto Fixed::create (Context& ctx, int argc, int args, Type const*) -> Value {
 }
 
 auto Bytes::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    assert(false);
-    return {}; // TODO
+    assert(argc == 1);
+    Value v = ctx[args];
+    if (v.isInt()) {
+        auto o = new Bytes ();
+        o->insert(0, v);
+        return o;
+    }
+    const void* p = 0;
+    size_t n = 0;
+    if (v.isStr()) {
+        p = (const char*) v;
+        n = strlen((const char*) p);
+    } else {
+        auto ps = v.ifType<Str>();
+        auto pb = v.ifType<Bytes>();
+        if (ps != 0) {
+            p = (char const*) *ps;
+            n = strlen((char const*) p); // TODO
+        } else if (pb != 0) {
+            p = pb->begin();
+            n = pb->size();
+        } else
+            assert(false); // TODO iterables
+    }
+    return new Bytes (p, n);
 }
 
 auto Str::create (Context& ctx, int argc, int args, Type const*) -> Value {
@@ -478,8 +550,15 @@ auto Dict::create (Context& ctx, int argc, int args, Type const*) -> Value {
 }
 
 auto Type::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    assert(false);
-    return {}; // TODO
+    assert(argc == 1);
+    Value v = ctx[args];
+    switch (v.tag()) {
+        case Value::Nil: assert(false); break;
+        case Value::Int: return "int";
+        case Value::Str: return "str";
+        case Value::Obj: return v.obj().type().name;
+    }
+    return {};
 }
 
 auto Class::create (Context& ctx, int argc, int args, Type const*) -> Value {

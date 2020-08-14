@@ -164,7 +164,18 @@ Value Bool::repr (Buffer& buf) const {
 }
 
 Value Bytes::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    buf.putc('\'');
+    for (auto b : *this) {
+        if (b == '\\' || b == '\'')
+            buf.putc('\\');
+        if (b >= ' ')
+            buf.putc(b);
+        else
+            putcEsc(buf, "x%02x", b);
+    }
+    buf.putc('\'');
+    return {};
 }
 
 Value Class::repr (Buffer& buf) const {
@@ -242,6 +253,7 @@ Value Slice::repr (Buffer& buf) const {
 }
 
 Value Str::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
     putsEsc(buf, ptr);
     return {};
 }

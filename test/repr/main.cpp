@@ -46,7 +46,7 @@ static void reprBasics () {
     TEST_ASSERT_EQUAL_STRING("<42>", buf);
 
     TestBuffer {} << Value () << 123 << "abc";
-    TEST_ASSERT_EQUAL_STRING("Nil 123 \"abc\"", buf);
+    TEST_ASSERT_EQUAL_STRING("_ 123 \"abc\"", buf);
 
     TestBuffer {} << Null << True << False;
     TEST_ASSERT_EQUAL_STRING("null true false", buf);

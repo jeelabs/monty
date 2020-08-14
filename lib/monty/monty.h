@@ -210,6 +210,7 @@ namespace Monty {
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
         virtual auto attr  (const char*, Value&) const -> Value;
+        virtual auto len   () const -> size_t;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
         virtual auto next  () -> Value;
@@ -264,14 +265,20 @@ namespace Monty {
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
     //CG< type bytes
-    struct Bytes : Object {
+    struct Bytes : Object, VecOf<uint8_t> {
         static auto create (Context&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Bytes (uint8_t const* =nullptr, size_t =0) {} // TODO
+        Bytes (void const* =nullptr, size_t =0);
+
+        auto hash (const uint8_t* p, size_t n) const -> uint32_t;
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+        auto len () const -> size_t override { return size(); }
     };
 
     //CG< type str
@@ -284,8 +291,11 @@ namespace Monty {
     //CG>
         Str (char const* s) : ptr (s) {}
 
+        operator char const* () const { return ptr; }
+
         auto getAt (Value k) const -> Value override;
 
+        private:
         char const* ptr;
     };
 
@@ -324,6 +334,7 @@ namespace Monty {
 
         auto operator[] (char const* key) const -> Value;
 
+        auto len () const -> size_t override { return count; }
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
@@ -372,6 +383,7 @@ namespace Monty {
         auto end () const -> Value const* { return begin() + size(); }
         auto operator[] (size_t idx) const -> Value { return begin()[idx]; }
 
+        auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
 
         size_t const fill;
@@ -395,6 +407,7 @@ namespace Monty {
         constexpr List () {}
         List (Context& ctx, int argc, int args);
 
+        auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
@@ -612,6 +625,12 @@ namespace Monty {
     struct Context : List {
         static Type const info;
         auto type () const -> Type const& override;
+
+        //using Object::repr; TODO can't be used to bypass List::repr ?
+        auto repr (Buffer& buf) const -> Value override {
+            return Object::repr(buf); // don't print as a list
+        }
+
         Context (Context* from =nullptr) : caller (from) {}
 
         void enter (Callable const&);
