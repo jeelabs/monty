@@ -628,8 +628,8 @@ namespace Monty {
         }
 
         struct Frame {
-            //    <---- previous ---->  <---- actual ---->
-            Value base, sp, ip, callee, ep, locals, result, stack [];
+            //    <------- previous ------->  <---- actual ---->
+            Value base, spOff, ipOff, callee, ep, locals, result, stack [];
         };
 
         auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
@@ -660,8 +660,8 @@ namespace Monty {
 
         // previous values are saved in current stack frame
         size_t base {0};
-        size_t spIdx {0};
-        size_t ipIdx {0};
+        size_t spOff {0};
+        size_t ipOff {0};
         Callable const* callee {nullptr};
 
         Value event;

@@ -105,18 +105,15 @@ struct PyVM : Interp {
 
     const char* fetchQ () { return context->callee->qStrAt(fetchO() + 1); }
 
-    auto spAsPtr () const -> Value* { return context->begin() + context->spIdx; }
-    auto spAsOff () const -> uint32_t { return sp - context->begin(); }
-
     // special wrapper to deal with context changes vs cached sp/ip values
     template< typename T >
     auto contextAdjuster (T fun) -> Value {
-        context->spIdx = spAsOff();
-        context->ipIdx = ip - context->ipBase();
+        context->spOff = sp - context->begin();
+        context->ipOff = ip - context->ipBase();
         Value v = fun();
         if (context != nullptr) {
-            sp = spAsPtr();
-            ip = context->ipBase() + context->ipIdx;
+            sp = context->begin() + context->spOff;
+            ip = context->ipBase() + context->ipOff;
         } else
             interrupt(0); // nothing left to do, exit inner loop
         return v;
@@ -290,22 +287,22 @@ struct PyVM : Interp {
     //CG1 op v
     void op_BuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(*context, arg, spAsOff());
+        *sp = Slice::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
     void op_BuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(*context, arg, spAsOff());
+        *sp = Tuple::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
     void op_BuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(*context, arg, spAsOff());
+        *sp = List::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
     void op_BuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(*context, arg, spAsOff());
+        *sp = Set::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
     void op_BuildMap (int arg) {
@@ -321,7 +318,7 @@ struct PyVM : Interp {
     void op_SetupExcept (int arg) {
         auto exc = context->excBase(1);
         exc[0] = ip - context->ipBase() + arg;
-        exc[1] = spAsOff();
+        exc[1] = sp - context->begin();
         exc[2] = {};
     }
     //CG1 op o
@@ -365,7 +362,7 @@ struct PyVM : Interp {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*context, arg + 1, context->spIdx + 1);
+            return sp->obj().call(*context, arg + 1, context->spOff + 1);
         });
         if (!v.isNil())
             *sp = v;
@@ -391,7 +388,7 @@ struct PyVM : Interp {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*context, arg, context->spIdx + 1);
+            return sp->obj().call(*context, arg, context->spOff + 1);
         });
         if (!v.isNil() && sp >= context->spBase())
             *sp = v;
@@ -468,8 +465,8 @@ struct PyVM : Interp {
     }
 
     void inner () {
-        sp = spAsPtr();
-        ip = context->ipBase() + context->ipIdx;
+        sp = context->begin() + context->spOff;
+        ip = context->ipBase() + context->ipOff;
 
         do {
             instructionTrace();
@@ -766,8 +763,8 @@ struct PyVM : Interp {
         if (context == nullptr)
             return; // last frame popped, there's no context left
 
-        context->spIdx = spAsOff();
-        context->ipIdx = ip - context->ipBase();
+        context->spOff = sp - context->begin();
+        context->ipOff = ip - context->ipBase();
 
         if (pendingBit(0))
             context->caught();

@@ -18,12 +18,12 @@ void Context::enter (Callable const& func) {
 
     auto& f = frame();          // new frame
     f.base = curr;              // index of (now previous) frame
-    f.sp = spIdx;               // previous stack index
-    f.ip = ipIdx;               // previous instruction index
+    f.spOff = spOff;            // previous stack index
+    f.ipOff = ipOff;            // previous instruction index
     f.callee = callee;          // previous callable
 
-    spIdx = f.stack-begin()-1;  // stack starts out empty
-    ipIdx = 0;                  // code starts at first opcode
+    spOff = f.stack-begin()-1;  // stack starts out empty
+    ipOff = 0;                  // code starts at first opcode
     callee = &func;             // new callable context
     f.ep = 0;                   // no exceptions pending
 }
@@ -36,8 +36,8 @@ Value Context::leave (Value v) {
 
     if (base > 0) {
         int prev = f.base;      // previous frame offset
-        spIdx = f.sp;           // restore stack index
-        ipIdx = f.ip;           // restore instruction index
+        spOff = f.spOff;        // restore stack index
+        ipOff = f.ipOff;        // restore instruction index
         callee = &f.callee.asType<Callable>(); // restore callee
 
         assert(fill > base);
@@ -78,9 +78,9 @@ void Context::caught () {
 
     assert(frame().ep > 0); // simple exception, no stack unwind
     auto ep = excBase(0);
-    ipIdx = ep[0];
-    spIdx = ep[1];
-    begin()[++spIdx] = e.isNil() ? ep[3] : e;
+    ipOff = ep[0];
+    spOff = ep[1];
+    begin()[++spOff] = e.isNil() ? ep[3] : e;
 }
 
 auto Context::next () -> Value {
