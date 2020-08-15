@@ -3,7 +3,7 @@
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
-struct PyVM : Runner {
+struct PyVM : Interp {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
         LoadConstString        = 0x10,

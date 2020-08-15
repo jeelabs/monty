@@ -45,7 +45,7 @@ void timerHook () {
     if (ms > 0 && (t - start) / ms != last) {
         last = (t - start) / ms;
         if (id > 0)
-            Runner::interrupt(id);
+            Interp::interrupt(id);
     }
 }
 

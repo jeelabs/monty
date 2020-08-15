@@ -5,8 +5,8 @@
 
 using namespace Monty;
 
-volatile uint32_t Runner::pending;
-Context* Runner::context;
+volatile uint32_t Interp::pending;
+Context* Interp::context;
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
@@ -70,7 +70,7 @@ Value Context::leave (Value v) {
         limit = fill;           // new limit
         fill = prev;            // new lower frame offset
     } else
-        Runner::context = caller; // last frame, drop this stack context, restore caller
+        Interp::context = caller; // last frame, drop this stack context, restore caller
 
     return r;
 }
@@ -87,11 +87,11 @@ void Context::raise (Value exc) {
     uint32_t num = 0;
     if (exc.isInt()) {
         num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
-        assert(num < 8 * sizeof Runner::pending);
+        assert(num < 8 * sizeof Interp::pending);
     } else
         event = exc;    // trigger exception or other outer-loop req
 
-    Runner::interrupt(num);     // set pending, to force inner loop exit
+    Interp::interrupt(num);     // set pending, to force inner loop exit
 }
 
 void Context::caught () {
@@ -108,7 +108,7 @@ void Context::caught () {
 }
 
 auto Context::next () -> Value {
-    Runner::resume(*this);
+    Interp::resume(*this);
     return {}; // no result yet
 }
 
@@ -120,35 +120,35 @@ void Context::marker () const {
     mark(caller);
 }
 
-void Runner::resume (Context& ctx) {
+void Interp::resume (Context& ctx) {
     assert(context != &ctx);
     context = &ctx;
     interrupt(0); // force inner loop exit
 }
 
-void Runner::exception (Value v) {
+void Interp::exception (Value v) {
     assert(!v.isInt());
     assert(context != nullptr);
     context->raise(v);
 }
 
-void Runner::interrupt (uint32_t num) {
-    assert(num < 8 * sizeof Runner::pending);
+void Interp::interrupt (uint32_t num) {
+    assert(num < 8 * sizeof pending);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
-auto Runner::nextPending () -> int {
+auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (size_t num = 0; num < 8 * sizeof Runner::pending; ++num)
+        for (size_t num = 0; num < 8 * sizeof pending; ++num)
             if (wasPending(num))
                 return num;
     return -1;
 }
 
-auto Runner::wasPending (uint32_t num) -> bool {
-    assert(num < 8 * sizeof Runner::pending);
+auto Interp::wasPending (uint32_t num) -> bool {
+    assert(num < 8 * sizeof pending);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-    return (__atomic_fetch_nand(&Runner::pending, mask, __ATOMIC_RELAXED) & mask) != 0;
+    return (__atomic_fetch_nand(&pending, mask, __ATOMIC_RELAXED) & mask) != 0;
 }

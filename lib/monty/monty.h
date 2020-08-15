@@ -680,7 +680,7 @@ namespace Monty {
         auto frame () const -> Frame& { return *(Frame*) end(); }
     };
 
-    struct Runner {
+    struct Interp {
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context
