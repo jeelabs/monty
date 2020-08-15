@@ -113,10 +113,16 @@ struct PyVM {
     template< typename T >
     auto contextAdjuster (T fun) -> Value {
         ctx->spIdx = spAsOff();
+        ctx->ipIdx = ip - ctx->ipBase();
         Value v = fun();
-        ctx = Context::active;
-        if (ctx != nullptr)
+        if (Context::active == nullptr) {
+            ctx->raise(); // there's nothing to do, exit inner loop
+            ctx = nullptr;
+        } else {
+            ctx = Context::active;
             sp = spAsPtr();
+            ip = ctx->ipBase() + ctx->ipIdx;
+        }
         return v;
     }
 
@@ -357,9 +363,8 @@ struct PyVM {
         ++sp;
         assert(!sp->isNil());
     }
-    //CG2 op vr
+    //CG1 op v
     void op_CallMethod (int arg) {
-        // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
         auto v = contextAdjuster([=]() -> Value {
@@ -368,9 +373,8 @@ struct PyVM {
         if (!v.isNil())
             *sp = v;
     }
-    //CG2 op vr
+    //CG1 op v
     void op_CallMethodVarKw (int arg) {
-        // note: called outside inner loop
         assert(false); // TODO
     }
     //CG1 op v
@@ -385,9 +389,8 @@ struct PyVM {
         *sp = new Callable (ctx->globals(), v.asType<Bytecode>(),
                                 sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
     }
-    //CG2 op vr
+    //CG1 op v
     void op_CallFunction (int arg) {
-        // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
@@ -396,14 +399,12 @@ struct PyVM {
         if (!v.isNil() && sp >= ctx->spBase())
             *sp = v;
     }
-    //CG2 op vr
+    //CG1 op v
     void op_CallFunctionVarKw (int arg) {
-        // note: called outside inner loop
         assert(false); // TODO
     }
-    //CG2 op r
+    //CG1 op
     void op_YieldValue () {
-        // note: called outside inner loop
         auto v = contextAdjuster([=]() -> Value {
             Context::active = ctx->caller;
             return *sp;
@@ -411,9 +412,8 @@ struct PyVM {
         if (ctx != nullptr)
             *sp = v;
     }
-    //CG2 op r
+    //CG1 op
     void op_ReturnValue () {
-        // note: called outside inner loop
         auto v = contextAdjuster([=]() -> Value {
             return ctx->leave(*sp);
         });
@@ -669,12 +669,12 @@ struct PyVM {
                 }
                 case Op::CallMethod: {
                     int arg = fetchVarInt();
-                    ctx->raise(Op::CallMethod, arg);
+                    op_CallMethod(arg);
                     break;
                 }
                 case Op::CallMethodVarKw: {
                     int arg = fetchVarInt();
-                    ctx->raise(Op::CallMethodVarKw, arg);
+                    op_CallMethodVarKw(arg);
                     break;
                 }
                 case Op::MakeFunction: {
@@ -689,19 +689,19 @@ struct PyVM {
                 }
                 case Op::CallFunction: {
                     int arg = fetchVarInt();
-                    ctx->raise(Op::CallFunction, arg);
+                    op_CallFunction(arg);
                     break;
                 }
                 case Op::CallFunctionVarKw: {
                     int arg = fetchVarInt();
-                    ctx->raise(Op::CallFunctionVarKw, arg);
+                    op_CallFunctionVarKw(arg);
                     break;
                 }
                 case Op::YieldValue: 
-                    ctx->raise(Op::YieldValue, 0);
+                    op_YieldValue();
                     break;
                 case Op::ReturnValue: 
-                    ctx->raise(Op::ReturnValue, 0);
+                    op_ReturnValue();
                     break;
                 case Op::GetIter: 
                     op_GetIter();
@@ -768,38 +768,17 @@ struct PyVM {
             }
         } while (Context::pending == 0);
 
+        if (ctx == nullptr)
+            return; // task returned, there's no context left
+
         ctx->spIdx = spAsOff();
         ctx->ipIdx = ip - ctx->ipBase();
 
         if (Context::wasPending(0)) {
             auto e = ctx->event;
             ctx->event = {};
-            if (e.isInt()) {
-                int n = e;
-                assert(n < 0);
-                raisedOp((Op) (n >> 16), n);
-            } else if (!e.isNil())
+            if (!e.isNil())
                 ctx->caught(e);
-        }
-    }
-
-    void raisedOp (Op op, uint16_t arg) {
-        switch (op) {
-            //CG< op-emit r
-            case Op::CallMethod:
-                op_CallMethod(arg); break;
-            case Op::CallMethodVarKw:
-                op_CallMethodVarKw(arg); break;
-            case Op::CallFunction:
-                op_CallFunction(arg); break;
-            case Op::CallFunctionVarKw:
-                op_CallFunctionVarKw(arg); break;
-            case Op::YieldValue:
-                op_YieldValue(); break;
-            case Op::ReturnValue:
-                op_ReturnValue(); break;
-            //CG>
-            default: assert(false);
         }
     }
 };

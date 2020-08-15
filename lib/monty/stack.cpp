@@ -85,7 +85,7 @@ auto Context::excBase (int incr) -> Value* {
 
 void Context::raise (Value exc) {
     uint32_t num = 0;
-    if (exc.isInt() && (int) exc >= 0) {
+    if (exc.isInt()) {
         num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
         assert(num < 8 * sizeof pending);
     } else

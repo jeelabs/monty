@@ -654,10 +654,6 @@ namespace Monty {
         auto globals () const -> Module& { return callee->mo; }
 
         void raise (Value exc ={});
-        void raise (uint8_t op, uint16_t arg) {
-            raise((~0U << 24) | (op << 16) | arg);
-        }
-
         void caught (Value e ={});
 
         auto next () -> Value override;
