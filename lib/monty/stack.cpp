@@ -36,14 +36,14 @@ Value Context::leave (Value v) {
 
     if (base > 0) {
         int prev = f.base;      // previous frame offset
-        assert(prev >= 0);
-
         spIdx = f.sp;
         ipIdx = f.ip;
         callee = &f.callee.asType<Callable>();
 
         assert(fill > base);
         remove(base, fill - base); // delete current frame
+
+        assert(prev >= 0);
         base = prev;            // new lower frame offset
     } else
         Interp::context = caller; // last frame, drop this stack context, restore caller
