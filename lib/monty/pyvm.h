@@ -109,6 +109,17 @@ struct PyVM {
     auto spAsPtr () const -> Value* { return ctx->begin() + ctx->spIdx; }
     auto spAsOff () const -> uint32_t { return sp - ctx->begin(); }
 
+    // special wrapper to deal with context changes vs cached ctx/sp values
+    template< typename T >
+    auto contextAdjuster (T fun) -> Value {
+        ctx->spIdx = spAsOff();
+        Value v = fun();
+        ctx = Context::active;
+        if (ctx != nullptr)
+            sp = spAsPtr();
+        return v;
+    }
+
     void instructionTrace () {
 #if SHOW_INSTR_PTR
         printf("\tip %04d sp %2d e %d ", (int) (ip - ctx->ipBase()),
@@ -350,11 +361,10 @@ struct PyVM {
     void op_CallMethod (int arg) {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
-        ctx->spIdx -= nargs + 2 * nkw + 1;
-auto sp = spAsPtr(); // TODO yuck
-        auto v = sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
-ctx = Context::active; // may have changed!
-sp = ctx->begin() + ctx->spIdx; // TODO yuck
+        sp -= nargs + 2 * nkw + 1;
+        auto v = contextAdjuster([=]() -> Value {
+            return sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
+        });
         if (!v.isNil())
             *sp = v;
     }
@@ -379,11 +389,10 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
     void op_CallFunction (int arg) {
         // note: called outside inner loop
         uint8_t nargs = arg, nkw = arg >> 8;
-        ctx->spIdx -= nargs + 2 * nkw;
-auto sp = spAsPtr(); // TODO yuck
-        auto v = sp->obj().call(*ctx, arg, ctx->spIdx + 1);
-ctx = Context::active; // may have changed!
-sp = ctx->begin() + ctx->spIdx; // TODO yuck
+        sp -= nargs + 2 * nkw;
+        auto v = contextAdjuster([=]() -> Value {
+            return sp->obj().call(*ctx, arg, ctx->spIdx + 1);
+        });
         if (!v.isNil() && sp >= ctx->spBase())
             *sp = v;
     }
@@ -395,23 +404,21 @@ sp = ctx->begin() + ctx->spIdx; // TODO yuck
     //CG2 op r
     void op_YieldValue () {
         // note: called outside inner loop
-        auto v = *sp;
-        Context::active = ctx->caller;
-ctx = Context::active; // may have changed!
-        if (ctx != nullptr) {
-auto sp = spAsPtr(); // TODO yuck
+        auto v = contextAdjuster([=]() -> Value {
+            Context::active = ctx->caller;
+            return *sp;
+        });
+        if (ctx != nullptr)
             *sp = v;
-        }
     }
     //CG2 op r
     void op_ReturnValue () {
         // note: called outside inner loop
-        auto v = ctx->leave(*sp);
-ctx = Context::active; // may have changed!
-        if (ctx != nullptr) {
-auto sp = spAsPtr(); // TODO yuck
+        auto v = contextAdjuster([=]() -> Value {
+            return ctx->leave(*sp);
+        });
+        if (ctx != nullptr)
             *sp = v;
-        }
     }
 
     //CG1 op

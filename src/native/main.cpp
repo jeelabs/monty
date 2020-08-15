@@ -36,7 +36,7 @@ int main (int argc, const char* argv []) {
         return 1;
     }
 
-    static uint8_t myMem [256*1024]; // TODO don't gc too soon ...
+    static uint8_t myMem [512*1024]; // TODO don't gc too soon ...
     Monty::setup(myMem, sizeof myMem);
 
     if (Monty::loadModule(bcData) == nullptr)
