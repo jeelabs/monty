@@ -6,7 +6,7 @@
 using namespace Monty;
 
 volatile uint32_t Runner::pending;
-Context* Runner::active;
+Context* Runner::context;
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
@@ -70,7 +70,7 @@ Value Context::leave (Value v) {
         limit = fill;           // new limit
         fill = prev;            // new lower frame offset
     } else
-        Runner::active = caller; // last frame, drop this stack context, restore caller
+        Runner::context = caller; // last frame, drop this stack context, restore caller
 
     return r;
 }
@@ -91,18 +91,15 @@ void Context::raise (Value exc) {
     } else
         event = exc;    // trigger exception or other outer-loop req
 
-    interrupt(num);     // set pending, to force inner loop exit
+    Runner::interrupt(num);     // set pending, to force inner loop exit
 }
 
-auto Context::nextPending () -> int {
-    if (Runner::pending != 0)
-        for (size_t num = 0; num < 8 * sizeof Runner::pending; ++num)
-            if (wasPending(num))
-                return num;
-    return -1;
-}
+void Context::caught () {
+    auto e = event;
+    event = {};
+    if (e.isNil())
+        return; // there was no exception, just an inner loop exit
 
-void Context::caught (Value e) {
     assert(epIdx > 0); // simple exception, no stack unwind
     auto ep = excBase(0);
     ipIdx = ep[0];
@@ -111,9 +108,7 @@ void Context::caught (Value e) {
 }
 
 auto Context::next () -> Value {
-    assert(Runner::active != this);
-    raise(); // force inner loop exit
-    Runner::active = this;
+    Runner::resume(*this);
     return {}; // no result yet
 }
 
@@ -125,19 +120,33 @@ void Context::marker () const {
     mark(caller);
 }
 
-void Context::exception (Value v) {
-    assert(!v.isInt());
-    assert(Runner::active != nullptr);
-    Runner::active->raise(v);
+void Runner::resume (Context& ctx) {
+    assert(context != &ctx);
+    context = &ctx;
+    interrupt(0); // force inner loop exit
 }
 
-void Context::interrupt (uint32_t num) {
+void Runner::exception (Value v) {
+    assert(!v.isInt());
+    assert(context != nullptr);
+    context->raise(v);
+}
+
+void Runner::interrupt (uint32_t num) {
     assert(num < 8 * sizeof Runner::pending);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-    __atomic_fetch_or(&Runner::pending, 1U << num, __ATOMIC_RELAXED);
+    __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
-auto Context::wasPending (uint32_t num) -> bool {
+auto Runner::nextPending () -> int {
+    if (pending != 0)
+        for (size_t num = 0; num < 8 * sizeof Runner::pending; ++num)
+            if (wasPending(num))
+                return num;
+    return -1;
+}
+
+auto Runner::wasPending (uint32_t num) -> bool {
     assert(num < 8 * sizeof Runner::pending);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

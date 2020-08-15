@@ -45,7 +45,7 @@ void timerHook () {
     if (ms > 0 && (t - start) / ms != last) {
         last = (t - start) / ms;
         if (id > 0)
-            Context::interrupt(id);
+            Runner::interrupt(id);
     }
 }
 

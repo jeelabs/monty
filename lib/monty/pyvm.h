@@ -86,9 +86,8 @@ struct PyVM : Runner {
         BinaryOpMulti          = 0xD7,
     };
 
-    Value* sp;
-    uint8_t const* ip;
-    Context* ctx;
+    Value* sp {nullptr};
+    uint8_t const* ip {nullptr};
 
     uint32_t fetchVarInt (uint32_t v =0) {
         uint8_t b = 0x80;
@@ -104,39 +103,36 @@ struct PyVM : Runner {
         return n | (*ip++ << 8);
     }
 
-    const char* fetchQstr () { return ctx->getQstr(fetchOffset() + 1); }
+    const char* fetchQstr () { return context->getQstr(fetchOffset() + 1); }
 
-    auto spAsPtr () const -> Value* { return ctx->begin() + ctx->spIdx; }
-    auto spAsOff () const -> uint32_t { return sp - ctx->begin(); }
+    auto spAsPtr () const -> Value* { return context->begin() + context->spIdx; }
+    auto spAsOff () const -> uint32_t { return sp - context->begin(); }
 
-    // special wrapper to deal with context changes vs cached ctx/sp values
+    // special wrapper to deal with context changes vs cached sp/ip values
     template< typename T >
     auto contextAdjuster (T fun) -> Value {
-        ctx->spIdx = spAsOff();
-        ctx->ipIdx = ip - ctx->ipBase();
+        context->spIdx = spAsOff();
+        context->ipIdx = ip - context->ipBase();
         Value v = fun();
-        if (active == nullptr) {
-            ctx->raise(); // there's nothing to do, exit inner loop
-            ctx = nullptr;
-        } else {
-            ctx = active;
+        if (context != nullptr) {
             sp = spAsPtr();
-            ip = ctx->ipBase() + ctx->ipIdx;
-        }
+            ip = context->ipBase() + context->ipIdx;
+        } else
+            interrupt(0); // nothing left to do, exit inner loop
         return v;
     }
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        printf("\tip %04d sp %2d e %d ", (int) (ip - ctx->ipBase()),
-                                         (int) (sp - ctx->spBase()),
-                                         (int) ctx->epIdx);
+        printf("\tip %04d sp %2d e %d ", (int) (ip - context->ipBase()),
+                                         (int) (sp - context->spBase()),
+                                         (int) context->epIdx);
         printf("op 0x%02x : ", *ip);
-        if (sp >= ctx->spBase())
+        if (sp >= context->spBase())
             sp->dump();
         printf("\n");
 #endif
-        assert(ip >= ctx->ipBase() && sp >= ctx->spBase() - 1);
+        assert(ip >= context->ipBase() && sp >= context->spBase() - 1);
     }
 
     //CG: op-init
@@ -167,19 +163,19 @@ struct PyVM : Runner {
     }
     //CG1 op v
     void op_LoadConstObj (int arg) {
-        *++sp = ctx->getConst(arg);
+        *++sp = context->getConst(arg);
     }
     //CG1 op v
     void op_LoadFastN (int arg) {
-        *++sp = ctx->fastSlot(arg);
+        *++sp = context->fastSlot(arg);
     }
     //CG1 op v
     void op_StoreFastN (int arg) {
-        ctx->fastSlot(arg) = *sp--;
+        context->fastSlot(arg) = *sp--;
     }
     //CG1 op v
     void op_DeleteFast (int arg) {
-        ctx->fastSlot(arg) = {};
+        context->fastSlot(arg) = {};
     }
 
     //CG1 op
@@ -236,33 +232,33 @@ struct PyVM : Runner {
 
     //CG1 op q
     void op_LoadName (char const* arg) {
-        assert(ctx->locals != nullptr);
-        *++sp = ctx->locals->at(arg);
+        assert(context->locals != nullptr);
+        *++sp = context->locals->at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
-        if (ctx->locals == nullptr)
-            ctx->locals = new Dict (&ctx->globals());
-        ctx->locals->at(arg) = *sp--;
+        if (context->locals == nullptr)
+            context->locals = new Dict (&context->globals());
+        context->locals->at(arg) = *sp--;
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
-        assert(ctx->locals != nullptr);
-        ctx->locals->at(arg) = {};
+        assert(context->locals != nullptr);
+        context->locals->at(arg) = {};
     }
     //CG1 op q
     void op_LoadGlobal (char const* arg) {
-        *++sp = ctx->globals().at(arg);
+        *++sp = context->globals().at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreGlobal (char const* arg) {
-        ctx->globals().at(arg) = *sp--;
+        context->globals().at(arg) = *sp--;
     }
     //CG1 op q
     void op_DeleteGlobal (char const* arg) {
-        ctx->globals().at(arg) = {};
+        context->globals().at(arg) = {};
     }
     //CG1 op q
     void op_LoadAttr (char const* arg) {
@@ -294,26 +290,26 @@ struct PyVM : Runner {
     //CG1 op v
     void op_BuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(*ctx, arg, spAsOff());
+        *sp = Slice::create(*context, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(*ctx, arg, spAsOff());
+        *sp = Tuple::create(*context, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(*ctx, arg, spAsOff());
+        *sp = List::create(*context, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(*ctx, arg, spAsOff());
+        *sp = Set::create(*context, arg, spAsOff());
     }
     //CG1 op v
     void op_BuildMap (int arg) {
-        *++sp = Dict::create(*ctx, arg, 0);
+        *++sp = Dict::create(*context, arg, 0);
     }
     //CG1 op
     void op_StoreMap () {
@@ -323,32 +319,32 @@ struct PyVM : Runner {
 
     //CG1 op o
     void op_SetupExcept (int arg) {
-        auto exc = ctx->excBase(1);
-        exc[0] = ip - ctx->ipBase() + arg;
+        auto exc = context->excBase(1);
+        exc[0] = ip - context->ipBase() + arg;
         exc[1] = spAsOff();
         exc[2] = {};
     }
     //CG1 op o
     void op_PopExceptJump (int arg) {
-        ctx->excBase(-1);
+        context->excBase(-1);
         ip += arg;
     }
     //CG1 op
     void op_RaiseLast () {
-        ctx->raise(""); // TODO
+        context->raise(""); // TODO
     }
     //CG1 op
     void op_RaiseObj () {
-        ctx->raise(*sp);
+        context->raise(*sp);
     }
     //CG1 op
     void op_RaiseFrom () {
         // TODO exception chaining
-        ctx->raise(*--sp);
+        context->raise(*--sp);
     }
     //CG1 op s
     void op_UnwindJump (int arg) {
-        ctx->epIdx -= *ip; // TODO hardwired for simplest case
+        context->epIdx -= *ip; // TODO hardwired for simplest case
         ip += arg;
     }
 
@@ -368,7 +364,7 @@ struct PyVM : Runner {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*ctx, arg + 1, ctx->spIdx + 1);
+            return sp->obj().call(*context, arg + 1, context->spIdx + 1);
         });
         if (!v.isNil())
             *sp = v;
@@ -379,14 +375,14 @@ struct PyVM : Runner {
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
-        auto v = ctx->getConst(arg);
-        *++sp = new Callable (ctx->globals(), v.asType<Bytecode>());
+        auto v = context->getConst(arg);
+        *++sp = new Callable (context->globals(), v.asType<Bytecode>());
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
-        auto v = ctx->getConst(arg);
+        auto v = context->getConst(arg);
         --sp;
-        *sp = new Callable (ctx->globals(), v.asType<Bytecode>(),
+        *sp = new Callable (context->globals(), v.asType<Bytecode>(),
                                 sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
     }
     //CG1 op v
@@ -394,9 +390,9 @@ struct PyVM : Runner {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*ctx, arg, ctx->spIdx + 1);
+            return sp->obj().call(*context, arg, context->spIdx + 1);
         });
-        if (!v.isNil() && sp >= ctx->spBase())
+        if (!v.isNil() && sp >= context->spBase())
             *sp = v;
     }
     //CG1 op v
@@ -406,18 +402,18 @@ struct PyVM : Runner {
     //CG1 op
     void op_YieldValue () {
         auto v = contextAdjuster([=]() -> Value {
-            active = ctx->caller;
+            context = context->caller;
             return *sp;
         });
-        if (ctx != nullptr)
+        if (context != nullptr)
             *sp = v;
     }
     //CG1 op
     void op_ReturnValue () {
         auto v = contextAdjuster([=]() -> Value {
-            return ctx->leave(*sp);
+            return context->leave(*sp);
         });
-        if (ctx != nullptr)
+        if (context != nullptr)
             *sp = v;
     }
 
@@ -453,12 +449,12 @@ struct PyVM : Runner {
     }
     //CG1 op m 16
     void op_LoadFastMulti (uint32_t arg) {
-        *++sp = ctx->fastSlot(arg);
+        *++sp = context->fastSlot(arg);
         assert(!sp->isNil());
     }
     //CG1 op m 16
     void op_StoreFastMulti (uint32_t arg) {
-        ctx->fastSlot(arg) = *sp--;
+        context->fastSlot(arg) = *sp--;
     }
     //CG1 op m 7
     void op_UnaryOpMulti (uint32_t arg) {
@@ -470,11 +466,9 @@ struct PyVM : Runner {
         *sp = sp->binOp((BinOp) arg, sp[1]);
     }
 
-    PyVM () {
-        ctx = active;
-        assert(ctx != nullptr);
+    void inner () {
         sp = spAsPtr();
-        ip = ctx->ipBase() + ctx->ipIdx;
+        ip = context->ipBase() + context->ipIdx;
 
         do {
             instructionTrace();
@@ -768,17 +762,13 @@ struct PyVM : Runner {
             }
         } while (pending == 0);
 
-        if (ctx == nullptr)
-            return; // task returned, there's no context left
+        if (context == nullptr)
+            return; // last frame popped, there's no context left
 
-        ctx->spIdx = spAsOff();
-        ctx->ipIdx = ip - ctx->ipBase();
+        context->spIdx = spAsOff();
+        context->ipIdx = ip - context->ipBase();
 
-        if (Context::wasPending(0)) {
-            auto e = ctx->event;
-            ctx->event = {};
-            if (!e.isNil())
-                ctx->caught(e);
-        }
+        if (wasPending(0))
+            context->caught();
     }
 };
