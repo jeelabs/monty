@@ -10,16 +10,14 @@ Context* Interp::context;
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
-    auto need = (frame().stack + frameSize) - end();
+    int need = (frame().stack + frameSize) - (begin() + base);
 
-    auto curr = fill;           // current frame offset
-    fill = limit;               // current limit
+    auto curr = base;           // current frame offset
+    base = fill;                // new frame offset
     insert(fill, need);         // make room
-    fill = limit;               // frame offset is old limit
-    limit += need;              // new limit of vector use
 
     auto& f = frame();          // new frame
-    f.link = curr;              // index of (now previous) frame
+    f.base = curr;              // index of (now previous) frame
     f.sp = spIdx;               // previous stack index
     f.ip = ipIdx;               // previous instruction index
     f.callee = callee;          // previous callable
@@ -28,8 +26,6 @@ void Context::enter (Callable const& func) {
     ipIdx = 0;                  // code starts at first opcode
     f.ep = 0;                   // no exceptions pending
     callee = &func;             // new callable context
-    f.locals = {};              // create a new dict on demand
-    f.result = {};              // start with no result
 }
 
 Value Context::leave (Value v) {
@@ -38,20 +34,17 @@ Value Context::leave (Value v) {
     if (r.isNil())              // use return result if set
         r = v;                  // ... else arg
 
-    if (fill > 0) {
-        int prev = f.link;      // previous frame offset
+    if (base > 0) {
+        int prev = f.base;      // previous frame offset
         assert(prev >= 0);
 
         spIdx = f.sp;
         ipIdx = f.ip;
         callee = &f.callee.asType<Callable>();
 
-        assert(limit > fill);
-        size_t base = fill;     // current frame offset
-        fill = limit;           // adjust current limit
-        remove(base, limit - base); // delete current frame
-        limit = fill;           // new limit
-        fill = prev;            // new lower frame offset
+        assert(fill > base);
+        remove(base, fill - base); // delete current frame
+        base = prev;            // new lower frame offset
     } else
         Interp::context = caller; // last frame, drop this stack context, restore caller
 

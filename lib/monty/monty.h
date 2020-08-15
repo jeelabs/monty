@@ -628,10 +628,11 @@ namespace Monty {
         }
 
         struct Frame {
-            Value link, sp, ip, ep, callee, locals, result, stack [];
+            //    <---- previous ---->  <---- actual ---->
+            Value base, sp, ip, callee, ep, locals, result, stack [];
         };
 
-        auto frame () const -> Frame& { return *(Frame*) end(); }
+        auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
 
         Context (Context* from =nullptr) : caller (from) {}
 
@@ -667,11 +668,11 @@ namespace Monty {
         void marker () const override;
 
         // previous values are saved in current stack frame
+        size_t base {0};
         size_t spIdx {0};
         size_t ipIdx {0};
         Callable const* callee {nullptr};
 
-        size_t limit {0};
         Value event;
         Context* caller;
 
