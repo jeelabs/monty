@@ -119,7 +119,7 @@ Class::Class (Vector const& vec, int argc, int args)
     auto& init = vec[args];
     init.obj().call(vec, argc - 2, args + 2);
 
-    auto ctx = Context::active;
+    auto ctx = Runner::active;
     assert(ctx != nullptr);
     ctx->locals = this;
     ctx->result = this;
@@ -127,7 +127,7 @@ Class::Class (Vector const& vec, int argc, int args)
 
 Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
         : Dict (&cls) {
-    auto ctx = Context::active;
+    auto ctx = Runner::active;
     assert(ctx != nullptr);
 
     Value self;

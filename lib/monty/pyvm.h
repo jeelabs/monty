@@ -3,7 +3,7 @@
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
-struct PyVM {
+struct PyVM : Runner {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
         LoadConstString        = 0x10,
@@ -115,11 +115,11 @@ struct PyVM {
         ctx->spIdx = spAsOff();
         ctx->ipIdx = ip - ctx->ipBase();
         Value v = fun();
-        if (Context::active == nullptr) {
+        if (active == nullptr) {
             ctx->raise(); // there's nothing to do, exit inner loop
             ctx = nullptr;
         } else {
-            ctx = Context::active;
+            ctx = active;
             sp = spAsPtr();
             ip = ctx->ipBase() + ctx->ipIdx;
         }
@@ -406,7 +406,7 @@ struct PyVM {
     //CG1 op
     void op_YieldValue () {
         auto v = contextAdjuster([=]() -> Value {
-            Context::active = ctx->caller;
+            active = ctx->caller;
             return *sp;
         });
         if (ctx != nullptr)
@@ -471,7 +471,7 @@ struct PyVM {
     }
 
     PyVM () {
-        ctx = Context::active;
+        ctx = active;
         assert(ctx != nullptr);
         sp = spAsPtr();
         ip = ctx->ipBase() + ctx->ipIdx;
@@ -766,7 +766,7 @@ struct PyVM {
                     assert(false);
                 }
             }
-        } while (Context::pending == 0);
+        } while (pending == 0);
 
         if (ctx == nullptr)
             return; // task returned, there's no context left

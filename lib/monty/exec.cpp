@@ -328,7 +328,7 @@ auto Callable::qStrAt (size_t i) const -> char const* {
 }
 
 auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
-    auto ctx = Context::active;
+    auto ctx = Runner::active;
     auto coro = code.isGenerator();
     if (coro)
         ctx = new Context (ctx);
@@ -368,9 +368,9 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     ctx.enter(*init);
     ctx.locals = &init->mo;
-    Context::active = &ctx;
+    Runner::active = &ctx;
 
-    while (Context::active != nullptr) {
+    while (Runner::active != nullptr) {
         PyVM vm;
     }
 

@@ -676,15 +676,18 @@ namespace Monty {
         static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto wasPending (uint32_t) -> bool; // test and clear bit
-
-        static volatile uint32_t pending;   // for irq-safe inner loop exit
-        static Context* active;             // current active context, if any
     private:
         struct Frame {
             Value link, sp, ip, ep, callee, locals, result, stack [];
         };
 
         auto frame () const -> Frame& { return *(Frame*) end(); }
+    };
+
+    struct Runner {
+
+        static volatile uint32_t pending;   // for irq-safe inner loop exit
+        static Context* active;             // current active context, if any
     };
 
     auto loadModule (uint8_t const* addr) -> Module*;
