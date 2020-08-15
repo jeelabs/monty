@@ -56,9 +56,16 @@ auto Value::operator== (Value rhs) const -> bool {
             case Nil: assert(false); // handled above
             case Int: return false;  // handled above
             case Str: return strcmp(*this, rhs) == 0;
-            case Obj: return obj().binop(BinOp::Equal, rhs);
+            case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
-    return binOp(BinOp::Equal, rhs);
+    Value lhs = *this;
+    if (!isObj()) {
+        lhs = rhs;
+        rhs = *this;
+    }
+    //return asObj().binop(BinOp::Equal, rhs.asObj()).truthy();
+    //return binOp(BinOp::Equal, rhs).truthy();
+    return lhs.binOp(BinOp::Equal, rhs).truthy();
 }
 
 auto Value::operator< (Value rhs) const -> bool {
@@ -220,7 +227,13 @@ auto Fixed::unop (UnOp) const -> Value {
     return {}; // TODO
 }
 
-auto Fixed::binop (BinOp, Value) const -> Value {
+auto Fixed::binop (BinOp op, Value rhs) const -> Value {
+    switch (op) {
+        case BinOp::Equal:
+            return false; // FIXME
+        default:
+            break;
+    }
     assert(false);
     return {}; // TODO
 }
@@ -289,13 +302,27 @@ auto Str::unop (UnOp op) const -> Value {
 
 auto Str::binop (BinOp op, Value rhs) const -> Value {
     auto l = (char const*) begin();
-    char const* r = rhs.isStr() ?(char const*)  rhs : (char const*) rhs.asType<Str>();
-    if (op == BinOp::Add) {
-        auto nl = strlen(l), nr = strlen(r);
-        auto o = new struct Str (nullptr, nl + nr);
-        memcpy((char*) o->begin(), l, nl);
-        memcpy((char*) o->begin() + nl, r, nr);
-        return o;
+    char const* r = nullptr;
+    if (rhs.isStr())
+        r = rhs;
+    else {
+        auto o = rhs.ifType<Str>();
+        if (o != nullptr)
+            r = *o;
+    }
+    switch (op) {
+        case BinOp::Equal:
+            return Value::asBool(r != 0 && strcmp(l, r) == 0);
+        case BinOp::Add: {
+            assert(r != nullptr);
+            auto nl = strlen(l), nr = strlen(r);
+            auto o = new struct Str (nullptr, nl + nr);
+            memcpy((char*) o->begin(), l, nl);
+            memcpy((char*) o->begin() + nl, r, nr);
+            return o;
+        }
+        default:
+            break;
     }
     return Bytes::binop(op, rhs);
 }
