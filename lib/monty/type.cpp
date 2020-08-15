@@ -28,11 +28,11 @@ Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
 
-auto Value::asObj () -> Object& {
+auto Value::asObj () const -> Object& {
     switch (tag()) {
         case Value::Nil: return (Object&) None::nullObj; // drop const
-        case Value::Int: *this = new Fixed (*this); break;
-        case Value::Str: *this = new struct Str (*this); break;
+        case Value::Int: return *new Fixed (*this);
+        case Value::Str: return *new struct Str (*this);
         case Value::Obj: break;
     }
     return obj();
@@ -58,8 +58,7 @@ auto Value::operator== (Value rhs) const -> bool {
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs);
         }
-    // TODO return binOp(BinOp::Equal, rhs);
-    return false;
+    return binOp(BinOp::Equal, rhs);
 }
 
 auto Value::operator< (Value rhs) const -> bool {
@@ -94,8 +93,7 @@ auto Value::unOp (UnOp op) const -> Value {
         }
         default: break;
     }
-    Value v = *this; // bypass const-ness
-    return v.asObj().unop(op);
+    return asObj().unop(op);
 }
 
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
@@ -131,18 +129,6 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 break;
             }
             case Str: {
-                auto l = (const char*) *this, r = (const char*) rhs;
-                switch (op) {
-                    case BinOp::Add: {
-                        // TODO no malloc, please
-                        auto buf = (char*) malloc(strlen(l) + strlen(r) + 1);
-                        strcpy(buf, l);
-                        strcat(buf, r);
-                        return buf;
-                    }
-                    default:
-                        break;
-                }
                 break;
             }
             default:
@@ -157,8 +143,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 }
                 break;
         }
-    Value v = *this; // bypass const-ness
-    return v.obj().binop(op, rhs);
+    return asObj().binop(op, rhs);
 }
 
 auto Value::check (Type const& t) const -> bool {
@@ -166,21 +151,27 @@ auto Value::check (Type const& t) const -> bool {
 }
 
 void Value::verify (Type const& t) const {
-    assert(check(t));
+    auto f = check(t);
+    if (!f) {
+        dump("verify?");
+        Value v = t;
+        v.dump(t.name);
+    }
+    assert(f);
 }
 
 auto Object::call (Context&, int, int) const -> Value {
-    assert(false);
+    Value v = this; v.dump("call?"); assert(false);
     return {};
 }
 
-auto Object::unop (UnOp) const -> Value {
-    assert(false);
+auto Object::unop (UnOp op) const -> Value {
+    Value v = this; v.dump("unop?"); assert(false);
     return {};
 }
 
 auto Object::binop (BinOp, Value) const -> Value {
-    assert(false);
+    Value v = this; v.dump("binop?"); assert(false);
     return {};
 }
 
@@ -189,23 +180,23 @@ auto Object::attr (const char* name, Value&) const -> Value {
     return atab != 0 ? atab->getAt(name) : getAt(name);
 }
 
+auto Object::next  () -> Value {
+    Value v = this; v.dump("next?"); assert(false);
+    return {};
+}
+
 auto Object::len () const -> size_t {
-    assert(false);
+    Value v = this; v.dump("len?"); assert(false);
     return {};
 }
 
 auto Object::getAt (Value) const -> Value {
-    assert(false);
+    Value v = this; v.dump("getAt?"); assert(false);
     return {};
 }
 
-auto Object::next  () -> Value {
-    assert(false);
-    return {};
-}
-
-auto Object::setAt (Value k, Value v) -> Value {
-    assert(false);
+auto Object::setAt (Value, Value) -> Value {
+    Value v = this; v.dump("setAt?"); assert(false);
     return {};
 }
 
@@ -269,15 +260,52 @@ auto Bytes::binop (BinOp op, Value rhs) const -> Value {
     return Object::binop(op, rhs);
 }
 
+auto Bytes::getAt (Value k) const -> Value {
+    assert(k.isInt());
+    return (*this)[k];
+}
+
+Str::Str (char const* s, int n) {
+    assert(n >= 0 || s != nullptr);
+    if (n < 0)
+        n = strlen(s);
+    insert(0, n);
+    adj(n+1);
+    assert((int) cap() > n);
+    if (s != nullptr)
+        memcpy(begin(), s, n);
+    else
+        memset(begin(), 0, n);
+    begin()[n] = 0;
+}
+
+auto Str::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Int:  return atoi((char const*) begin());
+        default:         break;
+    }
+    return Bytes::unop(op);
+}
+
+auto Str::binop (BinOp op, Value rhs) const -> Value {
+    auto l = (char const*) begin();
+    char const* r = rhs.isStr() ?(char const*)  rhs : (char const*) rhs.asType<Str>();
+    if (op == BinOp::Add) {
+        auto nl = strlen(l), nr = strlen(r);
+        auto o = new struct Str (nullptr, nl + nr);
+        memcpy((char*) o->begin(), l, nl);
+        memcpy((char*) o->begin() + nl, r, nr);
+        return o;
+    }
+    return Bytes::binop(op, rhs);
+}
+
 auto Str::getAt (Value k) const -> Value {
     assert(k.isInt());
     int idx = k;
     if (idx < 0)
-        idx += strlen(ptr);
-    auto buf = (char*) malloc(2); // TODO no malloc, please
-    buf[0] = ptr[idx];
-    buf[1] = 0;
-    return buf;
+        idx += size();
+    return new Str ((char const*) begin() + idx, 1); // TODO utf-8
 }
 
 Slice::Slice (Value a, Value b, Value c) {
@@ -375,8 +403,7 @@ static Function const f_next (bi_next);
 
 static auto bi_len (Context& ctx, int argc, int args) -> Value {
     assert(argc == 1);
-    Value v = ctx[args];
-    return v.asObj().len();
+    return ctx[args].asObj().len();
 }
 
 static Function const f_len (bi_len);

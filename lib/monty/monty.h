@@ -87,7 +87,7 @@ namespace Monty {
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const { return (char const*) (v >> 2); }
         auto obj () const -> Object& { return *(Object*) v; }
-        auto asObj () -> Object&; // convert int/str to object, in-place
+        auto asObj () const -> Object&; // create int/str object if needed
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
@@ -279,6 +279,7 @@ namespace Monty {
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
         auto len () const -> size_t override { return size(); }
+        auto getAt (Value k) const -> Value override;
     };
 
     //CG< type str
@@ -289,14 +290,13 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Str (char const* s) : ptr (s) {}
+        Str (char const* s, int n =-1);
 
-        operator char const* () const { return ptr; }
+        operator char const* () const { return (char const*) begin(); }
 
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
         auto getAt (Value k) const -> Value override;
-
-        private:
-        char const* ptr;
     };
 
     //CG< type range

@@ -254,7 +254,7 @@ Value Slice::repr (Buffer& buf) const {
 
 Value Str::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    putsEsc(buf, ptr);
+    putsEsc(buf, (char const*) begin());
     return {};
 }
 
