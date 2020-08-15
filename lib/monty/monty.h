@@ -675,8 +675,6 @@ namespace Monty {
 
         Value event;
         Context* caller;
-
-    private:
     };
 
     struct Interp {

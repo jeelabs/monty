@@ -24,8 +24,8 @@ void Context::enter (Callable const& func) {
 
     spIdx = f.stack-begin()-1;  // stack starts out empty
     ipIdx = 0;                  // code starts at first opcode
-    f.ep = 0;                   // no exceptions pending
     callee = &func;             // new callable context
+    f.ep = 0;                   // no exceptions pending
 }
 
 Value Context::leave (Value v) {
@@ -36,9 +36,9 @@ Value Context::leave (Value v) {
 
     if (base > 0) {
         int prev = f.base;      // previous frame offset
-        spIdx = f.sp;
-        ipIdx = f.ip;
-        callee = &f.callee.asType<Callable>();
+        spIdx = f.sp;           // restore stack index
+        ipIdx = f.ip;           // restore instruction index
+        callee = &f.callee.asType<Callable>(); // restore callee
 
         assert(fill > base);
         remove(base, fill - base); // delete current frame
