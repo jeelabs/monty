@@ -20,10 +20,10 @@ auto Tuple::getAt (Value k) const -> Value {
     return data()[k];
 }
 
-List::List (Context& ctx, int argc, int args) {
+List::List (Vector const& vec, int argc, int args) {
     insert(0, argc);
     for (int i = 0; i < argc; ++i)
-        (*this)[i] = ctx[args+i];
+        (*this)[i] = vec[args+i];
 }
 
 auto List::getAt (Value k) const -> Value {
@@ -102,33 +102,41 @@ auto Dict::at (Value k) const -> Value {
             chain != nullptr ? chain->getAt(k) : Value {};
 }
 
-auto Type::call (Context& ctx, int argc, int args) const -> Value {
-    return factory(ctx, argc, args, this);
+auto Type::call (Vector const& vec, int argc, int args) const -> Value {
+    return factory(vec, argc, args, this);
 }
 
-auto Type::noFactory (Context&, int, int, const Type*) -> Value {
+auto Type::noFactory (Vector const&, int, int, const Type*) -> Value {
     assert(false);
     return {};
 }
 
-Class::Class (Context& ctx, int argc, int args)
-        : Type (ctx[args+1], Inst::create) {
+Class::Class (Vector const& vec, int argc, int args)
+        : Type (vec[args+1], Inst::create) {
     assert(argc >= 2);
-    at("__name__") = ctx[args+1];
-    auto& init = ctx[args].asType<Callable>();
-    init.call(ctx, argc - 2, args + 2); // TODO *in-arg* ctx vs *curr* ctx!
-    ctx.locals = this;
-    ctx.result = this;
+    at("__name__") = vec[args+1];
+
+    auto& init = vec[args];
+    init.obj().call(vec, argc - 2, args + 2);
+
+    auto ctx = Context::active;
+    assert(ctx != nullptr);
+    ctx->locals = this;
+    ctx->result = this;
 }
 
-Inst::Inst (Context& ctx, int argc, int args, Class const& cls) {
-    chain = &cls;
+Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
+        : Dict (&cls) {
+    auto ctx = Context::active;
+    assert(ctx != nullptr);
+
     Value self;
     Value init = attr("__init__", self);
     if (!init.isNil()) {
-        ctx[args-1] = this; // TODO is this alwats ok ???
-        auto& co = init.asType<Callable>();
-        co.call(ctx, argc + 1, args - 1);
+        // stuff "self" before the args passed in TODO is this always ok ???
+        (*ctx)[args-1] = this;
+        init.obj().call(vec, argc + 1, args - 1);
     }
-    ctx.result = this;
+
+    ctx->result = this;
 }

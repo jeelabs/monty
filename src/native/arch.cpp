@@ -22,7 +22,7 @@ int archDone () {
     return 0;
 }
 
-static Value bi_blah (Context& ctx, int argc, int args) {
+static Value bi_blah (Vector const& ctx, int argc, int args) {
     return argc;
 }
 
@@ -49,7 +49,7 @@ void timerHook () {
     }
 }
 
-static Value f_ticker (Context& ctx, int argc, int args) {
+static Value f_ticker (Vector const& ctx, int argc, int args) {
     Value h = id;
     if (argc > 1) {
         if (argc != 3 || !ctx[args+1].isInt())
@@ -63,7 +63,7 @@ static Value f_ticker (Context& ctx, int argc, int args) {
     return id;
 }
 
-static Value f_ticks (Context& ctx, int argc, int args) {
+static Value f_ticks (Vector const& ctx, int argc, int args) {
     uint32_t t = getTime();
     if (begin == 0)
         begin = t;

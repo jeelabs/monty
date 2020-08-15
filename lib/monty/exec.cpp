@@ -327,10 +327,13 @@ auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
-auto Callable::call (Context& ctx, int argc, int args) const -> Value {
+auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
+    auto ctx = Context::active;
     auto coro = code.isGenerator();
-    auto ctx2 = coro ? new Context (&ctx) : &ctx;
-    ctx2->enter(*this);
+    if (coro)
+        ctx = new Context (ctx);
+
+    ctx->enter(*this);
 
     auto nPos = code.numArgs(0);
     auto nDef = code.numArgs(1);
@@ -338,15 +341,15 @@ auto Callable::call (Context& ctx, int argc, int args) const -> Value {
 
     for (uint32_t i = 0; i < nPos; ++i)
         if ((int) i < argc)
-            ctx2->fastSlot(i) = ctx[args+i];
+            ctx->fastSlot(i) = vec[args+i];
         else if (pos != nullptr && i < nDef + pos->fill)
-            //ctx2->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
-            ctx2->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
+            //ctx->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
+            ctx->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
 
     if (code.hasVarArgs())
-        ctx2->fastSlot(nPos+nKwo) = Tuple::create(ctx, argc-nPos, args+nPos);
+        ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
 
-    return coro ? ctx2 : Value {};
+    return coro ? ctx : Value {};
 }
 
 void Callable::marker () const {

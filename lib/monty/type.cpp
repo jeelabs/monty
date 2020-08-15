@@ -169,7 +169,7 @@ void Value::verify (Type const& t) const {
     assert(f);
 }
 
-auto Object::call (Context&, int, int) const -> Value {
+auto Object::call (Vector const&, int, int) const -> Value {
     Value v = this; v.dump("call?"); assert(false);
     return {};
 }
@@ -413,40 +413,40 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-static auto bi_print (Context& ctx, int argc, int args) -> Value {
+static auto bi_print (Vector const& vec, int argc, int args) -> Value {
     Buffer buf; // TODO
     for (int i = 0; i < argc; ++i)
-        buf << ctx[args+i];
+        buf << vec[args+i];
     buf.putc('\n');
     return {};
 }
 
 static Function const f_print (bi_print);
 
-static auto bi_next (Context& ctx, int argc, int args) -> Value {
-    assert(argc == 1 && ctx[args].isObj());
-    return ctx[args].obj().next();
+static auto bi_next (Vector const& vec, int argc, int args) -> Value {
+    assert(argc == 1 && vec[args].isObj());
+    return vec[args].obj().next();
 }
 
 static Function const f_next (bi_next);
 
-static auto bi_len (Context& ctx, int argc, int args) -> Value {
+static auto bi_len (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 1);
-    return ctx[args].asObj().len();
+    return vec[args].asObj().len();
 }
 
 static Function const f_len (bi_len);
 
-static auto bi_abs (Context& ctx, int argc, int args) -> Value {
+static auto bi_abs (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 1);
-    return ctx[args].unOp(UnOp::Abs);
+    return vec[args].unOp(UnOp::Abs);
 }
 
 static Function const f_abs (bi_abs);
 
-static auto bi_hash (Context& ctx, int argc, int args) -> Value {
+static auto bi_hash (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 1);
-    return ctx[args].unOp(UnOp::Hash);
+    return vec[args].unOp(UnOp::Hash);
 }
 
 static Function const f_hash (bi_hash);
@@ -487,13 +487,13 @@ static const Lookup::Item builtinsMap [] = {
 
 Lookup const Monty::builtins (builtinsMap, sizeof builtinsMap);
 
-static auto str_count (Context& ctx, int argc, int args) -> Value {
+static auto str_count (Vector const& vec, int argc, int args) -> Value {
     return 9; // TODO, hardcoded for features.py
 }
 
 static Function const f_str_count (str_count);
 
-static auto str_format (Context& ctx, int argc, int args) -> Value {
+static auto str_format (Vector const& vec, int argc, int args) -> Value {
     return 4; // TODO, hardcoded for features.py
 }
 
@@ -506,12 +506,12 @@ static const Lookup::Item strMap [] = {
 
 const Lookup Str::attrs (strMap, sizeof strMap);
 
-static auto list_append (Context& ctx, int argc, int args) -> Value {
+static auto list_append (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 2);
-    auto& l = ctx[args].asType<List>();
+    auto& l = vec[args].asType<List>();
     auto n = l.size();
     l.insert(n);
-    l[n] = ctx[args+1];
+    l[n] = vec[args+1];
     return {};
 }
 
@@ -538,16 +538,16 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Bool::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     if (argc == 1)
-        return ctx[args].unOp(UnOp::Boln);
+        return vec[args].unOp(UnOp::Boln);
     assert(argc == 0);
     return False;
 }
 
-auto Fixed::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Fixed::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(argc == 1);
-    auto v = ctx[args];
+    auto v = vec[args];
     switch (v.tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return v;
@@ -557,9 +557,9 @@ auto Fixed::create (Context& ctx, int argc, int args, Type const*) -> Value {
     return {};
 }
 
-auto Bytes::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(argc == 1);
-    Value v = ctx[args];
+    Value v = vec[args];
     if (v.isInt()) {
         auto o = new Bytes ();
         o->insert(0, v);
@@ -585,46 +585,46 @@ auto Bytes::create (Context& ctx, int argc, int args, Type const*) -> Value {
     return new Bytes (p, n);
 }
 
-auto Str::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    assert(argc == 1 && ctx[args].isStr());
-    return new Str (ctx[args]);
+auto Str::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc == 1 && vec[args].isStr());
+    return new Str (vec[args]);
 }
 
-auto Range::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Range::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Slice::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(1 <= argc && argc <= 3);
-    Value a = argc > 1 ? ctx[args] : Value (0);
-    Value b = argc == 1 ? ctx[args] : ctx[args+1];
-    Value c = argc > 2 ? ctx[args+2] : b;
+    Value a = argc > 1 ? vec[args] : Value (0);
+    Value b = argc == 1 ? vec[args] : vec[args+1];
+    Value c = argc > 2 ? vec[args+2] : b;
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     if (argc == 0)
         return Empty; // there's one unique empty tuple
-    return new (argc * sizeof (Value)) Tuple (argc, ctx.begin() + args);
+    return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
 }
 
-auto List::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    return new List (ctx, argc, args);
+auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    return new List (vec, argc, args);
 }
 
-auto Set::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    return new Set (ctx, argc, args);
+auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    return new Set (vec, argc, args);
 }
 
-auto Dict::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Dict::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     // TODO
     return new Dict;
 }
 
-auto Type::create (Context& ctx, int argc, int args, Type const*) -> Value {
+auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(argc == 1);
-    Value v = ctx[args];
+    Value v = vec[args];
     switch (v.tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return "int";
@@ -634,12 +634,12 @@ auto Type::create (Context& ctx, int argc, int args, Type const*) -> Value {
     return {};
 }
 
-auto Class::create (Context& ctx, int argc, int args, Type const*) -> Value {
-    assert(argc == 2 && ctx[args].isObj() && ctx[args+1].isStr());
-    return new Class (ctx, argc, args);
+auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc == 2 && vec[args].isObj() && vec[args+1].isStr());
+    return new Class (vec, argc, args);
 }
 
-auto Inst::create (Context& ctx, int argc, int args, Type const* t) -> Value {
+auto Inst::create (Vector const& vec, int argc, int args, Type const* t) -> Value {
     Value v = t;
-    return new Inst (ctx, argc, args, v.asType<Class>());
+    return new Inst (vec, argc, args, v.asType<Class>());
 }
