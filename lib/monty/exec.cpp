@@ -248,11 +248,10 @@ struct Loader {
                 debugf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
                 bc.constObjs[ct++] = p;
             } else if (type == 's') {
-                auto buf = (char*) malloc(sz+1); // TODO no malloc, please
-                memcpy(buf, ptr, sz);
-                buf[sz] = 0;
-                debugf("  obj %d = type %c %db = %s\n", i, type, (int) sz, buf);
-                bc.constObjs[ct++] = buf;
+                auto p = new Str ((char const*) ptr, sz);
+                debugf("  obj %d = type %c %db = %s\n",
+                        i, type, (int) sz, (char const*) *p);
+                bc.constObjs[ct++] = p;
             } else
                 assert(false); // TODO
         }
