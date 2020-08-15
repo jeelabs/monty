@@ -51,7 +51,8 @@ extern "C" int app_main () {
     }
 
     static uintptr_t myMem [4096];
-    Monty::setup(myMem);
+    Monty::setup(myMem, sizeof myMem);
+
     (void) Monty::loadModule(bcData);
 
     free((void*) bcData);

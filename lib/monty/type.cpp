@@ -9,6 +9,8 @@ namespace Monty { // TODO move ns into defs.h
 
 using namespace Monty;
 
+extern const Monty::Module m_machine;
+
 None const None::nullObj;
 Bool const Bool::falseObj;
 Bool const Bool::trueObj;
@@ -469,9 +471,11 @@ static const Lookup::Item builtinsMap [] = {
     { "len", &f_len },
     { "abs", &f_abs },
     { "hash", &f_hash },
+#ifndef UNIT_TEST
+    { "machine", &m_machine },
+#endif
 #if 0
     { "monty", &m_monty },
-    { "machine", &m_machine },
 #if INCLUDE_NETWORK
     { "network", &m_network },
 #endif

@@ -20,7 +20,7 @@ struct TestBuffer : Buffer {
 };
 
 void setUp () {
-    setup(memory);
+    setup(memory, sizeof memory);
     memAvail = avail();
 }
 

@@ -25,6 +25,8 @@ extern "C" {
 #include <string.h>
 #include <jee.h>
 
+using namespace Monty;
+
 static SpiGpio< PINS_NETWORK > spi;
 
 void enchw_setup (enchw_device_t*) {
@@ -134,18 +136,17 @@ static Value f_ifconfig (int argc, Value argv []) {
     return Value ();
 }
 
-struct SocketObj : Object {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static TypeObj info;
+struct Socket: Object {
+    static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+    static Lookup const attrs;
+    static Type const info;
+    auto type () const -> Type const& override { return info; }
 
-    SocketObj (tcp_pcb* p) : socket (p), readQueue (0, 0), writeQueue (0, 0) {
+    Socket (tcp_pcb* p) : socket (p), readQueue (0, 0), writeQueue (0, 0) {
         tcp_arg(socket, this);
     }
 
-    TypeObj& type () const override;
     void mark (void (*gc)(const Object&)) const override;
-    Value attr (const char* key, Value& self) const override;
 
     Value bind (int arg);
     Value connect (int argc, Value argv []);
@@ -154,53 +155,53 @@ struct SocketObj : Object {
     Value write (Value arg);
     Value close ();
 
+    auto attr (char const* name, Value& self) const -> Value override;
+
+    void marker () const override;
 private:
     bool sendIt (Value arg);
 
     tcp_pcb* socket;
-    CallArgsObj* accepter = 0;
-    ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
+    Callable* accepter = 0;
+    List readQueue, writeQueue; // TODO don't use queues: fix suspend!
     Value toSend;
-    ArrayObj* recvBuf = 0;
+    Array* recvBuf = 0;
 };
 
-Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
+Value Socket::create (const Type&, int argc, Value argv[]) {
     assert(argc == 1);
     auto p = tcp_new();
     assert(p != 0);
-    return new SocketObj (p);
+    return new Socket (p);
 }
 
-void SocketObj::mark (void (*gc)(const Object&)) const {
-    gc(readQueue);
-    gc(writeQueue);
-    if (accepter != 0)
-        gc(*accepter);
+void Socket::marker () const {
+    mark(readQueue);
+    mark(writeQueue);
+    mark(accepter);
+    mark(recvBuf);
     if (toSend.isObj())
-        gc(toSend.obj());
-    if (recvBuf != 0)
-        gc(*recvBuf);
+        mark(toSend.obj());
 }
 
-Value SocketObj::attr (const char* key, Value& self) const {
-    self = Value ();
+Value Socket::attr (const char* key, Value& self) const {
     return attrs.at(key);
 }
 
-Value SocketObj::bind (int arg) {
+Value Socket::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     (void) r; assert(r == 0);
     return Value ();
 }
 
-Value SocketObj::connect (int argc, Value argv []) {
+Value Socket::connect (int argc, Value argv []) {
     assert(argc == 2 && argv[0].isStr() && argv[1].isInt());
     ip4_addr host;
     auto ok = ip4addr_aton(argv[0], &host);
     (void) ok; assert(ok == 1);
 
     auto r = tcp_connect(socket, &host, argv[1], [](void *arg, tcp_pcb *tpcb, err_t err) -> err_t {
-        auto& self = *(SocketObj*) arg;
+        auto& self = *(Socket*) arg;
         assert(self.socket == tpcb);
         assert(self.readQueue.len() > 0);
         Context::tasks.append(self.readQueue.pop(0));
@@ -212,9 +213,9 @@ Value SocketObj::connect (int argc, Value argv []) {
     return Value ();
 }
 
-Value SocketObj::listen (int argc, Value argv []) {
+Value Socket::listen (int argc, Value argv []) {
     assert(argc == 3 && argv[2].isInt());
-    auto& cao = argv[1].asType<CallArgsObj>();
+    auto& cao = argv[1].asType<Callable>();
     assert(cao.isCoro());
 
     socket = tcp_listen_with_backlog(socket, argv[2]);
@@ -222,10 +223,10 @@ Value SocketObj::listen (int argc, Value argv []) {
 
     accepter = &cao;
     tcp_accept(socket, [](void *arg, tcp_pcb *newpcb, err_t err) -> err_t {
-        auto& self = *(SocketObj*) arg;
+        auto& self = *(Socket*) arg;
         assert(self.accepter != 0);
 
-        Value argv = new SocketObj (newpcb);
+        Value argv = new Socket (newpcb);
         Value v = self.accepter->call(1, &argv);
         assert(v.isObj());
         Context::tasks.append(v);
@@ -235,13 +236,13 @@ Value SocketObj::listen (int argc, Value argv []) {
     return Value ();
 }
 
-Value SocketObj::read (Value arg) {
-    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : &arg.asType<ArrayObj>();
+Value Socket::read (Value arg) {
+    recvBuf = arg.isInt() ? new Array ('B', arg) : &arg.asType<Array>();
     assert(recvBuf->isBuffer());
     Context::suspend(readQueue);
 
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
-        auto& self = *(SocketObj*) arg;
+        auto& self = *(Socket*) arg;
         assert(self.socket == tpcb);
         if (p != 0) {
             if (self.readQueue.len() == 0)
@@ -259,14 +260,14 @@ Value SocketObj::read (Value arg) {
     return Value ();
 }
 
-bool SocketObj::sendIt (Value arg) {
+bool Socket::sendIt (Value arg) {
     const void* p;
     int n;
     if (arg.isStr()) {
         p = (const char*) arg;
         n = strlen(arg);
     } else {
-        auto& o = arg.asType<BytesObj>();
+        auto& o = arg.asType<Bytes>();
         p = (const uint8_t*) o;
         n = o.len();
     }
@@ -284,7 +285,7 @@ bool SocketObj::sendIt (Value arg) {
     return true;
 }
 
-Value SocketObj::write (Value arg) {
+Value Socket::write (Value arg) {
     assert(toSend.isNil()); // don't allow multiple outstanding sends
     if (sendIt(arg))
         return Value ();
@@ -295,7 +296,7 @@ Value SocketObj::write (Value arg) {
 
     tcp_sent(socket, [](void *arg, tcp_pcb *tpcb, uint16_t len) -> err_t {
         printf("sent %p %d\n", arg, len);
-        auto& self = *(SocketObj*) arg;
+        auto& self = *(Socket*) arg;
         if (self.socket != 0) {
             assert(self.socket == tpcb);
             if (self.sendIt(self.toSend)) {
@@ -311,7 +312,7 @@ Value SocketObj::write (Value arg) {
     return Value ();
 }
 
-Value SocketObj::close () {
+Value Socket::close () {
     printf("\t CLOSE! %p r %d w %d\n",
             socket, (int) readQueue.len(), (int) writeQueue.len());
     if (socket != 0) {
@@ -329,25 +330,25 @@ Value SocketObj::close () {
     return Value ();
 }
 
-static const auto m_bind = MethObj::wrap(&SocketObj::bind);
+static const auto m_bind = MethObj::wrap(&Socket::bind);
 static const MethObj mo_bind = m_bind;
 
-static const auto m_connect = MethObj::wrap(&SocketObj::connect);
+static const auto m_connect = MethObj::wrap(&Socket::connect);
 static const MethObj mo_connect = m_connect;
 
-static const auto m_listen = MethObj::wrap(&SocketObj::listen);
+static const auto m_listen = MethObj::wrap(&Socket::listen);
 static const MethObj mo_listen = m_listen;
 
-static const auto m_read = MethObj::wrap(&SocketObj::read);
+static const auto m_read = MethObj::wrap(&Socket::read);
 static const MethObj mo_read = m_read;
 
-static const auto m_write = MethObj::wrap(&SocketObj::write);
+static const auto m_write = MethObj::wrap(&Socket::write);
 static const MethObj mo_write = m_write;
 
-static const auto m_close = MethObj::wrap(&SocketObj::close);
+static const auto m_close = MethObj::wrap(&Socket::close);
 static const MethObj mo_close = m_close;
 
-static const LookupObj::Item socketMap [] = {
+static const Lookup::Item socketMap [] = {
     { "bind", &mo_bind },
     { "connect", &mo_connect },
     { "listen", &mo_listen },
@@ -356,21 +357,20 @@ static const LookupObj::Item socketMap [] = {
     { "close", &mo_close },
 };
 
-const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);
+const Lookup SocketObj::attrs (socketMap, sizeof socketMap);
 
-TypeObj SocketObj::info ("<socket>", SocketObj::create, &SocketObj::attrs);
-TypeObj& SocketObj::type () const { return info; }
+Type Socket::info ("<socket>", Socket::create, &Socket::attrs);
 
-const FunObj fo_ifconfig = f_ifconfig;
-const FunObj fo_poll = f_poll;
+const Function fo_ifconfig = f_ifconfig;
+const Function fo_poll = f_poll;
 
-static const LookupObj::Item lo_network [] = {
+static const Lookup::Item lo_network [] = {
     { "ifconfig", &fo_ifconfig },
     { "poll", &fo_poll },
-    { "socket", &SocketObj::info },
+    { "socket", &Socket::info },
 };
 
-static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);
-const ModuleObj m_network (&ma_network);
+static const Lookup ma_network (lo_network, sizeof lo_network);
+const Module m_network (&ma_network);
 
 #endif // INCLUDE_NETWORK

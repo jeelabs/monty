@@ -7,7 +7,7 @@ uintptr_t memory [1024];
 size_t memAvail;
 
 void setUp () {
-    setup(memory);
+    setup(memory, sizeof memory);
     memAvail = avail();
 }
 
@@ -27,7 +27,7 @@ void objTypeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Bytes));
-    TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Str));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Str));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Range));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Lookup));
 

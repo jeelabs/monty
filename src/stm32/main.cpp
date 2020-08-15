@@ -3,7 +3,6 @@
 
 #include "monty.h"
 #include "arch.h"
-//#include <cstdio>
 
 int main () {
     archInit();
@@ -14,16 +13,18 @@ int main () {
     //showAllocInfo();      // show mem allocator behaviour for small allocs
     //showObjSizes();       // show sizeof information for the main classes
 
-#if STM32F1 // won't fit on a Blue Pill
-    static uintptr_t myMem [3072];
-#else
-    static uintptr_t myMem [4096];
-#endif
-    Monty::setup(myMem);
+    static uint8_t myMem [MEM_BYTES];
+    Monty::setup(myMem, sizeof myMem);
 
+    // load module from end of RAM, 4 KB below the stack top
+    // this leaves 16 KB on a Blue Pill, and 192 KB on an F4 Discovery
     extern uint8_t _estack [];
-    (void) Monty::loadModule(_estack - 0x1000);
+    auto bcData = _estack - 0x1000;
 
-    printf("done\n");
+    if (Monty::loadModule(bcData) == nullptr)
+        printf("can't load module\n");
+    else
+        printf("done\n");
+
     return archDone();
 }

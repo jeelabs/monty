@@ -3,7 +3,6 @@
 
 #include "monty.h"
 #include "arch.h"
-#include <cassert>
 #include <cstdio>
 
 static const uint8_t* loadBytecode (const char* fname) {
@@ -37,13 +36,11 @@ int main (int argc, const char* argv []) {
         return 1;
     }
 
-    static uintptr_t myMem [128*1024]; // TODO don't gc too soon ...
-    Monty::setup(myMem);
+    static uint8_t myMem [256*1024]; // TODO don't gc too soon ...
+    Monty::setup(myMem, sizeof myMem);
 
-    if (Monty::loadModule(bcData) == nullptr) {
-        printf("can't load module\n");
+    if (Monty::loadModule(bcData) == nullptr)
         return 2;
-    }
 
     printf("done\n");
     return archDone();

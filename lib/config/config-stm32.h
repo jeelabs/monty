@@ -28,10 +28,8 @@
     #define UART_BUSDIV 1
 #endif
 
-// see monty/gc.cpp
-#ifndef GC_MEM_BYTES
-#define GC_MEM_BYTES (10*1024)  // 10 Kb total memory
-#endif
-#ifndef GC_MEM_ALIGN
-#define GC_MEM_ALIGN 8          // 8-byte slot boundaries
+#if STM32F1 || INCLUDE_NETWORK
+    #define MEM_BYTES (12*1024) // e.g. Blue Pill
+#else
+    #define MEM_BYTES (32*1024) // will fit in ≥ 48 KB ram
 #endif

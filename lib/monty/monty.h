@@ -49,10 +49,7 @@ namespace Monty {
         friend void compact ();
     };
 
-    void setup (uintptr_t* base, size_t bytes); // configure the memory pool
-
-    template< size_t N > // convenience wrapper
-    void setup (uintptr_t (&array)[N]) { setup(array, sizeof array); }
+    void setup (void* base, size_t size); // configure the memory pool
 
     auto avail () -> size_t; // free bytes between the object & vector areas
 
@@ -90,6 +87,7 @@ namespace Monty {
         auto asObj () const -> Object&; // create int/str object if needed
 
         template< typename T > // return null pointer if not of required type
+        //auto ifType () const -> T* { return dynamic_cast<T*>(&obj()); }
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
 
         template< typename T > // type-asserted safe cast via Object::type()

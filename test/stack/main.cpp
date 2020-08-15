@@ -7,7 +7,7 @@ uintptr_t memory [1024];
 size_t memAvail;
 
 void setUp () {
-    setup(memory);
+    setup(memory, sizeof memory);
     memAvail = avail();
 }
 

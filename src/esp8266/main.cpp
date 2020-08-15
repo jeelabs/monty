@@ -60,10 +60,13 @@ void setup () {
     }
 
     static uintptr_t myMem [4096];
-    Monty::setup(myMem);
-    (void) Monty::loadModule(bcData);
+    Monty::setup(myMem, sizeof myMem);
 
-    printf("done\n");
+    if (Monty::loadModule(bcData) == nullptr)
+        printf("can't load module\n");
+    else
+        printf("done\n");
+
 }
 
 void loop () {}

@@ -228,21 +228,22 @@ namespace Monty {
         return true;
     }
 
-    void setup (uintptr_t* base, size_t size) {
-        assert((uintptr_t) base % PTR_SZ == 0);
-        assert(size % PTR_SZ == 0);
+    void setup (void* base, size_t size) {
+        assert(size > 2 * VS_SZ);
 
-        start = base;
-        limit = base + size / sizeof *base;
-
-        // start & limit must not be exact multiples of ObjSlot/VecSlot sizes
-        // when they are, simply increase start and/or decrease limit a bit
+        // to get alignment right, simply increase base and decrease size a bit
         // as a result, the allocated data itself sits on an xxxSlot boundary
         // this way no extra alignment is needed when setting up a memory pool
-        if ((uintptr_t) start % VS_SZ == 0)
-            ++start;
-        if ((uintptr_t) limit % VS_SZ == 0)
-            --limit;
+
+        while ((uintptr_t) base % VS_SZ != PTR_SZ) {
+            base = (uint8_t*) base + 1;
+            --size;
+        }
+        size -= size % VS_SZ;
+
+        start = (uintptr_t*) base;
+        limit = (uintptr_t*) ((uintptr_t) base + size);
+
         assert(start < limit); // need room for at least the objLow setup
 
         vecHigh = (VecSlot*) start;
