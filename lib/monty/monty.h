@@ -572,7 +572,7 @@ namespace Monty {
             return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
         }
 
-        auto codeStart () const -> uint8_t const* {
+        auto start () const -> uint8_t const* {
             return (uint8_t const*) (this + 1) + code;
         }
 
@@ -639,20 +639,11 @@ namespace Monty {
         void enter (Callable const&);
         Value leave (Value v);
 
-        auto getQstr (size_t i) const -> char const* {
-            return callee->qStrAt(i);
-        }
-        auto getConst (size_t i) const -> Value {
-            return callee->code.constAt(i);
-        }
+        auto spBase () const -> Value* { return frame().stack; }
+        auto ipBase () const -> uint8_t const* { return callee->code.start(); }
+
         auto fastSlot (size_t i) const -> Value& {
             return spBase()[callee->code.fastSlotTop() + ~i];
-        }
-        auto spBase () const -> Value* {
-            return frame().stack;
-        }
-        auto ipBase () const -> uint8_t const* {
-            return callee->code.codeStart();
         }
 
         static constexpr int EXC_STEP = 3; // use 3 slots per exception

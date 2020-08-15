@@ -131,13 +131,13 @@ def OP_EMIT(block, sel=0):
 def OP(block, typ='', multi=0):
     op = block[0].split()[1][3:]
     if 'q' in typ:
-        fmt, arg, decl = ' %s', 'fetchQstr()', 'char const* arg'
+        fmt, arg, decl = ' %s', 'fetchQ()', 'char const* arg'
     elif 'v' in typ:
-        fmt, arg, decl = ' %u', 'fetchVarInt()', 'int arg'
+        fmt, arg, decl = ' %u', 'fetchV()', 'int arg'
     elif 'o' in typ:
-        fmt, arg, decl = ' %d', 'fetchOffset()', 'int arg'
+        fmt, arg, decl = ' %d', 'fetchO()', 'int arg'
     elif 's' in typ:
-        fmt, arg, decl = ' %d', 'fetchOffset()-0x8000', 'int arg'
+        fmt, arg, decl = ' %d', 'fetchO()-0x8000', 'int arg'
     elif 'm' in typ:
         fmt, arg, decl = ' %d', 'ip[-1]', 'uint32_t arg'
     else:

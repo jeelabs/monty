@@ -89,7 +89,7 @@ struct PyVM : Interp {
     Value* sp {nullptr};
     uint8_t const* ip {nullptr};
 
-    uint32_t fetchVarInt (uint32_t v =0) {
+    uint32_t fetchV (uint32_t v =0) {
         uint8_t b = 0x80;
         while (b & 0x80) {
             b = *ip++;
@@ -98,12 +98,12 @@ struct PyVM : Interp {
         return v;
     }
 
-    int fetchOffset () {
+    int fetchO () {
         int n = *ip++;
         return n | (*ip++ << 8);
     }
 
-    const char* fetchQstr () { return context->getQstr(fetchOffset() + 1); }
+    const char* fetchQ () { return context->callee->qStrAt(fetchO() + 1); }
 
     auto spAsPtr () const -> Value* { return context->begin() + context->spIdx; }
     auto spAsOff () const -> uint32_t { return sp - context->begin(); }
@@ -159,11 +159,11 @@ struct PyVM : Interp {
     }
     //CG1 op
     void op_LoadConstSmallInt () {
-        *++sp = fetchVarInt((*ip & 0x40) ? ~0 : 0);
+        *++sp = fetchV((*ip & 0x40) ? ~0 : 0);
     }
     //CG1 op v
     void op_LoadConstObj (int arg) {
-        *++sp = context->getConst(arg);
+        *++sp = context->callee->code.constAt(arg);
     }
     //CG1 op v
     void op_LoadFastN (int arg) {
@@ -376,12 +376,12 @@ struct PyVM : Interp {
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
-        auto v = context->getConst(arg);
+        auto v = context->callee->code.constAt(arg);
         *++sp = new Callable (context->globals(), v.asType<Bytecode>());
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
-        auto v = context->getConst(arg);
+        auto v = context->callee->code.constAt(arg);
         --sp;
         *sp = new Callable (context->globals(), v.asType<Bytecode>(),
                                 sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
@@ -489,7 +489,7 @@ struct PyVM : Interp {
                     op_LoadConstTrue();
                     break;
                 case Op::LoadConstString: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_LoadConstString(arg);
                     break;
                 }
@@ -497,22 +497,22 @@ struct PyVM : Interp {
                     op_LoadConstSmallInt();
                     break;
                 case Op::LoadConstObj: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_LoadConstObj(arg);
                     break;
                 }
                 case Op::LoadFastN: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_LoadFastN(arg);
                     break;
                 }
                 case Op::StoreFastN: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_StoreFastN(arg);
                     break;
                 }
                 case Op::DeleteFast: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_DeleteFast(arg);
                     break;
                 }
@@ -532,67 +532,67 @@ struct PyVM : Interp {
                     op_RotThree();
                     break;
                 case Op::Jump: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_Jump(arg);
                     break;
                 }
                 case Op::PopJumpIfFalse: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_PopJumpIfFalse(arg);
                     break;
                 }
                 case Op::JumpIfFalseOrPop: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_JumpIfFalseOrPop(arg);
                     break;
                 }
                 case Op::PopJumpIfTrue: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_PopJumpIfTrue(arg);
                     break;
                 }
                 case Op::JumpIfTrueOrPop: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_JumpIfTrueOrPop(arg);
                     break;
                 }
                 case Op::LoadName: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_LoadName(arg);
                     break;
                 }
                 case Op::StoreName: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_StoreName(arg);
                     break;
                 }
                 case Op::DeleteName: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_DeleteName(arg);
                     break;
                 }
                 case Op::LoadGlobal: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_LoadGlobal(arg);
                     break;
                 }
                 case Op::StoreGlobal: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_StoreGlobal(arg);
                     break;
                 }
                 case Op::DeleteGlobal: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_DeleteGlobal(arg);
                     break;
                 }
                 case Op::LoadAttr: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_LoadAttr(arg);
                     break;
                 }
                 case Op::StoreAttr: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_StoreAttr(arg);
                     break;
                 }
@@ -603,27 +603,27 @@ struct PyVM : Interp {
                     op_StoreSubscr();
                     break;
                 case Op::BuildSlice: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_BuildSlice(arg);
                     break;
                 }
                 case Op::BuildTuple: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_BuildTuple(arg);
                     break;
                 }
                 case Op::BuildList: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_BuildList(arg);
                     break;
                 }
                 case Op::BuildSet: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_BuildSet(arg);
                     break;
                 }
                 case Op::BuildMap: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_BuildMap(arg);
                     break;
                 }
@@ -631,12 +631,12 @@ struct PyVM : Interp {
                     op_StoreMap();
                     break;
                 case Op::SetupExcept: {
-                    int arg = fetchOffset();
+                    int arg = fetchO();
                     op_SetupExcept(arg);
                     break;
                 }
                 case Op::PopExceptJump: {
-                    int arg = fetchOffset();
+                    int arg = fetchO();
                     op_PopExceptJump(arg);
                     break;
                 }
@@ -650,7 +650,7 @@ struct PyVM : Interp {
                     op_RaiseFrom();
                     break;
                 case Op::UnwindJump: {
-                    int arg = fetchOffset()-0x8000;
+                    int arg = fetchO()-0x8000;
                     op_UnwindJump(arg);
                     break;
                 }
@@ -658,37 +658,37 @@ struct PyVM : Interp {
                     op_LoadBuildClass();
                     break;
                 case Op::LoadMethod: {
-                    char const* arg = fetchQstr();
+                    char const* arg = fetchQ();
                     op_LoadMethod(arg);
                     break;
                 }
                 case Op::CallMethod: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_CallMethod(arg);
                     break;
                 }
                 case Op::CallMethodVarKw: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_CallMethodVarKw(arg);
                     break;
                 }
                 case Op::MakeFunction: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_MakeFunction(arg);
                     break;
                 }
                 case Op::MakeFunctionDefargs: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_MakeFunctionDefargs(arg);
                     break;
                 }
                 case Op::CallFunction: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_CallFunction(arg);
                     break;
                 }
                 case Op::CallFunctionVarKw: {
-                    int arg = fetchVarInt();
+                    int arg = fetchV();
                     op_CallFunctionVarKw(arg);
                     break;
                 }
@@ -705,7 +705,7 @@ struct PyVM : Interp {
                     op_GetIterStack();
                     break;
                 case Op::ForIter: {
-                    int arg = fetchOffset();
+                    int arg = fetchO();
                     op_ForIter(arg);
                     break;
                 }
