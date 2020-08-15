@@ -365,14 +365,13 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     if (init == nullptr)
         return nullptr;
 
+    PyVM vm;
+
     Context ctx;
     ctx.enter(*init);
     ctx.locals = &init->mo;
-    Interp::context = &ctx;
 
-    PyVM vm;
-    while (Interp::context != nullptr)
-        vm.inner();
+    vm.outer(ctx);
 
     return &init->mo;
 }

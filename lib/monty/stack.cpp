@@ -141,12 +141,12 @@ void Interp::interrupt (uint32_t num) {
 auto Interp::nextPending () -> int {
     if (pending != 0)
         for (size_t num = 0; num < 8 * sizeof pending; ++num)
-            if (wasPending(num))
+            if (pendingBit(num))
                 return num;
     return -1;
 }
 
-auto Interp::wasPending (uint32_t num) -> bool {
+auto Interp::pendingBit (uint32_t num) -> bool {
     assert(num < 8 * sizeof pending);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

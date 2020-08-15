@@ -686,7 +686,7 @@ namespace Monty {
         static void exception (Value exc);  // throw exception in curr context
         static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
-        static auto wasPending (uint32_t) -> bool; // test and clear bit
+        static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* context;             // current context, if any

@@ -768,7 +768,14 @@ struct PyVM : Interp {
         context->spIdx = spAsOff();
         context->ipIdx = ip - context->ipBase();
 
-        if (wasPending(0))
+        if (pendingBit(0))
             context->caught();
+    }
+
+    void outer (Context& ctx) {
+        context = &ctx;
+        do
+            inner();
+        while (context != nullptr);
     }
 };
