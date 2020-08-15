@@ -126,7 +126,7 @@ struct PyVM : Interp {
 #if SHOW_INSTR_PTR
         printf("\tip %04d sp %2d e %d ", (int) (ip - context->ipBase()),
                                          (int) (sp - context->spBase()),
-                                         (int) context->epIdx);
+                                         (int) frame().ep);
         printf("op 0x%02x : ", *ip);
         if (sp >= context->spBase())
             sp->dump();
@@ -232,20 +232,20 @@ struct PyVM : Interp {
 
     //CG1 op q
     void op_LoadName (char const* arg) {
-        assert(context->locals != nullptr);
-        *++sp = context->locals->at(arg);
+        assert(frame().locals.isObj());
+        *++sp = frame().locals.obj().getAt(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
-        if (context->locals == nullptr)
-            context->locals = new Dict (&context->globals());
-        context->locals->at(arg) = *sp--;
+        if (!frame().locals.isObj())
+            frame().locals = new Dict (&context->globals());
+        frame().locals.obj().setAt(arg, *sp--);
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
-        assert(context->locals != nullptr);
-        context->locals->at(arg) = {};
+        assert(frame().locals.isObj());
+        frame().locals.obj().setAt(arg, {});
     }
     //CG1 op q
     void op_LoadGlobal (char const* arg) {
@@ -344,7 +344,8 @@ struct PyVM : Interp {
     }
     //CG1 op s
     void op_UnwindJump (int arg) {
-        context->epIdx -= *ip; // TODO hardwired for simplest case
+        int ep = frame().ep;
+        frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
     }
 

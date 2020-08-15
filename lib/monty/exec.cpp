@@ -369,7 +369,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
 
     Context ctx;
     ctx.enter(*init);
-    ctx.locals = &init->mo;
+    ctx.frame().locals = &init->mo;
 
     vm.outer(ctx);
 

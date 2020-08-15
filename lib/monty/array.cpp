@@ -121,8 +121,8 @@ Class::Class (Vector const& vec, int argc, int args)
 
     auto ctx = Interp::context;
     assert(ctx != nullptr);
-    ctx->locals = this;
-    ctx->result = this;
+    ctx->frame().locals = this;
+    ctx->frame().result = this;
 }
 
 Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
@@ -138,5 +138,5 @@ Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
         init.obj().call(vec, argc + 1, args - 1);
     }
 
-    ctx->result = this;
+    ctx->frame().result = this;
 }

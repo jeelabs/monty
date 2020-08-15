@@ -627,6 +627,12 @@ namespace Monty {
             return Object::repr(buf); // don't print as a list
         }
 
+        struct Frame {
+            Value link, sp, ip, ep, callee, locals, result, stack [];
+        };
+
+        auto frame () const -> Frame& { return *(Frame*) end(); }
+
         Context (Context* from =nullptr) : caller (from) {}
 
         void enter (Callable const&);
@@ -663,24 +669,18 @@ namespace Monty {
         // previous values are saved in current stack frame
         size_t spIdx {0};
         size_t ipIdx {0};
-        size_t epIdx {0};
         Callable const* callee {nullptr};
-        Dict* locals {nullptr};
-        Value result;
 
         size_t limit {0};
         Value event;
         Context* caller;
 
     private:
-        struct Frame {
-            Value link, sp, ip, ep, callee, locals, result, stack [];
-        };
-
-        auto frame () const -> Frame& { return *(Frame*) end(); }
     };
 
     struct Interp {
+        static auto frame () -> Context::Frame& { return context->frame(); }
+
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context
