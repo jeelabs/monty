@@ -44,7 +44,7 @@ int archDone () {
     while (true) {}
 }
 
-static Value bi_blah (Context& ctx, int argc, int args) {
+static Value bi_blah (Vector const& vec, int argc, int args) {
     return argc;
 }
 
@@ -55,13 +55,13 @@ static uint32_t start, begin, last;
 
 // interface exposed to the VM
 
-Value f_ticker (Context& ctx, int argc, int args) {
+Value f_ticker (Vector const& vec, int argc, int args) {
     Value h = id;
     if (argc > 1) {
-        if (argc != 3 || !ctx[args+1].isInt())
+        if (argc != 3 || !vec[args+1].isInt())
             return -1;
-        ms = ctx[args+1];
-        h = ctx[args+2];
+        ms = vec[args+1];
+        h = vec[args+2];
         start = ticks; // set first timeout relative to now
         last = 0;
         VTableRam().systick = []() {
@@ -77,7 +77,7 @@ Value f_ticker (Context& ctx, int argc, int args) {
     return id;
 }
 
-Value f_ticks (Context& ctx, int argc, int args) {
+Value f_ticks (Vector const& vec, int argc, int args) {
     uint32_t t = ticks;
     if (begin == 0)
         begin = t;

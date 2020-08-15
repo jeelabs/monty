@@ -3,7 +3,7 @@
 
 using namespace Monty;
 
-static Value bi_blah (Context& ctx, int argc, int args) {
+static Value bi_blah (Vector const& vec, int argc, int args) {
     return argc;
 }
 

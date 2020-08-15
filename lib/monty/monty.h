@@ -65,12 +65,10 @@ namespace Monty {
     // forward decl's
     enum UnOp : uint8_t;
     enum BinOp : uint8_t;
-    struct Callable;
     struct Object;
     struct Lookup;
     struct Buffer;
     struct Type;
-    struct Context;
 
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
