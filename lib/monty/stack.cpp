@@ -46,7 +46,7 @@ Value Context::leave (Value v) {
         assert(prev >= 0);
         base = prev;            // new lower frame offset
     } else
-        Interp::context = caller; // last frame, drop this stack context, restore caller
+        Interp::context = caller; // last frame, drop context, restore caller
 
     return r;
 }
@@ -125,5 +125,5 @@ auto Interp::pendingBit (uint32_t num) -> bool {
     assert(num < 8 * sizeof pending);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-    return (__atomic_fetch_nand(&pending, mask, __ATOMIC_RELAXED) & mask) != 0;
+    return (__atomic_fetch_and(&pending, ~mask, __ATOMIC_RELAXED) & mask) != 0;
 }

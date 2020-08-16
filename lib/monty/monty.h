@@ -323,6 +323,7 @@ namespace Monty {
     struct Lookup : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         struct Item { char const* k; Value v; };
 
         constexpr Lookup (Item const* p, size_t sz)
@@ -349,6 +350,7 @@ namespace Monty {
     struct Buffer : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (const char* fmt, ...);
@@ -535,6 +537,7 @@ namespace Monty {
     struct BoundMeth : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
         void marker () const override { mark(meth); mark(self); }
@@ -549,6 +552,7 @@ namespace Monty {
     struct Module : Dict {
         static Type const info;
         auto type () const -> Type const& override;
+
         Module (Value qpool) : Dict (&builtins), qp (qpool) {}
 
         Value attr (const char* s, Value&) const override { return getAt(s); }
@@ -562,6 +566,7 @@ namespace Monty {
     struct Bytecode : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         auto constAt (size_t i) const -> Value { return constObjs[i]; }
         auto fastSlotTop () const -> size_t { return stackSz; }
         auto excLevel () const -> size_t { return excDepth; }
@@ -600,6 +605,7 @@ namespace Monty {
     struct Callable : Object {
         static Type const info;
         auto type () const -> Type const& override;
+
         Callable (Module& mod, Bytecode const& callee,
                     Tuple* t =nullptr, Dict* d =nullptr)
             : mo (mod), code (callee), pos (t), kw (d) {}

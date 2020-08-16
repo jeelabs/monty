@@ -103,7 +103,9 @@ struct PyVM : Interp {
         return n | (*ip++ << 8);
     }
 
-    const char* fetchQ () { return context->callee->qStrAt(fetchO() + 1); }
+    const char* fetchQ () {
+        return context->callee->qStrAt(fetchO() + 1);
+    }
 
     // special wrapper to deal with context changes vs cached sp/ip values
     template< typename T >
@@ -235,9 +237,10 @@ struct PyVM : Interp {
     }
     //CG1 op q
     void op_StoreName (char const* arg) {
-        if (!frame().locals.isObj())
-            frame().locals = new Dict (&context->globals());
-        frame().locals.obj().setAt(arg, *sp--);
+        auto& l = frame().locals;
+        if (!l.isObj())
+            l = new Dict (&context->globals());
+        l.obj().setAt(arg, *sp--);
     }
     //CG1 op q
     void op_DeleteName (char const* arg) {
