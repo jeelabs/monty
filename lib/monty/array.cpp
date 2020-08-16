@@ -41,11 +41,9 @@ struct AccessAs : Accessor {
         asVecOf<T>(vec)[pos] = val;
     }
     void ins (ByteVec& vec, size_t pos, size_t num) const override {
-        assert(vec.len() < (1<<28));
         asVecOf<T>(vec).insert(pos, num);
     }
     void del (ByteVec& vec, size_t pos, size_t num) const override {
-        assert(vec.len() < (1<<28));
         asVecOf<T>(vec).remove(pos, num);
     }
 };

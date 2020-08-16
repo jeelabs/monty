@@ -83,6 +83,11 @@ void Context::caught () {
     begin()[++spOff] = e.isNil() ? ep[3] : e;
 }
 
+auto Context::call (Vector const& vec, int argc, int args) const -> Value {
+    assert(false);
+    return {};
+}
+
 auto Context::next () -> Value {
     Interp::resume(*this);
     return {}; // no result yet

@@ -576,7 +576,7 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Module (Value qpool) : Dict (&builtins), qp (qpool) {}
+        Module (Value pool, Lookup const* lu =nullptr) : Dict (lu), qp (pool) {}
 
         Value attr (char const* s, Value&) const override { return getAt(s); }
 
@@ -683,6 +683,7 @@ namespace Monty {
         void raise (Value exc ={});
         void caught ();
 
+        auto call (Vector const& vec, int argc, int args) const -> Value override;
         auto next () -> Value override;
 
         void marker () const override;

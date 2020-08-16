@@ -22,12 +22,6 @@ int archDone () {
     return 0;
 }
 
-static Value bi_blah (Vector const& ctx, int argc, int args) {
-    return argc;
-}
-
-static const Function f_blah (bi_blah);
-
 static int ms, id;
 static uint32_t start, begin, last;
 
@@ -74,10 +68,9 @@ static const Function fo_ticker (f_ticker);
 static const Function fo_ticks (f_ticks);
 
 static const Lookup::Item lo_machine [] = {
-    { "blah", &f_blah },
     { "ticker", &fo_ticker },
     { "ticks", &fo_ticks },
 };
 
 static const Lookup ma_machine (lo_machine, sizeof lo_machine);
-const Module m_machine (&ma_machine);
+const Module m_machine ({}, &ma_machine);
