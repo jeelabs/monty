@@ -132,6 +132,9 @@ struct PyVM : Interp {
         printf("\n");
 #endif
         assert(ip >= context->ipBase() && sp >= context->spBase() - 1);
+#ifdef INNER_HOOK
+        INNER_HOOK
+#endif
     }
 
     //CG: op-init
@@ -406,7 +409,7 @@ struct PyVM : Interp {
             context = context->caller;
             return *sp;
         });
-        if (context != nullptr)
+        if (context != nullptr && !v.isNil() && !v.isNull()) // TODO none ...
             *sp = v;
     }
     //CG1 op
@@ -773,10 +776,38 @@ struct PyVM : Interp {
             context->caught();
     }
 
-    void outer (Context& ctx) {
-        context = &ctx;
-        do
-            inner();
-        while (context != nullptr);
+    void outer () {
+        while (true) {
+          //gcCheck(true);              // collect garbage, if needed
+
+            auto irq = nextPending();
+            if (irq >= 0) {
+                auto h = handlers[irq];
+                if (h.isObj())
+                    h.obj().next();     // resume the triggered handler
+            }
+
+            if (context == nullptr)
+                break;                  // no runnable context left
+            inner();                    // go process lots of bytecodes
+        }
+        assert(context == nullptr);
+    }
+
+    void run (Context* ctx =nullptr) {
+        context = ctx;
+        bool active;
+        do {
+#ifdef INNER_HOOK
+            INNER_HOOK
+#endif
+            outer();
+            active = false;
+            for (size_t i = 1; i < MAX_HANDLERS; ++i)
+                if (handlers[i].isObj()) {
+                    active = true;
+                    break;
+                }
+        } while (active);
     }
 };

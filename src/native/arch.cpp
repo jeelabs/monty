@@ -53,7 +53,7 @@ static Value f_ticker (Vector const& ctx, int argc, int args) {
         start = getTime(); // set first timeout relative to now
         last = 0;
     }
-    // TODO id = Context::setHandler(h);
+    id = Interp::setHandler(h);
     return id;
 }
 

@@ -61,10 +61,9 @@ auto Context::excBase (int incr) -> Value* {
 
 void Context::raise (Value exc) {
     uint32_t num = 0;
-    if (exc.isInt()) {
+    if (exc.isInt())
         num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
-        assert(num < 8 * sizeof Interp::pending);
-    } else
+    else
         event = exc;    // trigger exception or other outer-loop req
 
     Interp::interrupt(num);     // set pending, to force inner loop exit
@@ -100,6 +99,23 @@ void Context::marker () const {
     mark(caller);
 }
 
+Value Interp::handlers [MAX_HANDLERS];
+
+int Interp::setHandler (Value h) {
+    if (h.isInt()) {
+        int i = h;
+        if (1 <= i && i < (int) MAX_HANDLERS)
+            handlers[i] = {};
+        return 0;
+    }
+    for (int i = 1; i < (int) MAX_HANDLERS; ++i)
+        if (handlers[i].isNil()) {
+            handlers[i] = h;
+            return i;
+        }
+    return -1;
+}
+
 void Interp::resume (Context& ctx) {
     assert(context != &ctx);
     context = &ctx;
@@ -113,21 +129,22 @@ void Interp::exception (Value v) {
 }
 
 void Interp::interrupt (uint32_t num) {
-    assert(num < 8 * sizeof pending);
+printf("irq %d\n", num);
+    assert(num < MAX_HANDLERS);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
 auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (size_t num = 0; num < 8 * sizeof pending; ++num)
+        for (size_t num = 1; num < MAX_HANDLERS; ++num)
             if (pendingBit(num))
                 return num;
     return -1;
 }
 
 auto Interp::pendingBit (uint32_t num) -> bool {
-    assert(num < 8 * sizeof pending);
+    assert(num < MAX_HANDLERS);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     return (__atomic_fetch_and(&pending, ~mask, __ATOMIC_RELAXED) & mask) != 0;

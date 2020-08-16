@@ -5,6 +5,12 @@
 #include "monty.h"
 #include <cassert>
 
+// FIXME needs to figure out how to get this from arch.h !!!
+#if NATIVE
+#define INNER_HOOK { timerHook(); }
+extern void timerHook ();
+#endif
+
 #if VERBOSE_LOAD
 #define debugf printf
 #else
@@ -371,7 +377,7 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     ctx.enter(*init);
     ctx.frame().locals = &init->mo;
 
-    vm.outer(ctx);
+    vm.run(&ctx);
 
     return &init->mo;
 }

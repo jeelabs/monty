@@ -8,7 +8,6 @@ extern int archDone ();
 
 extern "C" int debugf (const char*, ...);
 
-#define INNER_HOOK  { timerHook(); }
-extern void timerHook ();
+#define INNER_HOOK  { extern void timerHook (); timerHook(); }
 
 extern const Monty::Module m_machine;

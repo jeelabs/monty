@@ -708,8 +708,13 @@ namespace Monty {
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
+        static int setHandler (Value);
+
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* context;             // current context, if any
+    protected:
+        static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
+        static Value handlers [];
     };
 
     auto loadModule (uint8_t const* addr) -> Module*;
