@@ -19,12 +19,12 @@ struct QstrPool : Object {
     int len;
     uint16_t off [];
 
-    static auto create (const char* d, int n, int b) -> QstrPool const* {
+    static auto create (char const* d, int n, int b) -> QstrPool const* {
         static_assert (sizeof *off == 2, "off is not a uint16_t ?");
         return new (2*(n+1)+b) QstrPool (d, n, b);
     }
 
-    QstrPool (const char* data, int num, int bytes) : len (num) {
+    QstrPool (char const* data, int num, int bytes) : len (num) {
         auto vec = (char*) off;
         off[0] = 2*(num+1);
         memcpy(vec + off[0], data, bytes);
@@ -120,7 +120,7 @@ struct Loader {
         auto& bc = loadRaw();
 
         debugf("qUsed #%d %db\n", (int) qVec.fill, (int) qBuf.fill);
-        auto pool = QstrPool::create((const char*) qBuf.begin(),
+        auto pool = QstrPool::create((char const*) qBuf.begin(),
                                         qVec.fill, qBuf.fill);
         assert(pool != nullptr);
 
@@ -283,7 +283,7 @@ struct Loader {
                     auto n = storeQstr() + 1;
                     assert(n > 0);
                     auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1] :
-                                        (const char*) qVec[n-qstrNext];
+                                        (char const*) qVec[n-qstrNext];
                     (void) s;
                     debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, s);
                     break;

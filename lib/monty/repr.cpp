@@ -7,13 +7,13 @@
 using namespace Monty;
 
 // non-recursive version for debugging, does not affect the VM state
-void Value::dump (const char* msg) const {
+void Value::dump (char const* msg) const {
     if (msg != 0)
         printf("%s ", msg);
     switch (tag()) {
         case Value::Nil: printf("<N>"); break;
         case Value::Int: printf("<I %d>", (int) *this); break;
-        case Value::Str: printf("<S \"%s\">", (const char*) *this); break;
+        case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
         case Value::Obj: printf("<O %s at %p>", obj().type().name, &obj()); break;
     }
     if (msg != 0)
@@ -97,7 +97,7 @@ void Buffer::putInt (int val, int base, int width, char fill) {
     }
 }
 
-void Buffer::print(const char* fmt, ...) {
+void Buffer::print(char const* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -158,6 +158,22 @@ void Buffer::print(const char* fmt, ...) {
     va_end(ap);
 }
 
+Value Array::repr (Buffer& buf) const {
+    // TODO this is a synchronous version, needs to be converted to a resumable
+    auto m = mode();
+    buf.print("%d%c", len(), m);
+    auto n = len();
+    switch (m) {
+        case 'l': case 'L':                     n <<= 1; // fall through
+        case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
+        case 'b': case 'B':                     break;
+    }
+    auto p = (uint8_t const*) begin();
+    for (size_t i = 0; i < n; ++i)
+        buf.print("%02x", p[i]);
+    return {};
+}
+
 Value Bool::repr (Buffer& buf) const {
     buf.puts(this == &falseObj ? "false" : "true");
     return {};
@@ -179,7 +195,7 @@ Value Bytes::repr (Buffer& buf) const {
 }
 
 Value Class::repr (Buffer& buf) const {
-    buf.print("<class %s>", (const char*) at("__name__"));
+    buf.print("<class %s>", (char const*) at("__name__"));
     return {};
 }
 

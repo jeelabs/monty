@@ -20,6 +20,85 @@ auto Tuple::getAt (Value k) const -> Value {
     return data()[k];
 }
 
+struct ArrayAny {
+    virtual auto get (VecOf<uint8_t> const&, size_t) const -> Value  = 0;
+    virtual void set (VecOf<uint8_t>&, size_t, Value) const = 0;
+    virtual void ins (VecOf<uint8_t>&, size_t, size_t) const = 0;
+    virtual void del (VecOf<uint8_t>&, size_t, size_t) const = 0;
+};
+
+template< typename T >
+struct ArrayAs : ArrayAny {
+    auto get (VecOf<uint8_t> const& vec, size_t pos) const -> Value override {
+        auto& v = (VecOf<T>&) vec;
+        return v[pos];
+    }
+    void set (VecOf<uint8_t>& vec, size_t pos, Value val) const override {
+        auto& v = (VecOf<T>&) vec;
+        v[pos] = val;
+    }
+    void ins (VecOf<uint8_t>& vec, size_t pos, size_t num) const override {
+        auto& v = (VecOf<T>&) vec;
+        v.insert(pos, num);
+    }
+    void del (VecOf<uint8_t>& vec, size_t pos, size_t num) const override {
+        auto& v = (VecOf<T>&) vec;
+        v.remove(pos, num);
+    }
+};
+
+constexpr auto arrayChars = "PTNbBhHiIlL";
+
+static ArrayAs<int8_t>   const vec_b;
+static ArrayAs<uint8_t>  const vec_B;
+static ArrayAs<int16_t>  const vec_h;
+static ArrayAs<uint16_t> const vec_H;
+static ArrayAs<int32_t>  const vec_l;
+static ArrayAs<uint32_t> const vec_L;
+
+static ArrayAny const* arrayTypes [] = {
+    &vec_B, // TODO P
+    &vec_B, // TODO T
+    &vec_B, // TODO N
+    &vec_b,
+    &vec_B,
+    &vec_h,
+    &vec_H,
+    &vec_h,
+    &vec_H,
+    &vec_l,
+    &vec_L,
+};
+
+Array::Array (char type, size_t len) {
+    auto p = strchr(arrayChars, type);
+    assert(p != nullptr);
+    auto s = p - arrayChars;
+    arrayTypes[s]->ins(*this, 0, len);
+    fill |= s << 28;
+}
+
+auto Array::mode () const -> char {
+    return arrayChars[fill >> 28];
+}
+
+auto Array::len () const -> size_t {
+    return size() & 0x0FFFFFFF;
+}
+
+auto Array::getAt (Value k) const -> Value {
+    assert(k.isInt());
+    auto n = k; // TODO relPos(k);
+    return arrayTypes[sel()]->get(*this, n);
+}
+
+auto Array::setAt (Value k, Value v) -> Value {
+    assert(k.isInt());
+    auto n = k; // TODO relPos(k);
+    arrayTypes[sel()]->set(*this, n, v);
+    return {};
+}
+
 List::List (Vector const& vec, int argc, int args) {
     insert(0, argc);
     for (int i = 0; i < argc; ++i)

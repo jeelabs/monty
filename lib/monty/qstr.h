@@ -2,7 +2,7 @@
 
 constexpr auto qstrFrom = 1; // see qstrNext at the end
 
-static const char qstrData [] =
+static char const qstrData [] =
     //CG< qstr 1
     ""                    "\0" // 1
     "__dir__"             "\0" // 2
@@ -172,7 +172,7 @@ static const char qstrData [] =
     //CG>
 ;
 
-const uint16_t qstrPos [] = {
+uint16_t const qstrPos [] = {
     //CG< qstr-emit
        0, // 1
        1, // 2

@@ -44,7 +44,7 @@ bool Value::truthy () const {
     switch (tag()) {
         case Value::Nil: return false;
         case Value::Int: return (int) *this != 0;
-        case Value::Str: return *(const char*) *this != 0;
+        case Value::Str: return *(char const*) *this != 0;
         case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
     }
     assert(false);
@@ -91,7 +91,7 @@ auto Value::unOp (UnOp op) const -> Value {
             break;
         }
         case Str: {
-            const char* s = *this;
+            char const* s = *this;
             switch (op) {
                 case UnOp::Boln: return asBool(*s);
               //case UnOp::Hash: return BytesObj::hash((const uint8_t*) s,
@@ -184,7 +184,7 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
-auto Object::attr (const char* name, Value&) const -> Value {
+auto Object::attr (char const* name, Value&) const -> Value {
     auto atab = type().chain;
     return atab != 0 ? atab->getAt(name) : getAt(name);
 }
@@ -377,6 +377,7 @@ Type const       Lookup::info ("<lookup>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
 
+Type const    Array::info ("array", Array::create, &Array::attrs);
 Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
 Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
 Type const    Class::info ("class", Class::create, &Class::attrs);
@@ -399,6 +400,7 @@ auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
+auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto        Class::type () const -> Type const& { return info; }
@@ -453,6 +455,7 @@ static Function const f_hash (bi_hash);
 
 static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
+    { "array", &Array::info },
     { "bool", &Bool::info },
     { "bytes", &Bytes::info },
     { "class", &Class::info },
@@ -532,6 +535,7 @@ Lookup const    Bytes::attrs {nullptr, 0};
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
+Lookup const    Array::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
 Lookup const     Dict::attrs {nullptr, 0};
 Lookup const     Type::attrs {nullptr, 0};
@@ -568,8 +572,8 @@ auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value
     const void* p = 0;
     size_t n = 0;
     if (v.isStr()) {
-        p = (const char*) v;
-        n = strlen((const char*) p);
+        p = (char const*) v;
+        n = strlen((char const*) p);
     } else {
         auto ps = v.ifType<Str>();
         auto pb = v.ifType<Bytes>();
@@ -607,6 +611,17 @@ auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value
     if (argc == 0)
         return Empty; // there's one unique empty tuple
     return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
+}
+
+auto Array::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc >= 1 && vec[args].isStr());
+    char type = *((char const*) vec[args]);
+    size_t len = 0;
+    if (argc == 2) {
+        assert(vec[args+1].isInt());
+        len = vec[args+1];
+    }
+    return new Array (type, len);
 }
 
 auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {

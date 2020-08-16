@@ -4,7 +4,7 @@
 
 namespace Monty {
 
-    extern "C" int printf (const char*, ...);
+    extern "C" int printf (char const*, ...);
 
 // see gc.cpp - objects and vectors with garbage collection
 
@@ -205,7 +205,7 @@ namespace Monty {
         virtual auto call  (Vector const&, int, int) const -> Value;
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
-        virtual auto attr  (const char*, Value&) const -> Value;
+        virtual auto attr  (char const*, Value&) const -> Value;
         virtual auto len   () const -> size_t;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
@@ -268,7 +268,8 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Bytes (void const* =nullptr, size_t =0);
+        constexpr Bytes () {}
+        Bytes (void const*, size_t =0);
 
         auto hash (const uint8_t* p, size_t n) const -> uint32_t;
 
@@ -353,7 +354,7 @@ namespace Monty {
 
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
-        void print (const char* fmt, ...);
+        void print (char const* fmt, ...);
 
         auto operator<< (Value v) -> Buffer&;
 
@@ -392,6 +393,27 @@ namespace Monty {
         Tuple (size_t n, Value const* vals =nullptr);
 
         auto data () const -> Value const* { return (Value const*) (this + 1); }
+    };
+
+    //CG< type array
+    struct Array : Bytes {
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr Array () {} // default is array of Value items
+        Array (char type, size_t len =0);
+
+        auto mode () const -> char;
+
+        auto len () const -> size_t override;
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
+
+    private:
+        auto sel () const -> uint8_t { return fill >> 28; }
     };
 
     //CG< type list
@@ -555,7 +577,7 @@ namespace Monty {
 
         Module (Value qpool) : Dict (&builtins), qp (qpool) {}
 
-        Value attr (const char* s, Value&) const override { return getAt(s); }
+        Value attr (char const* s, Value&) const override { return getAt(s); }
 
         void marker () const override { Dict::marker(); mark(qp); }
 

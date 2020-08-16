@@ -103,7 +103,7 @@ struct PyVM : Interp {
         return n | (*ip++ << 8);
     }
 
-    const char* fetchQ () {
+    char const* fetchQ () {
         return context->callee->qStrAt(fetchO() + 1);
     }
 
