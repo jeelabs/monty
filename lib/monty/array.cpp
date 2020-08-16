@@ -20,66 +20,71 @@ auto Tuple::getAt (Value k) const -> Value {
     return data()[k];
 }
 
-struct ArrayAny {
-    virtual auto get (VecOf<uint8_t> const&, size_t) const -> Value  = 0;
-    virtual void set (VecOf<uint8_t>&, size_t, Value) const = 0;
-    virtual void ins (VecOf<uint8_t>&, size_t, size_t) const = 0;
-    virtual void del (VecOf<uint8_t>&, size_t, size_t) const = 0;
+struct Accessor {
+    virtual auto get (ByteVec&, size_t) const -> Value  = 0;
+    virtual void set (ByteVec&, size_t, Value) const = 0;
+    virtual void ins (ByteVec&, size_t, size_t) const = 0;
+    virtual void del (ByteVec&, size_t, size_t) const = 0;
 };
 
 template< typename T >
-struct ArrayAs : ArrayAny {
-    auto get (VecOf<uint8_t> const& vec, size_t pos) const -> Value override {
-        auto& v = (VecOf<T>&) vec;
-        return v[pos];
+static auto asVecOf (ByteVec& a) -> VecOf<T>& {
+    return (VecOf<T>&) a;
+}
+
+template< typename T >
+struct AccessAs : Accessor {
+    auto get (ByteVec& ary, size_t pos) const -> Value override {
+        return asVecOf<T>(ary)[pos];
     }
-    void set (VecOf<uint8_t>& vec, size_t pos, Value val) const override {
-        auto& v = (VecOf<T>&) vec;
-        v[pos] = val;
+    void set (ByteVec& ary, size_t pos, Value val) const override {
+        asVecOf<T>(ary)[pos] = val;
     }
-    void ins (VecOf<uint8_t>& vec, size_t pos, size_t num) const override {
-        auto& v = (VecOf<T>&) vec;
-        v.insert(pos, num);
+    void ins (ByteVec& ary, size_t pos, size_t num) const override {
+        asVecOf<T>(ary).insert(pos, num);
     }
-    void del (VecOf<uint8_t>& vec, size_t pos, size_t num) const override {
-        auto& v = (VecOf<T>&) vec;
-        v.remove(pos, num);
+    void del (ByteVec& ary, size_t pos, size_t num) const override {
+        asVecOf<T>(ary).remove(pos, num);
     }
 };
 
-constexpr auto arrayChars = "PTNbBhHiIlL";
+constexpr auto arrayModes = "PTNbBhHiIlLqQ";
 
-static ArrayAs<int8_t>   const vec_b;
-static ArrayAs<uint8_t>  const vec_B;
-static ArrayAs<int16_t>  const vec_h;
-static ArrayAs<uint16_t> const vec_H;
-static ArrayAs<int32_t>  const vec_l;
-static ArrayAs<uint32_t> const vec_L;
+static AccessAs<int8_t>   const as_b;
+static AccessAs<uint8_t>  const as_B;
+static AccessAs<int16_t>  const as_h;
+static AccessAs<uint16_t> const as_H;
+static AccessAs<int32_t>  const as_l;
+static AccessAs<uint32_t> const as_L;
+static AccessAs<int64_t>  const as_q;
+static AccessAs<uint64_t> const as_Q;
 
-static ArrayAny const* arrayTypes [] = {
-    &vec_B, // TODO P
-    &vec_B, // TODO T
-    &vec_B, // TODO N
-    &vec_b,
-    &vec_B,
-    &vec_h,
-    &vec_H,
-    &vec_h,
-    &vec_H,
-    &vec_l,
-    &vec_L,
+static Accessor const* accessors [] = {
+    &as_B, // TODO P
+    &as_B, // TODO T
+    &as_B, // TODO N
+    &as_b,
+    &as_B,
+    &as_h,
+    &as_H,
+    &as_h,
+    &as_H,
+    &as_l,
+    &as_L,
+    &as_q,
+    &as_Q,
 };
 
 Array::Array (char type, size_t len) {
-    auto p = strchr(arrayChars, type);
+    auto p = strchr(arrayModes, type);
     assert(p != nullptr);
-    auto s = p - arrayChars;
-    arrayTypes[s]->ins(*this, 0, len);
+    auto s = p - arrayModes;
+    accessors[s]->ins(*this, 0, len);
     fill |= s << 28;
 }
 
 auto Array::mode () const -> char {
-    return arrayChars[fill >> 28];
+    return arrayModes[fill >> 28];
 }
 
 auto Array::len () const -> size_t {
@@ -89,13 +94,13 @@ auto Array::len () const -> size_t {
 auto Array::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = k; // TODO relPos(k);
-    return arrayTypes[sel()]->get(*this, n);
+    return accessors[sel()]->get(const_cast<Array&>(*this), n);
 }
 
 auto Array::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     auto n = k; // TODO relPos(k);
-    arrayTypes[sel()]->set(*this, n, v);
+    accessors[sel()]->set(*this, n, v);
     return {};
 }
 

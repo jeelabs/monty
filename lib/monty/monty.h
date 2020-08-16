@@ -74,7 +74,7 @@ namespace Monty {
         enum Tag { Nil, Int, Str, Obj };
 
         constexpr Value () : v (0) {}
-                  Value (int arg);
+        constexpr Value (int arg) : v ((arg << 1) | 1) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
@@ -192,6 +192,7 @@ namespace Monty {
         uint32_t fill {0};
     };
 
+    using ByteVec = VecOf<uint8_t>;
     using Vector = VecOf<Value>;
 
     void mark (Vector const&);
@@ -242,14 +243,14 @@ namespace Monty {
     };
 
     //CG< type int
-    struct Fixed : Object {
+    struct Int : Object {
         static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        constexpr Fixed (int64_t v) : i (v) {}
+        constexpr Int (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }
 
@@ -261,7 +262,7 @@ namespace Monty {
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
     //CG< type bytes
-    struct Bytes : Object, VecOf<uint8_t> {
+    struct Bytes : Object, ByteVec {
         static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;

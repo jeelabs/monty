@@ -21,11 +21,6 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
-Value::Value (int arg) : v ((arg << 1) | 1) {
-    if ((int) *this != arg)
-        *this = new Fixed (arg);
-}
-
 Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
     assert((char const*) *this == arg);
 }
@@ -33,7 +28,7 @@ Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
 auto Value::asObj () const -> Object& {
     switch (tag()) {
         case Value::Nil: return (Object&) None::nullObj; // drop const
-        case Value::Int: return *new Fixed (*this);
+        case Value::Int: return *new struct Int (*this);
         case Value::Str: return *new struct Str (*this);
         case Value::Obj: break;
     }
@@ -224,12 +219,12 @@ auto Bool::unop (UnOp op) const -> Value {
     return Object::unop(op);
 }
 
-auto Fixed::unop (UnOp) const -> Value {
+auto Int::unop (UnOp) const -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Fixed::binop (BinOp op, Value rhs) const -> Value {
+auto Int::binop (BinOp op, Value rhs) const -> Value {
     switch (op) {
         case BinOp::Equal:
             return false; // FIXME
@@ -382,7 +377,7 @@ Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
 Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
 Type const    Class::info ("class", Class::create, &Class::attrs);
 Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
-Type const    Fixed::info ("int", Fixed::create, &Fixed::attrs);
+Type const      Int::info ("int", Int::create, &Int::attrs);
 Type const     List::info ("list", List::create, &List::attrs);
 Type const    Range::info ("range", Range::create, &Range::attrs);
 Type const      Set::info ("set", Set::create, &Set::attrs);
@@ -405,7 +400,7 @@ auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto        Class::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
-auto        Fixed::type () const -> Type const& { return info; }
+auto          Int::type () const -> Type const& { return info; }
 auto         List::type () const -> Type const& { return info; }
 auto        Range::type () const -> Type const& { return info; }
 auto          Set::type () const -> Type const& { return info; }
@@ -460,7 +455,7 @@ static const Lookup::Item builtinsMap [] = {
     { "bytes", &Bytes::info },
     { "class", &Class::info },
     { "dict", &Dict::info },
-    { "int", &Fixed::info },
+    { "int", &Int::info },
     { "list", &List::info },
     { "range", &Range::info },
     { "set", &Set::info },
@@ -530,7 +525,7 @@ const Lookup List::attrs (listMap, sizeof listMap);
 // TODO added to satisfy linker
 
 Lookup const     Bool::attrs {nullptr, 0};
-Lookup const    Fixed::attrs {nullptr, 0};
+Lookup const      Int::attrs {nullptr, 0};
 Lookup const    Bytes::attrs {nullptr, 0};
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
@@ -549,7 +544,7 @@ auto Bool::create (Vector const& vec, int argc, int args, Type const*) -> Value 
     return False;
 }
 
-auto Fixed::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Int::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(argc == 1);
     auto v = vec[args];
     switch (v.tag()) {

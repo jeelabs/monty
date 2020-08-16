@@ -215,13 +215,13 @@ Value Dict::repr (Buffer& buf) const {
     return {};
 }
 
-Value Fixed::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
-}
-
 Value Inst::repr (Buffer& buf) const {
     buf.print("<%s object at %p>", type().name, this);
     return {};
+}
+
+Value Int::repr (Buffer& buf) const {
+    return Object::repr(buf); // TODO
 }
 
 Value List::repr (Buffer& buf) const {
