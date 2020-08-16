@@ -34,47 +34,72 @@ static auto asVecOf (ByteVec& a) -> VecOf<T>& {
 
 template< typename T >
 struct AccessAs : Accessor {
-    auto get (ByteVec& ary, size_t pos) const -> Value override {
-        return asVecOf<T>(ary)[pos];
+    auto get (ByteVec& vec, size_t pos) const -> Value override {
+        return asVecOf<T>(vec)[pos];
     }
-    void set (ByteVec& ary, size_t pos, Value val) const override {
-        asVecOf<T>(ary)[pos] = val;
+    void set (ByteVec& vec, size_t pos, Value val) const override {
+        asVecOf<T>(vec)[pos] = val;
     }
-    void ins (ByteVec& ary, size_t pos, size_t num) const override {
-        asVecOf<T>(ary).insert(pos, num);
+    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+        assert(vec.len() < (1<<28));
+        asVecOf<T>(vec).insert(pos, num);
     }
-    void del (ByteVec& ary, size_t pos, size_t num) const override {
-        asVecOf<T>(ary).remove(pos, num);
+    void del (ByteVec& vec, size_t pos, size_t num) const override {
+        assert(vec.len() < (1<<28));
+        asVecOf<T>(vec).remove(pos, num);
     }
 };
 
-constexpr auto arrayModes = "oPTNbBhHiIlLqQ";
+constexpr auto arrayModes = "oPTNbBhHiIlLqQ"
+#if USE_FLOAT
+                            "f"
+#endif
+#if USE_DOUBLE
+                            "d"
+#endif
+;
 
-static AccessAs<Value>    const as_o;
-static AccessAs<int8_t>   const as_b;
-static AccessAs<uint8_t>  const as_B;
-static AccessAs<int16_t>  const as_h;
-static AccessAs<uint16_t> const as_H;
-static AccessAs<int32_t>  const as_l;
-static AccessAs<uint32_t> const as_L;
-static AccessAs<int64_t>  const as_q;
-static AccessAs<uint64_t> const as_Q;
+// permanent per-type accessors, these are re-used for every Array instance
+// the cost per get/set/ins/del is one table index step, just as with vtables
 
+static AccessAs<Value>    const accessor_o;
+static AccessAs<int8_t>   const accessor_b;
+static AccessAs<uint8_t>  const accessor_B;
+static AccessAs<int16_t>  const accessor_h;
+static AccessAs<uint16_t> const accessor_H;
+static AccessAs<int32_t>  const accessor_l;
+static AccessAs<uint32_t> const accessor_L;
+static AccessAs<int64_t>  const accessor_q;
+static AccessAs<uint64_t> const accessor_Q;
+#if USE_FLOAT
+static AccessAs<float>    const accessor_f;
+#endif
+#if USE_DOUBLE
+static AccessAs<double>   const accessor_d;
+#endif
+
+// must be in same order as arrayModes
 static Accessor const* accessors [] = {
-    &as_o,
-    &as_B, // TODO P
-    &as_B, // TODO T
-    &as_B, // TODO N
-    &as_b,
-    &as_B,
-    &as_h,
-    &as_H,
-    &as_h,
-    &as_H,
-    &as_l,
-    &as_L,
-    &as_q,
-    &as_Q,
+    &accessor_o,
+    &accessor_B, // TODO P
+    &accessor_B, // TODO T
+    &accessor_B, // TODO N
+    &accessor_b,
+    &accessor_B,
+    &accessor_h,
+    &accessor_H,
+    &accessor_h, // i, same as h
+    &accessor_H, // I, same as H
+    &accessor_l,
+    &accessor_L,
+    &accessor_q,
+    &accessor_Q,
+#if USE_FLOAT
+    &accessor_f,
+#endif
+#if USE_DOUBLE
+    &accessor_d,
+#endif
 };
 
 Array::Array (char type, size_t len) {
