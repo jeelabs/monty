@@ -48,8 +48,9 @@ struct AccessAs : Accessor {
     }
 };
 
-constexpr auto arrayModes = "PTNbBhHiIlLqQ";
+constexpr auto arrayModes = "oPTNbBhHiIlLqQ";
 
+static AccessAs<Value>    const as_o;
 static AccessAs<int8_t>   const as_b;
 static AccessAs<uint8_t>  const as_B;
 static AccessAs<int16_t>  const as_h;
@@ -60,6 +61,7 @@ static AccessAs<int64_t>  const as_q;
 static AccessAs<uint64_t> const as_Q;
 
 static Accessor const* accessors [] = {
+    &as_o,
     &as_B, // TODO P
     &as_B, // TODO T
     &as_B, // TODO N
@@ -77,8 +79,7 @@ static Accessor const* accessors [] = {
 
 Array::Array (char type, size_t len) {
     auto p = strchr(arrayModes, type);
-    assert(p != nullptr);
-    auto s = p - arrayModes;
+    auto s = p != nullptr ? p - arrayModes : 0; // use Value if unknown type
     accessors[s]->ins(*this, 0, len);
     fill |= s << 28;
 }

@@ -397,7 +397,7 @@ namespace Monty {
     };
 
     //CG< type array
-    struct Array : Bytes {
+    struct Array : Object, ByteVec {
         static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
