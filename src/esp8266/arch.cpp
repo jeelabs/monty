@@ -27,13 +27,13 @@ extern "C" uint32_t __atomic_fetch_or_4 (void volatile* p, uint32_t v, int o) {
     return t;
 }
 
-extern "C" uint32_t __atomic_fetch_nand_4 (void volatile* p, uint32_t v, int o) {
+extern "C" uint32_t __atomic_fetch_and_4 (void volatile* p, uint32_t v, int o) {
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     // FIXME this version is not atomic!
     auto q = (uint32_t volatile*) p;
     // atomic start
     auto t = *q;
-    *q &= ~v;
+    *q &= v;
     // atomic end
     return t;
 }
