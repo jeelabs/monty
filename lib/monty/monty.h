@@ -699,6 +699,7 @@ namespace Monty {
     struct Interp {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
+        static void suspend (List& queue);
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context

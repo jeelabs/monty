@@ -7,6 +7,10 @@ verbose = 0
 # generate qstr definition
 qstrIndex = []
 
+def VERSION(block):
+    v = subprocess.getoutput('git describe --tags')
+    return ['constexpr auto VERSION = "%s";' % v]
+
 def QSTR_EMIT(block):
     return qstrIndex
 
@@ -329,8 +333,3 @@ def processDir(dir):
 if __name__ == '__main__':
     for d in sys.argv[1:]:
         processDir(d)
-
-    p = os.path
-    with open(p.join(p.dirname(sys.argv[0]), "version.h"), "w") as f:
-        v = subprocess.getoutput('git describe --tags')
-        f.write('#define VERSION "%s"\n' % v)

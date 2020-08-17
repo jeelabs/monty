@@ -157,6 +157,10 @@ bool Interp::isAlive () const {
     return false;
 }
 
+void Interp::suspend (List& queue) {
+    // TODO
+}
+
 void Interp::resume (Context& ctx) {
     assert(context != &ctx);
     assert(ctx.caller == nullptr);

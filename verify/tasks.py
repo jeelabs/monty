@@ -2,7 +2,7 @@ waiting = []
 
 def delay(n):
     for _ in range(n):
-        monty.suspend(waiting)
+        sys.suspend(waiting)
 
 async def task(rate):
     i = 0
@@ -12,13 +12,13 @@ async def task(rate):
         i += 1
 
 for i in [2, 3, 5]:
-    monty.tasks.append(task(i))
+    sys.tasks.append(task(i))
 
 def loop():
     global waiting
     for _ in range(35):
         for w in waiting:
-            monty.tasks.append(w)
+            sys.tasks.append(w)
         waiting = []
         yield
     machine.ticker()

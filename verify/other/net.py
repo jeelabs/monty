@@ -1,4 +1,4 @@
-print(monty.version)
+print(sys.version)
 
 network.ifconfig('192.168.188.2', '255.255.255.0', '192.168.188.1', '8.8.8.8')
 

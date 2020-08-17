@@ -6,7 +6,8 @@
 
 using namespace Monty;
 
-extern const Monty::Module m_machine;
+extern Module const m_sys;
+extern Module const m_machine;
 
 None const None::nullObj;
 Bool const Bool::falseObj;
@@ -466,11 +467,11 @@ static const Lookup::Item builtinsMap [] = {
     { "len", &f_len },
     { "abs", &f_abs },
     { "hash", &f_hash },
+    { "sys", &m_sys },
 #ifndef UNIT_TEST
     { "machine", &m_machine },
 #endif
 #if 0
-    { "sys", &m_sys },
 #if INCLUDE_NETWORK
     { "network", &m_network },
 #endif
