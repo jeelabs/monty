@@ -6,7 +6,7 @@
 #include <cassert>
 
 // FIXME needs to figure out how to get this from arch.h !!!
-#if NATIVE
+#if NATIVE && !defined (UNIT_TEST)
 #define INNER_HOOK { timerHook(); }
 extern void timerHook ();
 #endif
