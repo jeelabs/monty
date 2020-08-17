@@ -770,6 +770,12 @@ class PyVM : public Interp {
                     assert(false);
                 }
             }
+#if 0
+            mark(context);
+            tasks.marker();
+            sweep();
+            compact();
+#endif
         } while (pending == 0);
 
         if (context == nullptr)
@@ -803,6 +809,15 @@ class PyVM : public Interp {
     }
 
 public:
+    PyVM (Callable const& init) {
+        auto ctx = new Monty::Context;
+        ctx->enter(init);
+        ctx->frame().locals = &init.mo;
+
+        tasks.insert(0);
+        tasks[0] = ctx;
+    }
+
     void runner () {
         while (true) {
             outer();

@@ -7,18 +7,14 @@
 static uint8_t myMem [MEM_BYTES];
 
 static void runInterp (Monty::Callable& init) {
-    Monty::Context ctx;
-    ctx.enter(init);
-    ctx.frame().locals = &init.mo;
-    Monty::Interp::context = &ctx;
-
-    Monty::PyVM vm;
+    Monty::PyVM vm (init);
 
     while (vm.isAlive()) {
         vm.runner();
         archIdle();
     }
-    // nothing to do and nothing left to wait for at this point
+
+    // nothing left to do or wait for, at this point
 }
 
 int main () {

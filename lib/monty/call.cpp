@@ -79,8 +79,11 @@ Value Context::leave (Value v) {
 
         assert(prev >= 0);
         base = prev;            // new lower frame offset
-    } else
+    } else {
         Interp::context = caller; // last frame, drop context, restore caller
+        if (this == &Interp::tasks[0].obj())
+            Interp::tasks.pop(0);
+    }
 
     return r;
 }
