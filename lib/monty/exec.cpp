@@ -11,6 +11,10 @@
 extern void timerHook ();
 #endif
 
+#ifndef INNER_HOOK
+#define INNER_HOOK
+#endif
+
 #if VERBOSE_LOAD
 #define debugf printf
 #else
@@ -376,8 +380,13 @@ auto Monty::loadModule (uint8_t const* addr) -> Module* {
     Context ctx;
     ctx.enter(*init);
     ctx.frame().locals = &init->mo;
+    Interp::context = &ctx;
 
-    vm.run(&ctx);
+    while (vm.isAlive()) {
+        INNER_HOOK
+        vm.runner();
+    }
+    // nothing to do and nothing to wait for at this point
 
     return &init->mo;
 }

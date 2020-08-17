@@ -7,6 +7,8 @@ using namespace Monty;
 
 volatile uint32_t Interp::pending;
 Context* Interp::context;
+List Interp::tasks;
+Value Interp::handlers [MAX_HANDLERS];
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
@@ -99,8 +101,6 @@ void Context::marker () const {
     mark(caller);
 }
 
-Value Interp::handlers [MAX_HANDLERS];
-
 int Interp::setHandler (Value h) {
     if (h.isInt()) {
         int i = h;
@@ -114,6 +114,15 @@ int Interp::setHandler (Value h) {
             return i;
         }
     return -1;
+}
+
+bool Interp::isAlive () const {
+    if (context != nullptr || pending != 0 || tasks.len() > 0)
+        return true;
+    for (size_t i = 1; i < MAX_HANDLERS; ++i)
+        if (!handlers[i].isNil())
+            return true;
+    return false;
 }
 
 void Interp::resume (Context& ctx) {

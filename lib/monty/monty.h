@@ -709,9 +709,11 @@ namespace Monty {
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
         static int setHandler (Value);
+        bool isAlive () const;
 
         static volatile uint32_t pending;   // for irq-safe inner loop exit
-        static Context* context;             // current context, if any
+        static Context* context;            // current context, if any
+        static List tasks;                  // runnable task queue
     protected:
         static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
         static Value handlers [];

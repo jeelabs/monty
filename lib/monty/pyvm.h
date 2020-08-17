@@ -3,7 +3,7 @@
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
-struct PyVM : Interp {
+class PyVM : public Interp {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
         LoadConstString        = 0x10,
@@ -132,9 +132,7 @@ struct PyVM : Interp {
         printf("\n");
 #endif
         assert(ip >= context->ipBase() && sp >= context->spBase() - 1);
-#ifdef INNER_HOOK
         INNER_HOOK
-#endif
     }
 
     //CG: op-init
@@ -780,36 +778,30 @@ struct PyVM : Interp {
 
     void outer () {
         while (true) {
-          //gcCheck(true);              // collect garbage, if needed
-
             auto irq = nextPending();
-            if (irq >= 0) {
+            if (irq >= 0) {         // there's a pending soft-irq
                 auto h = handlers[irq];
                 if (h.isObj())
-                    h.obj().next();     // resume the triggered handler
+                    h.obj().next(); // resume the triggered handler
             }
 
             if (context == nullptr)
-                break;                  // no runnable context left
-            inner();                    // go process lots of bytecodes
+                break;              // no runnable context left
+
+            inner();                // go process lots of bytecodes
+
+          //gcCheck(true);          // collect garbage, if needed
         }
-        assert(context == nullptr);
     }
 
-    void run (Context* ctx =nullptr) {
-        context = ctx;
-        bool active;
-        do {
-#ifdef INNER_HOOK
-            INNER_HOOK
-#endif
+public:
+    void runner () {
+        while (true) {
             outer();
-            active = false;
-            for (size_t i = 0; i < MAX_HANDLERS; ++i)
-                if (!handlers[i].isNil()) {
-                    active = true;
-                    break;
-                }
-        } while (active);
+            if (tasks.len() == 0)
+                break;
+            // TODO resume tasks[0]
+        }
+        // no current context and no runnable tasks at this point
     }
 };

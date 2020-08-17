@@ -73,7 +73,7 @@ Value f_ticker (Vector const& vec, int argc, int args) {
             }
         };
     }
-    id = Context::setHandler(h);
+    id = Interp::setHandler(h);
     return id;
 }
 
