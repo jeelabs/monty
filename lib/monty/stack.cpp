@@ -138,7 +138,7 @@ void Interp::interrupt (uint32_t num) {
 
 auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (size_t num = 1; num < MAX_HANDLERS; ++num)
+        for (size_t num = 0; num < MAX_HANDLERS; ++num)
             if (pendingBit(num))
                 return num;
     return -1;

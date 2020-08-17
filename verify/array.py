@@ -21,6 +21,6 @@ f("H")
 f("I")
 f("L") # TODO needs 64-bit ints
 
-f("N",8)
-f("T",8)
-f("P",8)
+#f("N",8)
+#f("T",8)
+#f("P",8)

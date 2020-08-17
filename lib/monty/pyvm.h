@@ -805,8 +805,8 @@ struct PyVM : Interp {
 #endif
             outer();
             active = false;
-            for (size_t i = 1; i < MAX_HANDLERS; ++i)
-                if (handlers[i].isObj()) {
+            for (size_t i = 0; i < MAX_HANDLERS; ++i)
+                if (!handlers[i].isNil()) {
                     active = true;
                     break;
                 }
