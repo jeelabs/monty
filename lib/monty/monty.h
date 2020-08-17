@@ -575,7 +575,7 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Module (Value pool, Lookup const* lu =nullptr) : Dict (lu), qp (pool) {}
+        Module (Lookup const* lu, Value pool ={}) : Dict (lu), qp (pool) {}
 
         Value attr (char const* s, Value&) const override { return getAt(s); }
 

@@ -468,7 +468,7 @@ struct Loader {
 
         qBuf.adj(0); // buffer no longer needed
 
-        auto mod = new Module (*pool, &builtins);
+        auto mod = new Module (&builtins, *pool);
         return new Callable (*mod, bc);
     }
 

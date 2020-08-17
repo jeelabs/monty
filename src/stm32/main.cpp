@@ -1,7 +1,7 @@
 #include "monty.h"
 #include "arch.h"
 
-#include <assert.h>
+#include <cassert>
 #include "pyvm.h"
 
 static uint8_t myMem [MEM_BYTES];
