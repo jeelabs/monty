@@ -405,11 +405,13 @@ struct PyVM : Interp {
     }
     //CG1 op
     void op_YieldValue () {
+        auto ctx = context;
         auto v = contextAdjuster([=]() -> Value {
             context = context->caller;
             return *sp;
         });
-        if (context != nullptr && !v.isNil() && !v.isNull()) // TODO none ...
+        ctx->caller = nullptr;
+        if (context != nullptr && !v.isNil()) // TODO why null?
             *sp = v;
     }
     //CG1 op

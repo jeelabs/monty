@@ -337,7 +337,7 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     auto ctx = Interp::context;
     auto coro = code.isGenerator();
     if (coro)
-        ctx = new Context (ctx);
+        ctx = new Context;
 
     ctx->enter(*this);
 

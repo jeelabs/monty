@@ -118,6 +118,8 @@ int Interp::setHandler (Value h) {
 
 void Interp::resume (Context& ctx) {
     assert(context != &ctx);
+    assert(ctx.caller == nullptr);
+    ctx.caller = context;
     context = &ctx;
     interrupt(0); // force inner loop exit
 }
@@ -129,7 +131,6 @@ void Interp::exception (Value v) {
 }
 
 void Interp::interrupt (uint32_t num) {
-printf("irq %d\n", num);
     assert(num < MAX_HANDLERS);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
