@@ -2,8 +2,8 @@
 
 extern void archInit ();
 extern void archIdle ();
-extern int archDone ();
+extern auto archDone (char const* =nullptr) -> int;
 
-extern "C" int printf(const char*, ...);
+extern "C" int printf (char const*, ...);
 
 extern Monty::Module const m_machine;

@@ -31,6 +31,21 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
+static void runInterp (Monty::Callable& init) {
+    Monty::Context ctx;
+    ctx.enter(init);
+    ctx.frame().locals = &init.mo;
+    Monty::Interp::context = &ctx;
+
+    Monty::PyVM vm;
+
+    while (vm.isAlive()) {
+        vm.runner();
+        //archIdle();
+    }
+    // nothing to do and nothing left to wait for at this point
+}
+
 extern "C" int app_main () {
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
     printf("\xFF" "main\n"); // insert marker for serial capture by dog.c
@@ -49,18 +64,7 @@ extern "C" int app_main () {
         return 2;
     }
 
-    Monty::Context ctx;
-    ctx.enter(*init);
-    ctx.frame().locals = &init->mo;
-    Monty::Interp::context = &ctx;
-
-    Monty::PyVM vm;
-
-    while (vm.isAlive()) {
-        vm.runner();
-        // archIdle();
-    }
-    // nothing to do and nothing to wait for at this point
+    runInterp(*init);
 
     printf("done\n");
     return 0;

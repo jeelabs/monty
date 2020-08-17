@@ -3,7 +3,6 @@
 #include <cstring>
 
 namespace Monty {
-
     extern "C" int printf (char const*, ...);
 
 // see gc.cpp - objects and vectors with garbage collection

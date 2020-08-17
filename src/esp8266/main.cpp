@@ -23,6 +23,21 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
+static void runInterp (Monty::Callable& init) {
+    Monty::Context ctx;
+    ctx.enter(init);
+    ctx.frame().locals = &init.mo;
+    Monty::Interp::context = &ctx;
+
+    Monty::PyVM vm;
+
+    while (vm.isAlive()) {
+        vm.runner();
+        //archIdle();
+    }
+    // nothing to do and nothing left to wait for at this point
+}
+
 void setup () {
     Serial.begin(115200);
     printf("main\n");
@@ -46,18 +61,7 @@ void setup () {
         return;
     }
 
-    Monty::Context ctx;
-    ctx.enter(*init);
-    ctx.frame().locals = &init->mo;
-    Monty::Interp::context = &ctx;
-
-    Monty::PyVM vm;
-
-    while (vm.isAlive()) {
-        vm.runner();
-        //archIdle();
-    }
-    // nothing to do and nothing to wait for at this point
+    runInterp(*init);
 
     printf("done\n");
 }

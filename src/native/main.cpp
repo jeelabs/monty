@@ -25,25 +25,10 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-int main (int argc, const char* argv []) {
-    archInit();
-    printf("main\n");
-
-    auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
-    if (bcData == 0) {
-        printf("can't load bytecode\n");
-        return 1;
-    }
-
-    Monty::setup(myMem, sizeof myMem);
-
-    auto init = Monty::loadModule("__main__", bcData);
-    if (init == nullptr)
-        return 2;
-
+static void runInterp (Monty::Callable& init) {
     Monty::Context ctx;
-    ctx.enter(*init);
-    ctx.frame().locals = &init->mo;
+    ctx.enter(init);
+    ctx.frame().locals = &init.mo;
     Monty::Interp::context = &ctx;
 
     Monty::PyVM vm;
@@ -52,8 +37,23 @@ int main (int argc, const char* argv []) {
         vm.runner();
         archIdle();
     }
-    // nothing to do and nothing to wait for at this point
+    // nothing to do and nothing left to wait for at this point
+}
 
-    printf("done\n");
+int main (int argc, const char* argv []) {
+    archInit();
+
+    auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
+    if (bcData == 0)
+        return archDone("can't load bytecode");
+
+    Monty::setup(myMem, sizeof myMem);
+
+    auto init = Monty::loadModule("__main__", bcData);
+    if (init == nullptr)
+        return archDone("can't load module");
+
+    runInterp(*init);
+
     return archDone();
 }

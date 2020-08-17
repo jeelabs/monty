@@ -9,6 +9,7 @@ using namespace Monty;
 
 void archInit () {
     setbuf(stdout, 0);    
+    printf("main\n");
 }
 
 void archIdle () {
@@ -16,8 +17,9 @@ void archIdle () {
     nanosleep(&ts, &ts); // 10 µs, i.e. 1% of ticks' 1 ms resolution
 }
 
-auto archDone () -> int {
-    return 0;
+auto archDone (char const* msg) -> int {
+    printf("%s\n", msg != nullptr ? msg : "done");
+    return msg == nullptr ? 0 : 1;
 }
 
 static int ms, id;

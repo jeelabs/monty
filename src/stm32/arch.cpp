@@ -9,37 +9,39 @@
 
 using namespace Monty;
 
-UartBufDev< PINS_CONSOLE > console;
+UartDev< PINS_CONSOLE > console;
 
-int printf (const char* fmt, ...) {
+int printf (char const* fmt, ...) {
     va_list ap; va_start(ap, fmt);
     veprintf(console.putc, fmt, ap); va_end(ap);
     return 0;
 }
 
-extern "C" void __assert_func (const char *f, int l, const char * n, const char *e) {
+extern "C" void __assert_func (char const* f, int l, char const* n, char const* e) {
     printf("assert(%s) in %s\n\t%s:%d\n", e, n, f, l);
     while (true) {}
 }
 
-extern "C" void __assert (const char *f, int l, const char *e) {
+extern "C" void __assert (char const* f, int l, char const* e) {
     __assert_func(f, l, "-", e);
 }
 
 void archInit () {
     console.init();
     console.baud(115200, fullSpeedClock() / UART_BUSDIV);
-    wait_ms(100);
+    wait_ms(200);
+    printf("\xFF" "main\n"); // insert marker for serial capture by dog.c
 }
 
 void archIdle () {
     asm ("wfi");
 }
 
-int archDone () {
-    //Object::gcStats();
+auto archDone (char const* msg) -> int {
+    printf("%s\n", msg != nullptr ? msg : "done");
     //while (!console.xmit.empty()) {}
     while (true) {}
+    //return msg == nullptr ? 0 : 1);
 }
 
 static int ms, id;
@@ -76,13 +78,13 @@ Value f_ticks (Vector const& vec, int argc, int args) {
     return t - begin; // make all runs start out the same way
 }
 
-static const Function fo_ticker (f_ticker);
-static const Function fo_ticks (f_ticks);
+static Function const fo_ticker (f_ticker);
+static Function const fo_ticks (f_ticks);
 
-static const Lookup::Item lo_machine [] = {
+static Lookup::Item const lo_machine [] = {
     { "ticker", &fo_ticker },
     { "ticks", &fo_ticks },
 };
 
-static const Lookup ma_machine (lo_machine, sizeof lo_machine);
-const Module m_machine (&ma_machine);
+static Lookup const ma_machine (lo_machine, sizeof lo_machine);
+extern Module const m_machine (&ma_machine);
