@@ -428,6 +428,8 @@ namespace Monty {
         constexpr List () {}
         List (Vector const& vec, int argc, int args);
 
+        auto pop (int idx) -> Value;
+
         auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;

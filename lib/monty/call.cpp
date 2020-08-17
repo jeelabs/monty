@@ -158,7 +158,21 @@ bool Interp::isAlive () const {
 }
 
 void Interp::suspend (List& queue) {
-    // TODO
+printf("suspend\n");
+    assert(queue.size() > 0);
+    auto& ctx = tasks[0].asType<Context>();
+    assert(&ctx == context);
+
+    auto top = vm->fp;
+    while (top->caller != 0)
+        top = top->caller;
+    assert(top == &fo);
+
+    fo.caller = vm->flip(0);
+
+    queue.append(v);
+    tasks.pop(0);
+    raise(); // exit inner vm loop
 }
 
 void Interp::resume (Context& ctx) {

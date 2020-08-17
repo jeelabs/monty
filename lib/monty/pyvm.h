@@ -1,6 +1,6 @@
 // pyvm.h - virtual machine for bytecodes emitted by MicroPython 1.12
 
-#define SHOW_INSTR_PTR 1 // show instr ptr each time through loop (in pyvm.h)
+#define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
 #ifndef INNER_HOOK

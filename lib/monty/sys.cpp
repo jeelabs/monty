@@ -6,12 +6,12 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = "v0.92-37-g8630f51";
-static Str const s_version {VERSION};
+constexpr auto VERSION = "v0.92-38-g2671239";
 
 static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
     auto queue = &Interp::tasks;
-    if (argc > 1)
+printf("susp %d\n", argc);
+    if (argc == 2)
         queue = &vec[args+1].asType<List>();
     Interp::suspend(*queue);
     return Value ();
@@ -20,8 +20,8 @@ static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
 static Function const fo_suspend (f_suspend);
 
 static Lookup::Item const lo_sys [] = {
-    { "version", &s_version },
-    //{ "suspend", &fo_suspend },
+    { "version", VERSION },
+    { "suspend", &fo_suspend },
     { "tasks", &Interp::tasks },
     //{ "modules", &Interp::modules },
 };

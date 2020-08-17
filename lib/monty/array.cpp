@@ -134,6 +134,15 @@ List::List (Vector const& vec, int argc, int args) {
         (*this)[i] = vec[args+i];
 }
 
+auto List::pop (int idx) -> Value {
+    assert(len() > 0);
+    if (idx < 0)
+        idx += size();
+    Value v = (*this)[idx];
+    remove(idx);
+    return v;
+}
+
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = relPos(k);
