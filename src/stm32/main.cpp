@@ -4,16 +4,15 @@
 #include "monty.h"
 #include "arch.h"
 
+#include <cassert>
+#include "pyvm.h"
+
+static uint8_t myMem [MEM_BYTES];
+
 int main () {
     archInit();
-    printf("\xFF" // send out special marker for easier remote output capture
-           "main\n");
+    printf("\xFF" "main\n"); // insert marker for serial capture by dog.c
 
-    //showAlignment();      // show string address details in flash and ram
-    //showAllocInfo();      // show mem allocator behaviour for small allocs
-    //showObjSizes();       // show sizeof information for the main classes
-
-    static uint8_t myMem [MEM_BYTES];
     Monty::setup(myMem, sizeof myMem);
 
     // load module from end of RAM, 4 KB below the stack top
@@ -21,10 +20,24 @@ int main () {
     extern uint8_t _estack [];
     auto bcData = _estack - 0x1000;
 
-    if (Monty::loadModule(bcData) == nullptr)
+    auto init = Monty::loadModule("__main__", bcData);
+    if (init == nullptr) {
         printf("can't load module\n");
-    else
-        printf("done\n");
+        return archDone();
+    }
+
+    Monty::Context ctx;
+    ctx.enter(*init);
+    ctx.frame().locals = &init->mo;
+    Monty::Interp::context = &ctx;
+
+    Monty::PyVM vm;
+
+    while (vm.isAlive()) {
+        vm.runner();
+        archIdle();
+    }
+    // nothing to do and nothing to wait for at this point
 
     return archDone();
 }

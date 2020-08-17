@@ -17,12 +17,6 @@ int printf (const char* fmt, ...) {
     return 0;
 }
 
-int debugf (const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    veprintf(console.putc, fmt, ap); va_end(ap);
-    return 0;
-}
-
 extern "C" void __assert_func (const char *f, int l, const char * n, const char *e) {
     printf("assert(%s) in %s\n\t%s:%d\n", e, n, f, l);
     while (true) {}
@@ -38,17 +32,15 @@ void archInit () {
     wait_ms(100);
 }
 
+void archIdle () {
+    asm ("wfi");
+}
+
 int archDone () {
     //Object::gcStats();
     //while (!console.xmit.empty()) {}
     while (true) {}
 }
-
-static Value bi_blah (Vector const& vec, int argc, int args) {
-    return argc;
-}
-
-static const Function f_blah (bi_blah);
 
 static int ms, id;
 static uint32_t start, begin, last;
@@ -88,7 +80,6 @@ static const Function fo_ticker (f_ticker);
 static const Function fo_ticks (f_ticks);
 
 static const Lookup::Item lo_machine [] = {
-    { "blah", &f_blah },
     { "ticker", &fo_ticker },
     { "ticks", &fo_ticks },
 };

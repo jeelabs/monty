@@ -719,6 +719,6 @@ namespace Monty {
 
 // see load.cpp - importing and loading bytecodes
 
-    auto loadModule (uint8_t const* addr) -> Module*;
+    auto loadModule (char const* name, uint8_t const* addr) -> Callable*;
 
 } // namespace Monty

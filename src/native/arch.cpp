@@ -16,6 +16,11 @@ void archInit () {
     setbuf(stdout, 0);    
 }
 
+void archIdle () {
+    timespec ts { 0, 10000 };
+    nanosleep(&ts, &ts); // 10 µs, i.e. 1% of ticks' 1 ms resolution
+}
+
 int archDone () {
     //Context::gcTrigger();
     //Object::gcStats();

@@ -3,6 +3,12 @@
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through loop (in pyvm.h)
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
+#ifndef INNER_HOOK
+#define INNER_HOOK
+#endif
+
+namespace Monty {
+
 class PyVM : public Interp {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
@@ -778,6 +784,8 @@ class PyVM : public Interp {
 
     void outer () {
         while (true) {
+            INNER_HOOK
+
             auto irq = nextPending();
             if (irq >= 0) {         // there's a pending soft-irq
                 auto h = handlers[irq];
@@ -805,3 +813,5 @@ public:
         // no current context and no runnable tasks at this point
     }
 };
+
+} // namespace Monty

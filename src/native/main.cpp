@@ -3,7 +3,13 @@
 
 #include "monty.h"
 #include "arch.h"
+
+#include <cassert>
+#include "pyvm.h"
+
 #include <cstdio>
+
+static uint8_t myMem [512*1024]; // TODO don't gc too soon ...
 
 static const uint8_t* loadBytecode (const char* fname) {
     FILE* fp = fopen(fname, "rb");
@@ -26,21 +32,30 @@ int main (int argc, const char* argv []) {
     archInit();
     printf("main\n");
 
-    //showAlignment();      // show string address details in flash and ram
-    //showAllocInfo();      // show mem allocator behaviour for small allocs
-    //showObjSizes();       // show sizeof information for the main classes
-
     auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
     if (bcData == 0) {
         printf("can't load bytecode\n");
         return 1;
     }
 
-    static uint8_t myMem [512*1024]; // TODO don't gc too soon ...
     Monty::setup(myMem, sizeof myMem);
 
-    if (Monty::loadModule(bcData) == nullptr)
+    auto init = Monty::loadModule("__main__", bcData);
+    if (init == nullptr)
         return 2;
+
+    Monty::Context ctx;
+    ctx.enter(*init);
+    ctx.frame().locals = &init->mo;
+    Monty::Interp::context = &ctx;
+
+    Monty::PyVM vm;
+
+    while (vm.isAlive()) {
+        vm.runner();
+        archIdle();
+    }
+    // nothing to do and nothing to wait for at this point
 
     printf("done\n");
     return archDone();

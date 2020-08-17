@@ -9,14 +9,10 @@
 #include "monty.h"
 #include "arch.h"
 
-#include <cstdarg>
-#include <cstdio>
+#include <cassert>
+#include "pyvm.h"
 
-extern "C" int debugf (const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt);
-    vprintf(fmt, ap); va_end(ap);
-    return 0;
-}
+static uintptr_t myMem [4096];
 
 static const uint8_t* loadBytecode (const char* fname) {
     FILE* fp = fopen(fname, "rb");
@@ -37,12 +33,9 @@ static const uint8_t* loadBytecode (const char* fname) {
 
 extern "C" int app_main () {
     vTaskDelay(3000/10); // 3s delay, enough time to attach serial
-    printf("\xFF" // send out special marker for easier remote output capture
-           "main\n");
+    printf("\xFF" "main\n"); // insert marker for serial capture by dog.c
 
-    //showAlignment();      // show string address details in flash and ram
-    //showAllocInfo();      // show mem allocator behaviour for small allocs
-    //showObjSizes();       // show sizeof information for the main classes
+    Monty::setup(myMem, sizeof myMem);
 
     auto bcData = loadBytecode("demo.mpy");
     if (bcData == 0) {
@@ -50,14 +43,25 @@ extern "C" int app_main () {
         return 1;
     }
 
-    static uintptr_t myMem [4096];
-    Monty::setup(myMem, sizeof myMem);
+    auto init = Monty::loadModule("__main__", bcData);
+    if (init == nullptr) {
+        printf("can't load module\n");
+        return 2;
+    }
 
-    (void) Monty::loadModule(bcData);
+    Monty::Context ctx;
+    ctx.enter(*init);
+    ctx.frame().locals = &init->mo;
+    Monty::Interp::context = &ctx;
 
-    free((void*) bcData);
+    Monty::PyVM vm;
+
+    while (vm.isAlive()) {
+        vm.runner();
+        // archIdle();
+    }
+    // nothing to do and nothing to wait for at this point
 
     printf("done\n");
-    //Object::gcStats();
     return 0;
 }

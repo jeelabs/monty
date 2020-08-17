@@ -1,11 +1,8 @@
 // type.cpp - basic object types and type system
 
 #include "monty.h"
-#include <cassert>
-
-namespace Monty { // TODO move ns into defs.h
 #include "defs.h"
-}
+#include <cassert>
 
 using namespace Monty;
 
@@ -473,7 +470,7 @@ static const Lookup::Item builtinsMap [] = {
     { "machine", &m_machine },
 #endif
 #if 0
-    { "monty", &m_monty },
+    { "sys", &m_sys },
 #if INCLUDE_NETWORK
     { "network", &m_network },
 #endif

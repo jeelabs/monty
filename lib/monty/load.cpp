@@ -5,16 +5,6 @@
 #include "monty.h"
 #include <cassert>
 
-// FIXME needs to figure out how to get this from arch.h !!!
-#if NATIVE && !defined (UNIT_TEST)
-#define INNER_HOOK { timerHook(); }
-extern void timerHook ();
-#endif
-
-#ifndef INNER_HOOK
-#define INNER_HOOK
-#endif
-
 #if VERBOSE_LOAD
 #define debugf printf
 #else
@@ -22,8 +12,350 @@ extern void timerHook ();
 #endif
 
 namespace Monty {
-    #include "pyvm.h"
-    #include "qstr.h"
+    constexpr auto qstrFrom = 1; // see qstrNext at the end
+
+    char const qstrData [] =
+        //CG< qstr 1
+        ""                    "\0" // 1
+        "__dir__"             "\0" // 2
+        "\x0a"                "\0" // 3
+        " "                   "\0" // 4
+        "*"                   "\0" // 5
+        "/"                   "\0" // 6
+        "<module>"            "\0" // 7
+        "_"                   "\0" // 8
+        "__call__"            "\0" // 9
+        "__class__"           "\0" // 10
+        "__delitem__"         "\0" // 11
+        "__enter__"           "\0" // 12
+        "__exit__"            "\0" // 13
+        "__getattr__"         "\0" // 14
+        "__getitem__"         "\0" // 15
+        "__hash__"            "\0" // 16
+        "__init__"            "\0" // 17
+        "__int__"             "\0" // 18
+        "__iter__"            "\0" // 19
+        "__len__"             "\0" // 20
+        "__main__"            "\0" // 21
+        "__module__"          "\0" // 22
+        "__name__"            "\0" // 23
+        "__new__"             "\0" // 24
+        "__next__"            "\0" // 25
+        "__qualname__"        "\0" // 26
+        "__repr__"            "\0" // 27
+        "__setitem__"         "\0" // 28
+        "__str__"             "\0" // 29
+        "ArithmeticError"     "\0" // 30
+        "AssertionError"      "\0" // 31
+        "AttributeError"      "\0" // 32
+        "BaseException"       "\0" // 33
+        "EOFError"            "\0" // 34
+        "Ellipsis"            "\0" // 35
+        "Exception"           "\0" // 36
+        "GeneratorExit"       "\0" // 37
+        "ImportError"         "\0" // 38
+        "IndentationError"    "\0" // 39
+        "IndexError"          "\0" // 40
+        "KeyError"            "\0" // 41
+        "KeyboardInterrupt"   "\0" // 42
+        "LookupError"         "\0" // 43
+        "MemoryError"         "\0" // 44
+        "NameError"           "\0" // 45
+        "NoneType"            "\0" // 46
+        "NotImplementedError" "\0" // 47
+        "OSError"             "\0" // 48
+        "OverflowError"       "\0" // 49
+        "RuntimeError"        "\0" // 50
+        "StopIteration"       "\0" // 51
+        "SyntaxError"         "\0" // 52
+        "SystemExit"          "\0" // 53
+        "TypeError"           "\0" // 54
+        "ValueError"          "\0" // 55
+        "ZeroDivisionError"   "\0" // 56
+        "abs"                 "\0" // 57
+        "all"                 "\0" // 58
+        "any"                 "\0" // 59
+        "append"              "\0" // 60
+        "args"                "\0" // 61
+        "bool"                "\0" // 62
+        "builtins"            "\0" // 63
+        "bytearray"           "\0" // 64
+        "bytecode"            "\0" // 65
+        "bytes"               "\0" // 66
+        "callable"            "\0" // 67
+        "chr"                 "\0" // 68
+        "classmethod"         "\0" // 69
+        "clear"               "\0" // 70
+        "close"               "\0" // 71
+        "const"               "\0" // 72
+        "copy"                "\0" // 73
+        "count"               "\0" // 74
+        "dict"                "\0" // 75
+        "dir"                 "\0" // 76
+        "divmod"              "\0" // 77
+        "end"                 "\0" // 78
+        "endswith"            "\0" // 79
+        "eval"                "\0" // 80
+        "exec"                "\0" // 81
+        "extend"              "\0" // 82
+        "find"                "\0" // 83
+        "format"              "\0" // 84
+        "from_bytes"          "\0" // 85
+        "get"                 "\0" // 86
+        "getattr"             "\0" // 87
+        "globals"             "\0" // 88
+        "hasattr"             "\0" // 89
+        "hash"                "\0" // 90
+        "id"                  "\0" // 91
+        "index"               "\0" // 92
+        "insert"              "\0" // 93
+        "int"                 "\0" // 94
+        "isalpha"             "\0" // 95
+        "isdigit"             "\0" // 96
+        "isinstance"          "\0" // 97
+        "islower"             "\0" // 98
+        "isspace"             "\0" // 99
+        "issubclass"          "\0" // 100
+        "isupper"             "\0" // 101
+        "items"               "\0" // 102
+        "iter"                "\0" // 103
+        "join"                "\0" // 104
+        "key"                 "\0" // 105
+        "keys"                "\0" // 106
+        "len"                 "\0" // 107
+        "list"                "\0" // 108
+        "little"              "\0" // 109
+        "locals"              "\0" // 110
+        "lower"               "\0" // 111
+        "lstrip"              "\0" // 112
+        "main"                "\0" // 113
+        "map"                 "\0" // 114
+        "micropython"         "\0" // 115
+        "next"                "\0" // 116
+        "object"              "\0" // 117
+        "open"                "\0" // 118
+        "ord"                 "\0" // 119
+        "pop"                 "\0" // 120
+        "popitem"             "\0" // 121
+        "pow"                 "\0" // 122
+        "print"               "\0" // 123
+        "range"               "\0" // 124
+        "read"                "\0" // 125
+        "readinto"            "\0" // 126
+        "readline"            "\0" // 127
+        "remove"              "\0" // 128
+        "replace"             "\0" // 129
+        "repr"                "\0" // 130
+        "reverse"             "\0" // 131
+        "rfind"               "\0" // 132
+        "rindex"              "\0" // 133
+        "round"               "\0" // 134
+        "rsplit"              "\0" // 135
+        "rstrip"              "\0" // 136
+        "self"                "\0" // 137
+        "send"                "\0" // 138
+        "sep"                 "\0" // 139
+        "set"                 "\0" // 140
+        "setattr"             "\0" // 141
+        "setdefault"          "\0" // 142
+        "sort"                "\0" // 143
+        "sorted"              "\0" // 144
+        "split"               "\0" // 145
+        "start"               "\0" // 146
+        "startswith"          "\0" // 147
+        "staticmethod"        "\0" // 148
+        "step"                "\0" // 149
+        "stop"                "\0" // 150
+        "str"                 "\0" // 151
+        "strip"               "\0" // 152
+        "sum"                 "\0" // 153
+        "super"               "\0" // 154
+        "throw"               "\0" // 155
+        "to_bytes"            "\0" // 156
+        "tuple"               "\0" // 157
+        "type"                "\0" // 158
+        "update"              "\0" // 159
+        "upper"               "\0" // 160
+        "utf-8"               "\0" // 161
+        "value"               "\0" // 162
+        "values"              "\0" // 163
+        "write"               "\0" // 164
+        "zip"                 "\0" // 165
+        //CG>
+    ;
+
+    uint16_t const qstrPos [] = {
+        //CG< qstr-emit
+           0, // 1
+           1, // 2
+           9, // 3
+          11, // 4
+          13, // 5
+          15, // 6
+          17, // 7
+          26, // 8
+          28, // 9
+          37, // 10
+          47, // 11
+          59, // 12
+          69, // 13
+          78, // 14
+          90, // 15
+         102, // 16
+         111, // 17
+         120, // 18
+         128, // 19
+         137, // 20
+         145, // 21
+         154, // 22
+         165, // 23
+         174, // 24
+         182, // 25
+         191, // 26
+         204, // 27
+         213, // 28
+         225, // 29
+         233, // 30
+         249, // 31
+         264, // 32
+         279, // 33
+         293, // 34
+         302, // 35
+         311, // 36
+         321, // 37
+         335, // 38
+         347, // 39
+         364, // 40
+         375, // 41
+         384, // 42
+         402, // 43
+         414, // 44
+         426, // 45
+         436, // 46
+         445, // 47
+         465, // 48
+         473, // 49
+         487, // 50
+         500, // 51
+         514, // 52
+         526, // 53
+         537, // 54
+         547, // 55
+         558, // 56
+         576, // 57
+         580, // 58
+         584, // 59
+         588, // 60
+         595, // 61
+         600, // 62
+         605, // 63
+         614, // 64
+         624, // 65
+         633, // 66
+         639, // 67
+         648, // 68
+         652, // 69
+         664, // 70
+         670, // 71
+         676, // 72
+         682, // 73
+         687, // 74
+         693, // 75
+         698, // 76
+         702, // 77
+         709, // 78
+         713, // 79
+         722, // 80
+         727, // 81
+         732, // 82
+         739, // 83
+         744, // 84
+         751, // 85
+         762, // 86
+         766, // 87
+         774, // 88
+         782, // 89
+         790, // 90
+         795, // 91
+         798, // 92
+         804, // 93
+         811, // 94
+         815, // 95
+         823, // 96
+         831, // 97
+         842, // 98
+         850, // 99
+         858, // 100
+         869, // 101
+         877, // 102
+         883, // 103
+         888, // 104
+         893, // 105
+         897, // 106
+         902, // 107
+         906, // 108
+         911, // 109
+         918, // 110
+         925, // 111
+         931, // 112
+         938, // 113
+         943, // 114
+         947, // 115
+         959, // 116
+         964, // 117
+         971, // 118
+         976, // 119
+         980, // 120
+         984, // 121
+         992, // 122
+         996, // 123
+        1002, // 124
+        1008, // 125
+        1013, // 126
+        1022, // 127
+        1031, // 128
+        1038, // 129
+        1046, // 130
+        1051, // 131
+        1059, // 132
+        1065, // 133
+        1072, // 134
+        1078, // 135
+        1085, // 136
+        1092, // 137
+        1097, // 138
+        1102, // 139
+        1106, // 140
+        1110, // 141
+        1118, // 142
+        1129, // 143
+        1134, // 144
+        1141, // 145
+        1147, // 146
+        1153, // 147
+        1164, // 148
+        1177, // 149
+        1182, // 150
+        1187, // 151
+        1191, // 152
+        1197, // 153
+        1201, // 154
+        1207, // 155
+        1213, // 156
+        1222, // 157
+        1228, // 158
+        1233, // 159
+        1240, // 160
+        1246, // 161
+        1252, // 162
+        1258, // 163
+        1265, // 164
+        1271, // 165
+        1275, // 166
+        //CG>
+    };
+
+    constexpr auto qstrNext = qstrFrom + sizeof qstrPos / sizeof *qstrPos - 1;
 
 struct QstrPool : Object {
     int len;
@@ -329,8 +661,6 @@ struct Loader {
 
 } // namespace Monty
 
-#undef debugf // !VERBOSE_LOAD
-
 using namespace Monty;
 
 // TODO placed here iso in call.cpp because it needs to know the QstrPool type
@@ -338,24 +668,12 @@ auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
-auto Monty::loadModule (uint8_t const* addr) -> Module* {
+auto Monty::loadModule (char const* name, uint8_t const* addr) -> Callable* {
     Loader loader;
     auto* init = loader.load(addr);
     if (init == nullptr)
         return nullptr;
 
-    PyVM vm;
-
-    Context ctx;
-    ctx.enter(*init);
-    ctx.frame().locals = &init->mo;
-    Interp::context = &ctx;
-
-    while (vm.isAlive()) {
-        INNER_HOOK
-        vm.runner();
-    }
-    // nothing to do and nothing to wait for at this point
-
-    return &init->mo;
+    init->mo.at("__name__") = name;
+    return init;
 }

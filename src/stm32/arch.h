@@ -2,6 +2,7 @@
 #include "../version.h"
 
 extern void archInit ();
+extern void archIdle ();
 extern int archDone ();
 
 extern "C" int printf(const char*, ...);
