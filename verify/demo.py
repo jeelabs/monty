@@ -1,3 +1,5 @@
+print(sys.implementation, sys.version)
+
 try:
     str.count
 except AttributeError:
