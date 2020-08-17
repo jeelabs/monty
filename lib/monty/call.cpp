@@ -158,21 +158,17 @@ bool Interp::isAlive () const {
 }
 
 void Interp::suspend (List& queue) {
-printf("suspend\n");
-    assert(queue.size() > 0);
-    auto& ctx = tasks[0].asType<Context>();
-    assert(&ctx == context);
+    auto n = queue.size();
+    // TODO main task should be on the tasks list
+    assert(n == 0 || tasks[0].ifType<Context>() == context);
 
-    auto top = vm->fp;
-    while (top->caller != 0)
-        top = top->caller;
-    assert(top == &fo);
-
-    fo.caller = vm->flip(0);
-
-    queue.append(v);
+    queue.insert(n);
+    queue[n] = context;
     tasks.pop(0);
-    raise(); // exit inner vm loop
+
+    auto ctx = context;
+    context = context->caller;
+    ctx->caller = nullptr;
 }
 
 void Interp::resume (Context& ctx) {

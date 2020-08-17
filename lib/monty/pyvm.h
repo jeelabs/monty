@@ -808,7 +808,8 @@ public:
             outer();
             if (tasks.len() == 0)
                 break;
-            // TODO resume tasks[0]
+            auto& ctx = tasks.getAt(0).asType<Context>();
+            resume(ctx);
         }
         // no current context and no runnable tasks at this point
     }
