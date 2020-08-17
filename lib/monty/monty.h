@@ -538,7 +538,7 @@ namespace Monty {
 
     extern Lookup const builtins;
 
-// see stack.cpp - execution state, stacks, and callables
+// see call.cpp - execution state, stacks, and callables
 
     //CG3 type <function>
     struct Function : Object {
@@ -568,8 +568,6 @@ namespace Monty {
         Value meth;
         Value self;
     };
-
-// see exec.cpp - importing, loading, and bytecode execution
 
     //CG3 type <module>
     struct Module : Dict {
@@ -718,6 +716,8 @@ namespace Monty {
         static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
         static Value handlers [];
     };
+
+// see load.cpp - importing and loading bytecodes
 
     auto loadModule (uint8_t const* addr) -> Module*;
 

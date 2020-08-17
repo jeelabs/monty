@@ -1,4 +1,4 @@
-// stack.cpp - execution state, stacks, and callables
+// call.cpp - execution state, stacks, and callables
 
 #include "monty.h"
 #include <cassert>
@@ -9,6 +9,38 @@ volatile uint32_t Interp::pending;
 Context* Interp::context;
 List Interp::tasks;
 Value Interp::handlers [MAX_HANDLERS];
+
+auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
+    auto ctx = Interp::context;
+    auto coro = code.isGenerator();
+    if (coro)
+        ctx = new Context;
+
+    ctx->enter(*this);
+
+    auto nPos = code.numArgs(0);
+    auto nDef = code.numArgs(1);
+    auto nKwo = code.numArgs(2);
+
+    for (uint32_t i = 0; i < nPos; ++i)
+        if ((int) i < argc)
+            ctx->fastSlot(i) = vec[args+i];
+        else if (pos != nullptr && i < nDef + pos->fill)
+            //ctx->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
+            ctx->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
+
+    if (code.hasVarArgs())
+        ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
+
+    return coro ? ctx : Value {};
+}
+
+void Callable::marker () const {
+    mo.marker();
+    mark(code);
+    mark(pos);
+    mark(kw);
+}
 
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();

@@ -1,4 +1,4 @@
-// exec.cpp - importing, loading, and bytecode execution
+// load.cpp - importing and loading bytecodes
 
 #define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
@@ -333,40 +333,9 @@ struct Loader {
 
 using namespace Monty;
 
+// TODO placed here iso in call.cpp because it needs to know the QstrPool type
 auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
-}
-
-auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
-    auto ctx = Interp::context;
-    auto coro = code.isGenerator();
-    if (coro)
-        ctx = new Context;
-
-    ctx->enter(*this);
-
-    auto nPos = code.numArgs(0);
-    auto nDef = code.numArgs(1);
-    auto nKwo = code.numArgs(2);
-
-    for (uint32_t i = 0; i < nPos; ++i)
-        if ((int) i < argc)
-            ctx->fastSlot(i) = vec[args+i];
-        else if (pos != nullptr && i < nDef + pos->fill)
-            //ctx->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
-            ctx->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
-
-    if (code.hasVarArgs())
-        ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
-
-    return coro ? ctx : Value {};
-}
-
-void Callable::marker () const {
-    mo.marker();
-    mark(code);
-    mark(pos);
-    mark(kw);
 }
 
 auto Monty::loadModule (uint8_t const* addr) -> Module* {
