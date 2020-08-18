@@ -12,7 +12,7 @@
     #define PINS_NETWORK PinA<7>, PinA<6>, PinA<5>, PinA<4>
 #endif
 
-#if BOARD_discovery_f4 || STM32L073xx || STM32L412xx
+#if BOARD_discovery_f4 || STM32L073xx || STM32L4
     #define PINS_CONSOLE PinA<2>, PinA<3>
 #elif STM32H743xx // nucleo-144
     #define PINS_CONSOLE PinD<8>, PinD<9>
@@ -30,6 +30,8 @@
 
 #if STM32F1 || INCLUDE_NETWORK
     #define MEM_BYTES (12*1024) // e.g. Blue Pill
+#elif STM32L412xx
+    #define MEM_BYTES (24*1024) // will fit in ≥ 32 KB ram // FIXME, it's 40!
 #else
-    #define MEM_BYTES (32*1024) // will fit in ≥ 48 KB ram
+    #define MEM_BYTES (32*1024) // will fit in ≥ 40 KB ram
 #endif

@@ -26,6 +26,7 @@ int main () {
     // this leaves 16 KB on a Blue Pill, and 192 KB on an F4 Discovery
     extern uint8_t _estack [];
     auto bcData = _estack - 0x1000;
+    //printf("bytecode at 0x%p\n", bcData);
 
     auto init = Monty::loadModule("__main__", bcData);
     if (init == nullptr)

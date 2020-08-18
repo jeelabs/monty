@@ -9,7 +9,7 @@
 
 using namespace Monty;
 
-UartDev< PINS_CONSOLE > console;
+UartBufDev< PINS_CONSOLE > console;
 
 int printf (char const* fmt, ...) {
     va_list ap; va_start(ap, fmt);

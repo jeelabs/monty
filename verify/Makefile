@@ -6,19 +6,26 @@ BOARD ?= disco_f407vg
 ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
 tty = /dev/cu.usbmodemDDD8B7B83
-ram = 0x20004000
+ram = 0x20004000 # 20 kB
 else ifeq ($(BOARD),genericSTM32F103RC-enc28j60)
 gdb = /dev/cu.usbmodemE2C2B4DF1
 tty = /dev/cu.usbmodemE2C2B4DF3
-ram = 0x2000B000
+ram = 0x2000B000 # 48 kB
 else ifeq ($(BOARD),genericSTM32F103ZE-enc28j60)
 gdb = /dev/cu.usbmodemE4D3BFC11
 tty = /dev/cu.usbmodemE4D3BFC13
-ram = 0x2000F000
+ram = 0x2000F000 # 64 kB
 else ifeq ($(BOARD),disco_f407vg)
 tty = /dev/cu.usbmodem1462203
-ram = 0x2001F000
+ram = 0x2001F000 # 192 kB
+else ifeq ($(BOARD),nucleo_l412kb)
+tty = /dev/cu.usbmodem1461103
+ram = 0x20007000 # TODO 0x20009000 # 40 kB
+else ifeq ($(BOARD),nucleo_l432kc)
+tty = /dev/cu.usbmodem1461103
+ram = 0x2000B000 # 48 kB
 endif
+
 
 exe = ../.pio/build/$(BOARD)
 
