@@ -385,7 +385,7 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void op_CallMethodVarKw (int arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
@@ -411,7 +411,7 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void op_CallFunctionVarKw (int arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
     //CG1 op
     void op_YieldValue () {

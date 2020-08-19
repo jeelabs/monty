@@ -508,7 +508,7 @@ namespace Monty {
             : Dict (a), name (s), factory (f) {}
 
         auto call (Vector const& vec, int argc, int args) const -> Value override;
-        auto attr (char const* name, Value& self) const -> Value override {
+        auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
 

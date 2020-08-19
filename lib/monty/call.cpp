@@ -124,7 +124,7 @@ void Context::caught () {
     begin()[++spOff] = e.isNil() ? ep[3] : e;
 }
 
-auto Context::call (Vector const& vec, int argc, int args) const -> Value {
+auto Context::call (Vector const&, int, int) const -> Value {
     assert(false);
     return {};
 }

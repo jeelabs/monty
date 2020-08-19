@@ -444,7 +444,7 @@ struct Loader {
         }
     } prelude;
 
-    Callable* load (const uint8_t* data, int index =0) {
+    Callable* load (const uint8_t* data) {
         dp  = data;
         if (*dp++ != 'M')
             return 0; // incorrect file format

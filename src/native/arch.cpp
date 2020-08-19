@@ -57,7 +57,7 @@ static auto f_ticker (Vector const& ctx, int argc, int args) -> Value {
     return id;
 }
 
-static auto f_ticks (Vector const& ctx, int argc, int args) -> Value {
+static auto f_ticks (Vector const&, int, int) -> Value {
     uint32_t t = getTime();
     if (begin == 0)
         begin = t;

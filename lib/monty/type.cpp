@@ -167,7 +167,7 @@ auto Object::call (Vector const&, int, int) const -> Value {
     return {};
 }
 
-auto Object::unop (UnOp op) const -> Value {
+auto Object::unop (UnOp) const -> Value {
     Value v = this; v.dump("unop?"); assert(false);
     return {};
 }
@@ -229,7 +229,7 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
         default:
             break;
     }
-    assert(false);
+    (void) rhs; assert(false);
     return {}; // TODO
 }
 
@@ -238,7 +238,7 @@ Bytes::Bytes (void const* ptr, size_t len) {
     memcpy(begin(), ptr, len);
 }
 
-auto Bytes::hash (const uint8_t* p, size_t n) const -> uint32_t {
+auto Bytes::hash (const uint8_t*, size_t) const -> uint32_t {
     // see http://www.cse.yorku.ca/~oz/hash.html
     uint32_t h = 5381;
     for (auto b : *this)
@@ -497,13 +497,13 @@ static const Lookup::Item builtinsMap [] = {
 
 Lookup const Monty::builtins (builtinsMap, sizeof builtinsMap);
 
-static auto str_count (Vector const& vec, int argc, int args) -> Value {
+static auto str_count (Vector const&, int, int) -> Value {
     return 9; // TODO, hardcoded for features.py
 }
 
 static Function const f_str_count (str_count);
 
-static auto str_format (Vector const& vec, int argc, int args) -> Value {
+static auto str_format (Vector const&, int, int) -> Value {
     return 4; // TODO, hardcoded for features.py
 }
 
@@ -601,7 +601,7 @@ auto Str::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     return new Str (vec[args]);
 }
 
-auto Range::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Range::create (Vector const&, int, int, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
@@ -639,7 +639,7 @@ auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     return new Set (vec, argc, args);
 }
 
-auto Dict::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+auto Dict::create (Vector const&, int, int, Type const*) -> Value {
     // TODO
     return new Dict;
 }
