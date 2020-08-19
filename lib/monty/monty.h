@@ -51,6 +51,7 @@ namespace Monty {
     void setup (void* base, size_t size); // configure the memory pool
 
     auto avail () -> size_t; // free bytes between the object & vector areas
+    auto gcCheck () -> bool; // true when it's time to collect the garbage
 
     inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);
@@ -714,6 +715,8 @@ namespace Monty {
 
         static int setHandler (Value);
         bool isAlive () const;
+
+        void markAll (); // for gc
 
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* context;            // current context, if any

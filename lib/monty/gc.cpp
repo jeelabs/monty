@@ -273,6 +273,11 @@ namespace Monty {
         return (uintptr_t) objLow - (uintptr_t) vecHigh;
     }
 
+    auto gcCheck () -> bool {
+        auto total = (uintptr_t) limit - (uintptr_t) start;
+        return avail() < total / 4; // TODO crude
+    }
+
     void mark (Obj const& obj) {
         if (obj.isCollectable()) {
             auto p = obj2slot(obj);

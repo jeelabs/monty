@@ -208,12 +208,14 @@ class PyVM : public Interp {
     //CG1 op s
     void op_Jump (int arg) {
         ip += arg;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_PopJumpIfFalse (int arg) {
         if (!sp->truthy())
             ip += arg;
         --sp;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_JumpIfFalseOrPop (int arg) {
@@ -221,12 +223,14 @@ class PyVM : public Interp {
             ip += arg;
         else
             --sp;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_PopJumpIfTrue (int arg) {
         if (sp->truthy())
             ip += arg;
         --sp;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_JumpIfTrueOrPop (int arg) {
@@ -234,6 +238,7 @@ class PyVM : public Interp {
             ip += arg;
         else
             --sp;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
 
     //CG1 op q
@@ -354,6 +359,7 @@ class PyVM : public Interp {
         int ep = frame().ep;
         frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
+        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
 
     //CG1 op
@@ -770,14 +776,7 @@ class PyVM : public Interp {
                     assert(false);
                 }
             }
-#if 1
-            //printf("\tmarking ...\n");
-            mark(context);
-            for (size_t i = 0; i < MAX_HANDLERS; ++i)
-                handlers[i].marker();
-            sweep();
-            //compact();
-#endif
+
         } while (pending == 0);
 
         if (context == nullptr)
@@ -792,7 +791,7 @@ class PyVM : public Interp {
 
     void outer () {
         while (true) {
-            INNER_HOOK
+            INNER_HOOK              // optional, to simulate interrupts
 
             auto irq = nextPending();
             if (irq >= 0) {         // there's a pending soft-irq
@@ -806,7 +805,12 @@ class PyVM : public Interp {
 
             inner();                // go process lots of bytecodes
 
-          //gcCheck(true);          // collect garbage, if needed
+            if (gcCheck()) {
+                //printf("\tgc started ...\n");
+                markAll();
+                sweep();
+                compact();
+            }
         }
     }
 

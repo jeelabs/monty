@@ -168,6 +168,12 @@ bool Interp::isAlive () const {
     return false;
 }
 
+void Interp::markAll () {
+    mark(context);
+    for (size_t i = 0; i < MAX_HANDLERS; ++i)
+        handlers[i].marker();
+}
+
 void Interp::suspend (List& queue) {
     assert(tasks.pop(0).ifType<Context>() == context);
 
