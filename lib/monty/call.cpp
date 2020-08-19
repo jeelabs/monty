@@ -36,10 +36,7 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
 }
 
 void Callable::marker () const {
-    // FIXME mo.marker fails to mark the dict vals, ends up marking the keys ???
-    //mo.marker();
-    mark((Obj const&) mo);
-    //mark((Vector const&) mo);
+    mo.marker();
     mark(code);
     mark(pos);
     mark(kw);
@@ -88,9 +85,9 @@ Value Context::leave (Value v) {
             Interp::tasks.pop(0);
 
         // FIXME ...
-        //remove(0, fill); // delete last frame
-        //callee = nullptr;
-        //caller = nullptr;
+        remove(0, fill); // delete last frame
+        callee = nullptr;
+        caller = nullptr;
     }
 
     return r;
