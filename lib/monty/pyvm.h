@@ -485,16 +485,16 @@ class PyVM : public Interp {
             switch ((Op) *ip++) {
 
                 //CG< op-emit d
-                case Op::LoadNull: 
+                case Op::LoadNull:
                     op_LoadNull();
                     break;
-                case Op::LoadConstNone: 
+                case Op::LoadConstNone:
                     op_LoadConstNone();
                     break;
-                case Op::LoadConstFalse: 
+                case Op::LoadConstFalse:
                     op_LoadConstFalse();
                     break;
-                case Op::LoadConstTrue: 
+                case Op::LoadConstTrue:
                     op_LoadConstTrue();
                     break;
                 case Op::LoadConstString: {
@@ -502,7 +502,7 @@ class PyVM : public Interp {
                     op_LoadConstString(arg);
                     break;
                 }
-                case Op::LoadConstSmallInt: 
+                case Op::LoadConstSmallInt:
                     op_LoadConstSmallInt();
                     break;
                 case Op::LoadConstObj: {
@@ -525,19 +525,19 @@ class PyVM : public Interp {
                     op_DeleteFast(arg);
                     break;
                 }
-                case Op::DupTop: 
+                case Op::DupTop:
                     op_DupTop();
                     break;
-                case Op::DupTopTwo: 
+                case Op::DupTopTwo:
                     op_DupTopTwo();
                     break;
-                case Op::PopTop: 
+                case Op::PopTop:
                     op_PopTop();
                     break;
-                case Op::RotTwo: 
+                case Op::RotTwo:
                     op_RotTwo();
                     break;
-                case Op::RotThree: 
+                case Op::RotThree:
                     op_RotThree();
                     break;
                 case Op::Jump: {
@@ -605,10 +605,10 @@ class PyVM : public Interp {
                     op_StoreAttr(arg);
                     break;
                 }
-                case Op::LoadSubscr: 
+                case Op::LoadSubscr:
                     op_LoadSubscr();
                     break;
-                case Op::StoreSubscr: 
+                case Op::StoreSubscr:
                     op_StoreSubscr();
                     break;
                 case Op::BuildSlice: {
@@ -636,7 +636,7 @@ class PyVM : public Interp {
                     op_BuildMap(arg);
                     break;
                 }
-                case Op::StoreMap: 
+                case Op::StoreMap:
                     op_StoreMap();
                     break;
                 case Op::SetupExcept: {
@@ -649,13 +649,13 @@ class PyVM : public Interp {
                     op_PopExceptJump(arg);
                     break;
                 }
-                case Op::RaiseLast: 
+                case Op::RaiseLast:
                     op_RaiseLast();
                     break;
-                case Op::RaiseObj: 
+                case Op::RaiseObj:
                     op_RaiseObj();
                     break;
-                case Op::RaiseFrom: 
+                case Op::RaiseFrom:
                     op_RaiseFrom();
                     break;
                 case Op::UnwindJump: {
@@ -663,7 +663,7 @@ class PyVM : public Interp {
                     op_UnwindJump(arg);
                     break;
                 }
-                case Op::LoadBuildClass: 
+                case Op::LoadBuildClass:
                     op_LoadBuildClass();
                     break;
                 case Op::LoadMethod: {
@@ -701,16 +701,16 @@ class PyVM : public Interp {
                     op_CallFunctionVarKw(arg);
                     break;
                 }
-                case Op::YieldValue: 
+                case Op::YieldValue:
                     op_YieldValue();
                     break;
-                case Op::ReturnValue: 
+                case Op::ReturnValue:
                     op_ReturnValue();
                     break;
-                case Op::GetIter: 
+                case Op::GetIter:
                     op_GetIter();
                     break;
-                case Op::GetIterStack: 
+                case Op::GetIterStack:
                     op_GetIterStack();
                     break;
                 case Op::ForIter: {

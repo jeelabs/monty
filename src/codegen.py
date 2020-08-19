@@ -157,7 +157,7 @@ def OP(block, typ='', multi=0):
         opmulti.append('    break;')
         opmulti.append('}')
     else:
-        opdefs.append('case Op::%s: %s' % (op, '{' if arg else ''))
+        opdefs.append('case Op::%s:%s' % (op, ' {' if arg else ''))
         if arg:
             opdefs.append('    %s = %s;' % (decl, arg))
         info = ', arg' if arg else ''
@@ -316,7 +316,7 @@ def processFile(path):
         print(path)
     # TODO only process files if they have changed
     with open(path, 'r') as f:
-        lines = [s.rstrip() for s in f]
+        lines = [s.rstrip('\r\n') for s in f]
     result = processLines(iter(lines))
     if result and result != lines:
         print('rewriting:', path)
