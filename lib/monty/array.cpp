@@ -7,17 +7,7 @@ using namespace Monty;
 
 void Monty::mark (Vector const& vec) {
     for (auto e : vec)
-        if (e.isObj())
-            mark(e.obj());
-}
-
-Tuple::Tuple (size_t n, Value const* vals) : fill (n) {
-    memcpy((Value*) data(), vals, n * sizeof *vals);
-}
-
-auto Tuple::getAt (Value k) const -> Value {
-    assert(k.isInt());
-    return data()[k];
+        e.marker();
 }
 
 struct Accessor {
@@ -217,6 +207,13 @@ auto Dict::at (Value k) const -> Value {
     auto pos = find(k);
     return pos < n ? (*this)[n+pos] :
             chain != nullptr ? chain->getAt(k) : Value {};
+}
+
+void Dict::marker () const {
+    auto& v = (Vector const&) *this;
+    for (size_t i = 0; i < 2 * fill; ++i) // note: twice the fill
+        v[i].marker();
+    mark(chain);
 }
 
 auto Type::call (Vector const& vec, int argc, int args) const -> Value {

@@ -36,7 +36,10 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
 }
 
 void Callable::marker () const {
-    mo.marker();
+    // FIXME mo.marker fails to mark the dict vals, ends up marking the keys ???
+    //mo.marker();
+    mark((Obj const&) mo);
+    //mark((Vector const&) mo);
     mark(code);
     mark(pos);
     mark(kw);
@@ -83,6 +86,11 @@ Value Context::leave (Value v) {
         Interp::context = caller; // last frame, drop context, restore caller
         if (this == &Interp::tasks[0].obj())
             Interp::tasks.pop(0);
+
+        // FIXME ...
+        //remove(0, fill); // delete last frame
+        //callee = nullptr;
+        //caller = nullptr;
     }
 
     return r;
@@ -131,8 +139,8 @@ auto Context::next () -> Value {
 
 void Context::marker () const {
     List::marker();
+    event.marker();
     mark(callee);
-    mark(event);
     mark(caller);
 }
 
@@ -161,13 +169,11 @@ bool Interp::isAlive () const {
 }
 
 void Interp::suspend (List& queue) {
-    auto n = queue.size();
-    // TODO main task should be on the tasks list
-    assert(n == 0 || tasks[0].ifType<Context>() == context);
+    assert(tasks.pop(0).ifType<Context>() == context);
 
+    auto n = queue.size(); // TODO use append()
     queue.insert(n);
     queue[n] = context;
-    tasks.pop(0);
 
     auto ctx = context;
     context = context->caller;

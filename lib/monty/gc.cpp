@@ -1,9 +1,22 @@
 // gc.cpp - objects and vectors with garbage collection
 
+#define VERBOSE_GC 0 // show garbage collector activity
+
 #include "monty.h"
 #include <cassert>
 
 using namespace Monty;
+
+#if VERBOSE_GC
+#define D(x) { x; }
+static void V (Obj const& o, char const* s) {
+    Value x {(Object const&) o};
+    x.dump(s);
+}
+#else
+#define D(...)
+#define V(...)
+#endif
 
 struct ObjSlot {
     auto next () const -> ObjSlot* { return (ObjSlot*) (flag & ~1); }
@@ -261,27 +274,33 @@ namespace Monty {
     }
 
     void mark (Obj const& obj) {
-        auto p = obj2slot(obj);
-        if (p != nullptr) {
-            if (p->isMarked())
-                return;
-            p->setMark();
+        if (obj.isCollectable()) {
+            auto p = obj2slot(obj);
+            if (p != nullptr) {
+                if (p->isMarked())
+                    return;
+                V(obj, "\t mark");
+                p->setMark();
+            }
         }
         obj.marker();
     }
 
     void sweep () {
+        D( printf("\tsweeping ...\n"); )
         for (auto slot = objLow; slot != nullptr; slot = slot->chain)
             if (slot->isMarked())
                 slot->clearMark();
             else if (!slot->isFree()) {
                 auto q = &slot->obj;
+                V(*q, "\t delete");
                 delete q; // weird: must be a ptr *variable* for stm32 builds
                 assert(slot->isFree());
             }
     }
 
     void compact () {
+        D( printf("\tcompacting ...\n"); )
         auto newHigh = (VecSlot*) start;
         size_t n;
         for (auto slot = newHigh; slot < vecHigh; slot += n)

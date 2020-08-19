@@ -6,7 +6,7 @@
 
 #include <cstdio>
 
-static uint8_t myMem [512*1024]; // TODO don't gc too soon ...
+static uint8_t myMem [32*1024];
 
 static const uint8_t* loadBytecode (const char* fname) {
     FILE* fp = fopen(fname, "rb");

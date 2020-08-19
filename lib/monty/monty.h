@@ -102,7 +102,7 @@ namespace Monty {
         auto isNil () const -> bool { return v == 0; }
         auto isInt () const -> bool { return (v&1) == Int; }
         auto isStr () const -> bool { return (v&3) == Str; }
-        auto isObj () const -> bool { return (v&3) == Nil && v != 0; }
+        auto isObj () const -> bool { return (v&3) == 0 && v != 0; }
 
         inline auto isNull  () const -> bool;
         inline auto isFalse () const -> bool;
@@ -116,6 +116,8 @@ namespace Monty {
 
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
+
+        inline void marker () const;
         void dump (char const* msg =nullptr) const;
 
         static inline auto asBool (bool f) -> Value;
@@ -130,8 +132,6 @@ namespace Monty {
             const void* p;
         };
     };
-
-    inline void mark (Value v) { if (v.isObj()) mark(v.obj()); }
 
     extern Value const Null;
     extern Value const False;
@@ -211,6 +211,8 @@ namespace Monty {
         virtual auto setAt (Value, Value) -> Value;
         virtual auto next  () -> Value;
     };
+
+    void Value::marker () const { if (isObj()) mark(obj()); }
 
     //CG3 type <none>
     struct None : Object {
@@ -385,6 +387,8 @@ namespace Monty {
         auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
 
+        void marker () const override;
+
         size_t const fill;
 
         static Tuple const emptyObj;
@@ -483,7 +487,7 @@ namespace Monty {
         auto getAt (Value k) const -> Value override { return at(k); }
         auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
 
-        void marker () const override { Set::marker(); mark(chain); }
+        void marker () const override;
     // TODO protected:
         Object const* chain {nullptr};
     };
@@ -564,7 +568,7 @@ namespace Monty {
 
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
-        void marker () const override { mark(meth); mark(self); }
+        void marker () const override { meth.marker(); self.marker(); }
 
         Value meth;
         Value self;
@@ -579,7 +583,7 @@ namespace Monty {
 
         Value attr (char const* s, Value&) const override { return getAt(s); }
 
-        void marker () const override { Dict::marker(); mark(qp); }
+        void marker () const override { Dict::marker(); qp.marker(); }
 
         Value qp;
     };
@@ -603,7 +607,7 @@ namespace Monty {
             return (uint8_t const*) (this + 1) + code;
         }
 
-        void marker () const override {} // TODO
+        void marker () const override { mark(constObjs); }
     private:
         Bytecode () {}
 

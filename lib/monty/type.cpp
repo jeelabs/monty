@@ -351,7 +351,21 @@ auto Lookup::getAt (Value k) const -> Value {
 
 void Lookup::marker () const {
     for (size_t i = 0; i < count; ++i)
-        mark(items[i].v);
+        items[i].v.marker();
+}
+
+Tuple::Tuple (size_t n, Value const* vals) : fill (n) {
+    memcpy((Value*) data(), vals, n * sizeof *vals);
+}
+
+auto Tuple::getAt (Value k) const -> Value {
+    assert(k.isInt());
+    return data()[k];
+}
+
+void Tuple::marker () const {
+    for (size_t i = 0; i < fill; ++i)
+        data()[i].marker();
 }
 
 Type const Object::info ("<object>");

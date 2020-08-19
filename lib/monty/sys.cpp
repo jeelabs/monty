@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = "v0.93-5-g17526bd";
+constexpr auto VERSION = "v0.93-6-g9834126";
 
 static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
     auto queue = &Interp::tasks;
@@ -19,9 +19,9 @@ static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
 static Function const fo_suspend (f_suspend);
 
 static Lookup::Item const lo_sys [] = {
-    { "suspend", &fo_suspend },
-    { "tasks", &Interp::tasks },
-    //{ "modules", &Interp::modules },
+    { "suspend", fo_suspend },
+    { "tasks", Interp::tasks },
+    //{ "modules", Interp::modules },
     { "implementation", "monty" },
     { "version", VERSION },
 };

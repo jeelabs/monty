@@ -68,8 +68,8 @@ static Function const fo_ticker (f_ticker);
 static Function const fo_ticks (f_ticks);
 
 static Lookup::Item const lo_machine [] = {
-    { "ticker", &fo_ticker },
-    { "ticks", &fo_ticks },
+    { "ticker", fo_ticker },
+    { "ticks", fo_ticks },
 };
 
 static Lookup const ma_machine (lo_machine, sizeof lo_machine);

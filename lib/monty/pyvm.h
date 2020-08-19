@@ -770,11 +770,13 @@ class PyVM : public Interp {
                     assert(false);
                 }
             }
-#if 0
+#if 1
+            //printf("\tmarking ...\n");
             mark(context);
-            tasks.marker();
+            for (size_t i = 0; i < MAX_HANDLERS; ++i)
+                handlers[i].marker();
             sweep();
-            compact();
+            //compact();
 #endif
         } while (pending == 0);
 
