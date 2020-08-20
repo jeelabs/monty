@@ -9,8 +9,8 @@ except AttributeError:
 #
 zero = 0
 three = 3
-print(int("1"))
-print(int("2"))
+print("1")
+print("2")
 print(three)
 print("{}".format(4))
 five = 25 // 5
@@ -38,11 +38,11 @@ for i in range(13):
 print(a[11])
 print(a[-1])
 str = "0123456789"
-print(int(str[1] + str[3]))
+print(str[1] + str[3])
 
 
 def p(s):
-    print(int(s))
+    print(s)
 
 
 p("14")
@@ -75,9 +75,9 @@ if 20 > 30:
 else:
     a = "2"
 if 0 < 4:
-    print(int(a + "0"))
+    print(a + "0")
 else:
-    print(int(a + "1"))
+    print(a + "1")
 a = [20, 21, 22, 23, 24]
 for i in a:
     if i < 21:

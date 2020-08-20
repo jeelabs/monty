@@ -426,8 +426,27 @@ auto         Type::type () const -> Type const& { return info; }
 
 static auto bi_print (Vector const& vec, int argc, int args) -> Value {
     Buffer buf; // TODO
-    for (int i = 0; i < argc; ++i)
-        buf << vec[args+i];
+    for (int i = 0; i < argc; ++i) {
+        // TODO ugly logic to avoid quotes and escapes for string args
+        //  this only applies to the top level, not inside lists, etc.
+        char const* s = nullptr;
+        Value v = vec[args+i];
+        if (v.isStr())
+            s = v;
+        else {
+            auto p = v.ifType<Str>();
+            if (p != nullptr)
+                s = *p;
+        }
+        // if it's a plain string, print as is, else print via repr()
+        if (s != nullptr) {
+            if (buf.sep)
+                buf.putc(' ');
+            buf.puts(s);
+            buf.sep = true;
+        } else
+            buf << v;
+    }
     buf.putc('\n');
     return {};
 }

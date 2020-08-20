@@ -359,7 +359,7 @@ namespace Monty {
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (char const* fmt, ...);
 
-        auto operator<< (Value v) -> Buffer&;
+        auto operator<< (Value v) -> Buffer&; // TODO get rid of this C++'ism
 
         bool sep {false};
     protected:
