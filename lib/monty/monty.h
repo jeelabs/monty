@@ -538,6 +538,10 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
 
         auto type () const -> Type const& override { return *(Type*) chain; }
+        auto attr (char const* name, Value& self) const -> Value override {
+            self = this;
+            return Dict::attr(name, self);
+        }
 
     private:
         Inst (Vector const& vec, int argc, int args, Class const& cls);

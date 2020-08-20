@@ -3,4 +3,4 @@
 /NOCOMMIT/
 CMakeLists.txt
 sdkconfig
-src/version.h
+*.mpy

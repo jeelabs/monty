@@ -404,7 +404,20 @@ class PyVM : public Interp {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*context, arg, context->spOff + 1);
+            // TODO ugly, but not placed in BoundMeth::call to avoid nesting,
+            //  as then a bound-bound method would overwrite TWO stack items?
+            auto f = *sp;
+            auto num = arg;
+            auto pos = context->spOff + 1;
+            auto p = f.ifType<BoundMeth>();
+            if (p != nullptr) { // yep, it's a bound method, expand args by 1
+                assert(pos > 0);
+                ++num;
+                --pos;
+                *sp = p->self;
+                f = p->meth;
+            }
+            return f.obj().call(*context, num, pos);
         });
         if (!v.isNil() && sp >= context->spBase())
             *sp = v;

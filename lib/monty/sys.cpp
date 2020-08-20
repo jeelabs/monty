@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = "v0.93-22-gf293afb";
+constexpr auto VERSION = "v0.93-23-g206d1b2";
 
 static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
     auto queue = &Interp::tasks;
