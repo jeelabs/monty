@@ -13,8 +13,12 @@ void archInit () {
 }
 
 void archIdle () {
-    timespec ts { 0, 10000 };
-    nanosleep(&ts, &ts); // 10 µs, i.e. 1% of ticks' 1 ms resolution
+    timespec ts { 0, 100000 };
+    nanosleep(&ts, &ts); // 100 µs, i.e. 10% of ticks' 1 ms resolution
+}
+
+void archMode (RunMode) {
+    // whoops, no LEDs ...
 }
 
 auto archDone (char const* msg) -> int {

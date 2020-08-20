@@ -806,10 +806,11 @@ class PyVM : public Interp {
             inner();                // go process lots of bytecodes
 
             if (gcCheck()) {
-                //printf("\tgc started ...\n");
+                archMode(RunMode::GC);
                 markAll();
                 sweep();
                 compact();
+                archMode(RunMode::Run);
             }
         }
     }

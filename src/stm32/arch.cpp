@@ -9,6 +9,22 @@
 
 using namespace Monty;
 
+#if BOARD_discovery_f4
+static PinD<12> ledG;  // green = running
+static PinD<13> ledO;  // orange = collecting
+static PinD<14> ledR;  // red = halted
+static PinD<15> ledB;  // blue = idle
+
+static void initLeds () {
+    ledG.mode(Pinmode::out);
+    ledO.mode(Pinmode::out);
+    ledR.mode(Pinmode::out);
+    ledB.mode(Pinmode::out);
+}
+#else
+static void initLeds () {}
+#endif
+
 UartBufDev< PINS_CONSOLE > console;
 
 int printf (char const* fmt, ...) {
@@ -31,15 +47,29 @@ void archInit () {
     console.baud(115200, fullSpeedClock() / UART_BUSDIV);
     wait_ms(200);
     printf("\xFF" "main\n"); // insert marker for serial capture by dog.c
+    initLeds();
+    archMode(RunMode::Run);
 }
 
 void archIdle () {
+    archMode(RunMode::Idle);
     asm ("wfi");
+    archMode(RunMode::Run);
+}
+
+void archMode (RunMode r) {
+#if BOARD_discovery_f4
+    ledG = ((int) r >> 0) & 1;
+    ledO = ((int) r >> 1) & 1;
+    ledR = ((int) r >> 2) & 1;
+    ledB = ((int) r >> 3) & 1;
+#endif
 }
 
 auto archDone (char const* msg) -> int {
     printf("%s\n", msg != nullptr ? msg : "done");
     //while (!console.xmit.empty()) {}
+    archMode(RunMode::Done);
     while (true) {}
     //return msg == nullptr ? 0 : 1);
 }

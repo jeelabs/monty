@@ -166,6 +166,7 @@ bool Interp::isAlive () const {
 }
 
 void Interp::markAll () {
+    //printf("\tgc started ...\n");
     mark(context);
     for (size_t i = 0; i < MAX_HANDLERS; ++i)
         handlers[i].marker();

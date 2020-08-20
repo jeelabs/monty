@@ -3,6 +3,10 @@
 
 using namespace Monty;
 
+void archMode (RunMode) {
+    // whoops, no LEDs ...
+}
+
 static auto bi_blah (Vector const& vec, int argc, int args) -> Value {
     return argc;
 }

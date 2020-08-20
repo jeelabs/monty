@@ -13,7 +13,7 @@
 #endif
 
 #if BOARD_discovery_f4 || STM32L073xx || STM32L4
-    #define PINS_CONSOLE PinA<2>, PinA<3>
+    #define PINS_CONSOLE PinA<2>, PinA<3> // TODO rx on PA15 for L432?
 #elif STM32H743xx // nucleo-144
     #define PINS_CONSOLE PinD<8>, PinD<9>
 #elif CONFIG == GOLD_DRAGON
