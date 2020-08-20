@@ -20,7 +20,7 @@ tty = /dev/cu.usbmodem1462203
 ram = 0x2001F000 # 192 kB
 else ifeq ($(BOARD),nucleo_l412kb)
 tty = /dev/cu.usbmodem1461103
-ram = 0x20007000 # TODO 0x20009000 # 40 kB
+ram = 0x20009000 # 40 kB
 else ifeq ($(BOARD),nucleo_l432kc)
 tty = /dev/cu.usbmodem1461103
 ram = 0x2000B000 # 48 kB

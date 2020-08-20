@@ -30,8 +30,6 @@
 
 #if STM32F1 || INCLUDE_NETWORK
     #define MEM_BYTES (12*1024) // e.g. Blue Pill
-#elif STM32L412xx
-    #define MEM_BYTES (24*1024) // will fit in ≥ 32 KB ram // FIXME, it's 40!
 #else
     #define MEM_BYTES (32*1024) // will fit in ≥ 40 KB ram
 #endif
