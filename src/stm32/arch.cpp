@@ -70,7 +70,7 @@ auto archDone (char const* msg) -> int {
     printf("%s\n", msg != nullptr ? msg : "done");
     //while (!console.xmit.empty()) {}
     archMode(RunMode::Done);
-    while (true) {}
+    while (true) asm ("wfi");
     //return msg == nullptr ? 0 : 1);
 }
 
