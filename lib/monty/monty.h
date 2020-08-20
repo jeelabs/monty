@@ -563,58 +563,55 @@ namespace Monty {
         Prim func;
     };
 
-    struct MethodBase {
-        virtual Value call (Object&, Vector const&, int, int) const =0;
+    // Horrendous C++ ... this wraps several different argument calls into a
+    // virtual MethodBase object, which Method can then call in a generic way.
+    // It's probably just a neophyte's version of STL's <functional> types ...
+    // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
 
-        template< typename T >
-        static Value argConv (auto (T::*meth)() const -> Value,
-                        Object& self, Vector const&, int, int) {
-            return (((T&) self).*meth)();
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)() -> Value,
-                        Object& self, Vector const&, int, int) {
-            return (((T&) self).*meth)();
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)(Value) const -> Value,
-                        Object& self, Vector const& vec, int, int args) {
-            return (((T&) self).*meth)(vec[args+1]);
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)(Value) -> Value,
-                        Object& self, Vector const& vec, int, int args) {
-            return (((T&) self).*meth)(vec[args+1]);
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)(int) -> Value,
-                        Object& self, Vector const& vec, int, int args) {
-            return (((T&) self).*meth)(vec[args+1]);
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)(const char *) -> Value,
-                        Object& self, Vector const& vec, int, int args) {
-            return (((T&) self).*meth)(vec[args+1]);
-        }
-        template< typename T >
-        static Value argConv (auto (T::*meth)(Vector const&,int,int) -> Value,
-                        Object& self, Vector const& vec, int argc, int args) {
-            return (((T&) self).*meth)(vec, argc, args);
-        }
-        template< typename T >
-        static Value argConv (void (T::*meth)(Value),
-                        Object& self, Vector const& vec, int, int args) {
-            (((T&) self).*meth)(vec[args+1]);
-            return {};
-        }
+    template< typename T >
+    auto argConv (auto (T::*meth)() -> Value,
+                    Object& self, Vector const&, int, int) -> Value {
+        return (((T&) self).*meth)();
+    }
+    template< typename T >
+    auto argConv (auto (T::*meth)(Value) -> Value,
+                    Object& self, Vector const& vec, int, int args) -> Value {
+        return (((T&) self).*meth)(vec[args+1]);
+    }
+    template< typename T >
+    auto argConv (void (T::*meth)(Value),
+                    Object& self, Vector const& vec, int, int args) -> Value {
+        (((T&) self).*meth)(vec[args+1]);
+        return {};
+    }
+    template< typename T >
+    auto argConv (auto (T::*meth)(int) -> Value,
+                    Object& self, Vector const& vec, int, int args) -> Value {
+        return (((T&) self).*meth)(vec[args+1]);
+    }
+    template< typename T >
+    auto argConv (auto (T::*meth)(const char *) -> Value,
+                    Object& self, Vector const& vec, int, int args) -> Value {
+        return (((T&) self).*meth)(vec[args+1]);
+    }
+    template< typename T >
+    auto argConv (auto (T::*meth)(Vector const&,int,int) -> Value,
+                    Object& self, Vector const& vec, int argc, int args) -> Value {
+        return (((T&) self).*meth)(vec, argc, args);
+    }
+
+    // Method objects point to objects of this base class to make virtual calls
+    struct MethodBase {
+        virtual auto call (Object&, Vector const&, int, int) const -> Value = 0;
     };
 
     template< typename M >
     struct MethodDef : MethodBase {
         constexpr MethodDef (M memberPtr) : methPtr (memberPtr) {}
 
-        Value call (Object& self, Vector const& vec, int argc, int args) const override {
-            return MethodBase::argConv(methPtr, self, vec, argc, args);
+        auto call (Object& self,
+                Vector const& vec, int argc, int args) const -> Value override {
+            return argConv(methPtr, self, vec, argc, args);
         }
 
     private:
@@ -629,7 +626,7 @@ namespace Monty {
         constexpr Method (MethodBase const& m) : meth (m) {}
 
         auto call (Vector const& vec, int argc, int args) const -> Value override {
-            return meth.call(vec[args+0].asObj(), vec, argc, args);
+            return meth.call(vec[args+0].obj(), vec, argc, args);
         }
 
         template< typename M >
