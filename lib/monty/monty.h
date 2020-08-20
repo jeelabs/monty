@@ -433,6 +433,7 @@ namespace Monty {
         List (Vector const& vec, int argc, int args);
 
         auto pop (int idx) -> Value;
+        void append (Value v);
 
         auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
@@ -553,6 +554,22 @@ namespace Monty {
         using Prim = auto (*)(Vector const&,int,int) -> Value;
 
         constexpr Function (Prim f) : func (f) {}
+
+        auto call (Vector const& vec, int argc, int args) const -> Value override {
+            return func(vec, argc, args);
+        }
+
+    protected:
+        Prim func;
+    };
+
+    //CG3 type <method>
+    struct Method : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        using Prim = auto (*)(Vector const&,int,int) -> Value;
+
+        constexpr Method (Prim f) : func (f) {}
 
         auto call (Vector const& vec, int argc, int args) const -> Value override {
             return func(vec, argc, args);

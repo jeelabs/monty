@@ -137,16 +137,14 @@ static Value f_ifconfig (int argc, Value argv []) {
 }
 
 struct Socket: Object {
-    static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+    static auto create (Vector const&, int, int, Type const*) -> Value;
     static Lookup const attrs;
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    Socket (tcp_pcb* p) : socket (p), readQueue (0, 0), writeQueue (0, 0) {
+    Socket (tcp_pcb* p) : socket (p) {
         tcp_arg(socket, this);
     }
-
-    void mark (void (*gc)(const Object&)) const override;
 
     Value bind (int arg);
     Value connect (int argc, Value argv []);
@@ -168,7 +166,7 @@ private:
     Array* recvBuf = 0;
 };
 
-Value Socket::create (const Type&, int argc, Value argv[]) {
+auto Socket::create (Vector const&, int argc, int, Type const*) -> Value {
     assert(argc == 1);
     auto p = tcp_new();
     assert(p != 0);
@@ -176,16 +174,15 @@ Value Socket::create (const Type&, int argc, Value argv[]) {
 }
 
 void Socket::marker () const {
-    mark(readQueue);
-    mark(writeQueue);
+    readQueue.marker();
+    writeQueue.marker();
+    toSend.marker();
     mark(accepter);
     mark(recvBuf);
-    if (toSend.isObj())
-        mark(toSend.obj());
 }
 
 Value Socket::attr (const char* key, Value& self) const {
-    return attrs.at(key);
+    return attrs.getAt(key);
 }
 
 Value Socket::bind (int arg) {
@@ -204,19 +201,19 @@ Value Socket::connect (int argc, Value argv []) {
         auto& self = *(Socket*) arg;
         assert(self.socket == tpcb);
         assert(self.readQueue.len() > 0);
-        Context::tasks.append(self.readQueue.pop(0));
+        Interp::tasks.append(self.readQueue.pop(0));
         return ERR_OK;
     });
     (void) r; assert(r == 0);
 
-    Context::suspend(readQueue);
+    Interp::suspend(readQueue);
     return Value ();
 }
 
 Value Socket::listen (int argc, Value argv []) {
     assert(argc == 3 && argv[2].isInt());
     auto& cao = argv[1].asType<Callable>();
-    assert(cao.isCoro());
+    assert(cao.code.isGenerator());
 
     socket = tcp_listen_with_backlog(socket, argv[2]);
     assert(socket != NULL);
@@ -226,10 +223,13 @@ Value Socket::listen (int argc, Value argv []) {
         auto& self = *(Socket*) arg;
         assert(self.accepter != 0);
 
-        Value argv = new Socket (newpcb);
-        Value v = self.accepter->call(1, &argv);
+        Vector argv;
+        argv.insert(0);
+        argv[0] = new Socket (newpcb);
+
+        Value v = self.accepter->call(argv, 1, 0);
         assert(v.isObj());
-        Context::tasks.append(v);
+        Interp::tasks.append(v);
         return ERR_OK;
     });
 
@@ -239,7 +239,7 @@ Value Socket::listen (int argc, Value argv []) {
 Value Socket::read (Value arg) {
     recvBuf = arg.isInt() ? new Array ('B', arg) : &arg.asType<Array>();
     assert(recvBuf->isBuffer());
-    Context::suspend(readQueue);
+    Interp::suspend(readQueue);
 
     tcp_recv(socket, [](void *arg, tcp_pcb *tpcb, pbuf *p, err_t err) -> err_t {
         auto& self = *(Socket*) arg;
@@ -251,7 +251,7 @@ Value Socket::read (Value arg) {
             assert(n > 0);
             tcp_recved(tpcb, n);
             pbuf_free(p);
-            Context::wakeUp(self.readQueue.pop(0), self.recvBuf);
+            Interp::wakeUp(self.readQueue.pop(0), self.recvBuf);
         } else
             self.close();
         return ERR_OK;
@@ -268,8 +268,8 @@ bool Socket::sendIt (Value arg) {
         n = strlen(arg);
     } else {
         auto& o = arg.asType<Bytes>();
-        p = (const uint8_t*) o;
-        n = o.len();
+        p = o.begin()l
+        n = o.size();
     }
     if (n + 50 > tcp_sndbuf(socket)) // check for some spare room, just in case
         return false;
@@ -292,7 +292,7 @@ Value Socket::write (Value arg) {
 
     toSend = arg;
     printf("suspending write\n");
-    Context::suspend(writeQueue);
+    Interp::suspend(writeQueue);
 
     tcp_sent(socket, [](void *arg, tcp_pcb *tpcb, uint16_t len) -> err_t {
         printf("sent %p %d\n", arg, len);
@@ -303,7 +303,7 @@ Value Socket::write (Value arg) {
                 tcp_sent(tpcb, 0);
                 self.toSend = Value ();
                 assert(self.writeQueue.len() > 0);
-                Context::tasks.append(self.writeQueue.pop(0));
+                Interp::tasks.append(self.writeQueue.pop(0));
             }
         }
         return ERR_OK;
@@ -322,52 +322,52 @@ Value Socket::close () {
     }
     toSend = Value ();
     if (readQueue.len() > 0)
-        readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
+        readQueue.pop(0); // TODO throw Interp::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
     if (writeQueue.len() > 0)
-        writeQueue.pop(0); // TODO throw Context::tasks.append(writeQueue.pop(0));
+        writeQueue.pop(0); // TODO throw Interp::tasks.append(writeQueue.pop(0));
     assert(writeQueue.len() == 0);
     return Value ();
 }
 
-static const auto m_bind = MethObj::wrap(&Socket::bind);
-static const MethObj mo_bind = m_bind;
+static const auto m_bind = Method::wrap(&Socket::bind);
+static const Method mo_bind = m_bind;
 
-static const auto m_connect = MethObj::wrap(&Socket::connect);
-static const MethObj mo_connect = m_connect;
+static const auto m_connect = Method::wrap(&Socket::connect);
+static const Method mo_connect = m_connect;
 
-static const auto m_listen = MethObj::wrap(&Socket::listen);
-static const MethObj mo_listen = m_listen;
+static const auto m_listen = Method::wrap(&Socket::listen);
+static const Method mo_listen = m_listen;
 
-static const auto m_read = MethObj::wrap(&Socket::read);
-static const MethObj mo_read = m_read;
+static const auto m_read = Method::wrap(&Socket::read);
+static const Method mo_read = m_read;
 
-static const auto m_write = MethObj::wrap(&Socket::write);
-static const MethObj mo_write = m_write;
+static const auto m_write = Method::wrap(&Socket::write);
+static const Method mo_write = m_write;
 
-static const auto m_close = MethObj::wrap(&Socket::close);
-static const MethObj mo_close = m_close;
+static const auto m_close = Method::wrap(&Socket::close);
+static const Method mo_close = m_close;
 
 static const Lookup::Item socketMap [] = {
-    { "bind", &mo_bind },
-    { "connect", &mo_connect },
-    { "listen", &mo_listen },
-    { "read", &mo_read },
-    { "write", &mo_write },
-    { "close", &mo_close },
+    { "bind", mo_bind },
+    { "connect", mo_connect },
+    { "listen", mo_listen },
+    { "read", mo_read },
+    { "write", mo_write },
+    { "close", mo_close },
 };
 
-const Lookup SocketObj::attrs (socketMap, sizeof socketMap);
+const Lookup Socket::attrs (socketMap, sizeof socketMap);
 
-Type Socket::info ("<socket>", Socket::create, &Socket::attrs);
+Type const Socket::info ("<socket>", Socket::create, &Socket::attrs);
 
 const Function fo_ifconfig = f_ifconfig;
 const Function fo_poll = f_poll;
 
 static const Lookup::Item lo_network [] = {
-    { "ifconfig", &fo_ifconfig },
-    { "poll", &fo_poll },
-    { "socket", &Socket::info },
+    { "ifconfig", fo_ifconfig },
+    { "poll", fo_poll },
+    { "socket", Socket::info },
 };
 
 static const Lookup ma_network (lo_network, sizeof lo_network);

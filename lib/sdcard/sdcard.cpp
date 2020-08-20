@@ -16,14 +16,12 @@ static SdCard< decltype (spi) > sd;
 static FatFS< decltype (sd) > fs;
 
 struct File : Object {
-    static auto create (Context&,int,int,Type const* =nullptr) -> Value;
+    static auto create (Vector const&, int, int, Type const*) -> Value;
     static Lookup const attrs;
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    File (const char* s) : file (fs), readQueue (0, 0) {
-        limit = file.open(s);
-    }
+    File (const char* s) : file (fs), limit (file.open(s)) {}
 
     Value attr (const char* key, Value& self) const override;
 
@@ -37,13 +35,13 @@ private:
     size_t limit;
 };
 
-Value File::create (const Type&, int argc, Value argv[]) {
-    assert(argc == 2 && argv[1].isStr());
-    return new File (argv[1]);
+auto File::create (Vector const& vec, int argc, int args, Type const*) -> Value {
+    assert(argc == 2 && vec[args+1].isStr());
+    return new File (vec[args+1]);
 }
 
 Value File::attr (const char* key, Value& self) const {
-    return attrs.at(key);
+    return attrs.getAt(key);
 }
 
 Value File::read (int arg) {
@@ -57,11 +55,11 @@ Value File::read (int arg) {
     return {}; // TODO
 }
 
-static const auto m_size = MethObj::wrap(&File::size);
-static const MethObj mo_size = m_size;
+static const auto m_size = Method::wrap(&File::size);
+static const Method mo_size = m_size;
 
-static const auto m_read = MethObj::wrap(&File::read);
-static const MethObj mo_read = m_read;
+static const auto m_read = Method::wrap(&File::read);
+static const Method mo_read = m_read;
 
 static const Lookup::Item fileMap [] = {
     { "size", &mo_size },
@@ -70,7 +68,7 @@ static const Lookup::Item fileMap [] = {
 
 const Lookup File::attrs (fileMap, sizeof fileMap);
 
-Type File::info ("<file>", File::create, &File::attrs);
+Type const File::info ("<file>", File::create, &File::attrs);
 
 static Value f_init (int argc, Value argv []) {
     assert(argc == 1);
@@ -95,15 +93,15 @@ static Value f_sdwrite (int argc, Value argv []) {
     return {};
 }
 
-static const FunObj fo_init = f_init;
-static const FunObj fo_sdread = f_sdread;
-static const FunObj fo_sdwrite = f_sdwrite;
+static const Function fo_init = f_init;
+static const Function fo_sdread = f_sdread;
+static const Function fo_sdwrite = f_sdwrite;
 
 static const Lookup::Item lo_sdcard [] = {
-    { "init", &fo_init },
-    { "open", &File::info },
-    { "sdread", &fo_sdread },
-    { "sdwrite", &fo_sdwrite },
+    { "init", fo_init },
+    { "open", File::info },
+    { "sdread", fo_sdread },
+    { "sdwrite", fo_sdwrite },
 };
 
 static const Lookup ma_sdcard (lo_sdcard, sizeof lo_sdcard);

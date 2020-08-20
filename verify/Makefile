@@ -1,7 +1,7 @@
 #BOARD ?= bluepill_f103c8
-#BOARD ?= genericSTM32F103RC-enc28j60
+BOARD ?= genericSTM32F103RC-enc28j60
 #BOARD ?= genericSTM32F103ZE-enc28j60
-BOARD ?= disco_f407vg
+#BOARD ?= disco_f407vg
 
 ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81

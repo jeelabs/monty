@@ -133,6 +133,12 @@ auto List::pop (int idx) -> Value {
     return v;
 }
 
+void List::append (Value v) {
+    auto n = size();
+    insert(n);
+    (*this)[n] = v;
+}
+
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = relPos(k);

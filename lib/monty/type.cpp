@@ -381,6 +381,7 @@ Type const     Callable::info ("<callable>");
 Type const      Context::info ("<context>");
 Type const     Function::info ("<function>");
 Type const       Lookup::info ("<lookup>");
+Type const       Method::info ("<method>");
 Type const       Module::info ("<module>");
 Type const         None::info ("<none>");
 
@@ -405,6 +406,7 @@ auto     Callable::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
+auto       Method::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
 auto        Array::type () const -> Type const& { return info; }
@@ -519,9 +521,7 @@ const Lookup Str::attrs (strMap, sizeof strMap);
 static auto list_append (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 2);
     auto& l = vec[args].asType<List>();
-    auto n = l.size();
-    l.insert(n);
-    l[n] = vec[args+1];
+    l.append(vec[args+1]);
     return {};
 }
 
