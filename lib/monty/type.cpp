@@ -483,35 +483,35 @@ static Function const f_hash (bi_hash);
 
 static const Lookup::Item builtinsMap [] = {
     //CG< builtin-emit 1
-    { "array", &Array::info },
-    { "bool", &Bool::info },
-    { "bytes", &Bytes::info },
-    { "class", &Class::info },
-    { "dict", &Dict::info },
-    { "int", &Int::info },
-    { "list", &List::info },
-    { "range", &Range::info },
-    { "set", &Set::info },
-    { "slice", &Slice::info },
-    { "str", &Str::info },
-    { "tuple", &Tuple::info },
-    { "type", &Type::info },
+    { "array", Array::info },
+    { "bool", Bool::info },
+    { "bytes", Bytes::info },
+    { "class", Class::info },
+    { "dict", Dict::info },
+    { "int", Int::info },
+    { "list", List::info },
+    { "range", Range::info },
+    { "set", Set::info },
+    { "slice", Slice::info },
+    { "str", Str::info },
+    { "tuple", Tuple::info },
+    { "type", Type::info },
     //CG>
-    { "print", &f_print },
-    { "next", &f_next },
-    { "len", &f_len },
-    { "abs", &f_abs },
-    { "hash", &f_hash },
-    { "sys", &m_sys },
+    { "print", f_print },
+    { "next", f_next },
+    { "len", f_len },
+    { "abs", f_abs },
+    { "hash", f_hash },
+    { "sys", m_sys },
 #ifndef UNIT_TEST
-    { "machine", &m_machine },
+    { "machine", m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { "network", &m_network },
+    { "network", m_network },
 #endif
 #if INCLUDE_SDCARD
-    { "sdcard", &m_sdcard },
+    { "sdcard", m_sdcard },
 #endif
 #endif
 };

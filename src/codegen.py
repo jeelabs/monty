@@ -103,7 +103,7 @@ def BUILTIN_TYPES(block, fname):
     for tag, name, base in info:
         out.append(fmt2 % name)
         if not tag.startswith('<'):
-            builtins[1].append('{ "%s", &%s::info },' % (tag, name))
+            builtins[1].append('{ "%s", %s::info },' % (tag, name))
     return out
 
 def BUILTIN_EMIT(block, sel):
@@ -111,7 +111,7 @@ def BUILTIN_EMIT(block, sel):
 
 def BUILTIN(block, name):
     builtins[0].append('static FunObj const f_%s (bi_%s);' % (name, name))
-    builtins[1].append('{ "%s", &f_%s },' % (name, name))
+    builtins[1].append('{ "%s", f_%s },' % (name, name))
     fmt = 'static Value bi_%s (int argc, Value argv[]) {'
     return [fmt % name]
 
