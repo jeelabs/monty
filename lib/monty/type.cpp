@@ -538,6 +538,7 @@ static const Lookup::Item strMap [] = {
 
 const Lookup Str::attrs (strMap, sizeof strMap);
 
+#if 0
 static auto list_append (Vector const& vec, int argc, int args) -> Value {
     assert(argc == 2);
     auto& l = vec[args].asType<List>();
@@ -550,6 +551,15 @@ static Function const f_list_append (list_append);
 static const Lookup::Item listMap [] = {
     { "append", &f_list_append },
 };
+#else
+// TODO this method wrapper adds 168 bytes on STM32, but is it a one-time cost?
+static auto d_list_append = Method::wrap(&List::append);
+static Method const m_list_append (d_list_append);
+
+static const Lookup::Item listMap [] = {
+    { "append", &m_list_append },
+};
+#endif
 
 const Lookup List::attrs (listMap, sizeof listMap);
 

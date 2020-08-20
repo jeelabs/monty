@@ -174,7 +174,7 @@ void Interp::markAll () {
 
 void Interp::suspend (List& queue) {
     auto t = tasks.pop(0);
-    assert(t.ifType<Context>() == context);
+    assert(t.ifType<Context>() == context); (void) t;
 
     auto n = queue.size(); // TODO use append()
     queue.insert(n);
