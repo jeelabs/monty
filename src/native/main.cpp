@@ -49,6 +49,8 @@ int main (int argc, const char* argv []) {
     if (init == nullptr)
         return archDone("can't load module");
 
+    free((void*) bcData);
+
     runInterp(*init);
 
     return archDone();
