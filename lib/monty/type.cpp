@@ -58,8 +58,6 @@ auto Value::operator== (Value rhs) const -> bool {
         lhs = rhs;
         rhs = *this;
     }
-    //return asObj().binop(BinOp::Equal, rhs.asObj()).truthy();
-    //return binOp(BinOp::Equal, rhs).truthy();
     return lhs.binOp(BinOp::Equal, rhs).truthy();
 }
 
@@ -95,6 +93,7 @@ auto Value::unOp (UnOp op) const -> Value {
         }
         default: break;
     }
+
     return asObj().unop(op);
 }
 
@@ -107,6 +106,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
         case BinOp::NotEqual:  return binOp(BinOp::Equal, rhs).invert();
         default:               break;
     }
+
     if (tag() == rhs.tag())
         switch (tag()) {
             case Int: {
@@ -145,6 +145,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 }
                 break;
         }
+
     return asObj().binop(op, rhs);
 }
 

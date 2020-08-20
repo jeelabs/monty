@@ -254,6 +254,7 @@ Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
     Value init = attr("__init__", self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
+        assert(args > 0);
         (*ctx)[args-1] = this;
         init.obj().call(vec, argc + 1, args - 1);
     }
