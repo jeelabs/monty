@@ -22,7 +22,7 @@ There is no output for tests which generate exactly their expected output.
 To make all of the above work, the following is needed:
 
 * hardware: a [Blue Pill][bp], connected to USB via a [Black Magic Probe][bmp]
-* firmware: latest `toyvm`, built via `make bluepill` one directory up
+* firmware: latest `monty`, built via `make bluepill_f103c8` one directory up
 * tools: `mpy-cross` and `arm-none-eabi-gdb`, both must be in `$PATH`
 * dog: this is a small cat-like (heh) utility, see `dog.c` - needs `gcc`
 
