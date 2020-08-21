@@ -469,7 +469,7 @@ struct Loader {
         qBuf.adj(0); // buffer no longer needed
 
         auto mod = new Module (&builtins, *pool);
-        return new Callable (*mod, bc);
+        return new Callable (bc, mod);
     }
 
     uint32_t varInt () {

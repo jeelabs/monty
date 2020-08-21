@@ -392,14 +392,13 @@ class PyVM : public Interp {
     //CG1 op v
     void op_MakeFunction (int arg) {
         auto bc = context->callee->code.constAt(arg);
-        *++sp = new Callable (context->globals(), bc.asType<Bytecode>());
+        *++sp = new Callable (bc);
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
         auto bc = context->callee->code.constAt(arg);
         --sp;
-        *sp = new Callable (context->globals(), bc.asType<Bytecode>(),
-                                sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
+        *sp = new Callable (bc, sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
     }
     //CG1 op v
     void op_CallFunction (int arg) {
@@ -421,7 +420,7 @@ class PyVM : public Interp {
         int num = *ip++;
         sp -= num - 1;
         auto bc = context->callee->code.constAt(arg);
-        auto f = new Callable (context->globals(), bc.asType<Bytecode>());
+        auto f = new Callable (bc);
         *sp = new Closure (*f, *context, num, sp - context->begin());
     }
     //CG1 op v
@@ -429,8 +428,7 @@ class PyVM : public Interp {
         int num = *ip++;
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
-        auto f = new Callable (context->globals(), bc.asType<Bytecode>(),
-                                sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
+        auto f = new Callable (bc, sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
         *sp = new Closure (*f, *context, num, sp + 2 - context->begin());
     }
     //CG1 op v

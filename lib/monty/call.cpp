@@ -10,6 +10,11 @@ Context* Interp::context;
 List Interp::tasks;
 Value Interp::handlers [MAX_HANDLERS];
 
+Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
+        : mo (mod != nullptr ? *mod : Interp::context->globals()),
+          code (bc.asType<Bytecode>()), pos (t), kw (d) {
+}
+
 auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     auto ctx = Interp::context;
     auto coro = code.isGenerator();

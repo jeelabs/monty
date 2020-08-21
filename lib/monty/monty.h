@@ -702,9 +702,9 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Callable (Module& mod, Bytecode const& callee,
-                    Tuple* t =nullptr, Dict* d =nullptr)
-            : mo (mod), code (callee), pos (t), kw (d) {}
+        Callable (Value callee, Module* mod)
+            : Callable (callee, nullptr, nullptr, mod) {}
+        Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
 
         auto qStrAt (size_t) const -> char const*;
 
