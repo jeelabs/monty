@@ -793,6 +793,9 @@ namespace Monty {
         auto fastSlot (size_t i) const -> Value& {
             return spBase()[callee->code.fastSlotTop() + ~i];
         }
+        auto derefSlot (size_t i) const -> Value& {
+            return fastSlot(i).asType<Cell>().val;
+        }
 
         static constexpr int EXC_STEP = 3; // use 3 slots per exception
         auto excBase (int incr =0) -> Value*;
