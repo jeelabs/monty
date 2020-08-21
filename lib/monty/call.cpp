@@ -32,6 +32,9 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     if (code.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
 
+    // TODO this isn't quite right, inside bc, there's a list of indices ...
+    //  but why not lazily turn the first deref load into a new cell?
+    //  ... or keep a bitmap of which fast slots are / should be cells?
     for (size_t i = 0; i < code.numCells(); ++i)
         ctx->fastSlot(i) = new Cell (ctx->fastSlot(i));
 
