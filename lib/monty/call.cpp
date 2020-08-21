@@ -10,12 +10,6 @@ Context* Interp::context;
 List Interp::tasks;
 Value Interp::handlers [MAX_HANDLERS];
 
-auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
-    assert(args > 0 && this == &vec[args-1].obj());
-    vec[args-1] = self;
-    return meth.obj().call(vec, argc + 1, args - 1);
-}
-
 auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     auto ctx = Interp::context;
     auto coro = code.isGenerator();
@@ -46,6 +40,25 @@ void Callable::marker () const {
     mark(code);
     mark(pos);
     mark(kw);
+}
+
+auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
+    assert(args > 0 && this == &vec[args-1].obj());
+    vec[args-1] = self;
+    return meth.call(vec, argc + 1, args - 1);
+}
+
+Closure::Closure (Callable const& f, Vector const& vec, int argc, int args)
+        : func (f) {
+    insert(argc);
+    for (int i = 0; i < argc; ++i)
+        begin()[i] = vec[args+i];
+printf("clos %d %d\n", argc, args);
+begin()[0].dump("clos 0");
+}
+
+auto Closure::call (Vector const& vec, int argc, int args) const -> Value {
+    return func.call(vec, argc, args); // TODO wrong, insert closed vars
 }
 
 void Context::enter (Callable const& func) {

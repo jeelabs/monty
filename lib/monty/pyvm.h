@@ -277,8 +277,10 @@ class PyVM : public Interp {
         Value self;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
-        if (!self.isNil() && sp->ifType<Callable>() != 0)
-            *sp = new BoundMeth (*sp, self);
+        // TODO should this be moved into Inst::attr ???
+        auto f = sp->ifType<Callable>();
+        if (!self.isNil() && f != 0)
+            *sp = new BoundMeth (*f, self);
     }
     //CG1 op q
     void op_StoreAttr (char const* arg) {
@@ -389,14 +391,14 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void op_MakeFunction (int arg) {
-        auto v = context->callee->code.constAt(arg);
-        *++sp = new Callable (context->globals(), v.asType<Bytecode>());
+        auto bc = context->callee->code.constAt(arg);
+        *++sp = new Callable (context->globals(), bc.asType<Bytecode>());
     }
     //CG1 op v
     void op_MakeFunctionDefargs (int arg) {
-        auto v = context->callee->code.constAt(arg);
+        auto bc = context->callee->code.constAt(arg);
         --sp;
-        *sp = new Callable (context->globals(), v.asType<Bytecode>(),
+        *sp = new Callable (context->globals(), bc.asType<Bytecode>(),
                                 sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
     }
     //CG1 op v
@@ -406,7 +408,7 @@ class PyVM : public Interp {
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(*context, arg, context->spOff + 1);
         });
-        if (!v.isNil() && sp >= context->spBase())
+        if (!v.isNil() && sp >= context->spBase()) // TODO why the sp check?
             *sp = v;
     }
     //CG1 op v
@@ -416,32 +418,32 @@ class PyVM : public Interp {
 
     //CG1 op v
     void op_MakeClosure (int arg) {
-        int closed = *ip++;
-        sp -= closed - 1;
-        auto v = context->callee->code.constAt(arg);
-        auto f = new Callable (context->globals(), v.asType<Bytecode>());
-        *sp = f; // TODO wrong, needs a closure wrapper
+        int num = *ip++;
+        sp -= num - 1;
+        auto bc = context->callee->code.constAt(arg);
+        auto f = new Callable (context->globals(), bc.asType<Bytecode>());
+        *sp = new Closure (*f, *context, num, sp - context->begin());
     }
     //CG1 op v
     void op_MakeClosureDefargs (int arg) {
-        int closed = *ip++;
-        sp -= 2 + closed - 1;
-        auto v = context->callee->code.constAt(arg);
-        auto f = new Callable (context->globals(), v.asType<Bytecode>(),
+        int num = *ip++;
+        sp -= 2 + num - 1;
+        auto bc = context->callee->code.constAt(arg);
+        auto f = new Callable (context->globals(), bc.asType<Bytecode>(),
                                 sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
-        *sp = f; // TODO wrong, needs a closure wrapper
+        *sp = new Closure (*f, *context, num, sp + 2 - context->begin());
     }
     //CG1 op v
     void op_LoadDeref (int arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
     //CG1 op v
     void op_StoreDeref (int arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
     //CG1 op v
     void op_DeleteDeref (int arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
 
     //CG1 op

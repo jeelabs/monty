@@ -642,21 +642,6 @@ namespace Monty {
         const MethodBase& meth;
     };
 
-    //CG3 type <boundmeth>
-    struct BoundMeth : Object {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-        constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
-
-        auto call (Vector const& vec, int argc, int args) const -> Value override;
-
-        void marker () const override { meth.marker(); self.marker(); }
-
-        Value meth;
-        Value self;
-    };
-
     //CG3 type <module>
     struct Module : Dict {
         static Type const info;
@@ -730,6 +715,40 @@ namespace Monty {
         Bytecode const& code;
         Tuple* pos;
         Dict* kw;
+    };
+
+    //CG3 type <boundmeth>
+    struct BoundMeth : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        BoundMeth (Callable const& f, Value o) : meth (f), self (o) {}
+
+        auto call (Vector const& vec, int argc, int args) const -> Value override;
+
+        void marker () const override { meth.marker(); self.marker(); }
+    private:
+        Callable const& meth;
+        Value self;
+    };
+
+    //CG3 type <closure>
+    struct Closure : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        //using Object::repr; TODO can't be used to bypass List::repr ?
+        auto repr (Buffer& buf) const -> Value override {
+            return Object::repr(buf); // don't print as a list
+        }
+
+        Closure (Callable const&, Vector const&, int, int);
+
+        auto call (Vector const& vec, int argc, int args) const -> Value override;
+
+        void marker () const override { List::marker(); func.marker(); }
+    private:
+        Callable const& func;
     };
 
     //CG3 type <context>

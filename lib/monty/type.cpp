@@ -379,6 +379,7 @@ Type const    BoundMeth::info ("<boundmeth>");
 Type const       Buffer::info ("<buffer>");
 Type const     Bytecode::info ("<bytecode>");
 Type const     Callable::info ("<callable>");
+Type const      Closure::info ("<closure>");
 Type const      Context::info ("<context>");
 Type const     Function::info ("<function>");
 Type const       Lookup::info ("<lookup>");
@@ -404,6 +405,7 @@ auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }
 auto     Bytecode::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
+auto      Closure::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
