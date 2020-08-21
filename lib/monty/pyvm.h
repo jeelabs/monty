@@ -426,6 +426,37 @@ class PyVM : public Interp {
     void op_CallFunctionVarKw (int arg) {
         (void) arg; assert(false); // TODO
     }
+
+    //CG1 op v
+    void op_MakeClosure (int arg) {
+        int closed = *ip++;
+        sp -= closed - 1;
+        auto v = context->callee->code.constAt(arg);
+        auto f = new Callable (context->globals(), v.asType<Bytecode>());
+        *sp = f; // TODO wrong, needs a closure wrapper
+    }
+    //CG1 op v
+    void op_MakeClosureDefargs (int arg) {
+        int closed = *ip++;
+        sp -= 2 + closed - 1;
+        auto v = context->callee->code.constAt(arg);
+        auto f = new Callable (context->globals(), v.asType<Bytecode>(),
+                                sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
+        *sp = f; // TODO wrong, needs a closure wrapper
+    }
+    //CG1 op v
+    void op_LoadDeref (int arg) {
+        assert(false); // TODO
+    }
+    //CG1 op v
+    void op_StoreDeref (int arg) {
+        assert(false); // TODO
+    }
+    //CG1 op v
+    void op_DeleteDeref (int arg) {
+        assert(false); // TODO
+    }
+
     //CG1 op
     void op_YieldValue () {
         auto ctx = context;
@@ -720,6 +751,31 @@ class PyVM : public Interp {
                     op_CallFunctionVarKw(arg);
                     break;
                 }
+                case Op::MakeClosure: {
+                    int arg = fetchV();
+                    op_MakeClosure(arg);
+                    break;
+                }
+                case Op::MakeClosureDefargs: {
+                    int arg = fetchV();
+                    op_MakeClosureDefargs(arg);
+                    break;
+                }
+                case Op::LoadDeref: {
+                    int arg = fetchV();
+                    op_LoadDeref(arg);
+                    break;
+                }
+                case Op::StoreDeref: {
+                    int arg = fetchV();
+                    op_StoreDeref(arg);
+                    break;
+                }
+                case Op::DeleteDeref: {
+                    int arg = fetchV();
+                    op_DeleteDeref(arg);
+                    break;
+                }
                 case Op::YieldValue:
                     op_YieldValue();
                     break;
@@ -740,19 +796,14 @@ class PyVM : public Interp {
                 //CG>
 
                 // TODO
-                case Op::DeleteDeref:
                 case Op::EndFinally:
                 case Op::ImportFrom:
                 case Op::ImportName:
                 case Op::ImportStar:
-                case Op::LoadDeref:
                 case Op::LoadSuperMethod:
-                case Op::MakeClosure:
-                case Op::MakeClosureDefargs:
                 case Op::SetupFinally:
                 case Op::SetupWith:
                 case Op::StoreComp:
-                case Op::StoreDeref:
                 case Op::UnpackEx:
                 case Op::UnpackSequence:
                 case Op::WithCleanup:
