@@ -691,7 +691,7 @@ auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value 
 }
 
 auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 2 && vec[args].isObj() && vec[args+1].isStr());
+    assert(argc >= 2 && vec[args].isObj() && vec[args+1].isStr());
     return new Class (vec, argc, args);
 }
 
