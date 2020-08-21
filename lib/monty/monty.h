@@ -649,6 +649,8 @@ namespace Monty {
 
         constexpr BoundMeth (Value f, Value o) : meth (f), self (o) {}
 
+        auto call (Vector const& vec, int argc, int args) const -> Value override;
+
         void marker () const override { meth.marker(); self.marker(); }
 
         Value meth;

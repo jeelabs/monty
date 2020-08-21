@@ -10,6 +10,12 @@ Context* Interp::context;
 List Interp::tasks;
 Value Interp::handlers [MAX_HANDLERS];
 
+auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
+    assert(args > 0 && this == &vec[args-1].obj());
+    vec[args-1] = self;
+    return meth.obj().call(vec, argc + 1, args - 1);
+}
+
 auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     auto ctx = Interp::context;
     auto coro = code.isGenerator();
