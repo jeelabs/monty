@@ -3,8 +3,8 @@ The current setup is configured for a Blue Pill (STM32F103C8).
 
 ```
 $ make
-target: bluepill on /dev/cu.usbmodemDDD8B7B83
-      51      54     168 demo.out
+target: bluepill_f103c8 on /dev/cu.usbmodemDDD8B7B83
+      53 demo.out
 features.out
 hello.out
 $
@@ -22,7 +22,7 @@ There is no output for tests which generate exactly their expected output.
 To make all of the above work, the following is needed:
 
 * hardware: a [Blue Pill][bp], connected to USB via a [Black Magic Probe][bmp]
-* firmware: latest `monty`, built via `make bluepill_f103c8` one directory up
+* firmware: latest `monty`, built via `make bluepill_f103c8` one dir up
 * tools: `mpy-cross` and `arm-none-eabi-gdb`, both must be in `$PATH`
 * dog: this is a small cat-like (heh) utility, see `dog.c` - needs `gcc`
 
