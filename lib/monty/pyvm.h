@@ -141,6 +141,12 @@ class PyVM : public Interp {
         INNER_HOOK
     }
 
+    // check and trigger gc on backwards jumps, i.e. inside all loops
+    static void loopCheck (int arg) {
+        if (arg < 0 && gcCheck())
+            interrupt(0);
+    }
+
     //CG: op-init
 
     //CG1 op
@@ -208,37 +214,39 @@ class PyVM : public Interp {
     //CG1 op s
     void op_Jump (int arg) {
         ip += arg;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
+        loopCheck(arg);
     }
     //CG1 op s
     void op_PopJumpIfFalse (int arg) {
-        if (!sp->truthy())
+        if (!sp->truthy()) {
             ip += arg;
+            loopCheck(arg);
+        }
         --sp;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_JumpIfFalseOrPop (int arg) {
-        if (!sp->truthy())
+        if (!sp->truthy()) {
             ip += arg;
-        else
+            loopCheck(arg);
+        } else
             --sp;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_PopJumpIfTrue (int arg) {
-        if (sp->truthy())
+        if (sp->truthy()) {
             ip += arg;
+            loopCheck(arg);
+        }
         --sp;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
     //CG1 op s
     void op_JumpIfTrueOrPop (int arg) {
-        if (sp->truthy())
+        if (sp->truthy()) {
             ip += arg;
-        else
+            loopCheck(arg);
+        } else
             --sp;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
     }
 
     //CG1 op q
@@ -361,7 +369,7 @@ class PyVM : public Interp {
         int ep = frame().ep;
         frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
-        if (arg < 0 && gcCheck()) interrupt(0); // force gc TODO check here?
+        loopCheck(arg);
     }
 
     //CG1 op
@@ -398,7 +406,7 @@ class PyVM : public Interp {
     void op_MakeFunctionDefargs (int arg) {
         auto bc = context->callee->code.constAt(arg);
         --sp;
-        *sp = new Callable (bc, sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
+        *sp = new Callable (bc, sp[0], sp[1]);
     }
     //CG1 op v
     void op_CallFunction (int arg) {
@@ -407,7 +415,7 @@ class PyVM : public Interp {
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(*context, arg, context->spOff + 1);
         });
-        if (!v.isNil() && sp >= context->spBase()) // TODO why the sp check?
+        if (!v.isNil())
             *sp = v;
     }
     //CG1 op v
@@ -428,7 +436,7 @@ class PyVM : public Interp {
         int num = *ip++;
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
-        auto f = new Callable (bc, sp[0].ifType<Tuple>(), sp[1].ifType<Dict>());
+        auto f = new Callable (bc, sp[0], sp[1]);
         *sp = new Closure (*f, *context, num, sp + 2 - context->begin());
     }
     //CG1 op v
@@ -453,7 +461,7 @@ class PyVM : public Interp {
             return *sp;
         });
         ctx->caller = nullptr;
-        if (context != nullptr && !v.isNil()) // TODO why null?
+        if (context != nullptr)
             *sp = v;
     }
     //CG1 op

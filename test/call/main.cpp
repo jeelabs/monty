@@ -23,6 +23,7 @@ void smokeTest () {
 
 void callTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Function));
+    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (MethodBase));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Method));
     TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (Module));
     TEST_ASSERT_EQUAL(5 * sizeof (void*) + 16, sizeof (Bytecode)); // TODO hack

@@ -704,6 +704,8 @@ namespace Monty {
 
         Callable (Value callee, Module* mod)
             : Callable (callee, nullptr, nullptr, mod) {}
+        Callable (Value callee, Value pos, Value kw)
+            : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
         Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
 
         auto qStrAt (size_t) const -> char const*;
