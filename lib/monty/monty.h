@@ -666,6 +666,7 @@ namespace Monty {
         auto excLevel () const -> size_t { return excDepth; }
         auto isGenerator () const -> bool { return (flags & 1) != 0; }
         auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
+        auto numCells () const -> size_t { return n_cell; }
 
         auto numArgs (int t) const -> uint32_t {
             return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
@@ -691,6 +692,7 @@ namespace Monty {
         int8_t n_pos;
         int8_t n_kwonly;
         int8_t n_def_pos;
+        int8_t n_cell;
 
         friend struct Loader;
     };
@@ -730,6 +732,18 @@ namespace Monty {
     private:
         Callable const& meth;
         Value self;
+    };
+
+    //CG3 type <Cell>
+    struct Cell : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Cell (Value v) : val (v) {}
+
+        void marker () const override { val.marker(); }
+
+        Value val;
     };
 
     //CG3 type <closure>

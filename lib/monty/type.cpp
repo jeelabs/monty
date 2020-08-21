@@ -375,6 +375,7 @@ auto Object::type () const -> Type const& { return info; }
 Type const Inst::info ("<instance>");
 
 //CG< builtin-types lib/monty/monty.h
+Type const         Cell::info ("<Cell>");
 Type const    BoundMeth::info ("<boundmeth>");
 Type const       Buffer::info ("<buffer>");
 Type const     Bytecode::info ("<bytecode>");
@@ -401,6 +402,7 @@ Type const      Str::info ("str", Str::create, &Str::attrs);
 Type const    Tuple::info ("tuple", Tuple::create, &Tuple::attrs);
 Type const     Type::info ("type", Type::create, &Type::attrs);
 
+auto         Cell::type () const -> Type const& { return info; }
 auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }
 auto     Bytecode::type () const -> Type const& { return info; }

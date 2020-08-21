@@ -435,15 +435,19 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void op_LoadDeref (int arg) {
-        (void) arg; assert(false); // TODO
+        auto& p = context->fastSlot(arg).asType<Cell>();
+        *++sp = p.val;
+        assert(!sp->isNil());
     }
     //CG1 op v
     void op_StoreDeref (int arg) {
-        (void) arg; assert(false); // TODO
+        auto& p = context->fastSlot(arg).asType<Cell>();
+        p.val = *sp--;
     }
     //CG1 op v
     void op_DeleteDeref (int arg) {
-        (void) arg; assert(false); // TODO
+        assert(context->fastSlot(arg).ifType<Cell>() != nullptr);
+        context->fastSlot(arg) = {};
     }
 
     //CG1 op

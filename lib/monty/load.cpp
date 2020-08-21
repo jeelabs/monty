@@ -549,6 +549,7 @@ struct Loader {
         bc.n_kwonly = prelude.n_kwonly_args;
         bc.n_def_pos = prelude.n_def_pos_args;
         bc.hdrSz = prelude.n_info + prelude.n_cell;
+        bc.n_cell = prelude.n_cell;
         bc.size = bCount;
         debugf("raw sc %d np %d hs %d sz %d ns %d nx %d ko %d dp %d\n",
                 bc.flags, bc.n_pos, bc.hdrSz, bc.size,

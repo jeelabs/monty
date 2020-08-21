@@ -32,6 +32,9 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
     if (code.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
 
+    for (size_t i = 0; i < code.numCells(); ++i)
+        ctx->fastSlot(i) = new Cell (ctx->fastSlot(i));
+
     return coro ? ctx : Value {};
 }
 
@@ -50,15 +53,21 @@ auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
 
 Closure::Closure (Callable const& f, Vector const& vec, int argc, int args)
         : func (f) {
-    insert(argc);
+    insert(0, argc);
     for (int i = 0; i < argc; ++i)
         begin()[i] = vec[args+i];
-printf("clos %d %d\n", argc, args);
-begin()[0].dump("clos 0");
 }
 
 auto Closure::call (Vector const& vec, int argc, int args) const -> Value {
-    return func.call(vec, argc, args); // TODO wrong, insert closed vars
+    auto n = size();
+    assert(n > 0);
+    Vector v;
+    v.insert(0, n + argc);
+    for (size_t i = 0; i < n; ++i)
+        v[i] = begin()[i];
+    for (int i = 0; i < argc; ++i)
+        v[n+i] = vec[args+i];
+    return func.call(v, n + argc, 0);
 }
 
 void Context::enter (Callable const& func) {
