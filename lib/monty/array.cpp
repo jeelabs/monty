@@ -247,7 +247,7 @@ Class::Class (ArgVec const& args)
     ctx->frame().locals = this;
 }
 
-Inst::Inst (ArgVec args, Class const& cls) : Dict (&cls) {
+Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     auto ctx = Interp::context;
     assert(ctx != nullptr);
 

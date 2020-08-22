@@ -575,7 +575,7 @@ namespace Monty {
         }
 
     private:
-        Inst (ArgVec args, Class const& cls);
+        Inst (ArgVec const& args, Class const& cls);
     };
 
     extern Lookup const builtins;
