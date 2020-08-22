@@ -163,7 +163,7 @@ void Value::verify (Type const& t) const {
     assert(f);
 }
 
-auto Object::call (Vector const&, int, int) const -> Value {
+auto Object::call (ArgVec const&) const -> Value {
     Value v = this; v.dump("call?"); assert(false);
     return {};
 }
@@ -355,8 +355,8 @@ void Lookup::marker () const {
         items[i].v.marker();
 }
 
-Tuple::Tuple (size_t n, Value const* vals) : fill (n) {
-    memcpy((Value*) data(), vals, n * sizeof *vals);
+Tuple::Tuple (ArgVec const& args) : fill (args.num) {
+    memcpy((Value*) data(), args.begin(), args.num * sizeof (Value));
 }
 
 auto Tuple::getAt (Value k) const -> Value {
@@ -369,8 +369,7 @@ void Tuple::marker () const {
         data()[i].marker();
 }
 
-Exception::Exception (int exc, Vector const& vec, int argc, int args)
-                        : Tuple (argc, vec.begin() + args) {
+Exception::Exception (int exc, ArgVec const& args) : Tuple (args) {
     extra().code = exc;
 }
 
@@ -426,98 +425,98 @@ static Lookup::Item const exceptionMap [] = {
 Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
 
 //CG< exception-emit f
-static auto e_BaseException (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(0, vec, argc, args);
+static auto e_BaseException (ArgVec const& args) -> Value {
+    return Exception::create(0, args);
 }
 static Function const f_BaseException (e_BaseException);
 
-static auto e_Exception (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(1, vec, argc, args);
+static auto e_Exception (ArgVec const& args) -> Value {
+    return Exception::create(1, args);
 }
 static Function const f_Exception (e_Exception);
 
-static auto e_StopIteration (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(2, vec, argc, args);
+static auto e_StopIteration (ArgVec const& args) -> Value {
+    return Exception::create(2, args);
 }
 static Function const f_StopIteration (e_StopIteration);
 
-static auto e_ArithmeticError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(3, vec, argc, args);
+static auto e_ArithmeticError (ArgVec const& args) -> Value {
+    return Exception::create(3, args);
 }
 static Function const f_ArithmeticError (e_ArithmeticError);
 
-static auto e_AssertionError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(4, vec, argc, args);
+static auto e_AssertionError (ArgVec const& args) -> Value {
+    return Exception::create(4, args);
 }
 static Function const f_AssertionError (e_AssertionError);
 
-static auto e_AttributeError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(5, vec, argc, args);
+static auto e_AttributeError (ArgVec const& args) -> Value {
+    return Exception::create(5, args);
 }
 static Function const f_AttributeError (e_AttributeError);
 
-static auto e_EOFError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(6, vec, argc, args);
+static auto e_EOFError (ArgVec const& args) -> Value {
+    return Exception::create(6, args);
 }
 static Function const f_EOFError (e_EOFError);
 
-static auto e_ImportError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(7, vec, argc, args);
+static auto e_ImportError (ArgVec const& args) -> Value {
+    return Exception::create(7, args);
 }
 static Function const f_ImportError (e_ImportError);
 
-static auto e_LookupError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(8, vec, argc, args);
+static auto e_LookupError (ArgVec const& args) -> Value {
+    return Exception::create(8, args);
 }
 static Function const f_LookupError (e_LookupError);
 
-static auto e_IndexError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(9, vec, argc, args);
+static auto e_IndexError (ArgVec const& args) -> Value {
+    return Exception::create(9, args);
 }
 static Function const f_IndexError (e_IndexError);
 
-static auto e_KeyError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(10, vec, argc, args);
+static auto e_KeyError (ArgVec const& args) -> Value {
+    return Exception::create(10, args);
 }
 static Function const f_KeyError (e_KeyError);
 
-static auto e_MemoryError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(11, vec, argc, args);
+static auto e_MemoryError (ArgVec const& args) -> Value {
+    return Exception::create(11, args);
 }
 static Function const f_MemoryError (e_MemoryError);
 
-static auto e_NameError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(12, vec, argc, args);
+static auto e_NameError (ArgVec const& args) -> Value {
+    return Exception::create(12, args);
 }
 static Function const f_NameError (e_NameError);
 
-static auto e_OSError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(13, vec, argc, args);
+static auto e_OSError (ArgVec const& args) -> Value {
+    return Exception::create(13, args);
 }
 static Function const f_OSError (e_OSError);
 
-static auto e_RuntimeError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(14, vec, argc, args);
+static auto e_RuntimeError (ArgVec const& args) -> Value {
+    return Exception::create(14, args);
 }
 static Function const f_RuntimeError (e_RuntimeError);
 
-static auto e_NotImplementedError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(15, vec, argc, args);
+static auto e_NotImplementedError (ArgVec const& args) -> Value {
+    return Exception::create(15, args);
 }
 static Function const f_NotImplementedError (e_NotImplementedError);
 
-static auto e_TypeError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(16, vec, argc, args);
+static auto e_TypeError (ArgVec const& args) -> Value {
+    return Exception::create(16, args);
 }
 static Function const f_TypeError (e_TypeError);
 
-static auto e_ValueError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(17, vec, argc, args);
+static auto e_ValueError (ArgVec const& args) -> Value {
+    return Exception::create(17, args);
 }
 static Function const f_ValueError (e_ValueError);
 
-static auto e_UnicodeError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(18, vec, argc, args);
+static auto e_UnicodeError (ArgVec const& args) -> Value {
+    return Exception::create(18, args);
 }
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
@@ -584,13 +583,13 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-static auto bi_print (Vector const& vec, int argc, int args) -> Value {
+static auto bi_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
-    for (int i = 0; i < argc; ++i) {
+    for (int i = 0; i < args.num; ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
         //  this only applies to the top level, not inside lists, etc.
         char const* s = nullptr;
-        Value v = vec[args+i];
+        Value v = args[i];
         if (v.isStr())
             s = v;
         else {
@@ -613,30 +612,30 @@ static auto bi_print (Vector const& vec, int argc, int args) -> Value {
 
 static Function const f_print (bi_print);
 
-static auto bi_next (Vector const& vec, int argc, int args) -> Value {
-    assert(argc == 1 && vec[args].isObj());
-    return vec[args].obj().next();
+static auto bi_next (ArgVec const& args) -> Value {
+    assert(args.num == 1 && args[0].isObj());
+    return args[0].obj().next();
 }
 
 static Function const f_next (bi_next);
 
-static auto bi_len (Vector const& vec, int argc, int args) -> Value {
-    assert(argc == 1);
-    return vec[args].asObj().len();
+static auto bi_len (ArgVec const& args) -> Value {
+    assert(args.num == 1);
+    return args[0].asObj().len();
 }
 
 static Function const f_len (bi_len);
 
-static auto bi_abs (Vector const& vec, int argc, int args) -> Value {
-    assert(argc == 1);
-    return vec[args].unOp(UnOp::Abs);
+static auto bi_abs (ArgVec const& args) -> Value {
+    assert(args.num == 1);
+    return args[0].unOp(UnOp::Abs);
 }
 
 static Function const f_abs (bi_abs);
 
-static auto bi_hash (Vector const& vec, int argc, int args) -> Value {
-    assert(argc == 1);
-    return vec[args].unOp(UnOp::Hash);
+static auto bi_hash (ArgVec const& args) -> Value {
+    assert(args.num == 1);
+    return args[0].unOp(UnOp::Hash);
 }
 
 static Function const f_hash (bi_hash);
@@ -699,13 +698,13 @@ static Lookup::Item const builtinsMap [] = {
 
 Lookup const Monty::builtins (builtinsMap, sizeof builtinsMap);
 
-static auto str_count (Vector const&, int, int) -> Value {
+static auto str_count (ArgVec const&) -> Value {
     return 9; // TODO, hardcoded for features.py
 }
 
 static Function const f_str_count (str_count);
 
-static auto str_format (Vector const&, int, int) -> Value {
+static auto str_format (ArgVec const&) -> Value {
     return 4; // TODO, hardcoded for features.py
 }
 
@@ -719,10 +718,10 @@ static Lookup::Item const strMap [] = {
 Lookup const Str::attrs (strMap, sizeof strMap);
 
 #if 0
-static auto list_append (Vector const& vec, int argc, int args) -> Value {
-    assert(argc == 2);
-    auto& l = vec[args].asType<List>();
-    l.append(vec[args+1]);
+static auto list_append (ArgVec const& args) -> Value {
+    assert(args.num == 2);
+    auto& l = args[0].asType<List>();
+    l.append(args[1]);
     return {};
 }
 
@@ -759,16 +758,16 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
-auto Bool::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    if (argc == 1)
-        return vec[args].unOp(UnOp::Boln);
-    assert(argc == 0);
+auto Bool::create (ArgVec const& args, Type const*) -> Value {
+    if (args.num == 1)
+        return args[0].unOp(UnOp::Boln);
+    assert(args.num == 0);
     return False;
 }
 
-auto Int::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 1);
-    auto v = vec[args];
+auto Int::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    auto v = args[0];
     switch (v.tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return v;
@@ -778,9 +777,9 @@ auto Int::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     return {};
 }
 
-auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 1);
-    Value v = vec[args];
+auto Bytes::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    Value v = args[0];
     if (v.isInt()) {
         auto o = new Bytes ();
         o->insert(0, v);
@@ -806,63 +805,63 @@ auto Bytes::create (Vector const& vec, int argc, int args, Type const*) -> Value
     return new Bytes (p, n);
 }
 
-auto Str::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 1 && vec[args].isStr());
-    return new Str (vec[args]);
+auto Str::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1 && args[0].isStr());
+    return new Str (args[0]);
 }
 
-auto Range::create (Vector const&, int, int, Type const*) -> Value {
+auto Range::create (ArgVec const&, Type const*) -> Value {
     assert(false);
     return {}; // TODO
 }
 
-auto Slice::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(1 <= argc && argc <= 3);
-    Value a = argc > 1 ? vec[args] : Value (0);
-    Value b = argc == 1 ? vec[args] : vec[args+1];
-    Value c = argc > 2 ? vec[args+2] : b;
+auto Slice::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    Value a = args.num > 1 ? args[0] : Value (0);
+    Value b = args.num == 1 ? args[0] : args[1];
+    Value c = args.num > 2 ? args[2] : b;
     return new Slice (a, b, c);
 }
 
-auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    if (argc == 0)
+auto Tuple::create (ArgVec const& args, Type const*) -> Value {
+    if (args.num == 0)
         return Empty; // there's one unique empty tuple
-    return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
+    return new (args.num * sizeof (Value)) Tuple (args);
 }
 
-auto Exception::create (int exc, Vector const& vec, int argc, int args) -> Value {
-    // single alloc: first a tuple with argc values, then exception info
-    auto sz = argc * sizeof (Value) + sizeof (Extra);
-    return new (sz) Exception (exc, vec, argc, args);
+auto Exception::create (int exc, ArgVec const& args) -> Value {
+    // single alloc: first a tuple with args.num values, then exception info
+    auto sz = args.num * sizeof (Value) + sizeof (Extra);
+    return new (sz) Exception (exc, args);
 }
 
-auto Array::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc >= 1 && vec[args].isStr());
-    char type = *((char const*) vec[args]);
+auto Array::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num >= 1 && args[0].isStr());
+    char type = *((char const*) args[0]);
     size_t len = 0;
-    if (argc == 2) {
-        assert(vec[args+1].isInt());
-        len = vec[args+1];
+    if (args.num == 2) {
+        assert(args[1].isInt());
+        len = args[1];
     }
     return new Array (type, len);
 }
 
-auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    return new List ({vec, argc, args});
+auto List::create (ArgVec const& args, Type const*) -> Value {
+    return new List (args);
 }
 
-auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    return new Set ({vec, argc, args});
+auto Set::create (ArgVec const& args, Type const*) -> Value {
+    return new Set (args);
 }
 
-auto Dict::create (Vector const&, int, int, Type const*) -> Value {
+auto Dict::create (ArgVec const&, Type const*) -> Value {
     // TODO pre-alloc space to support fast add, needs vals midway cap iso len
     return new Dict;
 }
 
-auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 1);
-    Value v = vec[args];
+auto Type::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    Value v = args[0];
     switch (v.tag()) {
         case Value::Nil: assert(false); break;
         case Value::Int: return "int";
@@ -872,12 +871,12 @@ auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value 
     return {};
 }
 
-auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc >= 2 && vec[args].isObj() && vec[args+1].isStr());
-    return new Class ({vec, argc, args});
+auto Class::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num >= 2 && args[0].isObj() && args[1].isStr());
+    return new Class (args);
 }
 
-auto Inst::create (Vector const& vec, int argc, int args, Type const* t) -> Value {
+auto Inst::create (ArgVec const& args, Type const* t) -> Value {
     Value v = t;
-    return new Inst ({vec, argc, args}, v.asType<Class>());
+    return new Inst (args, v.asType<Class>());
 }

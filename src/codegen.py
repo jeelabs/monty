@@ -15,9 +15,8 @@ def EXCEPTION(block, name, base=''):
     excIds[name] = id
     excHier.append('{ %-25s %2d }, // %2d -> %s' %
                         ('"%s",' % name, baseId, id, base))
-    excFuns.append('static auto e_%s (Vector const& vec, int argc, int args) '
-                        '-> Value {' % name)
-    excFuns.append('    return Exception::create(%d, vec, argc, args);' % id)
+    excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
+    excFuns.append('    return Exception::create(%d, args);' % id)
     excFuns.append('}')
     excFuns.append('static Function const f_%s (e_%s);' % (name, name))
     excDefs.append('{ "%s", f_%s },' % (name, name))
@@ -75,7 +74,7 @@ def TYPE(block, tag, *_):
     base = ' '.join(base) # accept multi-word, e.g. protected
     out = [
         'struct %s : %s {' % (name, base),
-        '    static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;',
+        '    static auto create (ArgVec const&,Type const* =nullptr) -> Value;',
         '    static Lookup const attrs;',
         '    static Type const info;',
         '    auto type () const -> Type const& override;',

@@ -80,13 +80,13 @@ static uint32_t start, begin, last;
 
 // interface exposed to the VM
 
-Value f_ticker (Vector const& vec, int argc, int args) {
+Value f_ticker (ArgVec const& args) {
     Value h = id;
-    if (argc > 1) {
-        if (argc != 3 || !vec[args+1].isInt())
+    if (args.num > 1) {
+        if (args.num != 3 || !args[1].isInt())
             return -1;
-        ms = vec[args+1];
-        h = vec[args+2];
+        ms = args[1];
+        h = args[2];
         start = ticks; // set first timeout relative to now
         last = 0;
         VTableRam().systick = []() {
@@ -102,7 +102,7 @@ Value f_ticker (Vector const& vec, int argc, int args) {
     return id;
 }
 
-Value f_ticks (Vector const& vec, int argc, int args) {
+Value f_ticks (ArgVec const&) {
     uint32_t t = ticks;
     if (begin == 0)
         begin = t;

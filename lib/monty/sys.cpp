@@ -6,12 +6,12 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = "v0.93-53-g9fc4415";
+constexpr auto VERSION = "v0.93-55-gad1b0b9";
 
-static auto f_suspend (Vector const& vec, int argc, int args) -> Value {
+static auto f_suspend (ArgVec const& args) -> Value {
     auto queue = &Interp::tasks;
-    if (argc == 2)
-        queue = &vec[args+1].asType<List>();
+    if (args.num == 2)
+        queue = &args[1].asType<List>();
     Interp::suspend(*queue);
     return Value ();
 }

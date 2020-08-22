@@ -312,26 +312,26 @@ class PyVM : public Interp {
     //CG1 op v
     void opBuildSlice (int arg) {
         sp -= arg - 1;
-        *sp = Slice::create(*context, arg, sp - context->begin());
+        *sp = Slice::create({*context, arg, (int) (sp - context->begin())});
     }
     //CG1 op v
     void opBuildTuple (int arg) {
         sp -= arg - 1;
-        *sp = Tuple::create(*context, arg, sp - context->begin());
+        *sp = Tuple::create({*context, arg, (int) (sp - context->begin())});
     }
     //CG1 op v
     void opBuildList (int arg) {
         sp -= arg - 1;
-        *sp = List::create(*context, arg, sp - context->begin());
+        *sp = List::create({*context, arg, (int) (sp - context->begin())});
     }
     //CG1 op v
     void opBuildSet (int arg) {
         sp -= arg - 1;
-        *sp = Set::create(*context, arg, sp - context->begin());
+        *sp = Set::create({*context, arg, (int) (sp - context->begin())});
     }
     //CG1 op v
     void opBuildMap (int arg) {
-        *++sp = Dict::create(*context, arg, 0);
+        *++sp = Dict::create({*context, arg, 0});
     }
     //CG1 op
     void opStoreMap () {
@@ -392,7 +392,7 @@ class PyVM : public Interp {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*context, arg + 1, context->spOff + 1);
+            return sp->obj().call({*context, arg + 1, (int) context->spOff + 1});
         });
         if (!v.isNil())
             *sp = v;
@@ -417,7 +417,7 @@ class PyVM : public Interp {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(*context, arg, context->spOff + 1);
+            return sp->obj().call({*context, arg, (int) context->spOff + 1});
         });
         if (!v.isNil())
             *sp = v;
@@ -433,7 +433,7 @@ class PyVM : public Interp {
         sp -= num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc);
-        *sp = new Closure (*f, {*context, num, sp - context->begin()});
+        *sp = new Closure (*f, {*context, num, (int) (sp - context->begin())});
     }
     //CG1 op v
     void opMakeClosureDefargs (int arg) {
@@ -441,7 +441,7 @@ class PyVM : public Interp {
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc, sp[0], sp[1]);
-        *sp = new Closure (*f, {*context, num, sp + 2 - context->begin()});
+        *sp = new Closure (*f, {*context, num, (int) (sp + 2 - context->begin())});
     }
     //CG1 op v
     void opLoadDeref (int arg) {

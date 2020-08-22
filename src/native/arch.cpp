@@ -47,13 +47,13 @@ void timerHook () {
     }
 }
 
-static auto f_ticker (Vector const& ctx, int argc, int args) -> Value {
+static auto f_ticker (ArgVec const& args) -> Value {
     Value h = id;
-    if (argc > 1) {
-        if (argc != 3 || !ctx[args+1].isInt())
+    if (args.num > 1) {
+        if (args.num != 3 || !args[1].isInt())
             return -1;
-        ms = ctx[args+1];
-        h = ctx[args+2];
+        ms = args[1];
+        h = args[2];
         start = getTime(); // set first timeout relative to now
         last = 0;
     }
@@ -61,7 +61,7 @@ static auto f_ticker (Vector const& ctx, int argc, int args) -> Value {
     return id;
 }
 
-static auto f_ticks (Vector const&, int, int) -> Value {
+static auto f_ticks (ArgVec const&) -> Value {
     uint32_t t = getTime();
     if (begin == 0)
         begin = t;

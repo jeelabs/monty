@@ -15,7 +15,7 @@ Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
           code (bc.asType<Bytecode>()), pos (t), kw (d) {
 }
 
-auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
+auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = Interp::context;
     auto coro = code.isGenerator();
     if (coro)
@@ -23,19 +23,20 @@ auto Callable::call (Vector const& vec, int argc, int args) const -> Value {
 
     ctx->enter(*this);
 
-    auto nPos = code.numArgs(0);
-    auto nDef = code.numArgs(1);
-    auto nKwo = code.numArgs(2);
+    int nPos = code.numArgs(0);
+    int nDef = code.numArgs(1);
+    int nKwo = code.numArgs(2);
 
-    for (uint32_t i = 0; i < nPos; ++i)
-        if ((int) i < argc)
-            ctx->fastSlot(i) = vec[args+i];
-        else if (pos != nullptr && i < nDef + pos->fill)
+    for (int i = 0; i < nPos; ++i)
+        if (i < args.num)
+            ctx->fastSlot(i) = args[i];
+        else if (pos != nullptr && (size_t) i < nDef + pos->fill)
             //ctx->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
-            ctx->fastSlot(i) = (*pos)[i-argc]; // FIXME verify/args.py
+            ctx->fastSlot(i) = (*pos)[i-args.num]; // FIXME verify/args.py
 
     if (code.hasVarArgs())
-        ctx->fastSlot(nPos+nKwo) = Tuple::create(vec, argc-nPos, args+nPos);
+        ctx->fastSlot(nPos+nKwo) =
+            Tuple::create({args.vec, args.num-nPos, args.off+nPos});
 
     // TODO this isn't quite right, inside bc, there's a list of indices ...
     //  but why not lazily turn the first deref load into a new cell?
@@ -53,29 +54,29 @@ void Callable::marker () const {
     mark(kw);
 }
 
-auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
-    assert(args > 0 && this == &vec[args-1].obj());
-    vec[args-1] = self;
-    return meth.call(vec, argc + 1, args - 1);
+auto BoundMeth::call (ArgVec const& args) const -> Value {
+    assert(args.num > 0 && this == &args[-1].obj());
+    args[-1] = self; // overwrites the entry before first arg
+    return meth.call({args.vec, (int) args.num + 1, (int) args.off - 1});
 }
 
 Closure::Closure (Callable const& f, ArgVec const& args)
         : func (f) {
     insert(0, args.num);
-    for (size_t i = 0; i < args.num; ++i)
+    for (int i = 0; i < args.num; ++i)
         begin()[i] = args[i];
 }
 
-auto Closure::call (Vector const& vec, int argc, int args) const -> Value {
-    auto n = size();
+auto Closure::call (ArgVec const& args) const -> Value {
+    int n = size();
     assert(n > 0);
     Vector v;
-    v.insert(0, n + argc);
-    for (size_t i = 0; i < n; ++i)
+    v.insert(0, n + args.num);
+    for (int i = 0; i < n; ++i)
         v[i] = begin()[i];
-    for (int i = 0; i < argc; ++i)
-        v[n+i] = vec[args+i];
-    return func.call(v, n + argc, 0);
+    for (int i = 0; i < args.num; ++i)
+        v[n+i] = args[i];
+    return func.call({v, n + args.num, 0});
 }
 
 void Context::enter (Callable const& func) {
@@ -160,7 +161,7 @@ void Context::caught () {
     begin()[++spOff] = e.isNil() ? ep[3] : e;
 }
 
-auto Context::call (Vector const&, int, int) const -> Value {
+auto Context::call (ArgVec const&) const -> Value {
     assert(false);
     return {};
 }
