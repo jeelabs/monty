@@ -1,7 +1,7 @@
 // type.cpp - basic object types and type system
 
 #include "monty.h"
-#include "defs.h"
+#include "ops.h"
 #include <cassert>
 
 using namespace Monty;
