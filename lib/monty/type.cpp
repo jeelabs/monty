@@ -381,15 +381,45 @@ void Exception::marker () const {
 
 //CG: exception BaseException
 //CG: exception Exception BaseException
+//CG: exception StopIteration Exception
+//CG: exception ArithmeticError Exception
+//CG: exception AssertionError Exception
+//CG: exception AttributeError Exception
+//CG: exception EOFError Exception
+//CG: exception ImportError Exception
+//CG: exception LookupError Exception
+//CG: exception IndexError LookupError
+//CG: exception KeyError LookupError
+//CG: exception MemoryError Exception
+//CG: exception NameError Exception
+//CG: exception OSError Exception
 //CG: exception RuntimeError Exception
 //CG: exception NotImplementedError RuntimeError
+//CG: exception TypeError Exception
+//CG: exception ValueError Exception
+//CG: exception UnicodeError ValueError
 
 static const Lookup::Item exceptionMap [] = {
     //CG< exception-emit h
     { "BaseException",          -1 }, //  0 -> 
     { "Exception",               0 }, //  1 -> BaseException
-    { "RuntimeError",            1 }, //  2 -> Exception
-    { "NotImplementedError",     2 }, //  3 -> RuntimeError
+    { "StopIteration",           1 }, //  2 -> Exception
+    { "ArithmeticError",         1 }, //  3 -> Exception
+    { "AssertionError",          1 }, //  4 -> Exception
+    { "AttributeError",          1 }, //  5 -> Exception
+    { "EOFError",                1 }, //  6 -> Exception
+    { "ImportError",             1 }, //  7 -> Exception
+    { "LookupError",             1 }, //  8 -> Exception
+    { "IndexError",              8 }, //  9 -> LookupError
+    { "KeyError",                8 }, // 10 -> LookupError
+    { "MemoryError",             1 }, // 11 -> Exception
+    { "NameError",               1 }, // 12 -> Exception
+    { "OSError",                 1 }, // 13 -> Exception
+    { "RuntimeError",            1 }, // 14 -> Exception
+    { "NotImplementedError",    14 }, // 15 -> RuntimeError
+    { "TypeError",               1 }, // 16 -> Exception
+    { "ValueError",              1 }, // 17 -> Exception
+    { "UnicodeError",           17 }, // 18 -> ValueError
     //CG>
 };
 
@@ -406,15 +436,90 @@ static auto e_Exception (Vector const& vec, int argc, int args) -> Value {
 }
 static Function const f_Exception (e_Exception);
 
-static auto e_RuntimeError (Vector const& vec, int argc, int args) -> Value {
+static auto e_StopIteration (Vector const& vec, int argc, int args) -> Value {
     return Exception::create(2, vec, argc, args);
+}
+static Function const f_StopIteration (e_StopIteration);
+
+static auto e_ArithmeticError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(3, vec, argc, args);
+}
+static Function const f_ArithmeticError (e_ArithmeticError);
+
+static auto e_AssertionError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(4, vec, argc, args);
+}
+static Function const f_AssertionError (e_AssertionError);
+
+static auto e_AttributeError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(5, vec, argc, args);
+}
+static Function const f_AttributeError (e_AttributeError);
+
+static auto e_EOFError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(6, vec, argc, args);
+}
+static Function const f_EOFError (e_EOFError);
+
+static auto e_ImportError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(7, vec, argc, args);
+}
+static Function const f_ImportError (e_ImportError);
+
+static auto e_LookupError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(8, vec, argc, args);
+}
+static Function const f_LookupError (e_LookupError);
+
+static auto e_IndexError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(9, vec, argc, args);
+}
+static Function const f_IndexError (e_IndexError);
+
+static auto e_KeyError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(10, vec, argc, args);
+}
+static Function const f_KeyError (e_KeyError);
+
+static auto e_MemoryError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(11, vec, argc, args);
+}
+static Function const f_MemoryError (e_MemoryError);
+
+static auto e_NameError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(12, vec, argc, args);
+}
+static Function const f_NameError (e_NameError);
+
+static auto e_OSError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(13, vec, argc, args);
+}
+static Function const f_OSError (e_OSError);
+
+static auto e_RuntimeError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(14, vec, argc, args);
 }
 static Function const f_RuntimeError (e_RuntimeError);
 
 static auto e_NotImplementedError (Vector const& vec, int argc, int args) -> Value {
-    return Exception::create(3, vec, argc, args);
+    return Exception::create(15, vec, argc, args);
 }
 static Function const f_NotImplementedError (e_NotImplementedError);
+
+static auto e_TypeError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(16, vec, argc, args);
+}
+static Function const f_TypeError (e_TypeError);
+
+static auto e_ValueError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(17, vec, argc, args);
+}
+static Function const f_ValueError (e_ValueError);
+
+static auto e_UnicodeError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(18, vec, argc, args);
+}
+static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
 Type const Object::info ("<object>");
@@ -555,8 +660,23 @@ static const Lookup::Item builtinsMap [] = {
     //CG< exception-emit d
     { "BaseException", f_BaseException },
     { "Exception", f_Exception },
+    { "StopIteration", f_StopIteration },
+    { "ArithmeticError", f_ArithmeticError },
+    { "AssertionError", f_AssertionError },
+    { "AttributeError", f_AttributeError },
+    { "EOFError", f_EOFError },
+    { "ImportError", f_ImportError },
+    { "LookupError", f_LookupError },
+    { "IndexError", f_IndexError },
+    { "KeyError", f_KeyError },
+    { "MemoryError", f_MemoryError },
+    { "NameError", f_NameError },
+    { "OSError", f_OSError },
     { "RuntimeError", f_RuntimeError },
     { "NotImplementedError", f_NotImplementedError },
+    { "TypeError", f_TypeError },
+    { "ValueError", f_ValueError },
+    { "UnicodeError", f_UnicodeError },
     //CG>
     { "print", f_print },
     { "next", f_next },
