@@ -391,11 +391,11 @@ class PyVM : public Interp {
     void opCallMethod (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
+        ArgVec avec = {*context, arg + 1, (int) (sp + 1 - context->begin())};
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call({*context, arg + 1, (int) context->spOff + 1});
+            return sp->obj().call(avec);
         });
-        if (!v.isNil())
-            *sp = v;
+        *sp = v;
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
@@ -416,11 +416,11 @@ class PyVM : public Interp {
     void opCallFunction (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
+        ArgVec avec {*context, arg, (int) (sp + 1 - context->begin())};
         auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call({*context, arg, (int) context->spOff + 1});
+            return sp->obj().call(avec);
         });
-        if (!v.isNil())
-            *sp = v;
+        *sp = v;
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
@@ -433,7 +433,8 @@ class PyVM : public Interp {
         sp -= num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc);
-        *sp = new Closure (*f, {*context, num, (int) (sp - context->begin())});
+        ArgVec avec {*context, num, (int) (sp - context->begin())};
+        *sp = new Closure (*f, avec);
     }
     //CG1 op v
     void opMakeClosureDefargs (int arg) {
@@ -441,7 +442,8 @@ class PyVM : public Interp {
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc, sp[0], sp[1]);
-        *sp = new Closure (*f, {*context, num, (int) (sp + 2 - context->begin())});
+        ArgVec avec {*context, num, (int) (sp + 2 - context->begin())};
+        *sp = new Closure (*f, avec);
     }
     //CG1 op v
     void opLoadDeref (int arg) {
@@ -465,16 +467,14 @@ class PyVM : public Interp {
             return *sp;
         });
         ctx->caller = nullptr;
-        if (context != nullptr)
-            *sp = v;
+        *sp = v;
     }
     //CG1 op
     void opReturnValue () {
         auto v = contextAdjuster([=]() -> Value {
             return context->leave(*sp);
         });
-        if (context != nullptr)
-            *sp = v;
+        *sp = v;
     }
 
     //CG1 op
