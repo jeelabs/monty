@@ -393,7 +393,7 @@ namespace Monty {
         size_t const fill;
 
         static Tuple const emptyObj;
-    private:
+    protected:
         constexpr Tuple () : fill (0) {}
         Tuple (size_t n, Value const* vals =nullptr);
 
@@ -736,7 +736,7 @@ namespace Monty {
         Value self;
     };
 
-    //CG3 type <Cell>
+    //CG3 type <cell>
     struct Cell : Object {
         static Type const info;
         auto type () const -> Type const& override;
@@ -765,6 +765,18 @@ namespace Monty {
         void marker () const override { List::marker(); func.marker(); }
     private:
         Callable const& func;
+    };
+
+    //CG3 type <exception>
+    struct Exception : Tuple {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
+
+        void marker () const override { Tuple::marker(); }
+    private:
+        Exception (Vector const& vec, int argc, int args);
     };
 
     //CG3 type <context>

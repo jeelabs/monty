@@ -375,13 +375,14 @@ auto Object::type () const -> Type const& { return info; }
 Type const Inst::info ("<instance>");
 
 //CG< builtin-types lib/monty/monty.h
-Type const         Cell::info ("<Cell>");
 Type const    BoundMeth::info ("<boundmeth>");
 Type const       Buffer::info ("<buffer>");
 Type const     Bytecode::info ("<bytecode>");
 Type const     Callable::info ("<callable>");
+Type const         Cell::info ("<cell>");
 Type const      Closure::info ("<closure>");
 Type const      Context::info ("<context>");
+Type const    Exception::info ("<exception>");
 Type const     Function::info ("<function>");
 Type const       Lookup::info ("<lookup>");
 Type const       Method::info ("<method>");
@@ -402,13 +403,14 @@ Type const      Str::info ("str", Str::create, &Str::attrs);
 Type const    Tuple::info ("tuple", Tuple::create, &Tuple::attrs);
 Type const     Type::info ("type", Type::create, &Type::attrs);
 
-auto         Cell::type () const -> Type const& { return info; }
 auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }
 auto     Bytecode::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
+auto         Cell::type () const -> Type const& { return info; }
 auto      Closure::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
+auto    Exception::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Method::type () const -> Type const& { return info; }
