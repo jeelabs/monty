@@ -74,7 +74,7 @@ namespace Monty {
         enum Tag { Nil, Int, Str, Obj };
 
         constexpr Value () : v (0) {}
-        constexpr Value (int arg) : v ((arg << 1) | 1) {}
+        constexpr Value (int arg) : v (2 * arg + 1) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
