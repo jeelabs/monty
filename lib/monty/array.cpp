@@ -236,6 +236,12 @@ Class::Class (Vector const& vec, int argc, int args)
     assert(argc >= 2);
     at("__name__") = vec[args+1];
 
+    if (argc > 2) {
+        assert(argc == 3); // no support for multiple inheritance
+        chain = &vec[args+2].asType<Class>();
+    }
+    at("__bases__") = Tuple::create(vec, argc - 2, args + 2);
+
     auto& init = vec[args];
     init.obj().call(vec, argc - 2, args + 2);
 

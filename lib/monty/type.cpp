@@ -674,7 +674,7 @@ auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
 }
 
 auto Dict::create (Vector const&, int, int, Type const*) -> Value {
-    // TODO
+    // TODO pre-alloc space to support fast add, needs vals midway cap iso len
     return new Dict;
 }
 

@@ -380,8 +380,13 @@ class PyVM : public Interp {
     void op_LoadMethod (char const* arg) {
         sp[1] = *sp;
         *sp = sp->asObj().attr(arg, sp[1]);
+        assert(!sp->isNil());
         ++sp;
         assert(!sp->isNil());
+    }
+    //CG1 op q
+    void op_LoadSuperMethod (char const* arg) {
+        (void) arg; assert(false); // TODO
     }
     //CG1 op v
     void op_CallMethod (int arg) {
@@ -717,6 +722,11 @@ class PyVM : public Interp {
                     op_LoadMethod(arg);
                     break;
                 }
+                case Op::LoadSuperMethod: {
+                    char const* arg = fetchQ();
+                    op_LoadSuperMethod(arg);
+                    break;
+                }
                 case Op::CallMethod: {
                     int arg = fetchV();
                     op_CallMethod(arg);
@@ -796,7 +806,6 @@ class PyVM : public Interp {
                 case Op::ImportFrom:
                 case Op::ImportName:
                 case Op::ImportStar:
-                case Op::LoadSuperMethod:
                 case Op::SetupFinally:
                 case Op::SetupWith:
                 case Op::StoreComp:
