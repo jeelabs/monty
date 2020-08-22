@@ -38,7 +38,7 @@ int main (int argc, const char** argv) {
 
     do { // first byte read is blocking
         char c;
-        if (read(0, &c, 1) < 1)
+        if (read(0, &c, 1) < 1 || c == 0)
             break;
         if (c & 0x80) // restart output when garbage (or start char) is received
             freopen(argv[1], "w", fp);

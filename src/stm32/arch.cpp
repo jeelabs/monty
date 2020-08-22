@@ -67,7 +67,8 @@ void archMode (RunMode r) {
 }
 
 auto archDone (char const* msg) -> int {
-    printf("%s\n", msg != nullptr ? msg : "done");
+    // add a null byte at end of output to quickly stop dog.c
+    printf("%s\n%c", msg != nullptr ? msg : "done", 0);
     //while (!console.xmit.empty()) {}
     archMode(RunMode::Done);
     while (true) asm ("wfi");
