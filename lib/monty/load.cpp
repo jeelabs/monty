@@ -653,8 +653,6 @@ struct Loader {
                 auto n = *dp++;
                 *bcNext++ = n;
                 debugf("   x 0x%02x\n", n);
-                while (n-- > 0)
-                    *bcNext++ = *dp++;
             }
         }
     }
