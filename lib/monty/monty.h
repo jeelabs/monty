@@ -344,34 +344,6 @@ namespace Monty {
         size_t count;
     };
 
-    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
-    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
-    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
-
-// see repr.cpp - repr, printing, and buffering
-
-    //CG3 type <buffer>
-    struct Buffer : Object {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-        void putc (char v) { write((uint8_t const*) &v, 1); }
-        void puts (char const* s) { while (*s != 0) putc(*s++); }
-        void print (char const* fmt, ...);
-
-        auto operator<< (Value v) -> Buffer&; // TODO get rid of this C++'ism
-
-        bool sep {false};
-    protected:
-        virtual void write (uint8_t const* ptr, size_t len) const;
-    private:
-        int splitInt (uint32_t val, int base, uint8_t* buf);
-        void putFiller (int n, char fill);
-        void putInt (int val, int base, int width, char fill);
-    };
-
-// see array.cpp - arrays, dicts, and other derived types
-
     //CG< type tuple
     struct Tuple : Object {
         static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
@@ -399,6 +371,51 @@ namespace Monty {
 
         auto data () const -> Value const* { return (Value const*) (this + 1); }
     };
+
+    //CG3 type <exception>
+    struct Exception : Tuple {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        struct Extra { int code; };
+
+        static auto create (int, Vector const&, int, int) -> Value; // diff API
+        static Lookup const bases; // this maps the derivation hierarchy
+
+        void marker () const override;
+    private:
+        Exception (int exc, Vector const& vec, int argc, int args);
+
+        auto extra () -> Extra& { return *(Extra*) end(); }
+    };
+
+    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
+    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
+    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
+
+// see repr.cpp - repr, printing, and buffering
+
+    //CG3 type <buffer>
+    struct Buffer : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        void putc (char v) { write((uint8_t const*) &v, 1); }
+        void puts (char const* s) { while (*s != 0) putc(*s++); }
+        void print (char const* fmt, ...);
+
+        auto operator<< (Value v) -> Buffer&; // TODO get rid of this C++'ism
+
+        bool sep {false};
+    protected:
+        virtual void write (uint8_t const* ptr, size_t len) const;
+    private:
+        int splitInt (uint32_t val, int base, uint8_t* buf);
+        void putFiller (int n, char fill);
+        void putInt (int val, int base, int width, char fill);
+    };
+
+// see array.cpp - arrays, dicts, and other derived types
 
     //CG< type array
     struct Array : Object, ByteVec {
@@ -765,18 +782,6 @@ namespace Monty {
         void marker () const override { List::marker(); func.marker(); }
     private:
         Callable const& func;
-    };
-
-    //CG3 type <exception>
-    struct Exception : Tuple {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-        static auto create (Vector const&,int,int,Type const* =nullptr) -> Value;
-
-        void marker () const override { Tuple::marker(); }
-    private:
-        Exception (Vector const& vec, int argc, int args);
     };
 
     //CG3 type <context>

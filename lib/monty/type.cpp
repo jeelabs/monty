@@ -369,6 +369,54 @@ void Tuple::marker () const {
         data()[i].marker();
 }
 
+Exception::Exception (int exc, Vector const& vec, int argc, int args)
+                        : Tuple (argc, vec.begin() + args) {
+    extra().code = exc;
+}
+
+void Exception::marker () const {
+    Tuple::marker();
+    // TODO Extra fields
+}
+
+//CG: exception BaseException
+//CG: exception Exception BaseException
+//CG: exception RuntimeError Exception
+//CG: exception NotImplementedError RuntimeError
+
+static const Lookup::Item exceptionMap [] = {
+    //CG< exception-emit h
+    { "BaseException",          -1 }, //  0 -> 
+    { "Exception",               0 }, //  1 -> BaseException
+    { "RuntimeError",            1 }, //  2 -> Exception
+    { "NotImplementedError",     2 }, //  3 -> RuntimeError
+    //CG>
+};
+
+const Lookup Exception::bases (exceptionMap, sizeof exceptionMap);
+
+//CG< exception-emit f
+static auto e_BaseException (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(0, vec, argc, args);
+}
+static Function const f_BaseException (e_BaseException);
+
+static auto e_Exception (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(1, vec, argc, args);
+}
+static Function const f_Exception (e_Exception);
+
+static auto e_RuntimeError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(2, vec, argc, args);
+}
+static Function const f_RuntimeError (e_RuntimeError);
+
+static auto e_NotImplementedError (Vector const& vec, int argc, int args) -> Value {
+    return Exception::create(3, vec, argc, args);
+}
+static Function const f_NotImplementedError (e_NotImplementedError);
+//CG>
+
 Type const Object::info ("<object>");
 auto Object::type () const -> Type const& { return info; }
 
@@ -504,6 +552,12 @@ static const Lookup::Item builtinsMap [] = {
     { "tuple", Tuple::info },
     { "type", Type::info },
     //CG>
+    //CG< exception-emit d
+    { "BaseException", f_BaseException },
+    { "Exception", f_Exception },
+    { "RuntimeError", f_RuntimeError },
+    { "NotImplementedError", f_NotImplementedError },
+    //CG>
     { "print", f_print },
     { "next", f_next },
     { "len", f_len },
@@ -538,8 +592,8 @@ static auto str_format (Vector const&, int, int) -> Value {
 static Function const f_str_format (str_format);
 
 static const Lookup::Item strMap [] = {
-    { "count", &f_str_count },
-    { "format", &f_str_format },
+    { "count", f_str_count },
+    { "format", f_str_format },
 };
 
 const Lookup Str::attrs (strMap, sizeof strMap);
@@ -555,7 +609,7 @@ static auto list_append (Vector const& vec, int argc, int args) -> Value {
 static Function const f_list_append (list_append);
 
 static const Lookup::Item listMap [] = {
-    { "append", &f_list_append },
+    { "append", f_list_append },
 };
 #else
 // TODO this method wrapper adds 168 bytes on STM32, but is it a one-time cost?
@@ -563,7 +617,7 @@ static auto d_list_append = Method::wrap(&List::append);
 static Method const m_list_append (d_list_append);
 
 static const Lookup::Item listMap [] = {
-    { "append", &m_list_append },
+    { "append", m_list_append },
 };
 #endif
 
@@ -654,6 +708,12 @@ auto Tuple::create (Vector const& vec, int argc, int args, Type const*) -> Value
     if (argc == 0)
         return Empty; // there's one unique empty tuple
     return new (argc * sizeof (Value)) Tuple (argc, vec.begin() + args);
+}
+
+auto Exception::create (int exc, Vector const& vec, int argc, int args) -> Value {
+    // single alloc: first a tuple with argc values, then exception info
+    auto sz = argc * sizeof (Value) + sizeof (Extra);
+    return new (sz) Exception (exc, vec, argc, args);
 }
 
 auto Array::create (Vector const& vec, int argc, int args, Type const*) -> Value {

@@ -4,12 +4,40 @@ import os, sys, subprocess
 
 verbose = 0
 
-# generate qstr definition
-qstrIndex = []
+excIds = {}
+excHier = []
+excFuns = []
+excDefs = []
+
+def EXCEPTION(block, name, base=''):
+    id = len(excHier)
+    baseId = -1 if base == '' else excIds[base]
+    excIds[name] = id
+    excHier.append('{ %-25s %2d }, // %2d -> %s' %
+                        ('"%s",' % name, baseId, id, base))
+    excFuns.append('static auto e_%s (Vector const& vec, int argc, int args) '
+                        '-> Value {' % name)
+    excFuns.append('    return Exception::create(%d, vec, argc, args);' % id)
+    excFuns.append('}')
+    excFuns.append('static Function const f_%s (e_%s);' % (name, name))
+    excDefs.append('{ "%s", f_%s },' % (name, name))
+    excFuns.append('')
+    return []
+
+def EXCEPTION_EMIT(block, sel='h'):
+    if sel == 'h':
+        return excHier
+    if sel == 'f':
+        return excFuns[:-1]
+    if sel == 'd':
+        return excDefs
 
 def VERSION(block):
     v = subprocess.getoutput('git describe --tags')
     return ['constexpr auto VERSION = "%s";' % v]
+
+# generate qstr definition
+qstrIndex = []
 
 def QSTR_EMIT(block):
     return qstrIndex
