@@ -11,8 +11,8 @@ void archMode (RunMode) {
     // whoops, no LEDs ...
 }
 
-static auto bi_blah (Vector const& vec, int argc, int args) -> Value {
-    return argc;
+static auto bi_blah (ArgVec const& args) -> Value {
+    return args.num;
 }
 
 static Function const f_blah (bi_blah);
