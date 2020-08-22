@@ -361,8 +361,7 @@ class PyVM : public Interp {
     }
     //CG1 op
     void opRaiseFrom () {
-        // TODO exception chaining
-        context->raise(*--sp);
+        context->raise(*--sp); // exception chaining is not supported
     }
     //CG1 op s
     void opUnwindJump (int arg) {

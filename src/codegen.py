@@ -341,7 +341,7 @@ def processFile(d, f):
     flags.clear()
     if '/x' in path: # new code style
         flags['x'] = True
-    if 1 or verbose:
+    if verbose:
         print(path)
     # TODO only process files if they have changed
     with open(path, 'r') as f:
@@ -359,10 +359,10 @@ if __name__ == '__main__':
     for f in sys.argv[1:]:
         if os.path.isdir(f):
             root = f
-        elif root:
-            last.append(f)
-        else:
+        elif not root:
             first.append(f)
+        else:
+            last.append(f)
     assert root, "no directory arg found"
     # process the first files
     for f in first:
