@@ -336,11 +336,12 @@ def processLines(lines):
     return result
 
 # process one source file, replace it only if the new contents is different
-def processFile(path):
+def processFile(d, f):
+    path = os.path.join(d, f)
     flags.clear()
     if '/x' in path: # new code style
         flags['x'] = True
-    if verbose:
+    if 1 or verbose:
         print(path)
     # TODO only process files if they have changed
     with open(path, 'r') as f:
@@ -352,12 +353,25 @@ def processFile(path):
             for s in result:
                 f.write(s+'\n')
 
-# process all C/C++ sources and headers in specified directory
-def processDir(dir):
-    for name in os.listdir(dir):
-        if os.path.splitext(name)[1] in ['.h', '.c', '.cpp']:
-            processFile(os.path.join(dir, name))
-
 if __name__ == '__main__':
-    for d in sys.argv[1:]:
-        processDir(d)
+    # args should be: first-files* root-dir last-files*
+    first, root, last = [], None, []
+    for f in sys.argv[1:]:
+        if os.path.isdir(f):
+            root = f
+        elif root:
+            last.append(f)
+        else:
+            first.append(f)
+    assert root, "no directory arg found"
+    # process the first files
+    for f in first:
+        processFile(root, f)
+    # process all files not listed as first or last
+    for f in os.listdir(root):
+        if not f in first and not f in last:
+            if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
+                processFile(root, f)
+    # process the last files
+    for f in last:
+        processFile(root, f)
