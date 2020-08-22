@@ -233,13 +233,11 @@ auto Type::noFactory (Vector const&, int, int, const Type*) -> Value {
 
 Class::Class (Vector const& vec, int argc, int args)
         : Type (vec[args+1], Inst::create) {
-    assert(argc >= 2);
-    at("__name__") = vec[args+1];
-
-    if (argc > 2) {
-        assert(argc == 3); // no support for multiple inheritance
+    assert(2 <= argc && argc <= 3); // no support for multiple inheritance
+    if (argc > 2)
         chain = &vec[args+2].asType<Class>();
-    }
+
+    at("__name__") = vec[args+1];
     at("__bases__") = Tuple::create(vec, argc - 2, args + 2);
 
     auto& init = vec[args];
@@ -248,7 +246,6 @@ Class::Class (Vector const& vec, int argc, int args)
     auto ctx = Interp::context;
     assert(ctx != nullptr);
     ctx->frame().locals = this;
-    ctx->frame().result = this;
 }
 
 Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
