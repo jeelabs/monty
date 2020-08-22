@@ -27,7 +27,7 @@ namespace Monty {
     struct Vec {
         constexpr Vec () : caps (0), data (nullptr) {}
         constexpr Vec (void const* ptr, size_t len =0) // TODO caps b
-            : caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
+                    : caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
         ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
@@ -198,12 +198,11 @@ namespace Monty {
     void mark (Vector const&);
 
     struct ArgVec {
-        ArgVec (Vector const& v, int n, int o)
-            : vec (v), num (n), off (o) {}
+        ArgVec (Vector const& v, int n, int o) : vec (v), num (n), off (o) {}
 
         //auto size () const -> size_t { return num; }
         auto begin () const -> Value const* { return vec.begin() + off; }
-        auto end () const -> Value const* { return vec.begin() + num; }
+        auto end () const -> Value const* { return begin() + num; }
         auto operator[] (size_t idx) const -> Value& { return vec[off+idx]; }
 
         Vector const& vec;
@@ -345,7 +344,7 @@ namespace Monty {
         struct Item { char const* k; Value v; };
 
         constexpr Lookup (Item const* p, size_t sz)
-            : items (p), count (sz / sizeof (Item)) {}
+                        : items (p), count (sz / sizeof (Item)) {}
 
         auto operator[] (char const* key) const -> Value;
 
@@ -537,7 +536,7 @@ namespace Monty {
 
         constexpr Type (char const* s, Factory f =noFactory,
                                         Lookup const* a =nullptr)
-            : Dict (a), name (s), factory (f) {}
+                    : Dict (a), name (s), factory (f) {}
 
         auto call (ArgVec const&) const -> Value override;
         auto attr (char const* name, Value&) const -> Value override {
@@ -605,33 +604,33 @@ namespace Monty {
 
     template< typename T >
     auto argConv (auto (T::*meth)() -> Value,
-                    Object& self, ArgVec const&) -> Value {
+                                Object& self, ArgVec const&) -> Value {
         return (((T&) self).*meth)();
     }
     template< typename T >
     auto argConv (auto (T::*meth)(Value) -> Value,
-                    Object& self, ArgVec const& args) -> Value {
+                                Object& self, ArgVec const& args) -> Value {
         return (((T&) self).*meth)(args[1]);
     }
     template< typename T >
     auto argConv (void (T::*meth)(Value),
-                    Object& self, ArgVec const& args) -> Value {
+                                Object& self, ArgVec const& args) -> Value {
         (((T&) self).*meth)(args[1]);
         return {};
     }
     template< typename T >
     auto argConv (auto (T::*meth)(int) -> Value,
-                    Object& self, ArgVec const& args) -> Value {
+                                Object& self, ArgVec const& args) -> Value {
         return (((T&) self).*meth)(args[1]);
     }
     template< typename T >
     auto argConv (auto (T::*meth)(const char *) -> Value,
-                    Object& self, ArgVec const& args) -> Value {
+                                Object& self, ArgVec const& args) -> Value {
         return (((T&) self).*meth)(args[1]);
     }
     template< typename T >
     auto argConv (auto (T::*meth)(ArgVec const&) -> Value,
-                    Object& self, ArgVec const& args) -> Value {
+                                Object& self, ArgVec const& args) -> Value {
         return (((T&) self).*meth)(args);
     }
 
@@ -733,9 +732,9 @@ namespace Monty {
         auto type () const -> Type const& override;
 
         Callable (Value callee, Module* mod)
-            : Callable (callee, nullptr, nullptr, mod) {}
+                : Callable (callee, nullptr, nullptr, mod) {}
         Callable (Value callee, Value pos, Value kw)
-            : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
+                : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
         Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
 
         auto qStrAt (size_t) const -> char const*;

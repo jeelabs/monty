@@ -231,8 +231,7 @@ auto Type::noFactory (ArgVec const&, const Type*) -> Value {
     return {};
 }
 
-Class::Class (ArgVec const& args)
-        : Type (args[1], Inst::create) {
+Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     assert(2 <= args.num && args.num <= 3); // no support for multiple inheritance
     if (args.num > 2)
         chain = &args[2].asType<Class>();
