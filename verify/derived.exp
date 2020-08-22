@@ -1,0 +1,16 @@
+main
+an A
+ab ()
+A init A 123
+A:f A
+bn B
+bb (<class A>)
+A init B 456
+A:f B
+cn C
+cb (<class B>)
+B init C 789
+A:f C
+dn D
+db ()
+done
