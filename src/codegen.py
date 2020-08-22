@@ -133,7 +133,7 @@ def OP_EMIT(block, sel=0):
         return opraises
 
 def OP(block, typ='', multi=0):
-    op = block[0].split()[1][3:]
+    op = block[0].split()[1][2:]
     if 'q' in typ:
         fmt, arg, decl = ' %s', 'fetchQ()', 'char const* arg'
     elif 'v' in typ:
@@ -146,7 +146,7 @@ def OP(block, typ='', multi=0):
         fmt, arg, decl = ' %d', 'ip[-1]', 'uint32_t arg'
     else:
         fmt, arg, decl = '', '', ''
-    name = 'op_' + op
+    name = 'op' + op
 
     if 'm' in typ:
         opmulti.append('if ((uint32_t) (ip[-1] - Op::%s) < %d) {' % (op, multi))

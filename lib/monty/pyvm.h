@@ -150,74 +150,74 @@ class PyVM : public Interp {
     //CG: op-init
 
     //CG1 op
-    void op_LoadNull () {
+    void opLoadNull () {
         *++sp = {};
     }
     //CG1 op
-    void op_LoadConstNone () {
+    void opLoadConstNone () {
         *++sp = Null;
     }
     //CG1 op
-    void op_LoadConstFalse () {
+    void opLoadConstFalse () {
         *++sp = False;
     }
     //CG1 op
-    void op_LoadConstTrue () {
+    void opLoadConstTrue () {
         *++sp = True;
     }
     //CG1 op q
-    void op_LoadConstString (char const* arg) {
+    void opLoadConstString (char const* arg) {
         *++sp = arg;
     }
     //CG1 op
-    void op_LoadConstSmallInt () {
+    void opLoadConstSmallInt () {
         *++sp = fetchV((*ip & 0x40) ? ~0 : 0);
     }
     //CG1 op v
-    void op_LoadConstObj (int arg) {
+    void opLoadConstObj (int arg) {
         *++sp = context->callee->code.constAt(arg);
     }
     //CG1 op v
-    void op_LoadFastN (int arg) {
+    void opLoadFastN (int arg) {
         *++sp = context->fastSlot(arg);
     }
     //CG1 op v
-    void op_StoreFastN (int arg) {
+    void opStoreFastN (int arg) {
         context->fastSlot(arg) = *sp--;
     }
     //CG1 op v
-    void op_DeleteFast (int arg) {
+    void opDeleteFast (int arg) {
         context->fastSlot(arg) = {};
     }
 
     //CG1 op
-    void op_DupTop () {
+    void opDupTop () {
         ++sp; sp[0] = sp[-1];
     }
     //CG1 op
-    void op_DupTopTwo () {
+    void opDupTopTwo () {
         sp += 2; sp[0] = sp[-2]; sp[-1] = sp[-3];
     }
     //CG1 op
-    void op_PopTop () {
+    void opPopTop () {
         --sp;
     }
     //CG1 op
-    void op_RotTwo () {
+    void opRotTwo () {
         auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = v;
     }
     //CG1 op
-    void op_RotThree () {
+    void opRotThree () {
         auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = sp[-2]; sp[-2] = v;
     }
 
     //CG1 op s
-    void op_Jump (int arg) {
+    void opJump (int arg) {
         ip += arg;
         loopCheck(arg);
     }
     //CG1 op s
-    void op_PopJumpIfFalse (int arg) {
+    void opPopJumpIfFalse (int arg) {
         if (!sp->truthy()) {
             ip += arg;
             loopCheck(arg);
@@ -225,7 +225,7 @@ class PyVM : public Interp {
         --sp;
     }
     //CG1 op s
-    void op_JumpIfFalseOrPop (int arg) {
+    void opJumpIfFalseOrPop (int arg) {
         if (!sp->truthy()) {
             ip += arg;
             loopCheck(arg);
@@ -233,7 +233,7 @@ class PyVM : public Interp {
             --sp;
     }
     //CG1 op s
-    void op_PopJumpIfTrue (int arg) {
+    void opPopJumpIfTrue (int arg) {
         if (sp->truthy()) {
             ip += arg;
             loopCheck(arg);
@@ -241,7 +241,7 @@ class PyVM : public Interp {
         --sp;
     }
     //CG1 op s
-    void op_JumpIfTrueOrPop (int arg) {
+    void opJumpIfTrueOrPop (int arg) {
         if (sp->truthy()) {
             ip += arg;
             loopCheck(arg);
@@ -250,38 +250,38 @@ class PyVM : public Interp {
     }
 
     //CG1 op q
-    void op_LoadName (char const* arg) {
+    void opLoadName (char const* arg) {
         assert(frame().locals.isObj());
         *++sp = frame().locals.obj().getAt(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
-    void op_StoreName (char const* arg) {
+    void opStoreName (char const* arg) {
         auto& l = frame().locals;
         if (!l.isObj())
             l = new Dict (&context->globals());
         l.obj().setAt(arg, *sp--);
     }
     //CG1 op q
-    void op_DeleteName (char const* arg) {
+    void opDeleteName (char const* arg) {
         assert(frame().locals.isObj());
         frame().locals.obj().setAt(arg, {});
     }
     //CG1 op q
-    void op_LoadGlobal (char const* arg) {
+    void opLoadGlobal (char const* arg) {
         *++sp = context->globals().at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
-    void op_StoreGlobal (char const* arg) {
+    void opStoreGlobal (char const* arg) {
         context->globals().at(arg) = *sp--;
     }
     //CG1 op q
-    void op_DeleteGlobal (char const* arg) {
+    void opDeleteGlobal (char const* arg) {
         context->globals().at(arg) = {};
     }
     //CG1 op q
-    void op_LoadAttr (char const* arg) {
+    void opLoadAttr (char const* arg) {
         Value self;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
@@ -291,18 +291,18 @@ class PyVM : public Interp {
             *sp = new BoundMeth (*f, self);
     }
     //CG1 op q
-    void op_StoreAttr (char const* arg) {
+    void opStoreAttr (char const* arg) {
         assert(&sp->obj().type().type() == &Class::info);
         sp->obj().setAt(arg, sp[-1]);
         sp -= 2;
     }
     //CG1 op
-    void op_LoadSubscr () {
+    void opLoadSubscr () {
         --sp;
         *sp = sp->asObj().getAt(sp[1]);
     }
     //CG1 op
-    void op_StoreSubscr () {
+    void opStoreSubscr () {
         --sp; // val [obj] key
         assert(sp->isObj());
         sp->obj().setAt(sp[1], sp[-1]);
@@ -310,62 +310,62 @@ class PyVM : public Interp {
     }
 
     //CG1 op v
-    void op_BuildSlice (int arg) {
+    void opBuildSlice (int arg) {
         sp -= arg - 1;
         *sp = Slice::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
-    void op_BuildTuple (int arg) {
+    void opBuildTuple (int arg) {
         sp -= arg - 1;
         *sp = Tuple::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
-    void op_BuildList (int arg) {
+    void opBuildList (int arg) {
         sp -= arg - 1;
         *sp = List::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
-    void op_BuildSet (int arg) {
+    void opBuildSet (int arg) {
         sp -= arg - 1;
         *sp = Set::create(*context, arg, sp - context->begin());
     }
     //CG1 op v
-    void op_BuildMap (int arg) {
+    void opBuildMap (int arg) {
         *++sp = Dict::create(*context, arg, 0);
     }
     //CG1 op
-    void op_StoreMap () {
+    void opStoreMap () {
         sp -= 2;
         sp->obj().setAt(sp[2], sp[1]); // TODO optimise later: no key check
     }
 
     //CG1 op o
-    void op_SetupExcept (int arg) {
+    void opSetupExcept (int arg) {
         auto exc = context->excBase(1);
         exc[0] = ip - context->ipBase() + arg;
         exc[1] = sp - context->begin();
         exc[2] = {};
     }
     //CG1 op o
-    void op_PopExceptJump (int arg) {
+    void opPopExceptJump (int arg) {
         context->excBase(-1);
         ip += arg;
     }
     //CG1 op
-    void op_RaiseLast () {
+    void opRaiseLast () {
         context->raise(""); // TODO
     }
     //CG1 op
-    void op_RaiseObj () {
+    void opRaiseObj () {
         context->raise(*sp);
     }
     //CG1 op
-    void op_RaiseFrom () {
+    void opRaiseFrom () {
         // TODO exception chaining
         context->raise(*--sp);
     }
     //CG1 op s
-    void op_UnwindJump (int arg) {
+    void opUnwindJump (int arg) {
         int ep = frame().ep;
         frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
@@ -373,11 +373,11 @@ class PyVM : public Interp {
     }
 
     //CG1 op
-    void op_LoadBuildClass () {
+    void opLoadBuildClass () {
         *++sp = Class::info;
     }
     //CG1 op q
-    void op_LoadMethod (char const* arg) {
+    void opLoadMethod (char const* arg) {
         sp[1] = *sp;
         *sp = sp->asObj().attr(arg, sp[1]);
         assert(!sp->isNil());
@@ -385,11 +385,11 @@ class PyVM : public Interp {
         assert(!sp->isNil());
     }
     //CG1 op q
-    void op_LoadSuperMethod (char const* arg) {
+    void opLoadSuperMethod (char const* arg) {
         (void) arg; assert(false); // TODO
     }
     //CG1 op v
-    void op_CallMethod (int arg) {
+    void opCallMethod (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
         auto v = contextAdjuster([=]() -> Value {
@@ -399,22 +399,22 @@ class PyVM : public Interp {
             *sp = v;
     }
     //CG1 op v
-    void op_CallMethodVarKw (int arg) {
+    void opCallMethodVarKw (int arg) {
         (void) arg; assert(false); // TODO
     }
     //CG1 op v
-    void op_MakeFunction (int arg) {
+    void opMakeFunction (int arg) {
         auto bc = context->callee->code.constAt(arg);
         *++sp = new Callable (bc);
     }
     //CG1 op v
-    void op_MakeFunctionDefargs (int arg) {
+    void opMakeFunctionDefargs (int arg) {
         auto bc = context->callee->code.constAt(arg);
         --sp;
         *sp = new Callable (bc, sp[0], sp[1]);
     }
     //CG1 op v
-    void op_CallFunction (int arg) {
+    void opCallFunction (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
         auto v = contextAdjuster([=]() -> Value {
@@ -424,12 +424,12 @@ class PyVM : public Interp {
             *sp = v;
     }
     //CG1 op v
-    void op_CallFunctionVarKw (int arg) {
+    void opCallFunctionVarKw (int arg) {
         (void) arg; assert(false); // TODO
     }
 
     //CG1 op v
-    void op_MakeClosure (int arg) {
+    void opMakeClosure (int arg) {
         int num = *ip++;
         sp -= num - 1;
         auto bc = context->callee->code.constAt(arg);
@@ -437,7 +437,7 @@ class PyVM : public Interp {
         *sp = new Closure (*f, *context, num, sp - context->begin());
     }
     //CG1 op v
-    void op_MakeClosureDefargs (int arg) {
+    void opMakeClosureDefargs (int arg) {
         int num = *ip++;
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
@@ -445,21 +445,21 @@ class PyVM : public Interp {
         *sp = new Closure (*f, *context, num, sp + 2 - context->begin());
     }
     //CG1 op v
-    void op_LoadDeref (int arg) {
+    void opLoadDeref (int arg) {
         *++sp = context->derefSlot(arg);
         assert(!sp->isNil());
     }
     //CG1 op v
-    void op_StoreDeref (int arg) {
+    void opStoreDeref (int arg) {
         context->derefSlot(arg) = *sp--;
     }
     //CG1 op v
-    void op_DeleteDeref (int arg) {
+    void opDeleteDeref (int arg) {
         context->derefSlot(arg) = {};
     }
 
     //CG1 op
-    void op_YieldValue () {
+    void opYieldValue () {
         auto ctx = context;
         auto v = contextAdjuster([=]() -> Value {
             context = context->caller;
@@ -470,7 +470,7 @@ class PyVM : public Interp {
             *sp = v;
     }
     //CG1 op
-    void op_ReturnValue () {
+    void opReturnValue () {
         auto v = contextAdjuster([=]() -> Value {
             return context->leave(*sp);
         });
@@ -479,11 +479,11 @@ class PyVM : public Interp {
     }
 
     //CG1 op
-    void op_GetIter () {
+    void opGetIter () {
         assert(false); // TODO
     }
     //CG1 op
-    void op_GetIterStack () {
+    void opGetIterStack () {
         // TODO yuck, the compiler assumes 4 stack entries are used!
         //  layout [seq,idx,nil,nil]
         *++sp = 0;
@@ -491,7 +491,7 @@ class PyVM : public Interp {
         *++sp = {};
     }
     //CG1 op o
-    void op_ForIter (int arg) {
+    void opForIter (int arg) {
         assert(sp->isNil());
         int n = sp[-2];
         Value v = sp[-3].obj().getAt(n++);
@@ -505,24 +505,24 @@ class PyVM : public Interp {
     }
 
     //CG1 op m 64
-    void op_LoadConstSmallIntMulti (uint32_t arg) {
+    void opLoadConstSmallIntMulti (uint32_t arg) {
         *++sp = arg - 16;
     }
     //CG1 op m 16
-    void op_LoadFastMulti (uint32_t arg) {
+    void opLoadFastMulti (uint32_t arg) {
         *++sp = context->fastSlot(arg);
         assert(!sp->isNil());
     }
     //CG1 op m 16
-    void op_StoreFastMulti (uint32_t arg) {
+    void opStoreFastMulti (uint32_t arg) {
         context->fastSlot(arg) = *sp--;
     }
     //CG1 op m 7
-    void op_UnaryOpMulti (uint32_t arg) {
+    void opUnaryOpMulti (uint32_t arg) {
         *sp = sp->unOp((UnOp) arg);
     }
     //CG1 op m 35
-    void op_BinaryOpMulti (uint32_t arg) {
+    void opBinaryOpMulti (uint32_t arg) {
         --sp;
         *sp = sp->binOp((BinOp) arg, sp[1]);
     }
@@ -537,266 +537,266 @@ class PyVM : public Interp {
 
                 //CG< op-emit d
                 case Op::LoadNull:
-                    op_LoadNull();
+                    opLoadNull();
                     break;
                 case Op::LoadConstNone:
-                    op_LoadConstNone();
+                    opLoadConstNone();
                     break;
                 case Op::LoadConstFalse:
-                    op_LoadConstFalse();
+                    opLoadConstFalse();
                     break;
                 case Op::LoadConstTrue:
-                    op_LoadConstTrue();
+                    opLoadConstTrue();
                     break;
                 case Op::LoadConstString: {
                     char const* arg = fetchQ();
-                    op_LoadConstString(arg);
+                    opLoadConstString(arg);
                     break;
                 }
                 case Op::LoadConstSmallInt:
-                    op_LoadConstSmallInt();
+                    opLoadConstSmallInt();
                     break;
                 case Op::LoadConstObj: {
                     int arg = fetchV();
-                    op_LoadConstObj(arg);
+                    opLoadConstObj(arg);
                     break;
                 }
                 case Op::LoadFastN: {
                     int arg = fetchV();
-                    op_LoadFastN(arg);
+                    opLoadFastN(arg);
                     break;
                 }
                 case Op::StoreFastN: {
                     int arg = fetchV();
-                    op_StoreFastN(arg);
+                    opStoreFastN(arg);
                     break;
                 }
                 case Op::DeleteFast: {
                     int arg = fetchV();
-                    op_DeleteFast(arg);
+                    opDeleteFast(arg);
                     break;
                 }
                 case Op::DupTop:
-                    op_DupTop();
+                    opDupTop();
                     break;
                 case Op::DupTopTwo:
-                    op_DupTopTwo();
+                    opDupTopTwo();
                     break;
                 case Op::PopTop:
-                    op_PopTop();
+                    opPopTop();
                     break;
                 case Op::RotTwo:
-                    op_RotTwo();
+                    opRotTwo();
                     break;
                 case Op::RotThree:
-                    op_RotThree();
+                    opRotThree();
                     break;
                 case Op::Jump: {
                     int arg = fetchO()-0x8000;
-                    op_Jump(arg);
+                    opJump(arg);
                     break;
                 }
                 case Op::PopJumpIfFalse: {
                     int arg = fetchO()-0x8000;
-                    op_PopJumpIfFalse(arg);
+                    opPopJumpIfFalse(arg);
                     break;
                 }
                 case Op::JumpIfFalseOrPop: {
                     int arg = fetchO()-0x8000;
-                    op_JumpIfFalseOrPop(arg);
+                    opJumpIfFalseOrPop(arg);
                     break;
                 }
                 case Op::PopJumpIfTrue: {
                     int arg = fetchO()-0x8000;
-                    op_PopJumpIfTrue(arg);
+                    opPopJumpIfTrue(arg);
                     break;
                 }
                 case Op::JumpIfTrueOrPop: {
                     int arg = fetchO()-0x8000;
-                    op_JumpIfTrueOrPop(arg);
+                    opJumpIfTrueOrPop(arg);
                     break;
                 }
                 case Op::LoadName: {
                     char const* arg = fetchQ();
-                    op_LoadName(arg);
+                    opLoadName(arg);
                     break;
                 }
                 case Op::StoreName: {
                     char const* arg = fetchQ();
-                    op_StoreName(arg);
+                    opStoreName(arg);
                     break;
                 }
                 case Op::DeleteName: {
                     char const* arg = fetchQ();
-                    op_DeleteName(arg);
+                    opDeleteName(arg);
                     break;
                 }
                 case Op::LoadGlobal: {
                     char const* arg = fetchQ();
-                    op_LoadGlobal(arg);
+                    opLoadGlobal(arg);
                     break;
                 }
                 case Op::StoreGlobal: {
                     char const* arg = fetchQ();
-                    op_StoreGlobal(arg);
+                    opStoreGlobal(arg);
                     break;
                 }
                 case Op::DeleteGlobal: {
                     char const* arg = fetchQ();
-                    op_DeleteGlobal(arg);
+                    opDeleteGlobal(arg);
                     break;
                 }
                 case Op::LoadAttr: {
                     char const* arg = fetchQ();
-                    op_LoadAttr(arg);
+                    opLoadAttr(arg);
                     break;
                 }
                 case Op::StoreAttr: {
                     char const* arg = fetchQ();
-                    op_StoreAttr(arg);
+                    opStoreAttr(arg);
                     break;
                 }
                 case Op::LoadSubscr:
-                    op_LoadSubscr();
+                    opLoadSubscr();
                     break;
                 case Op::StoreSubscr:
-                    op_StoreSubscr();
+                    opStoreSubscr();
                     break;
                 case Op::BuildSlice: {
                     int arg = fetchV();
-                    op_BuildSlice(arg);
+                    opBuildSlice(arg);
                     break;
                 }
                 case Op::BuildTuple: {
                     int arg = fetchV();
-                    op_BuildTuple(arg);
+                    opBuildTuple(arg);
                     break;
                 }
                 case Op::BuildList: {
                     int arg = fetchV();
-                    op_BuildList(arg);
+                    opBuildList(arg);
                     break;
                 }
                 case Op::BuildSet: {
                     int arg = fetchV();
-                    op_BuildSet(arg);
+                    opBuildSet(arg);
                     break;
                 }
                 case Op::BuildMap: {
                     int arg = fetchV();
-                    op_BuildMap(arg);
+                    opBuildMap(arg);
                     break;
                 }
                 case Op::StoreMap:
-                    op_StoreMap();
+                    opStoreMap();
                     break;
                 case Op::SetupExcept: {
                     int arg = fetchO();
-                    op_SetupExcept(arg);
+                    opSetupExcept(arg);
                     break;
                 }
                 case Op::PopExceptJump: {
                     int arg = fetchO();
-                    op_PopExceptJump(arg);
+                    opPopExceptJump(arg);
                     break;
                 }
                 case Op::RaiseLast:
-                    op_RaiseLast();
+                    opRaiseLast();
                     break;
                 case Op::RaiseObj:
-                    op_RaiseObj();
+                    opRaiseObj();
                     break;
                 case Op::RaiseFrom:
-                    op_RaiseFrom();
+                    opRaiseFrom();
                     break;
                 case Op::UnwindJump: {
                     int arg = fetchO()-0x8000;
-                    op_UnwindJump(arg);
+                    opUnwindJump(arg);
                     break;
                 }
                 case Op::LoadBuildClass:
-                    op_LoadBuildClass();
+                    opLoadBuildClass();
                     break;
                 case Op::LoadMethod: {
                     char const* arg = fetchQ();
-                    op_LoadMethod(arg);
+                    opLoadMethod(arg);
                     break;
                 }
                 case Op::LoadSuperMethod: {
                     char const* arg = fetchQ();
-                    op_LoadSuperMethod(arg);
+                    opLoadSuperMethod(arg);
                     break;
                 }
                 case Op::CallMethod: {
                     int arg = fetchV();
-                    op_CallMethod(arg);
+                    opCallMethod(arg);
                     break;
                 }
                 case Op::CallMethodVarKw: {
                     int arg = fetchV();
-                    op_CallMethodVarKw(arg);
+                    opCallMethodVarKw(arg);
                     break;
                 }
                 case Op::MakeFunction: {
                     int arg = fetchV();
-                    op_MakeFunction(arg);
+                    opMakeFunction(arg);
                     break;
                 }
                 case Op::MakeFunctionDefargs: {
                     int arg = fetchV();
-                    op_MakeFunctionDefargs(arg);
+                    opMakeFunctionDefargs(arg);
                     break;
                 }
                 case Op::CallFunction: {
                     int arg = fetchV();
-                    op_CallFunction(arg);
+                    opCallFunction(arg);
                     break;
                 }
                 case Op::CallFunctionVarKw: {
                     int arg = fetchV();
-                    op_CallFunctionVarKw(arg);
+                    opCallFunctionVarKw(arg);
                     break;
                 }
                 case Op::MakeClosure: {
                     int arg = fetchV();
-                    op_MakeClosure(arg);
+                    opMakeClosure(arg);
                     break;
                 }
                 case Op::MakeClosureDefargs: {
                     int arg = fetchV();
-                    op_MakeClosureDefargs(arg);
+                    opMakeClosureDefargs(arg);
                     break;
                 }
                 case Op::LoadDeref: {
                     int arg = fetchV();
-                    op_LoadDeref(arg);
+                    opLoadDeref(arg);
                     break;
                 }
                 case Op::StoreDeref: {
                     int arg = fetchV();
-                    op_StoreDeref(arg);
+                    opStoreDeref(arg);
                     break;
                 }
                 case Op::DeleteDeref: {
                     int arg = fetchV();
-                    op_DeleteDeref(arg);
+                    opDeleteDeref(arg);
                     break;
                 }
                 case Op::YieldValue:
-                    op_YieldValue();
+                    opYieldValue();
                     break;
                 case Op::ReturnValue:
-                    op_ReturnValue();
+                    opReturnValue();
                     break;
                 case Op::GetIter:
-                    op_GetIter();
+                    opGetIter();
                     break;
                 case Op::GetIterStack:
-                    op_GetIterStack();
+                    opGetIterStack();
                     break;
                 case Op::ForIter: {
                     int arg = fetchO();
-                    op_ForIter(arg);
+                    opForIter(arg);
                     break;
                 }
                 //CG>
@@ -818,27 +818,27 @@ class PyVM : public Interp {
                     //CG< op-emit m
                     if ((uint32_t) (ip[-1] - Op::LoadConstSmallIntMulti) < 64) {
                         uint32_t arg = ip[-1] - Op::LoadConstSmallIntMulti;
-                        op_LoadConstSmallIntMulti(arg);
+                        opLoadConstSmallIntMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::LoadFastMulti) < 16) {
                         uint32_t arg = ip[-1] - Op::LoadFastMulti;
-                        op_LoadFastMulti(arg);
+                        opLoadFastMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::StoreFastMulti) < 16) {
                         uint32_t arg = ip[-1] - Op::StoreFastMulti;
-                        op_StoreFastMulti(arg);
+                        opStoreFastMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::UnaryOpMulti) < 7) {
                         uint32_t arg = ip[-1] - Op::UnaryOpMulti;
-                        op_UnaryOpMulti(arg);
+                        opUnaryOpMulti(arg);
                         break;
                     }
                     if ((uint32_t) (ip[-1] - Op::BinaryOpMulti) < 35) {
                         uint32_t arg = ip[-1] - Op::BinaryOpMulti;
-                        op_BinaryOpMulti(arg);
+                        opBinaryOpMulti(arg);
                         break;
                     }
                     //CG>
