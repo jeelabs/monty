@@ -848,11 +848,11 @@ auto Array::create (Vector const& vec, int argc, int args, Type const*) -> Value
 }
 
 auto List::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    return new List (vec, argc, args);
+    return new List ({vec, argc, args});
 }
 
 auto Set::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    return new Set (vec, argc, args);
+    return new Set ({vec, argc, args});
 }
 
 auto Dict::create (Vector const&, int, int, Type const*) -> Value {
@@ -874,10 +874,10 @@ auto Type::create (Vector const& vec, int argc, int args, Type const*) -> Value 
 
 auto Class::create (Vector const& vec, int argc, int args, Type const*) -> Value {
     assert(argc >= 2 && vec[args].isObj() && vec[args+1].isStr());
-    return new Class (vec, argc, args);
+    return new Class ({vec, argc, args});
 }
 
 auto Inst::create (Vector const& vec, int argc, int args, Type const* t) -> Value {
     Value v = t;
-    return new Inst (vec, argc, args, v.asType<Class>());
+    return new Inst ({vec, argc, args}, v.asType<Class>());
 }

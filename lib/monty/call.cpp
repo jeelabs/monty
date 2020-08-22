@@ -59,11 +59,11 @@ auto BoundMeth::call (Vector const& vec, int argc, int args) const -> Value {
     return meth.call(vec, argc + 1, args - 1);
 }
 
-Closure::Closure (Callable const& f, Vector const& vec, int argc, int args)
+Closure::Closure (Callable const& f, ArgVec const& args)
         : func (f) {
-    insert(0, argc);
-    for (int i = 0; i < argc; ++i)
-        begin()[i] = vec[args+i];
+    insert(0, args.num);
+    for (size_t i = 0; i < args.num; ++i)
+        begin()[i] = args[i];
 }
 
 auto Closure::call (Vector const& vec, int argc, int args) const -> Value {

@@ -433,7 +433,7 @@ class PyVM : public Interp {
         sp -= num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc);
-        *sp = new Closure (*f, *context, num, sp - context->begin());
+        *sp = new Closure (*f, {*context, num, sp - context->begin()});
     }
     //CG1 op v
     void opMakeClosureDefargs (int arg) {
@@ -441,7 +441,7 @@ class PyVM : public Interp {
         sp -= 2 + num - 1;
         auto bc = context->callee->code.constAt(arg);
         auto f = new Callable (bc, sp[0], sp[1]);
-        *sp = new Closure (*f, *context, num, sp + 2 - context->begin());
+        *sp = new Closure (*f, {*context, num, sp + 2 - context->begin()});
     }
     //CG1 op v
     void opLoadDeref (int arg) {

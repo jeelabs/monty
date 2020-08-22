@@ -197,6 +197,20 @@ namespace Monty {
 
     void mark (Vector const&);
 
+    struct ArgVec {
+        ArgVec (Vector const& v, long n =0, long o =0)
+            : vec (v), num (n), off (o) {}
+
+        auto size () const -> size_t { return num; }
+        auto begin () const -> Value const* { return vec.begin() + off; }
+        auto end () const -> Value const* { return vec.begin() + size(); }
+        auto operator[] (size_t idx) const -> Value& { return vec[off+idx]; }
+
+        Vector const& vec;
+        size_t num;
+        size_t off;
+    };
+
     // can't use "CG type <object>", as type/repr are virtual iso override
     struct Object : Obj {
         static const Type info;
@@ -447,7 +461,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr List () {}
-        List (Vector const& vec, int argc, int args);
+        List (ArgVec const& args);
 
         auto pop (int idx) -> Value;
         void append (Value v);
@@ -544,7 +558,7 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Class (Vector const& vec, int argc, int args);
+        Class (ArgVec const& args);
     };
 
     // can't use CG, because type() must not be auto-generated
@@ -561,7 +575,7 @@ namespace Monty {
         }
 
     private:
-        Inst (Vector const& vec, int argc, int args, Class const& cls);
+        Inst (ArgVec args, Class const& cls);
     };
 
     extern Lookup const builtins;
@@ -775,7 +789,7 @@ namespace Monty {
             return Object::repr(buf); // don't print as a list
         }
 
-        Closure (Callable const&, Vector const&, int, int);
+        Closure (Callable const&, ArgVec const&);
 
         auto call (Vector const& vec, int argc, int args) const -> Value override;
 

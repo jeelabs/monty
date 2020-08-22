@@ -118,10 +118,10 @@ auto Array::setAt (Value k, Value v) -> Value {
     return {};
 }
 
-List::List (Vector const& vec, int argc, int args) {
-    insert(0, argc);
-    for (int i = 0; i < argc; ++i)
-        (*this)[i] = vec[args+i];
+List::List (ArgVec const& args) {
+    insert(0, args.size());
+    for (size_t i = 0; i < args.size(); ++i)
+        (*this)[i] = args[i];
 }
 
 auto List::pop (int idx) -> Value {
@@ -231,25 +231,23 @@ auto Type::noFactory (Vector const&, int, int, const Type*) -> Value {
     return {};
 }
 
-Class::Class (Vector const& vec, int argc, int args)
-        : Type (vec[args+1], Inst::create) {
-    assert(2 <= argc && argc <= 3); // no support for multiple inheritance
-    if (argc > 2)
-        chain = &vec[args+2].asType<Class>();
+Class::Class (ArgVec const& args)
+        : Type (args[1], Inst::create) {
+    assert(2 <= args.size() && args.size() <= 3); // no support for multiple inheritance
+    if (args.size() > 2)
+        chain = &args[2].asType<Class>();
 
-    at("__name__") = vec[args+1];
-    at("__bases__") = Tuple::create(vec, argc - 2, args + 2);
+    at("__name__") = args[1];
+    at("__bases__") = Tuple::create(args.vec, args.num - 2, args.off + 2);
 
-    auto& init = vec[args];
-    init.obj().call(vec, argc - 2, args + 2);
+    args[0].obj().call(args.vec, args.num - 2, args.off + 2);
 
     auto ctx = Interp::context;
     assert(ctx != nullptr);
     ctx->frame().locals = this;
 }
 
-Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
-        : Dict (&cls) {
+Inst::Inst (ArgVec args, Class const& cls) : Dict (&cls) {
     auto ctx = Interp::context;
     assert(ctx != nullptr);
 
@@ -257,9 +255,9 @@ Inst::Inst (Vector const& vec, int argc, int args, Class const& cls)
     Value init = attr("__init__", self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
-        assert(args > 0);
-        (*ctx)[args-1] = this;
-        init.obj().call(vec, argc + 1, args - 1);
+        assert(ctx == &args.vec && args.off > 0);
+        args[-1] = this;
+        init.obj().call(args.vec, args.num + 1, args.off - 1);
     }
 
     ctx->frame().result = this;
