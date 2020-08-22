@@ -5,6 +5,8 @@
 namespace Monty {
     extern "C" int printf (char const*, ...);
 
+    constexpr auto Q (uint32_t, char const* s) -> const char* { return s; }
+
 // see gc.cpp - objects and vectors with garbage collection
 
     struct Obj {

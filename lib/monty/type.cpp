@@ -5,6 +5,7 @@
 #include <cassert>
 
 using namespace Monty;
+using Monty::Q;
 
 extern Module const m_sys;
 extern Module const m_machine;
@@ -400,25 +401,25 @@ void Exception::marker () const {
 
 static Lookup::Item const exceptionMap [] = {
     //CG< exception-emit h
-    { "BaseException",          -1 }, //  0 -> 
-    { "Exception",               0 }, //  1 -> BaseException
-    { "StopIteration",           1 }, //  2 -> Exception
-    { "ArithmeticError",         1 }, //  3 -> Exception
-    { "AssertionError",          1 }, //  4 -> Exception
-    { "AttributeError",          1 }, //  5 -> Exception
-    { "EOFError",                1 }, //  6 -> Exception
-    { "ImportError",             1 }, //  7 -> Exception
-    { "LookupError",             1 }, //  8 -> Exception
-    { "IndexError",              8 }, //  9 -> LookupError
-    { "KeyError",                8 }, // 10 -> LookupError
-    { "MemoryError",             1 }, // 11 -> Exception
-    { "NameError",               1 }, // 12 -> Exception
-    { "OSError",                 1 }, // 13 -> Exception
-    { "RuntimeError",            1 }, // 14 -> Exception
-    { "NotImplementedError",    14 }, // 15 -> RuntimeError
-    { "TypeError",               1 }, // 16 -> Exception
-    { "ValueError",              1 }, // 17 -> Exception
-    { "UnicodeError",           17 }, // 18 -> ValueError
+    { Q( 33,"BaseException")       , -1 }, //  0 -> 
+    { Q( 36,"Exception")           ,  0 }, //  1 -> BaseException
+    { Q( 51,"StopIteration")       ,  1 }, //  2 -> Exception
+    { Q( 30,"ArithmeticError")     ,  1 }, //  3 -> Exception
+    { Q( 31,"AssertionError")      ,  1 }, //  4 -> Exception
+    { Q( 32,"AttributeError")      ,  1 }, //  5 -> Exception
+    { Q( 34,"EOFError")            ,  1 }, //  6 -> Exception
+    { Q( 38,"ImportError")         ,  1 }, //  7 -> Exception
+    { Q( 43,"LookupError")         ,  1 }, //  8 -> Exception
+    { Q( 40,"IndexError")          ,  8 }, //  9 -> LookupError
+    { Q( 41,"KeyError")            ,  8 }, // 10 -> LookupError
+    { Q( 44,"MemoryError")         ,  1 }, // 11 -> Exception
+    { Q( 45,"NameError")           ,  1 }, // 12 -> Exception
+    { Q( 48,"OSError")             ,  1 }, // 13 -> Exception
+    { Q( 50,"RuntimeError")        ,  1 }, // 14 -> Exception
+    { Q( 47,"NotImplementedError") , 14 }, // 15 -> RuntimeError
+    { Q( 54,"TypeError")           ,  1 }, // 16 -> Exception
+    { Q( 55,"ValueError")          ,  1 }, // 17 -> Exception
+    { Q(165,"UnicodeError")        , 17 }, // 18 -> ValueError
     //CG>
 };
 
@@ -527,33 +528,33 @@ auto Object::type () const -> Type const& { return info; }
 Type const Inst::info ("<instance>");
 
 //CG< builtin-types lib/monty/monty.h
-Type const    BoundMeth::info ("<boundmeth>");
-Type const       Buffer::info ("<buffer>");
-Type const     Bytecode::info ("<bytecode>");
-Type const     Callable::info ("<callable>");
-Type const         Cell::info ("<cell>");
-Type const      Closure::info ("<closure>");
-Type const      Context::info ("<context>");
-Type const    Exception::info ("<exception>");
-Type const     Function::info ("<function>");
-Type const       Lookup::info ("<lookup>");
-Type const       Method::info ("<method>");
-Type const       Module::info ("<module>");
-Type const         None::info ("<none>");
+Type const    BoundMeth::info (Q(166,"<boundmeth>"));
+Type const       Buffer::info (Q(167,"<buffer>"));
+Type const     Bytecode::info (Q(168,"<bytecode>"));
+Type const     Callable::info (Q(169,"<callable>"));
+Type const         Cell::info (Q(170,"<cell>"));
+Type const      Closure::info (Q(171,"<closure>"));
+Type const      Context::info (Q(172,"<context>"));
+Type const    Exception::info (Q(173,"<exception>"));
+Type const     Function::info (Q(174,"<function>"));
+Type const       Lookup::info (Q(175,"<lookup>"));
+Type const       Method::info (Q(176,"<method>"));
+Type const       Module::info (Q(  7,"<module>"));
+Type const         None::info (Q(177,"<none>"));
 
-Type const    Array::info ("array", Array::create, &Array::attrs);
-Type const     Bool::info ("bool", Bool::create, &Bool::attrs);
-Type const    Bytes::info ("bytes", Bytes::create, &Bytes::attrs);
-Type const    Class::info ("class", Class::create, &Class::attrs);
-Type const     Dict::info ("dict", Dict::create, &Dict::attrs);
-Type const      Int::info ("int", Int::create, &Int::attrs);
-Type const     List::info ("list", List::create, &List::attrs);
-Type const    Range::info ("range", Range::create, &Range::attrs);
-Type const      Set::info ("set", Set::create, &Set::attrs);
-Type const    Slice::info ("slice", Slice::create, &Slice::attrs);
-Type const      Str::info ("str", Str::create, &Str::attrs);
-Type const    Tuple::info ("tuple", Tuple::create, &Tuple::attrs);
-Type const     Type::info ("type", Type::create, &Type::attrs);
+Type const    Array::info (Q(178,"array") ,  Array::create, &Array::attrs);
+Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
+Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
+Type const    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
+Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
+Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
+Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
+Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
+Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
+Type const    Slice::info (Q(180,"slice") ,  Slice::create, &Slice::attrs);
+Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
+Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
+Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
 auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }
@@ -642,56 +643,56 @@ static Function const f_hash (bi_hash);
 
 static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
-    { "array", Array::info },
-    { "bool", Bool::info },
-    { "bytes", Bytes::info },
-    { "class", Class::info },
-    { "dict", Dict::info },
-    { "int", Int::info },
-    { "list", List::info },
-    { "range", Range::info },
-    { "set", Set::info },
-    { "slice", Slice::info },
-    { "str", Str::info },
-    { "tuple", Tuple::info },
-    { "type", Type::info },
+    { Q(178,"array") , Array::info },
+    { Q( 62,"bool")  , Bool::info },
+    { Q( 66,"bytes") , Bytes::info },
+    { Q(179,"class") , Class::info },
+    { Q( 75,"dict")  , Dict::info },
+    { Q( 94,"int")   , Int::info },
+    { Q(108,"list")  , List::info },
+    { Q(124,"range") , Range::info },
+    { Q(140,"set")   , Set::info },
+    { Q(180,"slice") , Slice::info },
+    { Q(151,"str")   , Str::info },
+    { Q(157,"tuple") , Tuple::info },
+    { Q(158,"type")  , Type::info },
     //CG>
     //CG< exception-emit d
-    { "BaseException", f_BaseException },
-    { "Exception", f_Exception },
-    { "StopIteration", f_StopIteration },
-    { "ArithmeticError", f_ArithmeticError },
-    { "AssertionError", f_AssertionError },
-    { "AttributeError", f_AttributeError },
-    { "EOFError", f_EOFError },
-    { "ImportError", f_ImportError },
-    { "LookupError", f_LookupError },
-    { "IndexError", f_IndexError },
-    { "KeyError", f_KeyError },
-    { "MemoryError", f_MemoryError },
-    { "NameError", f_NameError },
-    { "OSError", f_OSError },
-    { "RuntimeError", f_RuntimeError },
-    { "NotImplementedError", f_NotImplementedError },
-    { "TypeError", f_TypeError },
-    { "ValueError", f_ValueError },
-    { "UnicodeError", f_UnicodeError },
+    { Q( 33,"BaseException")       , f_BaseException },
+    { Q( 36,"Exception")           , f_Exception },
+    { Q( 51,"StopIteration")       , f_StopIteration },
+    { Q( 30,"ArithmeticError")     , f_ArithmeticError },
+    { Q( 31,"AssertionError")      , f_AssertionError },
+    { Q( 32,"AttributeError")      , f_AttributeError },
+    { Q( 34,"EOFError")            , f_EOFError },
+    { Q( 38,"ImportError")         , f_ImportError },
+    { Q( 43,"LookupError")         , f_LookupError },
+    { Q( 40,"IndexError")          , f_IndexError },
+    { Q( 41,"KeyError")            , f_KeyError },
+    { Q( 44,"MemoryError")         , f_MemoryError },
+    { Q( 45,"NameError")           , f_NameError },
+    { Q( 48,"OSError")             , f_OSError },
+    { Q( 50,"RuntimeError")        , f_RuntimeError },
+    { Q( 47,"NotImplementedError") , f_NotImplementedError },
+    { Q( 54,"TypeError")           , f_TypeError },
+    { Q( 55,"ValueError")          , f_ValueError },
+    { Q(165,"UnicodeError")        , f_UnicodeError },
     //CG>
-    { "print", f_print },
-    { "next", f_next },
-    { "len", f_len },
-    { "abs", f_abs },
-    { "hash", f_hash },
-    { "sys", m_sys },
+    { Q(123,"print"), f_print },
+    { Q(116,"next"),  f_next },
+    { Q(107,"len"),   f_len },
+    { Q( 57,"abs"),   f_abs },
+    { Q( 90,"hash"),  f_hash },
+    { Q(181,"sys"),   m_sys },
 #ifndef UNIT_TEST
-    { "machine", m_machine },
+    { Q(182,"machine"), m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { "network", m_network },
+    { Q(183,"network"), m_network },
 #endif
 #if INCLUDE_SDCARD
-    { "sdcard", m_sdcard },
+    { Q(184,"sdcard"), m_sdcard },
 #endif
 #endif
 };
@@ -711,8 +712,8 @@ static auto str_format (ArgVec const&) -> Value {
 static Function const f_str_format (str_format);
 
 static Lookup::Item const strMap [] = {
-    { "count", f_str_count },
-    { "format", f_str_format },
+    { Q( 74,"count"), f_str_count },
+    { Q( 84,"format"), f_str_format },
 };
 
 Lookup const Str::attrs (strMap, sizeof strMap);
@@ -728,7 +729,7 @@ static auto list_append (ArgVec const& args) -> Value {
 static Function const f_list_append (list_append);
 
 static Lookup::Item const listMap [] = {
-    { "append", f_list_append },
+    { Q( 60,"append"), f_list_append },
 };
 #else
 // TODO this method wrapper adds 168 bytes on STM32, but is it a one-time cost?
@@ -736,7 +737,7 @@ static auto d_list_append = Method::wrap(&List::append);
 static Method const m_list_append (d_list_append);
 
 static Lookup::Item const listMap [] = {
-    { "append", m_list_append },
+    { Q( 60,"append"), m_list_append },
 };
 #endif
 

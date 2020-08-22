@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import os, sys, subprocess
+import os, re, sys, subprocess
 
 verbose = 0
 
@@ -13,13 +13,13 @@ def EXCEPTION(block, name, base=''):
     id = len(excHier)
     baseId = -1 if base == '' else excIds[base]
     excIds[name] = id
-    excHier.append('{ %-25s %2d }, // %2d -> %s' %
-                        ('"%s",' % name, baseId, id, base))
+    excHier.append('{ %-29s, %2d }, // %2d -> %s' %
+                        (q(name), baseId, id, base))
     excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
     excFuns.append('    return Exception::create(%d, args);' % id)
     excFuns.append('}')
     excFuns.append('static Function const f_%s (e_%s);' % (name, name))
-    excDefs.append('{ "%s", f_%s },' % (name, name))
+    excDefs.append('{ %-29s, f_%s },' % (q(name), name))
     excFuns.append('')
     return []
 
@@ -37,9 +37,24 @@ def VERSION(block):
 
 # generate qstr definition
 qstrIndex = []
+qstrMap = {}
 
-def QSTR_EMIT(block):
-    return qstrIndex
+def qid(s):
+    if s in qstrMap:
+        i = qstrMap[s]
+    else:
+        i = len(qstrMap)
+        qstrMap[s] = i
+    return i
+
+def q(s):
+    return 'Q(%3d,"%s")' % (qid(s), s)
+
+def QSTR_EMIT(block, sel='i'):
+    if sel == 'i':
+        return qstrIndex
+    if sel == 'm':
+        return [str(x) for x in qstrMap.items()]
 
 def QSTR(block, off=0):
     out = []
@@ -49,7 +64,9 @@ def QSTR(block, off=0):
     pos = 0
     for s in block:
         s = s.replace(sep, '')
-        s = '"%s"' % s.split('"')[-2]
+        s = s.split('"')[-2]
+        qstrMap[s] = off
+        s = '"%s"' % s
         out.append('%-21s %s // %d' % (s, sep, off))
         n = pos + len(eval(s)) + 1 # deal with backslashes
         off += 1
@@ -115,22 +132,22 @@ def BUILTIN_TYPES(block, fname):
                     info.append([f1[2], f2[1], f2[3]])
     info.sort()
     out = []
-    fmt1a = 'Type const %12s::info ("%s");'
-    fmt1b = 'Type const %8s::info ("%s", %s::create, &%s::attrs);'
+    fmt1a = 'Type const %12s::info (%s);'
+    fmt1b = 'Type const %8s::info (%-15s, %6s::create, &%s::attrs);'
     fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
     sep = True
     for tag, name, base in info:
         if tag.startswith('<'):
-            out.append(fmt1a % (name, tag))
+            out.append(fmt1a % (name, q(tag)))
         else:
             if sep: out.append('')
             sep = False
-            out.append(fmt1b % (name, tag, name, name))
+            out.append(fmt1b % (name, q(tag), name, name))
     out.append('')
     for tag, name, base in info:
         out.append(fmt2 % name)
         if not tag.startswith('<'):
-            builtins[1].append('{ "%s", %s::info },' % (tag, name))
+            builtins[1].append('{ %-15s, %s::info },' % (q(tag), name))
     return out
 
 def BUILTIN_EMIT(block, sel):
@@ -138,7 +155,7 @@ def BUILTIN_EMIT(block, sel):
 
 def BUILTIN(block, name):
     builtins[0].append('static FunObj const f_%s (bi_%s);' % (name, name))
-    builtins[1].append('{ "%s", f_%s },' % (name, name))
+    builtins[1].append('{ %-20s, f_%s },' % (q(name), name))
     fmt = 'static Value bi_%s (int argc, Value argv[]) {'
     return [fmt % name]
 
@@ -332,7 +349,12 @@ def processLines(lines):
             if head == '//CG<':
                 result.append(prefix + '//CG>')
 
-    return result
+    # perform in-line qstr lookup and replacement
+    def qfix(m):
+        return q(m.group(1))
+
+    p = re.compile(r'\bQ\([ \d]+\d,"(.*?)"\)')
+    return [p.sub(qfix, line) for line in result]
 
 # process one source file, replace it only if the new contents is different
 def processFile(d, f):
