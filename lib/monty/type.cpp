@@ -399,7 +399,7 @@ void Exception::marker () const {
 //CG: exception ValueError Exception
 //CG: exception UnicodeError ValueError
 
-static const Lookup::Item exceptionMap [] = {
+static Lookup::Item const exceptionMap [] = {
     //CG< exception-emit h
     { "BaseException",          -1 }, //  0 -> 
     { "Exception",               0 }, //  1 -> BaseException
@@ -423,7 +423,7 @@ static const Lookup::Item exceptionMap [] = {
     //CG>
 };
 
-const Lookup Exception::bases (exceptionMap, sizeof exceptionMap);
+Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
 
 //CG< exception-emit f
 static auto e_BaseException (Vector const& vec, int argc, int args) -> Value {
@@ -641,7 +641,7 @@ static auto bi_hash (Vector const& vec, int argc, int args) -> Value {
 
 static Function const f_hash (bi_hash);
 
-static const Lookup::Item builtinsMap [] = {
+static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
     { "array", Array::info },
     { "bool", Bool::info },
@@ -711,12 +711,12 @@ static auto str_format (Vector const&, int, int) -> Value {
 
 static Function const f_str_format (str_format);
 
-static const Lookup::Item strMap [] = {
+static Lookup::Item const strMap [] = {
     { "count", f_str_count },
     { "format", f_str_format },
 };
 
-const Lookup Str::attrs (strMap, sizeof strMap);
+Lookup const Str::attrs (strMap, sizeof strMap);
 
 #if 0
 static auto list_append (Vector const& vec, int argc, int args) -> Value {
@@ -728,7 +728,7 @@ static auto list_append (Vector const& vec, int argc, int args) -> Value {
 
 static Function const f_list_append (list_append);
 
-static const Lookup::Item listMap [] = {
+static Lookup::Item const listMap [] = {
     { "append", f_list_append },
 };
 #else
@@ -736,12 +736,12 @@ static const Lookup::Item listMap [] = {
 static auto d_list_append = Method::wrap(&List::append);
 static Method const m_list_append (d_list_append);
 
-static const Lookup::Item listMap [] = {
+static Lookup::Item const listMap [] = {
     { "append", m_list_append },
 };
 #endif
 
-const Lookup List::attrs (listMap, sizeof listMap);
+Lookup const List::attrs (listMap, sizeof listMap);
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // TODO added to satisfy linker
