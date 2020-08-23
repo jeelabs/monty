@@ -175,7 +175,7 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opLoadConstObj (int arg) {
-        *++sp = context->callee->code.constAt(arg);
+        *++sp = context->callee->code[arg];
     }
     //CG1 op v
     void opLoadFastN (int arg) {
@@ -403,12 +403,12 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opMakeFunction (int arg) {
-        auto bc = context->callee->code.constAt(arg);
+        auto bc = context->callee->code[arg];
         *++sp = new Callable (bc);
     }
     //CG1 op v
     void opMakeFunctionDefargs (int arg) {
-        auto bc = context->callee->code.constAt(arg);
+        auto bc = context->callee->code[arg];
         --sp;
         *sp = new Callable (bc, sp[0], sp[1]);
     }
@@ -431,7 +431,7 @@ class PyVM : public Interp {
     void opMakeClosure (int arg) {
         int num = *ip++;
         sp -= num - 1;
-        auto bc = context->callee->code.constAt(arg);
+        auto bc = context->callee->code[arg];
         auto f = new Callable (bc);
         ArgVec avec {*context, num, (int) (sp - context->begin())};
         *sp = new Closure (*f, avec);
@@ -440,7 +440,7 @@ class PyVM : public Interp {
     void opMakeClosureDefargs (int arg) {
         int num = *ip++;
         sp -= 2 + num - 1;
-        auto bc = context->callee->code.constAt(arg);
+        auto bc = context->callee->code[arg];
         auto f = new Callable (bc, sp[0], sp[1]);
         ArgVec avec {*context, num, (int) (sp + 2 - context->begin())};
         *sp = new Closure (*f, avec);

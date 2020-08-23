@@ -26,7 +26,7 @@ void callTypeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (MethodBase));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Method));
     TEST_ASSERT_EQUAL(6 * sizeof (void*), sizeof (Module));
-    TEST_ASSERT_EQUAL(5 * sizeof (void*) + 16, sizeof (Bytecode)); // TODO hack
+    TEST_ASSERT_EQUAL(3 * sizeof (void*) + 24, sizeof (Bytecode)); // TODO hack
     TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Callable));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (BoundMeth));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Cell));

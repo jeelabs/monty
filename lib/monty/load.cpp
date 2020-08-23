@@ -231,11 +231,10 @@ struct Loader {
         bc.nCode = varInt();
         debugf("nData %d nCode %d\n", bc.nData, bc.nCode);
 
-        bc.constObjs.insert(0, bc.n_pos + bc.n_kwonly + bc.nData + bc.nCode);
+        bc.adj(bc.n_pos + bc.n_kwonly + bc.nData + bc.nCode); // pre-alloc
 
-        int ct = 0;
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
-            bc.constObjs[ct++] = loadQstr();
+            bc.append(loadQstr());
 
         for (int i = 0; i < bc.nData; ++i) {
             auto type = *dp++;
@@ -246,18 +245,18 @@ struct Loader {
             if (type == 'b') {
                 auto p = new (sz) Bytes (ptr, sz);
                 debugf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
-                bc.constObjs[ct++] = p;
+                bc.append(p);
             } else if (type == 's') {
                 auto p = new Str ((char const*) ptr, sz);
                 debugf("  obj %d = type %c %db = %s\n",
                         i, type, (int) sz, (char const*) *p);
-                bc.constObjs[ct++] = p;
+                bc.append(p);
             } else
                 assert(false); // TODO
         }
         for (int i = 0; i < bc.nCode; ++i) {
             debugf("  raw %d:\n", i+bc.nData);
-            bc.constObjs[ct++] = loadRaw();
+            bc.append(loadRaw());
         }
 
         return bc;
@@ -327,9 +326,7 @@ auto Callable::qStrAt (size_t i) const -> char const* {
 auto Monty::loadModule (char const* name, uint8_t const* addr) -> Callable* {
     Loader loader;
     auto* init = loader.load(addr);
-    if (init == nullptr)
-        return nullptr;
-
-    init->mo.at("__name__") = name;
+    if (init != nullptr)
+        init->mo.at("__name__") = name;
     return init;
 }

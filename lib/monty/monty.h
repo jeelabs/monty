@@ -699,11 +699,10 @@ namespace Monty {
     };
 
     //CG3 type <bytecode>
-    struct Bytecode : Object {
+    struct Bytecode : List {
         static Type const info;
         auto type () const -> Type const& override;
 
-        auto constAt (size_t i) const -> Value { return constObjs[i]; }
         auto fastSlotTop () const -> size_t { return stackSz; }
         auto excLevel () const -> size_t { return excDepth; }
         auto isGenerator () const -> bool { return (flags & 1) != 0; }
@@ -718,11 +717,9 @@ namespace Monty {
             return (uint8_t const*) (this + 1) + code;
         }
 
-        void marker () const override { mark(constObjs); }
     private:
         Bytecode () {}
 
-        Vector constObjs;
         int16_t code;
         int16_t stackSz;
         int16_t flags;

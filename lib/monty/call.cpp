@@ -49,7 +49,7 @@ auto Callable::call (ArgVec const& args) const -> Value {
 
 void Callable::marker () const {
     mo.marker();
-    mark(code);
+    code.marker();
     mark(pos);
     mark(kw);
 }
