@@ -195,7 +195,7 @@ struct Loader {
         auto npre = dp - savedDp;
 
         // bytecode will be stored in extra bytes allocated after Bytecode
-        auto& bc = *new (bCount + 1) Bytecode; // FIXME +1 for stm32 ???
+        auto& bc = *new (bCount) Bytecode;
         bcBuf = bcNext = (uint8_t*) (&bc + 1);
         bcLimit = bcBuf + bCount - npre;
 

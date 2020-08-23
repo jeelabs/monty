@@ -722,11 +722,12 @@ namespace Monty {
 
         int16_t code;
         int16_t stackSz;
-        int16_t flags;
         int16_t hdrSz;
         int16_t size;
-        int16_t nData;
-        int16_t nCode;
+
+        int8_t flags;
+        int8_t nData;
+        int8_t nCode;
         int8_t excDepth;
         int8_t n_pos;
         int8_t n_kwonly;
