@@ -43,7 +43,7 @@ def qid(s):
     if s in qstrMap:
         i = qstrMap[s]
     else:
-        i = len(qstrMap)
+        i = len(qstrMap) + 1
         qstrMap[s] = i
     return i
 

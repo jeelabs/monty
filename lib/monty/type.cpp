@@ -435,7 +435,7 @@ static Lookup::Item const exceptionMap [] = {
     { Q( 47,"NotImplementedError") , 14 }, // 15 -> RuntimeError
     { Q( 54,"TypeError")           ,  1 }, // 16 -> Exception
     { Q( 55,"ValueError")          ,  1 }, // 17 -> Exception
-    { Q(165,"UnicodeError")        , 17 }, // 18 -> ValueError
+    { Q(166,"UnicodeError")        , 17 }, // 18 -> ValueError
     //CG>
 };
 
@@ -544,30 +544,30 @@ auto Object::type () const -> Type const& { return info; }
 Type const Inst::info ("<instance>");
 
 //CG< builtin-types lib/monty/monty.h
-Type const    BoundMeth::info (Q(166,"<boundmeth>"));
-Type const       Buffer::info (Q(167,"<buffer>"));
-Type const     Bytecode::info (Q(168,"<bytecode>"));
-Type const     Callable::info (Q(169,"<callable>"));
-Type const         Cell::info (Q(170,"<cell>"));
-Type const      Closure::info (Q(171,"<closure>"));
-Type const      Context::info (Q(172,"<context>"));
-Type const    Exception::info (Q(173,"<exception>"));
-Type const     Function::info (Q(174,"<function>"));
-Type const       Lookup::info (Q(175,"<lookup>"));
-Type const       Method::info (Q(176,"<method>"));
+Type const    BoundMeth::info (Q(167,"<boundmeth>"));
+Type const       Buffer::info (Q(168,"<buffer>"));
+Type const     Bytecode::info (Q(169,"<bytecode>"));
+Type const     Callable::info (Q(170,"<callable>"));
+Type const         Cell::info (Q(171,"<cell>"));
+Type const      Closure::info (Q(172,"<closure>"));
+Type const      Context::info (Q(173,"<context>"));
+Type const    Exception::info (Q(174,"<exception>"));
+Type const     Function::info (Q(175,"<function>"));
+Type const       Lookup::info (Q(176,"<lookup>"));
+Type const       Method::info (Q(177,"<method>"));
 Type const       Module::info (Q(  7,"<module>"));
-Type const         None::info (Q(177,"<none>"));
+Type const         None::info (Q(178,"<none>"));
 
-Type const    Array::info (Q(178,"array") ,  Array::create, &Array::attrs);
+Type const    Array::info (Q(179,"array") ,  Array::create, &Array::attrs);
 Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type const    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
+Type const    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
 Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
 Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(180,"slice") ,  Slice::create, &Slice::attrs);
+Type const    Slice::info (Q(181,"slice") ,  Slice::create, &Slice::attrs);
 Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
@@ -659,16 +659,16 @@ static Function const f_hash (bi_hash);
 
 static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
-    { Q(178,"array") , Array::info },
+    { Q(179,"array") , Array::info },
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(179,"class") , Class::info },
+    { Q(180,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(180,"slice") , Slice::info },
+    { Q(181,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
     { Q(157,"tuple") , Tuple::info },
     { Q(158,"type")  , Type::info },
@@ -692,23 +692,23 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 47,"NotImplementedError") , f_NotImplementedError },
     { Q( 54,"TypeError")           , f_TypeError },
     { Q( 55,"ValueError")          , f_ValueError },
-    { Q(165,"UnicodeError")        , f_UnicodeError },
+    { Q(166,"UnicodeError")        , f_UnicodeError },
     //CG>
     { Q(123,"print"), f_print },
     { Q(116,"next"),  f_next },
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
-    { Q(181,"sys"),   m_sys },
+    { Q(182,"sys"),   m_sys },
 #ifndef UNIT_TEST
-    { Q(182,"machine"), m_machine },
+    { Q(183,"machine"), m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { Q(183,"network"), m_network },
+    { Q(184,"network"), m_network },
 #endif
 #if INCLUDE_SDCARD
-    { Q(184,"sdcard"), m_sdcard },
+    { Q(185,"sdcard"), m_sdcard },
 #endif
 #endif
 };
