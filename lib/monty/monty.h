@@ -886,8 +886,8 @@ namespace Monty {
         static Value handlers [];
     };
 
-// see load.cpp - importing and loading bytecodes
+// see import.cpp - importing and loading bytecodes
 
-    auto loadModule (char const* name, uint8_t const* addr) -> Callable*;
+    auto importer (char const* name, uint8_t const* addr) -> Callable*;
 
 } // namespace Monty

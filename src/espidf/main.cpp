@@ -49,7 +49,7 @@ extern "C" int app_main () {
         return 1;
     }
 
-    auto init = Monty::loadModule("__main__", bcData);
+    auto init = Monty::importer("__main__", bcData);
     if (init == nullptr) {
         printf("can't load module\n");
         return 2;

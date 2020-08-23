@@ -28,7 +28,7 @@ int main () {
     auto bcData = _estack - 0x1000;
     //printf("bytecode at 0x%p\n", bcData);
 
-    auto init = Monty::loadModule("__main__", bcData);
+    auto init = Monty::importer("__main__", bcData);
     if (init == nullptr)
         return archDone("can't load module");
 

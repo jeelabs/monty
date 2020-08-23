@@ -1,4 +1,4 @@
-// load.cpp - importing and loading bytecodes
+// import.cpp - importing and loading bytecodes
 
 #define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
@@ -323,7 +323,7 @@ auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
-auto Monty::loadModule (char const* name, uint8_t const* addr) -> Callable* {
+auto Monty::importer (char const* name, uint8_t const* addr) -> Callable* {
     Loader loader;
     auto* init = loader.load(addr);
     if (init != nullptr)
