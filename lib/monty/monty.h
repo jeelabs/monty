@@ -5,8 +5,6 @@
 namespace Monty {
     extern "C" int printf (char const*, ...);
 
-    constexpr auto Q (uint32_t, char const* s) -> const char* { return s; }
-
 // see gc.cpp - objects and vectors with garbage collection
 
     struct Obj {
@@ -72,22 +70,35 @@ namespace Monty {
     struct Buffer;
     struct Type;
 
+    struct Q {
+        constexpr Q (uint16_t i, char const* p) : id (i), s (p) {}
+
+        constexpr operator char const* () const { return s; }
+
+        static auto str (uint16_t) -> char const*;
+        static auto find (char const*) -> uint16_t;
+        static auto make (char const*) -> uint16_t;
+
+        uint16_t id;
+        char const* s;
+    };
+
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
 
         constexpr Value () : v (0) {}
-        constexpr Value (int arg) : v (2 * arg + 1) {}
+        constexpr Value (int arg) : v (arg * 2 + 1) {}
+        constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
 
         operator int () const { return (intptr_t) v >> 1; }
-        operator char const* () const { return (char const*) (v >> 2); }
+        operator char const* () const;
         auto obj () const -> Object& { return *(Object*) v; }
         auto asObj () const -> Object&; // create int/str object if needed
 
         template< typename T > // return null pointer if not of required type
-        //auto ifType () const -> T* { return dynamic_cast<T*>(&obj()); }
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
 
         template< typename T > // type-asserted safe cast via Object::type()

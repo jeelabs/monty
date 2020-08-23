@@ -20,8 +20,24 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
-Value::Value (char const* arg) : v (((uintptr_t) arg << 2) | 2) {
-    assert((char const*) *this == arg);
+auto Q::str (uint16_t i) -> char const* {
+    (void) i; assert(false); // TODO
+}
+
+auto Q::find (char const* p) -> uint16_t {
+    (void) p; assert(false); // TODO
+}
+
+auto Q::make (char const* p) -> uint16_t {
+    (void) p; assert(false); // TODO
+}
+
+Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
+    assert((char const*) *this == arg); // watch out for address truncation
+}
+
+Value::operator char const* () const {
+    return (char const*) (v >> 2);
 }
 
 auto Value::asObj () const -> Object& {
