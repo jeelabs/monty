@@ -353,7 +353,7 @@ def processLines(lines):
     def qfix(m):
         return q(m.group(1))
 
-    p = re.compile(r'\bQ\([ \d]+\d,"(.*?)"\)')
+    p = re.compile(r'\bQ\([ \d]*\d,"(.*?)"\)')
     return [p.sub(qfix, line) for line in result]
 
 # process one source file, replace it only if the new contents is different

@@ -236,8 +236,8 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     if (args.num > 2)
         chain = &args[2].asType<Class>();
 
-    at("__name__") = args[1];
-    at("__bases__") = Tuple::create({args.vec, args.num - 2, args.off + 2});
+    at(Q( 23,"__name__")) = args[1];
+    at(Q(166,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 
@@ -251,7 +251,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     assert(ctx != nullptr);
 
     Value self;
-    Value init = attr("__init__", self);
+    Value init = attr(Q( 17,"__init__"), self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         assert(ctx == &args.vec && args.off > 0);

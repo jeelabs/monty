@@ -327,6 +327,6 @@ auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
     Loader ldr;
     auto* init = ldr.load(addr);
     if (init != nullptr)
-        init->mo.at("__name__") = name;
+        init->mo.at(Q( 23,"__name__")) = name;
     return init;
 }
