@@ -10,7 +10,7 @@
 #include <termios.h>
 #include <unistd.h>
 
-#define IDLE_MS 100
+#define IDLE_MS 250
 
 int main (int argc, const char** argv) {
     if (argc != 2) {
