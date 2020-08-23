@@ -888,6 +888,6 @@ namespace Monty {
 
 // see import.cpp - importing and loading bytecodes
 
-    auto importer (char const* name, uint8_t const* addr) -> Callable*;
+    auto loader (char const* name, uint8_t const* addr) -> Callable*;
 
 } // namespace Monty

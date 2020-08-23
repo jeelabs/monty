@@ -45,7 +45,7 @@ int main (int argc, const char* argv []) {
 
     Monty::setup(myMem, sizeof myMem);
 
-    auto init = Monty::importer("__main__", bcData);
+    auto init = Monty::loader("__main__", bcData);
     if (init == nullptr)
         return archDone("can't load module");
 

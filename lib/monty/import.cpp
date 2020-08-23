@@ -323,9 +323,9 @@ auto Callable::qStrAt (size_t i) const -> char const* {
     return mo.qp.asType<QstrPool>().atIdx(i);
 }
 
-auto Monty::importer (char const* name, uint8_t const* addr) -> Callable* {
-    Loader loader;
-    auto* init = loader.load(addr);
+auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
+    Loader ldr;
+    auto* init = ldr.load(addr);
     if (init != nullptr)
         init->mo.at("__name__") = name;
     return init;
