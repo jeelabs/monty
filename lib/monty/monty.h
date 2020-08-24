@@ -10,7 +10,8 @@ namespace Monty {
     struct Obj {
         virtual ~Obj () {}
 
-        auto isCollectable () const -> bool;
+        static auto inPool (void const* p) -> bool;
+        auto isCollectable () const -> bool { return inPool(this); }
 
         auto operator new (size_t bytes) -> void*;
         auto operator new (size_t bytes, size_t extra) -> void* {
@@ -34,7 +35,10 @@ namespace Monty {
         auto operator= (Vec const&) -> Vec& = delete;
         // TODO Vec (Vec&& v); auto operator= (Vec&& v) -> Vec&;
 
-        auto isResizable () const -> bool;
+        static auto inPool (void const* p) -> bool;
+        auto isResizable () const -> bool {
+            return data == nullptr || inPool(data);
+        }
 
         auto ptr () const -> uint8_t* { return data; }
         auto cap () const -> size_t;
@@ -69,6 +73,9 @@ namespace Monty {
     struct Lookup;
     struct Buffer;
     struct Type;
+
+    extern char const qstrBase [];
+    extern int const qstrBaseLen;
 
     struct Q {
         constexpr Q (uint16_t i, char const* p) : id (i), s (p) {}
@@ -212,9 +219,10 @@ namespace Monty {
     void mark (Vector const&);
 
     struct VaryVec : private ByteVec {
-        using ByteVec::ByteVec;
+        constexpr VaryVec (void const* ptr =nullptr, size_t len =0)
+            : ByteVec (ptr, len) {}
 
-        auto size () const -> size_t { return fill; }
+        using ByteVec::size;
 
         auto atGet (size_t i) const -> uint8_t const* {
             return begin() + pos(i);

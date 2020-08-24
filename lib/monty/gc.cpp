@@ -116,9 +116,8 @@ static void defaultOutOfMemoryHandler () { assert(false); }
 namespace Monty {
     void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
-    auto Obj::isCollectable () const -> bool {
-        auto p = (void const*) this;
-        return objLow <= p && p < limit;
+    auto Obj::inPool (void const* p) -> bool {
+        return objLow < p && p < limit;
     }
 
     auto Obj::operator new (size_t sz) -> void* {
@@ -158,9 +157,8 @@ namespace Monty {
             objLow = objLow->chain;
     }
 
-    auto Vec::isResizable () const -> bool {
-        auto p = (void*) data;
-        return p == nullptr || (start < p && p < vecHigh);
+    auto Vec::inPool (void const* p) -> bool {
+        return start < p && p < vecHigh;
     }
 
     auto Vec::cap () const -> size_t {

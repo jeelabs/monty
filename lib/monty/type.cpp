@@ -20,6 +20,9 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
+static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
+static VaryVec qstrInterned;
+
 auto Q::str (uint16_t i) -> char const* {
     (void) i; assert(false); // TODO
 }
