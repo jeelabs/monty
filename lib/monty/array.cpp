@@ -44,8 +44,13 @@ struct AccessAsVaryBytes : Accessor {
         return new Bytes (v.atGet(pos), v.atLen(pos));
     }
     void set (ByteVec& vec, size_t pos, Value val) const override {
-        auto& b = val.asType<Bytes>();
-        ((VaryVec&) vec).atSet(pos, b.begin(), b.size());
+        auto& v = (VaryVec&) vec;
+        if (val.isNil())
+            v.remove(pos);
+        else {
+            auto& b = val.asType<Bytes>();
+            v.atSet(pos, b.begin(), b.size());
+        }
     }
     void ins (ByteVec& vec, size_t pos, size_t num) const override {
         ((VaryVec&) vec).insert(pos, num);
@@ -60,8 +65,13 @@ struct AccessAsVaryStr : AccessAsVaryBytes {
         return new Str ((char const*) ((VaryVec&) vec).atGet(pos));
     }
     void set (ByteVec& vec, size_t pos, Value val) const override {
-        auto s = (char const*) val;
-        ((VaryVec&) vec).atSet(pos, s, strlen(s) + 1);
+        auto& v = (VaryVec&) vec;
+        if (val.isNil())
+            v.remove(pos);
+        else {
+            char const* s = val.isStr() ? val : val.asType<Str>();
+            v.atSet(pos, (char const*) s, strlen(s) + 1);
+        }
     }
 };
 
@@ -125,15 +135,15 @@ Array::Array (char type, size_t len) {
     auto p = strchr(arrayModes, type);
     auto s = p != nullptr ? p - arrayModes : 0; // use Value if unknown type
     accessors[s]->ins(*this, 0, len);
-    fill |= s << 28;
+    fill |= s << 27;
 }
 
 auto Array::mode () const -> char {
-    return arrayModes[fill >> 28];
+    return arrayModes[fill >> 27];
 }
 
 auto Array::len () const -> size_t {
-    return size() & 0x0FFFFFFF;
+    return size() & 0x07FFFFFF;
 }
 
 auto Array::getAt (Value k) const -> Value {
@@ -145,7 +155,10 @@ auto Array::getAt (Value k) const -> Value {
 auto Array::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     auto n = k; // TODO relPos(k);
-    accessors[sel()]->set(*this, n, v);
+    auto s = sel();
+    fill &= 0x07FFFFFF;
+    accessors[s]->set(*this, n, v);
+    fill |= s << 27;
     return {};
 }
 

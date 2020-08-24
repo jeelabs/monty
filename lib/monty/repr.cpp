@@ -161,12 +161,13 @@ void Buffer::print(char const* fmt, ...) {
 Value Array::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     auto m = mode();
-    buf.print("%d%c", len(), m);
     auto n = len();
+    buf.print("%d%c", n, m);
     switch (m) {
         case 'l': case 'L':                     n <<= 1; // fall through
         case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
         case 'b': case 'B':                     break;
+        case 'v': case 'V': n = ((uint16_t const*) begin())[len()]; break;
     }
     auto p = (uint8_t const*) begin();
     for (size_t i = 0; i < n; ++i)
