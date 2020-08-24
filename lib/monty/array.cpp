@@ -55,19 +55,13 @@ struct AccessAsVaryBytes : Accessor {
     }
 };
 
-struct AccessAsVaryStr : Accessor {
+struct AccessAsVaryStr : AccessAsVaryBytes {
     auto get (ByteVec& vec, size_t pos) const -> Value override {
         return new Str ((char const*) ((VaryVec&) vec).atGet(pos));
     }
     void set (ByteVec& vec, size_t pos, Value val) const override {
         auto s = (char const*) val;
         ((VaryVec&) vec).atSet(pos, s, strlen(s) + 1);
-    }
-    void ins (ByteVec& vec, size_t pos, size_t num) const override {
-        ((VaryVec&) vec).insert(pos, num);
-    }
-    void del (ByteVec& vec, size_t pos, size_t num) const override {
-        ((VaryVec&) vec).remove(pos, num);
     }
 };
 
