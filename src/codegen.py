@@ -37,14 +37,16 @@ def VERSION(block):
 
 # generate qstr definition
 qstrIndex = []
-qstrMap = {}
+qstrLen = [2]
+qstrMap = {'?': 0}
 
 def qid(s):
     if s in qstrMap:
         i = qstrMap[s]
     else:
-        i = len(qstrMap) + 1
+        i = len(qstrMap)
         qstrMap[s] = i
+        qstrLen.append(len(s) + 1)
     return i
 
 def q(s):
@@ -53,8 +55,25 @@ def q(s):
 def QSTR_EMIT(block, sel='i'):
     if sel == 'i':
         return qstrIndex
-    if sel == 'm':
-        return [str(x) for x in qstrMap.items()]
+    out = []
+    if sel in 'xv':
+        qstrLen.append(0)
+        i, n, s = 0, 2 * len(qstrLen), ''
+        for x in qstrLen:
+            s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
+            i += 1
+            n += x
+            if i % 8 == 0:
+                out.append('"%s"' % s)
+                s = ''
+        if s:
+            out.append('"%s"' % s)
+        if sel == 'v':
+            out.append('')
+    if sel in 'sv':
+        e = ['%-22s "\\0" // %d' % ('"%s"' % k, v) for k, v in qstrMap.items()]
+        out.extend(e)
+    return out
 
 def QSTR(block, off=0):
     out = []
@@ -71,6 +90,7 @@ def QSTR(block, off=0):
         n = pos + len(eval(s)) + 1 # deal with backslashes
         off += 1
         qstrIndex.append("%4d, // %d" % (n, off))
+        qstrLen.append(n-pos)
         pos = n
     return out
 
