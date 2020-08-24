@@ -212,7 +212,7 @@ struct Loader {
                         i, type, (int) sz, (char const*) *p);
                 bc.append(p);
             } else
-                assert(false); // TODO
+                assert(false); // TODO e, i, f, c
         }
         for (int i = 0; i < bc.nCode; ++i) {
             debugf("  raw %d:\n", i+bc.nData);
@@ -240,7 +240,7 @@ struct Loader {
                     break;
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
-                    assert(n > 0);
+                    (void) n; assert(n > 0);
                     debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, Q::str(n));
                     break;
                 }

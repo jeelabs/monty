@@ -13,13 +13,12 @@ def EXCEPTION(block, name, base=''):
     id = len(excHier)
     baseId = -1 if base == '' else excIds[base]
     excIds[name] = id
-    excHier.append('{ %-31s, %2d }, // %2d -> %s' %
-                        (q(name) + '.s', baseId, id, base))
+    excHier.append('{ %-29s, %2d }, // %2d -> %s' % (q(name), baseId, id, base))
     excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
     excFuns.append('    return Exception::create(%d, args);' % id)
     excFuns.append('}')
     excFuns.append('static Function const f_%s (e_%s);' % (name, name))
-    excDefs.append('{ %-31s, f_%s },' % (q(name) + '.s', name))
+    excDefs.append('{ %-29s, f_%s },' % (q(name), name))
     excFuns.append('')
     return []
 
@@ -174,21 +173,21 @@ def BUILTIN_TYPES(block, fname):
     info.sort()
     out = []
     fmt1a = 'Type const %12s::info (%s);'
-    fmt1b = 'Type const %8s::info (%-17s, %6s::create, &%s::attrs);'
+    fmt1b = 'Type const %8s::info (%-15s, %6s::create, &%s::attrs);'
     fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
     sep = True
     for tag, name, base in info:
         if tag.startswith('<'):
-            out.append(fmt1a % (name, q(tag) + '.s'))
+            out.append(fmt1a % (name, q(tag)))
         else:
             if sep: out.append('')
             sep = False
-            out.append(fmt1b % (name, q(tag) + '.s', name, name))
+            out.append(fmt1b % (name, q(tag), name, name))
     out.append('')
     for tag, name, base in info:
         out.append(fmt2 % name)
         if not tag.startswith('<'):
-            builtins[1].append('{ %-17s, %s::info },' % (q(tag) + '.s', name))
+            builtins[1].append('{ %-15s, %s::info },' % (q(tag), name))
     return out
 
 def BUILTIN_EMIT(block, sel):
@@ -196,7 +195,7 @@ def BUILTIN_EMIT(block, sel):
 
 def BUILTIN(block, name):
     builtins[0].append('static FunObj const f_%s (bi_%s);' % (name, name))
-    builtins[1].append('{ %-20s, f_%s },' % (q(name) + '.s', name))
+    builtins[1].append('{ %-20s, f_%s },' % (q(name), name))
     fmt = 'static Value bi_%s (int argc, Value argv[]) {'
     return [fmt % name]
 

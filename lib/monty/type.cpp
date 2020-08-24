@@ -20,7 +20,8 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
-constexpr int QSTR_RAM_BASE = 10000;
+constexpr int QID_RAM_BASE = 10000;
+constexpr int QID_RAM_LAST = 20000;
 
 static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
 static VaryVec qstrRamMap;
@@ -35,8 +36,8 @@ auto Q::hash (void const* p, size_t n) -> uint32_t {
 
 auto Q::str (uint16_t i) -> char const* {
     assert(i != 0);
-    auto s = i < QSTR_RAM_BASE ? qstrBaseMap.atGet(i)
-                               : qstrRamMap.atGet(i - QSTR_RAM_BASE);
+    auto s = i < QID_RAM_BASE ? qstrBaseMap.atGet(i)
+                               : qstrRamMap.atGet(i - QID_RAM_BASE);
     return (char const*) s;
 }
 
@@ -58,12 +59,12 @@ auto Q::find (char const* s) -> uint16_t {
         return i;
     auto j = qstrFind(qstrRamMap, s, h);
     if (j > 0)
-        return j + QSTR_RAM_BASE;
+        return j + QID_RAM_BASE;
     return 0;
 }
 
 auto Q::next () -> uint16_t {
-    return qstrRamMap.size() + QSTR_RAM_BASE;
+    return qstrRamMap.size() + QID_RAM_BASE;
 }
 
 auto Q::make (char const* s) -> uint16_t {
@@ -79,21 +80,27 @@ auto Q::make (char const* s) -> uint16_t {
     v.atGet(0)[i++] = hash(s, n);
     v.insert(i);
     v.atSet(i, s, n+1);
-    return i + QSTR_RAM_BASE;
+    return i + QID_RAM_BASE;
 }
 
 Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
-#if 0
     if (Vec::inPool(arg)) // don't store pointers into movable vector space
+#if 0
         *this = new struct Str (arg); // TODO should try Q::find first
-    else
+#else
+        v = Q::make(arg) * 4 + 2;
 #endif
+    else
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
 Value::operator char const* () const {
-    return isStr() ? (char const*) (v >> 2)
-                   : (char const*) asType<struct Str>();
+    if (!isStr())
+        return asType<struct Str>();
+    auto p = v >> 2;
+    if (p < QID_RAM_LAST)
+        return Q::str(p);
+    return (char const*) p;
 }
 
 auto Value::asObj () const -> Object& {
@@ -521,25 +528,25 @@ void Exception::marker () const {
 
 static Lookup::Item const exceptionMap [] = {
     //CG< exception-emit h
-    { Q( 33,"BaseException").s       , -1 }, //  0 -> 
-    { Q( 36,"Exception").s           ,  0 }, //  1 -> BaseException
-    { Q( 51,"StopIteration").s       ,  1 }, //  2 -> Exception
-    { Q( 30,"ArithmeticError").s     ,  1 }, //  3 -> Exception
-    { Q( 31,"AssertionError").s      ,  1 }, //  4 -> Exception
-    { Q( 32,"AttributeError").s      ,  1 }, //  5 -> Exception
-    { Q( 34,"EOFError").s            ,  1 }, //  6 -> Exception
-    { Q( 38,"ImportError").s         ,  1 }, //  7 -> Exception
-    { Q( 43,"LookupError").s         ,  1 }, //  8 -> Exception
-    { Q( 40,"IndexError").s          ,  8 }, //  9 -> LookupError
-    { Q( 41,"KeyError").s            ,  8 }, // 10 -> LookupError
-    { Q( 44,"MemoryError").s         ,  1 }, // 11 -> Exception
-    { Q( 45,"NameError").s           ,  1 }, // 12 -> Exception
-    { Q( 48,"OSError").s             ,  1 }, // 13 -> Exception
-    { Q( 50,"RuntimeError").s        ,  1 }, // 14 -> Exception
-    { Q( 47,"NotImplementedError").s , 14 }, // 15 -> RuntimeError
-    { Q( 54,"TypeError").s           ,  1 }, // 16 -> Exception
-    { Q( 55,"ValueError").s          ,  1 }, // 17 -> Exception
-    { Q(167,"UnicodeError").s        , 17 }, // 18 -> ValueError
+    { Q( 33,"BaseException")       , -1 }, //  0 -> 
+    { Q( 36,"Exception")           ,  0 }, //  1 -> BaseException
+    { Q( 51,"StopIteration")       ,  1 }, //  2 -> Exception
+    { Q( 30,"ArithmeticError")     ,  1 }, //  3 -> Exception
+    { Q( 31,"AssertionError")      ,  1 }, //  4 -> Exception
+    { Q( 32,"AttributeError")      ,  1 }, //  5 -> Exception
+    { Q( 34,"EOFError")            ,  1 }, //  6 -> Exception
+    { Q( 38,"ImportError")         ,  1 }, //  7 -> Exception
+    { Q( 43,"LookupError")         ,  1 }, //  8 -> Exception
+    { Q( 40,"IndexError")          ,  8 }, //  9 -> LookupError
+    { Q( 41,"KeyError")            ,  8 }, // 10 -> LookupError
+    { Q( 44,"MemoryError")         ,  1 }, // 11 -> Exception
+    { Q( 45,"NameError")           ,  1 }, // 12 -> Exception
+    { Q( 48,"OSError")             ,  1 }, // 13 -> Exception
+    { Q( 50,"RuntimeError")        ,  1 }, // 14 -> Exception
+    { Q( 47,"NotImplementedError") , 14 }, // 15 -> RuntimeError
+    { Q( 54,"TypeError")           ,  1 }, // 16 -> Exception
+    { Q( 55,"ValueError")          ,  1 }, // 17 -> Exception
+    { Q(167,"UnicodeError")        , 17 }, // 18 -> ValueError
     //CG>
 };
 
@@ -642,39 +649,39 @@ static auto e_UnicodeError (ArgVec const& args) -> Value {
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(183,"<object>").s);
+Type const Object::info (Q(183,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-Type const Inst::info (Q(184,"<instance>").s);
+Type const Inst::info (Q(184,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
-Type const    BoundMeth::info (Q(168,"<boundmeth>").s);
-Type const       Buffer::info (Q(169,"<buffer>").s);
-Type const     Bytecode::info (Q(170,"<bytecode>").s);
-Type const     Callable::info (Q(171,"<callable>").s);
-Type const         Cell::info (Q(172,"<cell>").s);
-Type const      Closure::info (Q(173,"<closure>").s);
-Type const      Context::info (Q(174,"<context>").s);
-Type const    Exception::info (Q(175,"<exception>").s);
-Type const     Function::info (Q(176,"<function>").s);
-Type const       Lookup::info (Q(177,"<lookup>").s);
-Type const       Method::info (Q(178,"<method>").s);
-Type const       Module::info (Q(  7,"<module>").s);
-Type const         None::info (Q(179,"<none>").s);
+Type const    BoundMeth::info (Q(168,"<boundmeth>"));
+Type const       Buffer::info (Q(169,"<buffer>"));
+Type const     Bytecode::info (Q(170,"<bytecode>"));
+Type const     Callable::info (Q(171,"<callable>"));
+Type const         Cell::info (Q(172,"<cell>"));
+Type const      Closure::info (Q(173,"<closure>"));
+Type const      Context::info (Q(174,"<context>"));
+Type const    Exception::info (Q(175,"<exception>"));
+Type const     Function::info (Q(176,"<function>"));
+Type const       Lookup::info (Q(177,"<lookup>"));
+Type const       Method::info (Q(178,"<method>"));
+Type const       Module::info (Q(  7,"<module>"));
+Type const         None::info (Q(179,"<none>"));
 
-Type const    Array::info (Q(180,"array").s ,  Array::create, &Array::attrs);
-Type const     Bool::info (Q( 62,"bool").s  ,   Bool::create, &Bool::attrs);
-Type const    Bytes::info (Q( 66,"bytes").s ,  Bytes::create, &Bytes::attrs);
-Type const    Class::info (Q(181,"class").s ,  Class::create, &Class::attrs);
-Type const     Dict::info (Q( 75,"dict").s  ,   Dict::create, &Dict::attrs);
-Type const      Int::info (Q( 94,"int").s   ,    Int::create, &Int::attrs);
-Type const     List::info (Q(108,"list").s  ,   List::create, &List::attrs);
-Type const    Range::info (Q(124,"range").s ,  Range::create, &Range::attrs);
-Type const      Set::info (Q(140,"set").s   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(182,"slice").s ,  Slice::create, &Slice::attrs);
-Type const      Str::info (Q(151,"str").s   ,    Str::create, &Str::attrs);
-Type const    Tuple::info (Q(157,"tuple").s ,  Tuple::create, &Tuple::attrs);
-Type const     Type::info (Q(158,"type").s  ,   Type::create, &Type::attrs);
+Type const    Array::info (Q(180,"array") ,  Array::create, &Array::attrs);
+Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
+Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
+Type const    Class::info (Q(181,"class") ,  Class::create, &Class::attrs);
+Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
+Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
+Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
+Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
+Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
+Type const    Slice::info (Q(182,"slice") ,  Slice::create, &Slice::attrs);
+Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
+Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
+Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
 auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }
@@ -763,56 +770,56 @@ static Function const f_hash (bi_hash);
 
 static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
-    { Q(180,"array").s , Array::info },
-    { Q( 62,"bool").s  , Bool::info },
-    { Q( 66,"bytes").s , Bytes::info },
-    { Q(181,"class").s , Class::info },
-    { Q( 75,"dict").s  , Dict::info },
-    { Q( 94,"int").s   , Int::info },
-    { Q(108,"list").s  , List::info },
-    { Q(124,"range").s , Range::info },
-    { Q(140,"set").s   , Set::info },
-    { Q(182,"slice").s , Slice::info },
-    { Q(151,"str").s   , Str::info },
-    { Q(157,"tuple").s , Tuple::info },
-    { Q(158,"type").s  , Type::info },
+    { Q(180,"array") , Array::info },
+    { Q( 62,"bool")  , Bool::info },
+    { Q( 66,"bytes") , Bytes::info },
+    { Q(181,"class") , Class::info },
+    { Q( 75,"dict")  , Dict::info },
+    { Q( 94,"int")   , Int::info },
+    { Q(108,"list")  , List::info },
+    { Q(124,"range") , Range::info },
+    { Q(140,"set")   , Set::info },
+    { Q(182,"slice") , Slice::info },
+    { Q(151,"str")   , Str::info },
+    { Q(157,"tuple") , Tuple::info },
+    { Q(158,"type")  , Type::info },
     //CG>
     //CG< exception-emit d
-    { Q( 33,"BaseException").s       , f_BaseException },
-    { Q( 36,"Exception").s           , f_Exception },
-    { Q( 51,"StopIteration").s       , f_StopIteration },
-    { Q( 30,"ArithmeticError").s     , f_ArithmeticError },
-    { Q( 31,"AssertionError").s      , f_AssertionError },
-    { Q( 32,"AttributeError").s      , f_AttributeError },
-    { Q( 34,"EOFError").s            , f_EOFError },
-    { Q( 38,"ImportError").s         , f_ImportError },
-    { Q( 43,"LookupError").s         , f_LookupError },
-    { Q( 40,"IndexError").s          , f_IndexError },
-    { Q( 41,"KeyError").s            , f_KeyError },
-    { Q( 44,"MemoryError").s         , f_MemoryError },
-    { Q( 45,"NameError").s           , f_NameError },
-    { Q( 48,"OSError").s             , f_OSError },
-    { Q( 50,"RuntimeError").s        , f_RuntimeError },
-    { Q( 47,"NotImplementedError").s , f_NotImplementedError },
-    { Q( 54,"TypeError").s           , f_TypeError },
-    { Q( 55,"ValueError").s          , f_ValueError },
-    { Q(167,"UnicodeError").s        , f_UnicodeError },
+    { Q( 33,"BaseException")       , f_BaseException },
+    { Q( 36,"Exception")           , f_Exception },
+    { Q( 51,"StopIteration")       , f_StopIteration },
+    { Q( 30,"ArithmeticError")     , f_ArithmeticError },
+    { Q( 31,"AssertionError")      , f_AssertionError },
+    { Q( 32,"AttributeError")      , f_AttributeError },
+    { Q( 34,"EOFError")            , f_EOFError },
+    { Q( 38,"ImportError")         , f_ImportError },
+    { Q( 43,"LookupError")         , f_LookupError },
+    { Q( 40,"IndexError")          , f_IndexError },
+    { Q( 41,"KeyError")            , f_KeyError },
+    { Q( 44,"MemoryError")         , f_MemoryError },
+    { Q( 45,"NameError")           , f_NameError },
+    { Q( 48,"OSError")             , f_OSError },
+    { Q( 50,"RuntimeError")        , f_RuntimeError },
+    { Q( 47,"NotImplementedError") , f_NotImplementedError },
+    { Q( 54,"TypeError")           , f_TypeError },
+    { Q( 55,"ValueError")          , f_ValueError },
+    { Q(167,"UnicodeError")        , f_UnicodeError },
     //CG>
-    { Q(123,"print").s, f_print },
-    { Q(116,"next").s,  f_next },
-    { Q(107,"len").s,   f_len },
-    { Q( 57,"abs").s,   f_abs },
-    { Q( 90,"hash").s,  f_hash },
-    { Q(185,"sys").s,   m_sys },
+    { Q(123,"print"), f_print },
+    { Q(116,"next"),  f_next },
+    { Q(107,"len"),   f_len },
+    { Q( 57,"abs"),   f_abs },
+    { Q( 90,"hash"),  f_hash },
+    { Q(185,"sys"),   m_sys },
 #ifndef UNIT_TEST
-    { Q(186,"machine").s, m_machine },
+    { Q(186,"machine"), m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { Q(187,"network").s, m_network },
+    { Q(187,"network"), m_network },
 #endif
 #if INCLUDE_SDCARD
-    { Q(188,"sdcard").s, m_sdcard },
+    { Q(188,"sdcard"), m_sdcard },
 #endif
 #endif
 };

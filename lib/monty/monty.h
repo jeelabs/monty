@@ -97,8 +97,7 @@ namespace Monty {
 
         constexpr Value () : v (0) {}
         constexpr Value (int arg) : v (arg * 2 + 1) {}
-      //constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
-                  Value (Q const& arg) : Value (arg.s) {} // TODO remove
+        constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
