@@ -28,7 +28,7 @@ native bluepill_f103c8 disco_f407vg esp8266 tinypico:
 	pio run -c configs/$@.ini -s
 
 gen:
-	src/codegen.py qstr.h lib/monty/ dump.txt
+	src/codegen.py qstr.h lib/monty/ qstr.cpp
 
 verify:
 	pio run -c configs/native.ini -s

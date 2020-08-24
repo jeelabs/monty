@@ -37,14 +37,14 @@ def VERSION(block):
 
 # generate qstr definition
 qstrIndex = []
-qstrLen = [8]
-qstrMap = {'mty0...': 0}
+qstrLen = []
+qstrMap = {}
 
 def qid(s):
     if s in qstrMap:
         i = qstrMap[s]
     else:
-        i = len(qstrMap)
+        i = len(qstrMap) + 1
         qstrMap[s] = i
         qstrLen.append(len(s) + 1)
     return i
@@ -52,13 +52,22 @@ def qid(s):
 def q(s):
     return 'Q(%3d,"%s")' % (qid(s), s)
 
+def hash(s):
+    h = 5381
+    for b in s.encode():
+        h = (((h<<5) + h) ^ b) & 0xFFFFFFFF
+    return h
+
 def QSTR_EMIT(block, sel='i'):
     if sel == 'i':
         return qstrIndex
     out = []
+    num = len(qstrLen)
+    qstrLen.insert(0, num)
+    qstrLen.append(0)
+    num += 2
     if sel in 'xv':
-        qstrLen.append(0)
-        i, n, s = 0, 2 * len(qstrLen), ''
+        i, n, s = 0, 2 * num, ''
         for x in qstrLen:
             s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
             i += 1
@@ -68,8 +77,20 @@ def QSTR_EMIT(block, sel='i'):
                 s = ''
         if s:
             out.append('"%s"' % s)
-        if sel == 'v':
-            out.append('')
+        out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
+                   (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
+    if sel in 'hv':
+        i, s, h = 0, '', {}
+        for x in map(hash, qstrMap):
+            s += '\\x%02X' % (x & 0xFF)
+            i += 1
+            h[x & 0xFF] = True
+            if i % 16 == 0:
+                out.append('"%s"' % s)
+                s = ''
+        if s:
+            out.append('"%s"' % s)
+        out.append('// found %d distinct hashes' % len(h))
     if sel in 'sv':
         e = ['%-22s "\\0" // %d' % ('"%s"' % k, v) for k, v in qstrMap.items()]
         out.extend(e)
