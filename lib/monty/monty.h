@@ -80,8 +80,9 @@ namespace Monty {
     struct Q {
         constexpr Q (uint16_t i, char const* p) : id (i), s (p) {}
 
-        constexpr operator char const* () const { return s; }
+        operator char const* () const { return str(id); }
 
+        static auto hash (void const*, size_t) -> uint32_t;
         static auto str (uint16_t) -> char const*;
         static auto find (char const*) -> uint16_t;
         static auto make (char const*) -> uint16_t;
@@ -224,12 +225,13 @@ namespace Monty {
 
         using ByteVec::size;
 
-        auto atGet (size_t i) const -> uint8_t const* {
+        auto atGet (size_t i) const -> uint8_t* {
             return begin() + pos(i);
         }
         auto atLen (size_t i) const -> size_t {
             return pos(i+1) - pos(i);
         }
+        void atAdj (size_t idx, size_t len);
         void atSet (size_t i, void const* ptr, size_t len);
 
         void insert (size_t idx, size_t num =1);
@@ -329,8 +331,6 @@ namespace Monty {
     //CG>
         constexpr Bytes () {}
         Bytes (void const*, size_t =0);
-
-        auto hash (const uint8_t* p, size_t n) const -> uint32_t;
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
