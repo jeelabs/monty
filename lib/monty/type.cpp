@@ -62,6 +62,10 @@ auto Q::find (char const* s) -> uint16_t {
     return 0;
 }
 
+auto Q::next () -> uint16_t {
+    return qstrRamMap.size() + QSTR_RAM_BASE;
+}
+
 auto Q::make (char const* s) -> uint16_t {
     auto i = find(s);
     if (i > 0)
@@ -79,11 +83,17 @@ auto Q::make (char const* s) -> uint16_t {
 }
 
 Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
-    assert((char const*) *this == arg); // watch out for address truncation
+#if 0
+    if (Vec::inPool(arg)) // don't store pointers into movable vector space
+        *this = new struct Str (arg); // TODO should try Q::find first
+    else
+#endif
+        assert((char const*) *this == arg); // watch out for address truncation
 }
 
 Value::operator char const* () const {
-    return (char const*) (v >> 2);
+    return isStr() ? (char const*) (v >> 2)
+                   : (char const*) asType<struct Str>();
 }
 
 auto Value::asObj () const -> Object& {

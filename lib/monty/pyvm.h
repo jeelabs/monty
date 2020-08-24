@@ -110,7 +110,7 @@ class PyVM : public Interp {
     }
 
     char const* fetchQ () {
-        return context->callee->qStrAt(fetchO() + 1);
+        return Q::str(fetchO() + 1);
     }
 
     // special wrapper to deal with context changes vs cached sp/ip values

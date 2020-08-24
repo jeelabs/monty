@@ -3,7 +3,6 @@
 #define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
 #include "monty.h"
-#include "qstr.h"
 #include <cassert>
 
 #if VERBOSE_LOAD
@@ -14,39 +13,8 @@
 
 namespace Monty {
 
-struct QstrPool : Object {
-    int len;
-    uint16_t off [];
-
-    static auto create (char const* d, int n, int b) -> QstrPool const* {
-        static_assert (sizeof *off == 2, "off is not a uint16_t ?");
-        return new (2*(n+1)+b) QstrPool (d, n, b);
-    }
-
-    QstrPool (char const* data, int num, int bytes) : len (num) {
-        auto vec = (char*) off;
-        off[0] = 2*(num+1);
-        memcpy(vec + off[0], data, bytes);
-        for (int i = 0; i < num; ++i) {
-            auto pos = off[i];
-            off[i+1] = pos + strlen(vec + pos) + 1;
-        }
-    }
-
-    auto atIdx (int idx) const -> char const* {
-        assert(idx >= qstrFrom);
-        if (idx < (int) qstrNext)
-            return qstrData + qstrPos[idx-qstrFrom];
-        idx -= qstrNext;
-        assert(idx < len);
-        return (char const*) off + off[idx];
-    }
-};
-
 struct Loader {
     const uint8_t* dp;
-    VecOf<char> qBuf;
-    Vector qVec;
     VecOf<uint16_t> qWin;
     uint8_t* bcBuf;
     uint8_t* bcNext;
@@ -114,18 +82,11 @@ struct Loader {
         debugf("qwin %d\n", (int) n);
         qWin.insert(0, n); // qstr window
 
-        qBuf.adj(500); // TODO avoid large over-alloc
-
         auto& bc = loadRaw();
 
-        debugf("qUsed #%d %db\n", (int) qVec.fill, (int) qBuf.fill);
-        auto pool = QstrPool::create((char const*) qBuf.begin(),
-                                        qVec.fill, qBuf.fill);
-        assert(pool != nullptr);
+        debugf("qNext %d %s\n", Q::next(), Q::str(Q::next()-1));
 
-        qBuf.adj(0); // buffer no longer needed
-
-        auto mod = new Module (&builtins, *pool);
+        auto mod = new Module (&builtins);
         return new Callable (bc, mod);
     }
 
@@ -152,19 +113,18 @@ struct Loader {
         if (len & 1)
             return winQstr(len>>1);
         len >>= 1;
-        auto o = qBuf.fill;
-        qBuf.insert(o, len + 1);
-        auto s = (char*) qBuf.begin() + o; // TODO careful, can move
+
+        char qBuf [30]; // TODO yuck, temp buf to terminate with a null byte
+        assert(len < sizeof qBuf);
         for (int i = 0; i < len; ++i)
-            s[i] = *dp++;
-        s[len] = 0;
-        debugf("q:%s\n", s);
-        int n = qVec.fill;
-        qVec.insert(n, 1); // make room
-        qVec[n] = s;
+            qBuf[i] = *dp++;
+        qBuf[len] = 0;
+        debugf("q:%s\n", qBuf);
+
+        int n = Q::make(qBuf);
+
         qWin.remove(qWin.fill-1);
         qWin.insert(0);
-        n += qstrNext;
         qWin[0] = n;
         return n;
     }
@@ -281,10 +241,7 @@ struct Loader {
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
                     assert(n > 0);
-                    auto s = n < (int) qstrNext ? qstrData + qstrPos[n-1] :
-                                        (char const*) qVec[n-qstrNext];
-                    (void) s;
-                    debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, s);
+                    debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, Q::str(n));
                     break;
                 }
                 case MP_BC_FORMAT_VAR_UINT: {
@@ -317,11 +274,6 @@ struct Loader {
 } // namespace Monty
 
 using namespace Monty;
-
-// TODO placed here iso in call.cpp because it needs to know the QstrPool type
-auto Callable::qStrAt (size_t i) const -> char const* {
-    return mo.qp.asType<QstrPool>().atIdx(i);
-}
 
 auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
     Loader ldr;

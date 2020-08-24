@@ -86,6 +86,7 @@ namespace Monty {
         static auto str (uint16_t) -> char const*;
         static auto find (char const*) -> uint16_t;
         static auto make (char const*) -> uint16_t;
+        static auto next () -> uint16_t;
 
         uint16_t id;
         char const* s;
@@ -722,13 +723,11 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Module (Lookup const* lu, Value pool ={}) : Dict (lu), qp (pool) {}
+        Module (Lookup const* lu) : Dict (lu) {}
 
         Value attr (char const* s, Value&) const override { return getAt(s); }
 
-        void marker () const override { Dict::marker(); qp.marker(); }
-
-        Value qp;
+        void marker () const override { Dict::marker(); }
     };
 
     //CG3 type <bytecode>
@@ -780,8 +779,6 @@ namespace Monty {
         Callable (Value callee, Value pos, Value kw)
                 : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
         Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
-
-        auto qStrAt (size_t) const -> char const*;
 
         auto call (ArgVec const&) const -> Value override;
 
