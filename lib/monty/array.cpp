@@ -38,7 +38,40 @@ struct AccessAs : Accessor {
     }
 };
 
-constexpr auto arrayModes = "oPTNbBhHiIlLqQ"
+struct AccessAsVaryBytes : Accessor {
+    auto get (ByteVec& vec, size_t pos) const -> Value override {
+        auto& v = (VaryVec&) vec;
+        return new Bytes (v.atGet(pos), v.atLen(pos));
+    }
+    void set (ByteVec& vec, size_t pos, Value val) const override {
+        auto& b = val.asType<Bytes>();
+        ((VaryVec&) vec).atSet(pos, b.begin(), b.size());
+    }
+    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+        ((VaryVec&) vec).insert(pos, num);
+    }
+    void del (ByteVec& vec, size_t pos, size_t num) const override {
+        ((VaryVec&) vec).remove(pos, num);
+    }
+};
+
+struct AccessAsVaryStr : Accessor {
+    auto get (ByteVec& vec, size_t pos) const -> Value override {
+        return new Str ((char const*) ((VaryVec&) vec).atGet(pos));
+    }
+    void set (ByteVec& vec, size_t pos, Value val) const override {
+        auto s = (char const*) val;
+        ((VaryVec&) vec).atSet(pos, s, strlen(s) + 1);
+    }
+    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+        ((VaryVec&) vec).insert(pos, num);
+    }
+    void del (ByteVec& vec, size_t pos, size_t num) const override {
+        ((VaryVec&) vec).remove(pos, num);
+    }
+};
+
+constexpr auto arrayModes = "oPTNbBhHiIlLqQvV"
 #if USE_FLOAT
                             "f"
 #endif
@@ -59,6 +92,8 @@ static AccessAs<int32_t>  const accessor_l;
 static AccessAs<uint32_t> const accessor_L;
 static AccessAs<int64_t>  const accessor_q;
 static AccessAs<uint64_t> const accessor_Q;
+static AccessAsVaryBytes  const accessor_v;
+static AccessAsVaryStr    const accessor_V;
 #if USE_FLOAT
 static AccessAs<float>    const accessor_f;
 #endif
@@ -82,6 +117,8 @@ static Accessor const* accessors [] = {
     &accessor_L,
     &accessor_q,
     &accessor_Q,
+    &accessor_v,
+    &accessor_V,
 #if USE_FLOAT
     &accessor_f,
 #endif
