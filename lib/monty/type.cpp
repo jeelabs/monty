@@ -180,6 +180,48 @@ void Value::verify (Type const& t) const {
     assert(f);
 }
 
+void VaryVec::atSet (size_t idx, void const* ptr, size_t len) {
+    assert(idx < fill);
+    auto olen = atLen(idx);
+    if (len != olen) {
+        auto ofill = fill;
+        fill = pos(fill);
+        if (len > olen)
+            ByteVec::insert(pos(idx+1), len - olen);
+        else
+            ByteVec::remove(pos(idx) + len, olen - len);
+        fill = ofill;
+
+        for (size_t i = idx + 1; i <= fill; ++i)
+            pos(i) += len - olen;
+    }
+    memcpy(begin() + pos(idx), ptr, len);
+}
+
+void VaryVec::insert (size_t idx, size_t num) {
+    assert(idx <= fill);
+    if (cap() == 0) {
+        ByteVec::insert(0, 2);
+        pos(0) = 2;
+        fill = 0;
+    }
+
+    auto ofill = fill;
+    fill = pos(fill);
+    ByteVec::insert(2 * idx, 2 * num);
+    fill = ofill + num;
+
+    for (size_t i = idx + num; i <= fill; ++i)
+        pos(i) += 2 * num;
+    for (size_t i = 0; i < num; ++i)
+        pos(idx+i) = pos(idx+num);
+}
+
+void VaryVec::remove (size_t idx, size_t num) {
+    assert(idx + num <= fill);
+    assert(false); // TODO
+}
+
 auto Object::call (ArgVec const&) const -> Value {
     Value v = this; v.dump("call?"); assert(false);
     return {};

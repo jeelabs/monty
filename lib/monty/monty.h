@@ -211,6 +211,27 @@ namespace Monty {
 
     void mark (Vector const&);
 
+    struct VaryVec : private ByteVec {
+        using ByteVec::ByteVec;
+
+        auto size () const -> size_t { return fill; }
+
+        auto atGet (size_t i) const -> uint8_t const* {
+            return begin() + pos(i);
+        }
+        auto atLen (size_t i) const -> size_t {
+            return pos(i+1) - pos(i);
+        }
+        void atSet (size_t i, void const* ptr, size_t len);
+
+        void insert (size_t idx, size_t num =1);
+        void remove (size_t idx, size_t num =1);
+    private:
+        auto pos (size_t i) const -> uint16_t& {
+            return ((uint16_t*) begin())[i];
+        }
+    };
+
     struct ArgVec {
         ArgVec (Vector const& v, int n, int o) : vec (v), num (n), off (o) {}
 

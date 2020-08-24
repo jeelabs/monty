@@ -37,8 +37,8 @@ def VERSION(block):
 
 # generate qstr definition
 qstrIndex = []
-qstrLen = [2]
-qstrMap = {'?': 0}
+qstrLen = [8]
+qstrMap = {'mty0...': 0}
 
 def qid(s):
     if s in qstrMap:

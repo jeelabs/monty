@@ -21,7 +21,8 @@ void smokeTest () {
     TEST_ASSERT_EQUAL(42, 40 + 2);
 }
 
-void objTypeSizes () {
+void typeSizes () {
+    TEST_ASSERT_EQUAL(sizeof (ByteVec), sizeof (VaryVec));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Value));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Object));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
@@ -46,11 +47,49 @@ void objTypeSizes () {
     TEST_ASSERT_EQUAL(2*sizeof (void*) + 2*sizeof (uint32_t), sizeof (Slice));
 }
 
+void varyVecTests () {
+    VaryVec v;
+    TEST_ASSERT_EQUAL(0, v.size());
+
+    v.insert(0);
+    TEST_ASSERT_EQUAL(1, v.size());
+    TEST_ASSERT_EQUAL(0, v.atLen(0));
+
+    v.atSet(0, "abc", 4);
+    TEST_ASSERT_EQUAL(1, v.size());
+    TEST_ASSERT_EQUAL(4, v.atLen(0));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(0));
+
+    v.insert(0);
+    TEST_ASSERT_EQUAL(2, v.size());
+    TEST_ASSERT_EQUAL(0, v.atLen(0));
+    TEST_ASSERT_EQUAL(4, v.atLen(1));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(1));
+
+    v.atSet(0, "defg", 5);
+    TEST_ASSERT_EQUAL(5, v.atLen(0));
+    TEST_ASSERT_EQUAL(4, v.atLen(1));
+    TEST_ASSERT_EQUAL_STRING("defg", v.atGet(0));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(1));
+
+    v.atSet(0, "hi", 3);
+    TEST_ASSERT_EQUAL(3, v.atLen(0));
+    TEST_ASSERT_EQUAL(4, v.atLen(1));
+    TEST_ASSERT_EQUAL_STRING("hi", v.atGet(0));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(1));
+
+    v.atSet(0, nullptr, 0);
+    TEST_ASSERT_EQUAL(0, v.atLen(0));
+    TEST_ASSERT_EQUAL(4, v.atLen(1));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(1));
+}
+
 int main () {
     UNITY_BEGIN();
 
     RUN_TEST(smokeTest);
-    RUN_TEST(objTypeSizes);
+    RUN_TEST(typeSizes);
+    RUN_TEST(varyVecTests);
 
     UNITY_END();
 }
