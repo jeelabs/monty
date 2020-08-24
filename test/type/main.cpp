@@ -82,6 +82,37 @@ void varyVecTests () {
     TEST_ASSERT_EQUAL(0, v.atLen(0));
     TEST_ASSERT_EQUAL(4, v.atLen(1));
     TEST_ASSERT_EQUAL_STRING("abc", v.atGet(1));
+
+    v.remove(0);
+    TEST_ASSERT_EQUAL(1, v.size());
+    TEST_ASSERT_EQUAL(4, v.atLen(0));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(0));
+
+    v.insert(1, 3);
+    TEST_ASSERT_EQUAL(4, v.size());
+    TEST_ASSERT_EQUAL(4, v.atLen(0));
+    TEST_ASSERT_EQUAL_STRING("abc", v.atGet(0));
+    TEST_ASSERT_EQUAL(0, v.atLen(1));
+    TEST_ASSERT_EQUAL(0, v.atLen(2));
+    TEST_ASSERT_EQUAL(0, v.atLen(3));
+    v.atSet(3, "four", 5);
+    TEST_ASSERT_EQUAL_STRING("four", v.atGet(3));
+    v.atSet(2, "three", 6);
+    TEST_ASSERT_EQUAL_STRING("three", v.atGet(2));
+    v.atSet(1, "two", 4);
+    TEST_ASSERT_EQUAL_STRING("two", v.atGet(1));
+    v.atSet(0, "one", 4);
+    TEST_ASSERT_EQUAL_STRING("one", v.atGet(0));
+    TEST_ASSERT_EQUAL_STRING("two", v.atGet(1));
+    TEST_ASSERT_EQUAL_STRING("three", v.atGet(2));
+    TEST_ASSERT_EQUAL_STRING("four", v.atGet(3));
+
+    v.remove(1, 2);
+    TEST_ASSERT_EQUAL(2, v.size());
+    TEST_ASSERT_EQUAL(4, v.atLen(0));
+    TEST_ASSERT_EQUAL(5, v.atLen(1));
+    TEST_ASSERT_EQUAL_STRING("one", v.atGet(0));
+    TEST_ASSERT_EQUAL_STRING("four", v.atGet(1));
 }
 
 int main () {

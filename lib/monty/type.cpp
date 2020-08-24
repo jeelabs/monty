@@ -211,7 +211,7 @@ void VaryVec::insert (size_t idx, size_t num) {
     ByteVec::insert(2 * idx, 2 * num);
     fill = ofill + num;
 
-    for (size_t i = idx + num; i <= fill; ++i)
+    for (size_t i = 0; i <= fill; ++i)
         pos(i) += 2 * num;
     for (size_t i = 0; i < num; ++i)
         pos(idx+i) = pos(idx+num);
@@ -219,7 +219,18 @@ void VaryVec::insert (size_t idx, size_t num) {
 
 void VaryVec::remove (size_t idx, size_t num) {
     assert(idx + num <= fill);
-    assert(false); // TODO
+    auto diff = pos(idx+num) - pos(idx);
+
+    auto ofill = fill;
+    fill = pos(fill);
+    ByteVec::remove(pos(idx), diff);
+    ByteVec::remove(2 * idx, 2 * num);
+    fill = ofill - num;
+
+    for (size_t i = 0; i <= fill; ++i)
+        pos(i) -= 2 * num;
+    for (size_t i = idx; i <= fill; ++i)
+        pos(i) -= diff;
 }
 
 auto Object::call (ArgVec const&) const -> Value {
