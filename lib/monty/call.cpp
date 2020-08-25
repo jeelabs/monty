@@ -5,10 +5,19 @@
 
 using namespace Monty;
 
+#ifdef UNIT_TEST
+static auto archTime () -> uint32_t { assert(false); }
+#else
+extern auto archTime () -> uint32_t;
+#endif
+
 volatile uint32_t Interp::pending;
-Context* Interp::context;
-List Interp::tasks;
-Value Interp::handlers [MAX_HANDLERS];
+Context*          Interp::context;
+List              Interp::tasks;
+Value             Interp::handlers [MAX_HANDLERS];
+
+static uint32_t deadlines [Interp::MAX_HANDLERS]; // when to wake up handlers
+static uint32_t idleFlags [Interp::MAX_HANDLERS]; // requirements while idling
 
 Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
@@ -179,6 +188,8 @@ void Context::marker () const {
 }
 
 int Interp::setHandler (Value h) {
+    static_assert (MAX_HANDLERS <= 8 * sizeof pending, "MAX_HANDLERS too large");
+
     if (h.isInt()) {
         int i = h;
         if (1 <= i && i < (int) MAX_HANDLERS)
@@ -207,6 +218,13 @@ void Interp::markAll () {
     mark(context);
     for (size_t i = 0; i < MAX_HANDLERS; ++i)
         handlers[i].marker();
+}
+
+void Interp::snooze (size_t id, int ms, uint32_t flags) {
+    assert(id < MAX_HANDLERS);
+    assert(handlers[id].isObj());
+    deadlines[id] = archTime() + ms;
+    idleFlags[id] = flags;
 }
 
 void Interp::suspend (List& queue) {

@@ -12,7 +12,7 @@
     #define PINS_NETWORK PinA<7>, PinA<6>, PinA<5>, PinA<4>
 #endif
 
-#if BOARD_discovery_f4 || STM32L073xx || STM32L4
+#if BOARD_discovery_f4 || STM32L0 || STM32L4
     #define PINS_CONSOLE PinA<2>, PinA<3> // TODO rx on PA15 for L432?
 #elif STM32H743xx // nucleo-144
     #define PINS_CONSOLE PinD<8>, PinD<9>
@@ -28,7 +28,7 @@
     #define UART_BUSDIV 1
 #endif
 
-#if STM32F1 || INCLUDE_NETWORK
+#if STM32L0 || STM32F1 || INCLUDE_NETWORK
     #define MEM_BYTES (12*1024) // e.g. Blue Pill
 #else
     #define MEM_BYTES (32*1024) // will fit in ≥ 40 KB ram

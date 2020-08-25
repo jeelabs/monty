@@ -12,6 +12,12 @@ void archInit () {
     printf("main\n");
 }
 
+auto archTime () -> uint32_t {
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
+}
+
 void archIdle () {
     timespec ts { 0, 100000 };
     nanosleep(&ts, &ts); // 100 µs, i.e. 10% of ticks' 1 ms resolution
@@ -29,17 +35,11 @@ auto archDone (char const* msg) -> int {
 static int ms, id;
 static uint32_t start, begin, last;
 
-static auto getTime () -> uint32_t {
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
-}
-
 // interface exposed to the VM
 
 // simulate in software, see INNER_HOOK in arch.h and monty/pyvm.h
 void timerHook () {
-    uint32_t t = getTime();
+    uint32_t t = archTime();
     if (ms > 0 && (t - start) / ms != last) {
         last = (t - start) / ms;
         if (id > 0)
@@ -54,7 +54,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
             return -1;
         ms = args[1];
         h = args[2];
-        start = getTime(); // set first timeout relative to now
+        start = archTime(); // set first timeout relative to now
         last = 0;
     }
     id = Interp::setHandler(h);
@@ -62,7 +62,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
 }
 
 static auto f_ticks (ArgVec const&) -> Value {
-    uint32_t t = getTime();
+    uint32_t t = archTime();
     if (begin == 0)
         begin = t;
     return t - begin; // make all runs start out the same way

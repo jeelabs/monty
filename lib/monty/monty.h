@@ -886,13 +886,16 @@ namespace Monty {
         size_t ipOff {0};
         Callable const* callee {nullptr};
 
+        // TODO place at the bottom of the stack for access from VM code
         Value event;
+        uint32_t deadline;
         Context* caller;
     };
 
     struct Interp {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
+        static void snooze (size_t id, int ms, uint32_t flags);
         static void suspend (List& queue);
         static void resume (Context& ctx);
 
@@ -906,12 +909,13 @@ namespace Monty {
 
         void markAll (); // for gc
 
+        static constexpr auto MAX_HANDLERS = 32;
+
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* context;            // current context, if any
         static List tasks;                  // runnable task queue
     protected:
-        static constexpr auto MAX_HANDLERS = 8 * sizeof pending;
-        static Value handlers [];
+        static Value handlers [];           // installed soft-irq handlers
     };
 
 // see import.cpp - importing and loading bytecodes

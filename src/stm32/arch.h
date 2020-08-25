@@ -1,6 +1,7 @@
 #include "config.h"
 
 extern void archInit ();
+extern auto archTime () -> uint32_t;
 extern void archIdle ();
 extern auto archDone (char const* =nullptr) -> int;
 
