@@ -1,11 +1,15 @@
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
 #include "monty.h"
 #include "arch.h"
 
+#include <ctime>
+
 using namespace Monty;
+
+auto archTime () -> uint32_t {
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
+}
 
 void archMode (RunMode) {
     // whoops, no LEDs ...

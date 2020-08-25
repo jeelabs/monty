@@ -1,3 +1,5 @@
+extern auto archTime () -> uint32_t;
+
 enum class RunMode { Run, GC, Idle, Sleep, Done, };
 extern void archMode (RunMode); // show status on LEDs, if available
 

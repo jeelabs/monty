@@ -1,7 +1,12 @@
 #include "monty.h"
 #include "arch.h"
+#include <arduino.h>
 
 using namespace Monty;
+
+auto archTime () -> uint32_t {
+    return millis();
+}
 
 void archMode (RunMode) {
     // whoops, no LEDs ...
