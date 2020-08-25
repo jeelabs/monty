@@ -1,4 +1,4 @@
-**Monty** is a Virtual Machine which executes bytecode produced by [MicroPython][MPY].  
+**Monty** is a Virtual Machine which runs bytecode produced by [MicroPython][MPY].  
 It's grossly incomplete and totally unfit for general use, but ... it _does_ work.  
 There is no compiler, this VM requires an `.mpy` file from `mpy-cross` to run.  
 
@@ -15,7 +15,8 @@ the toolchains it needs, but for native builds, `gcc` needs to be present as wel
 
 Once these requirements are met, just run `make` to get started.
 
-The Monty source code is in the public domain and "under active development".
+The Monty source code is in the public domain and "under active development".  
+Latest commits are at: <https://git.jeelabs.org/jcw/monty/commits/branch/dev>.
 
 [MPY]: https://micropython.org/
 [PIO]: https://docs.platformio.org/en/latest/core/installation.html
