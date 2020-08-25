@@ -1,3 +1,6 @@
+B = native	# board name
+T = call	# which test to run
+
 help:
 	# make all    - shorthand for "make run testall verify"
 	# make run    - build and run a native (macos/linux) version
@@ -12,10 +15,10 @@ run: gen native verify/demo.mpy
 	.pio/build/native/program verify/demo.mpy
 
 test: gen platformio.ini
-	pio test -e native
+	pio test -c configs/native.ini -f $T
 
 testall: gen platformio.ini
-	pio test -e native -f '*'
+	pio test -c configs/native.ini
 
 up: platformio.ini
 	pio run -t upload -s
@@ -30,9 +33,8 @@ native bluepill_f103c8 disco_f407vg esp8266 tinypico:
 gen:
 	src/codegen.py qstr.h lib/monty/ qstr.cpp
 
-verify:
-	pio run -c configs/native.ini -s
-	@ make -C $@ BOARD=native
+verify: $B
+	@ make -C $@ BOARD=$B
 
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.

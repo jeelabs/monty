@@ -29,9 +29,6 @@ tty = /dev/cu.usbmodem1461103
 ram = 0x2000B000 # 48 kB
 endif
 
-
-exe = ../.pio/build/$(BOARD)
-
 src := $(wildcard *.py)
 mpy := $(patsubst %.py,%.mpy,$(src))
 out := $(patsubst %.py,%.out,$(src))
@@ -40,7 +37,7 @@ exp := $(patsubst %.py,%.exp,$(src))
 all: check dog fresh $(exp)
 
 # check that the firmware is present and the board is connected
-check: $(exe) $(tty)
+check: $(tty)
 ifdef tty
 	@ echo target: $(BOARD) on $(tty)
 endif
@@ -62,7 +59,7 @@ clean:
 %.out : %.mpy
 	@ echo $@
 ifeq ($(BOARD), native)
-	@ $(exe)/program $< >$@
+	@ .pio/build/native/program $< >$@
 else ifdef gdb
 	@ ./dog $@ <$(tty) & pid=$$!; \
 	  arm-none-eabi-gdb -nx --batch -ex "tar ext $(gdb)" -ex "mon swdp" \
