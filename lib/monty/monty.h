@@ -78,7 +78,7 @@ namespace Monty {
     extern int const qstrBaseLen;
 
     struct Q {
-        constexpr Q (uint16_t i, char const* p) : id (i), s (p) {}
+        constexpr Q (uint16_t i, char const*) : id (i) {}
 
         operator char const* () const { return str(id); }
 
@@ -89,7 +89,6 @@ namespace Monty {
         static auto next () -> uint16_t;
 
         uint16_t id;
-        char const* s;
     };
 
     struct Value {
@@ -384,7 +383,7 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        struct Item { char const* k; Value v; };
+        struct Item { Value k, v; }; // TODO plain const Value list or dict ?
 
         constexpr Lookup (Item const* p, size_t sz)
                         : items (p), count (sz / sizeof (Item)) {}
@@ -580,18 +579,18 @@ namespace Monty {
     //CG>
         using Factory = auto (*)(ArgVec const&,Type const*) -> Value;
 
-        constexpr Type (char const* s, Factory f =noFactory,
-                                        Lookup const* a =nullptr)
-                    : Dict (a), name (s), factory (f) {}
+        constexpr Type (Value s, Factory f =noFactory, Lookup const* a =nullptr)
+                        : Dict (a), name (s), factory (f) {}
 
         auto call (ArgVec const&) const -> Value override;
         auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
 
-        char const* name;
-        Factory factory;
+        Value name;
     private:
+        Factory factory;
+
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 

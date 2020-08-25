@@ -14,7 +14,9 @@ void Value::dump (char const* msg) const {
         case Value::Nil: printf("<N>"); break;
         case Value::Int: printf("<I %d>", (int) *this); break;
         case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
-        case Value::Obj: printf("<O %s at %p>", obj().type().name, &obj()); break;
+        case Value::Obj: printf("<O %s at %p>",
+                                 (char const*) obj().type().name, &obj());
+                         break;
     }
     if (msg != 0)
         printf("\n");
@@ -30,9 +32,9 @@ static void putcEsc (Buffer& buf, char const* fmt, uint8_t ch) {
     }
 }
 
-static void putsEsc (Buffer& buf, char const* s) {
+static void putsEsc (Buffer& buf, Value s) {
     buf.putc('"');
-    for (auto p = (const uint8_t*) s; *p != 0; ++p) {
+    for (auto p = (uint8_t const*) (char const*) s; *p != 0; ++p) {
         if (*p == '\\' || *p == '"')
             buf.putc('\\');
         if (*p >= ' ')
@@ -217,7 +219,7 @@ Value Dict::repr (Buffer& buf) const {
 }
 
 Value Inst::repr (Buffer& buf) const {
-    buf.print("<%s object at %p>", type().name, this);
+    buf.print("<%s object at %p>", (char const*) type().name, this);
     return {};
 }
 
@@ -244,7 +246,7 @@ Value None::repr (Buffer& buf) const {
 }
 
 auto Object::repr (Buffer& buf) const -> Value {
-    buf.print("<%s at %p>", type().name, this);
+    buf.print("<%s at %p>", (char const*) type().name, this);
     return {};
 }
 
@@ -289,6 +291,6 @@ Value Tuple::repr (Buffer& buf) const {
 }
 
 Value Type::repr (Buffer& buf) const {
-    buf.print("<type %s>", name);
+    buf.print("<type %s>", (char const*) name);
     return {};
 }
