@@ -520,7 +520,8 @@ class PyVM : public Interp {
     }
     //CG1 op q
     void opImportFrom (char const* arg) {
-        (void) arg; assert(false); // TODO
+        Value v = sp->obj().getAt(arg);
+        *++sp = v;
     }
     //CG1 op
     void opImportStar () {
