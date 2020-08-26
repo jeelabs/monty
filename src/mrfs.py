@@ -14,9 +14,8 @@
 import binascii, datetime, os, struct, sys, subprocess
 from datetime import datetime
 
-args = iter(sys.argv[1:])
 ofile = None
-
+args = iter(sys.argv[1:])
 for fn in args:
     if fn == '-o':
         ofile = open(next(args), 'wb')
@@ -60,7 +59,8 @@ for fn in args:
             raise SystemExit('%s: bad header at offset %d' %
                                 (fn, size - len(dat)))
     else:
-        txt = ('%s %s' % (date, fn)).encode() + b'\0'
+        nam = base if ext == '.mpy' else fn
+        txt = ('%s %s' % (date, nam)).encode() + b'\0'
         vec = struct.pack('4H', 8, 8, 8+len(txt), 8+len(txt)) + txt
         while len(vec) % 8 != 0:
             vec += b'\0'
