@@ -8,6 +8,7 @@
 #   else each "abc.def" file is wrapped up and written to "abc.mrfs"
 #
 #   files with a ".py" extensions are compiled to ".mpy" and then wrapped
+#   (the ".mpy" extension is always omitted from names stored internally)
 #
 #   input files with extension ".mrfs" are listed instead of wrapped
 
