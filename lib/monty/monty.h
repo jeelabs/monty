@@ -920,6 +920,8 @@ namespace Monty {
 
 // see import.cpp - importing and loading bytecodes
 
+    extern uint8_t const* fsBase;
+    auto fsLookup (char const* name) -> uint8_t const*;
     auto loader (char const* name, uint8_t const* addr) -> Callable*;
 
 } // namespace Monty

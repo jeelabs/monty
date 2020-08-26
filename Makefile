@@ -12,7 +12,7 @@ help:
 all: run testall verify
 
 run: gen native verify/demo.mpy
-	.pio/build/native/program verify/demo.mpy
+	.pio/build/native/program verify/demo.mpy verify/rom.mrfs
 
 test: gen platformio.ini
 	pio test -c configs/$B.ini -f $T

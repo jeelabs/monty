@@ -8,16 +8,17 @@
 
 static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
 
-static const uint8_t* loadBytecode (const char* fname) {
+static const uint8_t* loadFile (const char* fname) {
     FILE* fp = fopen(fname, "rb");
     if (fp == 0)
         return 0;
     fseek(fp, 0, SEEK_END);
     size_t bytes = ftell(fp);
     fseek(fp, 0, SEEK_SET);
-    //printf("bytecode size %db\n", (int) bytes);
-    auto buf = (uint8_t*) malloc(bytes);
+    //printf("%s: %db\n", fname, (int) bytes);
+    auto buf = (uint8_t*) malloc(bytes + 64);
     auto len = fread(buf, 1, bytes, fp);
+    memset(buf + bytes, 0xFF, 64); // simulate empty flash at end
     fclose(fp);
     if (len == bytes)
         return buf;
@@ -39,19 +40,33 @@ static void runInterp (Monty::Callable& init) {
 int main (int argc, const char* argv []) {
     archInit();
 
-    auto bcData = loadBytecode(argc == 2 ? argv[1] : "demo.mpy");
-    if (bcData == 0)
+    // load simulated "rom" from "file"
+    Monty::fsBase = loadFile(argc >= 3 ? argv[2] : "rom.mrfs");
+
+    // name of the bytecode to run
+    auto bcData = loadFile(argc >= 2 ? argv[1] : "demo.mpy");
+
+    auto bc = bcData;
+    if (bc == nullptr && argc >= 3) // no such file, try mrfs
+        bc = Monty::fsLookup(argv[1]);
+    if (bc == nullptr)
         return archDone("can't load bytecode");
 
+    // the loader uses garbage-collected memory
     Monty::setup(myMem, sizeof myMem);
 
-    auto init = Monty::loader("__main__", bcData);
+    // construct in-memory bytecode objects and sub-objects
+    auto init = Monty::loader("__main__", bc);
     if (init == nullptr)
         return archDone("can't load module");
 
+    // orignal bytecode file is no longer needed
     free((void*) bcData);
 
+    // go!
     runInterp(*init);
 
+    // simulated rom data no longer needed
+    free((void*) Monty::fsBase);
     return archDone();
 }

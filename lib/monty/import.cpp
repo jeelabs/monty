@@ -275,18 +275,34 @@ struct Loader {
 
 using namespace Monty;
 
+uint8_t const* Monty::fsBase;
+
+auto Monty::fsLookup (char const* name) -> uint8_t const* {
+    auto addr = fsBase;
+
+    if (addr != nullptr)
+        while (true) {
+            if (memcmp(addr, "mty0", 4) != 0) {
+                printf("%s: not found\n", name);
+                return nullptr;
+            }
+            if (strcmp(name, (char const*) addr + 28) == 0)
+                break;
+            auto size = ((uint32_t const*) addr)[1];
+            while (size % 8 != 4)
+                ++size;
+            addr += size + 4;
+        }
+
+    // found MRFS entry, the actual payload starts a little further
+    auto vend = *(uint16_t*) (addr + 14);   // end of varyvec
+    vend += 8;                              // skip header
+    vend += -vend & 7;                      // round up to multiple of 8
+    printf("loading 20%s @ %p\n", (char const*) addr + 16, addr + vend);
+    return addr + vend;                     // start of real payload
+}
+
 auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
-    addr = (uint8_t const*) 0x08010000;
-
-    // detect MRFS entry, for which the actual payload starts a little further
-    if (memcmp(addr, "mty0", 4) == 0) {
-        auto vend = *(uint16_t*) (addr + 14);   // end of varyvec
-        vend += 8;                              // skip header
-        vend += -vend & 7;                      // round up to multiple of 8
-        printf("loading 20%s @ %p\n", (char const*) addr + 16, addr + vend);
-        addr += vend;                           // start of real payload
-    }
-
     Loader ldr;
     auto* init = ldr.load(addr);
     if (init != nullptr)

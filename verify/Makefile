@@ -34,7 +34,7 @@ mpy := $(patsubst %.py,%.mpy,$(src))
 out := $(patsubst %.py,%.out,$(src))
 exp := $(patsubst %.py,%.exp,$(src))
 
-all: check dog fresh $(exp)
+all: check rom.mrfs dog fresh $(exp)
 
 # check that the firmware is present and the board is connected
 check: $(tty)
@@ -44,6 +44,11 @@ endif
 
 # dog is like cat, but it sets the baudrate and quits on idle
 dog: dog.c
+
+# build an image with all the modules for (simulated) flash use
+rom.mrfs: $(src)
+	@ ../src/mrfs.py -o $@ $^
+	@ ls -l $@
 
 fresh:
 	@ rm -f $(out)
@@ -56,10 +61,10 @@ clean:
 	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | head; else wc -l $<; fi
 
 # 1) store bytecode in ram, 2) reset the µC, 3) capture output to file
-%.out : %.mpy
+%.out : %.mpy rom.mrfs
 	@ echo $@
 ifeq ($(BOARD), native)
-	@ ../.pio/build/native/program $< >$@
+	@ ../.pio/build/native/program $^ >$@
 else ifdef gdb
 	@ ./dog $@ <$(tty) & pid=$$!; \
 	  arm-none-eabi-gdb -nx --batch -ex "tar ext $(gdb)" -ex "mon swdp" \

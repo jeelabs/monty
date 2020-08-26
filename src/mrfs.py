@@ -12,7 +12,7 @@
 #
 #   input files with extension ".mrfs" are listed instead of wrapped
 
-import binascii, datetime, os, struct, sys, subprocess
+import binascii, os, struct, sys, subprocess
 from datetime import datetime
 
 ofile = None
@@ -77,7 +77,7 @@ for fn in args:
         crc = binascii.crc32(pad, crc)
         pad += struct.pack('I', crc)
 
-        fd = ofile if ofile else open(fnOut, 'wb')
+        fd = ofile or open(fnOut, 'wb')
 
         fd.write(hdr)   # 8-byte header
         fd.write(vec)   # minimal varyvec + padding
