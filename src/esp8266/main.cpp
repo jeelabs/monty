@@ -6,8 +6,6 @@
 
 #include <LittleFS.h>
 
-static uintptr_t myMem [4096];
-
 static const uint8_t* loadBytecode (const char* fname) {
     File f = LittleFS.open(fname, "r");
     if (!f)
@@ -49,13 +47,17 @@ void setup () {
         return;
     }
 
-    Monty::setup(myMem, sizeof myMem);
+    constexpr auto N = 12*1024;
+    auto myMem = malloc(N);
+    Monty::setup(myMem, N);
 
     auto init = Monty::loader("__main__", bcData);
     if (init == nullptr) {
         printf("can't load module\n");
         return;
     }
+
+    free((void*) bcData);
 
     runInterp(*init);
 
