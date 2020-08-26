@@ -922,6 +922,6 @@ namespace Monty {
 
     extern uint8_t const* fsBase;
     auto fsLookup (char const* name) -> uint8_t const*;
-    auto loader (char const* name, uint8_t const* addr) -> Callable*;
+    auto loader (Value name, uint8_t const* addr) -> Callable*;
 
 } // namespace Monty

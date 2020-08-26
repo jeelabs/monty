@@ -503,6 +503,29 @@ class PyVM : public Interp {
         }
     }
 
+    //CG1 op q
+    void opImportName (char const* arg) {
+        --sp; // TODO fromlist ignore for now, *sp level also ignored
+        auto base = fsLookup(arg);
+        assert(base != nullptr);
+        auto init = loader(arg, base);
+        assert(init != nullptr);
+        ArgVec avec = {*context, 0, (int) (sp - context->begin())};
+        contextAdjuster([=]() -> Value {
+            init->call(avec);
+            context->frame().locals = &init->mo;
+        });
+        *sp = init->mo;
+    }
+    //CG1 op q
+    void opImportFrom (char const* arg) {
+        assert(false); // TODO
+    }
+    //CG1 op
+    void opImportStar () {
+        assert(false); // TODO
+    }
+
     //CG1 op m 64
     void opLoadConstSmallIntMulti (uint32_t arg) {
         *++sp = arg - 16;
@@ -798,13 +821,23 @@ class PyVM : public Interp {
                     opForIter(arg);
                     break;
                 }
+                case Op::ImportName: {
+                    char const* arg = fetchQ();
+                    opImportName(arg);
+                    break;
+                }
+                case Op::ImportFrom: {
+                    char const* arg = fetchQ();
+                    opImportFrom(arg);
+                    break;
+                }
+                case Op::ImportStar:
+                    opImportStar();
+                    break;
                 //CG>
 
                 // TODO
                 case Op::EndFinally:
-                case Op::ImportFrom:
-                case Op::ImportName:
-                case Op::ImportStar:
                 case Op::SetupFinally:
                 case Op::SetupWith:
                 case Op::StoreComp:

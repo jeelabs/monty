@@ -298,11 +298,11 @@ auto Monty::fsLookup (char const* name) -> uint8_t const* {
     auto vend = *(uint16_t*) (addr + 14);   // end of varyvec
     vend += 8;                              // skip header
     vend += -vend & 7;                      // round up to multiple of 8
-    printf("loading 20%s @ %p\n", (char const*) addr + 16, addr + vend);
+    //printf("loading 20%s @ %p\n", (char const*) addr + 16, addr + vend);
     return addr + vend;                     // start of real payload
 }
 
-auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
+auto Monty::loader (Value name, uint8_t const* addr) -> Callable* {
     Loader ldr;
     auto* init = ldr.load(addr);
     if (init != nullptr)

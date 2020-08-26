@@ -40,10 +40,10 @@ namespace Monty {
         "\xCE\xB9\x0B\x42\x90\xD1\x1C\x2A\xBF\x2D\x54\x1A\xB7\x4B\xF9\x63"
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
-        "\xB7\x4E\x7D\x98\xE6\x03\x84\xC7\x6F\x5B\x17\x64\xBF\x22\xC1\xA7"
+        "\xB7\x4E\x7D\x98\xE6\x03\x1B\xC7\x6F\x5B\x17\x64\xBF\x22\xC1\xA7"
         "\x40\x8F\xE1\x56\x98\xB0\x25\x45\xF8\x4D\x7C\xAB\xB5\xB2\x2E\xBC"
         "\x60\x5B\xC6"
-        // found 140 distinct hashes
+        // found 139 distinct hashes
         ""                     "\0" // 1
         "__dir__"              "\0" // 2
         "\x0a"                 "\0" // 3
@@ -210,7 +210,7 @@ namespace Monty {
         "write"                "\0" // 164
         "zip"                  "\0" // 165
         "__bases__"            "\0" // 166
-        "v0.93-91-ga9a506f"    "\0" // 167
+        "v0.93-92-g0f452d1"    "\0" // 167
         "snooze"               "\0" // 168
         "suspend"              "\0" // 169
         "tasks"                "\0" // 170

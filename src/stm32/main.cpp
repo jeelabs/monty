@@ -20,6 +20,8 @@ static void runInterp (Monty::Callable& init) {
 int main () {
     archInit();
 
+    Monty::fsBase = (uint8_t const*) 0x08010000; // 64 KB past flash begin
+
     Monty::setup(myMem, sizeof myMem);
 
     // load module from end of RAM, 4 KB below the stack top
