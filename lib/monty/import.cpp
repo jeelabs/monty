@@ -276,6 +276,14 @@ struct Loader {
 using namespace Monty;
 
 auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
+    // detect MRFS entry, for which the actual payload starts a little further
+    if (memcmp(addr, "mty0", 4) == 0) {
+        auto vend = *(uint16_t*) (addr + 14);   // end of varyvec
+        vend += -vend & 7;                      // round up to multiple of 8
+        printf("loading %s @ %p\n", (char const*) addr + 16, addr + vend);
+        addr += vend;                           // start of real payload
+    }
+
     Loader ldr;
     auto* init = ldr.load(addr);
     if (init != nullptr)
