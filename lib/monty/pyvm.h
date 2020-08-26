@@ -515,12 +515,11 @@ class PyVM : public Interp {
             assert(init != nullptr);
             mod = init-> mo;
             modules.at(arg) = mod;
-            ArgVec avec = {*context, 0, (int) (sp - context->begin())};
+            ArgVec avec = {*context, 0, 0};
             contextAdjuster([=]() -> Value {
-                init->call(avec);
-                context->frame().locals = &init->mo;
-                return {};
+                return init->call(avec);
             });
+            context->frame().locals = mod;
         }
         *sp = mod;
     }
