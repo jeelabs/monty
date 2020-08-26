@@ -276,11 +276,14 @@ struct Loader {
 using namespace Monty;
 
 auto Monty::loader (char const* name, uint8_t const* addr) -> Callable* {
+    addr = (uint8_t const*) 0x08010000;
+
     // detect MRFS entry, for which the actual payload starts a little further
     if (memcmp(addr, "mty0", 4) == 0) {
         auto vend = *(uint16_t*) (addr + 14);   // end of varyvec
+        vend += 8;                              // skip header
         vend += -vend & 7;                      // round up to multiple of 8
-        printf("loading %s @ %p\n", (char const*) addr + 16, addr + vend);
+        printf("loading 20%s @ %p\n", (char const*) addr + 16, addr + vend);
         addr += vend;                           // start of real payload
     }
 
