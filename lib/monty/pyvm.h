@@ -505,7 +505,7 @@ class PyVM : public Interp {
 
     //CG1 op q
     void opImportName (char const* arg) {
-        --sp; // TODO fromlist ignore for now, *sp level also ignored
+        --sp; // TODO ignore fromlist for now, *sp level also ignored
         auto base = fsLookup(arg);
         assert(base != nullptr);
         auto init = loader(arg, base);
@@ -514,12 +514,13 @@ class PyVM : public Interp {
         contextAdjuster([=]() -> Value {
             init->call(avec);
             context->frame().locals = &init->mo;
+            return {};
         });
         *sp = init->mo;
     }
     //CG1 op q
     void opImportFrom (char const* arg) {
-        assert(false); // TODO
+        (void) arg; assert(false); // TODO
     }
     //CG1 op
     void opImportStar () {
