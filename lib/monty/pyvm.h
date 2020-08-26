@@ -506,17 +506,24 @@ class PyVM : public Interp {
     //CG1 op q
     void opImportName (char const* arg) {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
-        auto base = fsLookup(arg);
-        assert(base != nullptr);
-        auto init = loader(arg, base);
-        assert(init != nullptr);
-        ArgVec avec = {*context, 0, (int) (sp - context->begin())};
-        contextAdjuster([=]() -> Value {
-            init->call(avec);
-            context->frame().locals = &init->mo;
-            return {};
-        });
-        *sp = init->mo;
+        Value name = Q::intern(arg); // TODO yuck, arg was already a qstr!
+        Value mod = modules.at(name);
+        if (mod.isNil()) {
+            // TODO move part of this code to Interp
+            auto base = fsLookup(name);
+            assert(base != nullptr);
+            auto init = loader(name, base);
+            assert(init != nullptr);
+            mod = init-> mo;
+            modules.at(name) = mod;
+            ArgVec avec = {*context, 0, (int) (sp - context->begin())};
+            contextAdjuster([=]() -> Value {
+                init->call(avec);
+                context->frame().locals = &init->mo;
+                return {};
+            });
+        }
+        *sp = mod;
     }
     //CG1 op q
     void opImportFrom (char const* arg) {

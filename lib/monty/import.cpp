@@ -84,7 +84,7 @@ struct Loader {
 
         auto& bc = loadRaw();
 
-        debugf("qNext %d %s\n", Q::next(), Q::str(Q::next()-1));
+        debugf("qNext %d %s\n", Q::nextId(), Q::str(Q::nextId()-1));
 
         auto mod = new Module (&builtins);
         return new Callable (bc, mod);

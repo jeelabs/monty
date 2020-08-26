@@ -14,6 +14,7 @@ extern auto archTime () -> uint32_t;
 volatile uint32_t Interp::pending;
 Context*          Interp::context;
 List              Interp::tasks;
+Dict              Interp::modules;
 Value             Interp::handlers [MAX_HANDLERS];
 
 static uint32_t deadlines [Interp::MAX_HANDLERS]; // when to wake up handlers

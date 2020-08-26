@@ -78,7 +78,7 @@ namespace Monty {
     extern int const qstrBaseLen;
 
     struct Q {
-        constexpr Q (uint16_t i, char const*) : id (i) {}
+        constexpr Q (uint16_t i, char const* =nullptr) : id (i) {}
 
         operator char const* () const { return str(id); }
 
@@ -86,7 +86,8 @@ namespace Monty {
         static auto str (uint16_t) -> char const*;
         static auto find (char const*) -> uint16_t;
         static auto make (char const*) -> uint16_t;
-        static auto next () -> uint16_t;
+        static auto intern (char const* s) -> Q { return make(s); }
+        static auto nextId () -> uint16_t;
 
         uint16_t id;
     };
@@ -720,6 +721,7 @@ namespace Monty {
     struct Module : Dict {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
 
         Module (Lookup const* lu) : Dict (lu) {}
 
@@ -914,6 +916,7 @@ namespace Monty {
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static Context* context;            // current context, if any
         static List tasks;                  // runnable task queue
+        static Dict modules;                // module cache
     protected:
         static Value handlers [];           // installed soft-irq handlers
     };

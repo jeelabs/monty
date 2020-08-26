@@ -240,6 +240,13 @@ Value List::repr (Buffer& buf) const {
     return {};
 }
 
+Value Module::repr (Buffer& buf) const {
+    Value name = at(Q( 23,"__name__"));
+    assert(name.isStr());
+    buf.print("<module '%s'", (char const*) name);
+    return {};
+}
+
 Value None::repr (Buffer& buf) const {
     buf.puts("null");
     return {};

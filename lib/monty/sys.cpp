@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.93-94-g088ab65");
+constexpr auto VERSION = Q(167,"v0.93-95-g6f12722");
 
 static auto f_snooze (ArgVec const& args) -> Value {
     assert(2 <= args.num && args.num <= 4 && args[1].isInt());
@@ -47,8 +47,9 @@ static Lookup::Item const lo_sys [] = {
     { Q(168,"snooze"), fo_snooze },
     { Q(169,"suspend"), fo_suspend },
     { Q(170,"tasks"), Interp::tasks },
-    { Q(171,"implementation"), Q(172,"monty") },
-    { Q(173,"version"), VERSION },
+    { Q(171,"modules"), Interp::modules },
+    { Q(172,"implementation"), Q(173,"monty") },
+    { Q(174,"version"), VERSION },
 };
 
 static Lookup const ma_sys (lo_sys, sizeof lo_sys);
