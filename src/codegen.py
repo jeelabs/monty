@@ -219,7 +219,7 @@ def OP_EMIT(block, sel=0):
 def OP(block, typ='', multi=0):
     op = block[0].split()[1][2:]
     if 'q' in typ:
-        fmt, arg, decl = ' %s', 'fetchQ()', 'char const* arg'
+        fmt, arg, decl = ' %s', 'fetchQ()', 'Q arg'
     elif 'v' in typ:
         fmt, arg, decl = ' %u', 'fetchV()', 'int arg'
     elif 'o' in typ:
@@ -246,6 +246,7 @@ def OP(block, typ='', multi=0):
             opdefs.append('    %s = %s;' % (decl, arg))
         info = ', arg' if arg else ''
         if 'op:print' in flags:
+            if fmt == ' %s': info = ', (char const*) arg' # convert from qstr
             if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
             opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
         if 'r' in typ:

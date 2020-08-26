@@ -4,6 +4,7 @@ hello monty
 456
 <module>
 hello
+{"hello":<module 'hello'}
 f 123 ()
 f 123 (1)
 f 123 (2,3)
@@ -11,4 +12,6 @@ f 123 (3,4,5)
 g 1 9
 g 2 3
 f 123 (9,8,7)
+g 987 9
+{"hello":<module 'hello',"args":<module 'args'}
 done

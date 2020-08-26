@@ -95,7 +95,7 @@ class PyVM : public Interp {
     Value* sp {nullptr};
     uint8_t const* ip {nullptr};
 
-    uint32_t fetchV (uint32_t v =0) {
+    auto fetchV (uint32_t v =0) -> uint32_t {
         uint8_t b = 0x80;
         while (b & 0x80) {
             b = *ip++;
@@ -104,13 +104,13 @@ class PyVM : public Interp {
         return v;
     }
 
-    int fetchO () {
+    auto fetchO () -> int {
         int n = *ip++;
         return n | (*ip++ << 8);
     }
 
-    char const* fetchQ () {
-        return Q::str(fetchO() + 1); // TODO get rid of this off-by-one stuff
+    auto fetchQ () -> Q {
+        return fetchO() + 1; // TODO get rid of this off-by-one stuff
     }
 
     // special wrapper to deal with context changes vs cached sp/ip values
@@ -138,7 +138,7 @@ class PyVM : public Interp {
         printf("\n");
 #endif
         assert(ip >= context->ipBase() && sp >= context->spBase() - 1);
-        INNER_HOOK
+        INNER_HOOK  // used for simulated time in native builds
     }
 
     // check and trigger gc on backwards jumps, i.e. inside all loops
@@ -166,7 +166,7 @@ class PyVM : public Interp {
         *++sp = True;
     }
     //CG1 op q
-    void opLoadConstString (char const* arg) {
+    void opLoadConstString (Q arg) {
         *++sp = arg;
     }
     //CG1 op
@@ -250,38 +250,38 @@ class PyVM : public Interp {
     }
 
     //CG1 op q
-    void opLoadName (char const* arg) {
+    void opLoadName (Q arg) {
         assert(frame().locals.isObj());
         *++sp = frame().locals.obj().getAt(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
-    void opStoreName (char const* arg) {
+    void opStoreName (Q arg) {
         auto& l = frame().locals;
         if (!l.isObj())
             l = new Dict (&context->globals());
         l.obj().setAt(arg, *sp--);
     }
     //CG1 op q
-    void opDeleteName (char const* arg) {
+    void opDeleteName (Q arg) {
         assert(frame().locals.isObj());
         frame().locals.obj().setAt(arg, {});
     }
     //CG1 op q
-    void opLoadGlobal (char const* arg) {
+    void opLoadGlobal (Q arg) {
         *++sp = context->globals().at(arg);
         assert(!sp->isNil());
     }
     //CG1 op q
-    void opStoreGlobal (char const* arg) {
+    void opStoreGlobal (Q arg) {
         context->globals().at(arg) = *sp--;
     }
     //CG1 op q
-    void opDeleteGlobal (char const* arg) {
+    void opDeleteGlobal (Q arg) {
         context->globals().at(arg) = {};
     }
     //CG1 op q
-    void opLoadAttr (char const* arg) {
+    void opLoadAttr (Q arg) {
         Value self;
         *sp = sp->obj().attr(arg, self);
         assert(!sp->isNil());
@@ -291,7 +291,7 @@ class PyVM : public Interp {
             *sp = new BoundMeth (*f, self);
     }
     //CG1 op q
-    void opStoreAttr (char const* arg) {
+    void opStoreAttr (Q arg) {
         assert(&sp->obj().type().type() == &Class::info);
         sp->obj().setAt(arg, sp[-1]);
         sp -= 2;
@@ -376,7 +376,7 @@ class PyVM : public Interp {
         *++sp = Class::info;
     }
     //CG1 op q
-    void opLoadMethod (char const* arg) {
+    void opLoadMethod (Q arg) {
         sp[1] = *sp;
         *sp = sp->asObj().attr(arg, sp[1]);
         assert(!sp->isNil());
@@ -384,7 +384,7 @@ class PyVM : public Interp {
         assert(!sp->isNil());
     }
     //CG1 op q
-    void opLoadSuperMethod (char const* arg) {
+    void opLoadSuperMethod (Q arg) {
         (void) arg; assert(false); // TODO
     }
     //CG1 op v
@@ -504,18 +504,17 @@ class PyVM : public Interp {
     }
 
     //CG1 op q
-    void opImportName (char const* arg) {
+    void opImportName (Q arg) {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
-        Value name = Q::intern(arg); // TODO yuck, arg was already a qstr!
-        Value mod = modules.at(name);
+        Value mod = modules.at(arg);
         if (mod.isNil()) {
             // TODO move part of this code to Interp
-            auto base = fsLookup(name);
+            auto base = fsLookup(arg);
             assert(base != nullptr);
-            auto init = loader(name, base);
+            auto init = loader(arg, base);
             assert(init != nullptr);
             mod = init-> mo;
-            modules.at(name) = mod;
+            modules.at(arg) = mod;
             ArgVec avec = {*context, 0, (int) (sp - context->begin())};
             contextAdjuster([=]() -> Value {
                 init->call(avec);
@@ -526,7 +525,7 @@ class PyVM : public Interp {
         *sp = mod;
     }
     //CG1 op q
-    void opImportFrom (char const* arg) {
+    void opImportFrom (Q arg) {
         Value v = sp->obj().getAt(arg);
         *++sp = v;
     }
@@ -580,7 +579,7 @@ class PyVM : public Interp {
                     opLoadConstTrue();
                     break;
                 case Op::LoadConstString: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadConstString(arg);
                     break;
                 }
@@ -648,42 +647,42 @@ class PyVM : public Interp {
                     break;
                 }
                 case Op::LoadName: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadName(arg);
                     break;
                 }
                 case Op::StoreName: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opStoreName(arg);
                     break;
                 }
                 case Op::DeleteName: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opDeleteName(arg);
                     break;
                 }
                 case Op::LoadGlobal: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadGlobal(arg);
                     break;
                 }
                 case Op::StoreGlobal: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opStoreGlobal(arg);
                     break;
                 }
                 case Op::DeleteGlobal: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opDeleteGlobal(arg);
                     break;
                 }
                 case Op::LoadAttr: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadAttr(arg);
                     break;
                 }
                 case Op::StoreAttr: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opStoreAttr(arg);
                     break;
                 }
@@ -749,12 +748,12 @@ class PyVM : public Interp {
                     opLoadBuildClass();
                     break;
                 case Op::LoadMethod: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadMethod(arg);
                     break;
                 }
                 case Op::LoadSuperMethod: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opLoadSuperMethod(arg);
                     break;
                 }
@@ -831,12 +830,12 @@ class PyVM : public Interp {
                     break;
                 }
                 case Op::ImportName: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opImportName(arg);
                     break;
                 }
                 case Op::ImportFrom: {
-                    char const* arg = fetchQ();
+                    Q arg = fetchQ();
                     opImportFrom(arg);
                     break;
                 }

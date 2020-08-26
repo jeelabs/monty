@@ -63,8 +63,8 @@ auto Q::find (char const* s) -> uint16_t {
     return 0;
 }
 
-auto Q::nextId () -> uint16_t {
-    return qstrRamMap.size() + QID_RAM_BASE;
+auto Q::last () -> uint16_t {
+    return qstrRamMap.size() - 1 + QID_RAM_BASE;
 }
 
 auto Q::make (char const* s) -> uint16_t {

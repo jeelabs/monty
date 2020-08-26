@@ -86,8 +86,7 @@ namespace Monty {
         static auto str (uint16_t) -> char const*;
         static auto find (char const*) -> uint16_t;
         static auto make (char const*) -> uint16_t;
-        static auto intern (char const* s) -> Q { return make(s); }
-        static auto nextId () -> uint16_t;
+        static auto last () -> uint16_t;
 
         uint16_t id;
     };
