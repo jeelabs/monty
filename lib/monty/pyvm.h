@@ -513,7 +513,7 @@ class PyVM : public Interp {
             assert(base != nullptr);
             auto init = loader(arg, base);
             assert(init != nullptr);
-            mod = init-> mo;
+            mod = init->mo;
             modules.at(arg) = mod;
             ArgVec avec = {*context, 0, 0};
             contextAdjuster([=]() -> Value {
