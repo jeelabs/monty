@@ -59,7 +59,7 @@ clean:
 %.out : %.mpy
 	@ echo $@
 ifeq ($(BOARD), native)
-	@ .pio/build/native/program $< >$@
+	@ ../.pio/build/native/program $< >$@
 else ifdef gdb
 	@ ./dog $@ <$(tty) & pid=$$!; \
 	  arm-none-eabi-gdb -nx --batch -ex "tar ext $(gdb)" -ex "mon swdp" \

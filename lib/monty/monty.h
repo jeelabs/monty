@@ -905,9 +905,9 @@ namespace Monty {
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
         static int setHandler (Value);
-        bool isAlive () const;
+        static bool isAlive ();
 
-        void markAll (); // for gc
+        static void markAll (); // for gc
 
         static constexpr auto MAX_HANDLERS = 32;
 

@@ -204,7 +204,7 @@ int Interp::setHandler (Value h) {
     return -1;
 }
 
-bool Interp::isAlive () const {
+bool Interp::isAlive () {
     if (context != nullptr || pending != 0 || tasks.len() > 0)
         return true;
     for (size_t i = 1; i < MAX_HANDLERS; ++i)
