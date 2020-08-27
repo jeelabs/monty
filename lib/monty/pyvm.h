@@ -338,6 +338,18 @@ class PyVM : public Interp {
         sp -= 2;
         sp->obj().setAt(sp[2], sp[1]); // TODO optimise later: no key check
     }
+    //CG1 op v
+    void opStoreComp (int arg) {
+        (void) arg; assert(false); // TODO
+    }
+    //CG1 op v
+    void opUnpackSequence (int arg) {
+        (void) arg; assert(false); // TODO
+    }
+    //CG1 op v
+    void opUnpackEx (int arg) {
+        (void) arg; assert(false); // TODO
+    }
 
     //CG1 op o
     void opSetupExcept (int arg) {
@@ -358,6 +370,14 @@ class PyVM : public Interp {
         assert(*sp == Null); // TODO other cases
         context->excBase(-1);
         --sp;
+    }
+    //CG1 op
+    void opSetupWith () {
+        assert(false); // TODO
+    }
+    //CG1 op
+    void opWithCleanup () {
+        assert(false); // TODO
     }
     //CG1 op o
     void opPopExceptJump (int arg) {
@@ -480,6 +500,10 @@ class PyVM : public Interp {
             return *sp;
         });
         *sp = v;
+    }
+    //CG1 op
+    void opYieldFrom () {
+        assert(false); // TODO
     }
     //CG1 op
     void opReturnValue () {
@@ -731,6 +755,21 @@ class PyVM : public Interp {
                 case Op::StoreMap:
                     opStoreMap();
                     break;
+                case Op::StoreComp: {
+                    int arg = fetchV();
+                    opStoreComp(arg);
+                    break;
+                }
+                case Op::UnpackSequence: {
+                    int arg = fetchV();
+                    opUnpackSequence(arg);
+                    break;
+                }
+                case Op::UnpackEx: {
+                    int arg = fetchV();
+                    opUnpackEx(arg);
+                    break;
+                }
                 case Op::SetupExcept: {
                     int arg = fetchO();
                     opSetupExcept(arg);
@@ -743,6 +782,12 @@ class PyVM : public Interp {
                 }
                 case Op::EndFinally:
                     opEndFinally();
+                    break;
+                case Op::SetupWith:
+                    opSetupWith();
+                    break;
+                case Op::WithCleanup:
+                    opWithCleanup();
                     break;
                 case Op::PopExceptJump: {
                     int arg = fetchO();
@@ -834,6 +879,9 @@ class PyVM : public Interp {
                 case Op::YieldValue:
                     opYieldValue();
                     break;
+                case Op::YieldFrom:
+                    opYieldFrom();
+                    break;
                 case Op::ReturnValue:
                     opReturnValue();
                     break;
@@ -862,14 +910,6 @@ class PyVM : public Interp {
                     opImportStar();
                     break;
                 //CG>
-
-                // TODO
-                case Op::SetupWith:
-                case Op::StoreComp:
-                case Op::UnpackEx:
-                case Op::UnpackSequence:
-                case Op::WithCleanup:
-                case Op::YieldFrom:
 
                 default: {
                     //CG< op-emit m
