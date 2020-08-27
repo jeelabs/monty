@@ -461,6 +461,13 @@ auto Str::getAt (Value k) const -> Value {
     return new Str ((char const*) begin() + idx, 1); // TODO utf-8
 }
 
+Range::Range (Value a, Value b, Value c) {
+    assert(a.isInt() && b.isInt());
+    start = a;
+    limit = b;
+    step = c.isInt() ? (int) c : 1;
+}
+
 Slice::Slice (Value a, Value b, Value c) {
     assert(a.isInt() && b.isInt());
     off = a;
@@ -946,9 +953,12 @@ auto Str::create (ArgVec const& args, Type const*) -> Value {
     return new Str (args[0]);
 }
 
-auto Range::create (ArgVec const&, Type const*) -> Value {
-    assert(false);
-    return {}; // TODO
+auto Range::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    Value a = args.num > 1 ? args[0] : Value (0);
+    Value b = args.num == 1 ? args[0] : args[1];
+    Value c = args.num > 2 ? args[2] : b;
+    return new Range (a, b, c);
 }
 
 auto Slice::create (ArgVec const& args, Type const*) -> Value {

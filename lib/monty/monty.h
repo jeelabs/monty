@@ -364,6 +364,10 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
+        Range (Value a, Value b, Value c);
+
+    private:
+        int32_t start, limit, step;
     };
 
     //CG< type slice

@@ -263,7 +263,8 @@ auto Object::repr (Buffer& buf) const -> Value {
 }
 
 Value Range::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
+    buf.print("<range %d,%d,%d>", start, limit, step);
+    return {};
 }
 
 Value Set::repr (Buffer& buf) const {
@@ -280,7 +281,8 @@ Value Set::repr (Buffer& buf) const {
 }
 
 Value Slice::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
+    buf.print("<slice %d:%d:%d>", off, num, step);
+    return {};
 }
 
 Value Str::repr (Buffer& buf) const {
