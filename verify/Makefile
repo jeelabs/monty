@@ -29,7 +29,7 @@ tty = /dev/cu.usbmodem1461103
 ram = 0x2000B000 # 48 kB
 endif
 
-src := $(wildcard *.py)
+src := $(wildcard [a-z][a-z]*.py)
 mpy := $(patsubst %.py,%.mpy,$(src))
 out := $(patsubst %.py,%.out,$(src))
 exp := $(patsubst %.py,%.exp,$(src))
@@ -46,7 +46,7 @@ endif
 dog: dog.c
 
 # build an image with all the modules for (simulated) flash use
-rom.mrfs: $(src)
+rom.mrfs: *.py
 	@ ../src/mrfs.py -o $@ $^
 	@ ls -l $@
 

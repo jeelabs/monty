@@ -463,10 +463,10 @@ class PyVM : public Interp {
     void opYieldValue () {
         auto ctx = context;
         auto v = contextAdjuster([=]() -> Value {
-            context = context->caller;
+            context = context->caller().ifType<Context>();
             return *sp;
         });
-        ctx->caller = nullptr;
+        ctx->caller() = {};
         *sp = v;
     }
     //CG1 op

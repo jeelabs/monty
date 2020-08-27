@@ -31,7 +31,7 @@ void callTypeSizes () {
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (BoundMeth));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Cell));
     TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Closure));
-    TEST_ASSERT_EQUAL(11 * sizeof (void*), sizeof (Context));
+    TEST_ASSERT_EQUAL(8 * sizeof (void*), sizeof (Context));
 }
 
 int main () {

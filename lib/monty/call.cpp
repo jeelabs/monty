@@ -115,7 +115,7 @@ Value Context::leave (Value v) {
     if (r.isNil())              // use return result if set
         r = v;                  // ... else arg
 
-    if (base > 0) {
+    if (base > NumSlots) {
         int prev = f.base;      // previous frame offset
         spOff = f.spOff;        // restore stack index
         ipOff = f.ipOff;        // restore instruction index
@@ -127,14 +127,15 @@ Value Context::leave (Value v) {
         assert(prev >= 0);
         base = prev;            // new lower frame offset
     } else {
-        Interp::context = caller; // last frame, drop context, restore caller
+        // last frame, drop context, restore caller
+        Interp::context = caller().ifType<Context>();
         if (this == &Interp::tasks[0].obj())
             Interp::tasks.pop(0);
 
         // FIXME ...
         remove(0, fill); // delete last frame
         callee = nullptr;
-        caller = nullptr;
+        caller() = {};
     }
 
     return r;
@@ -151,18 +152,18 @@ auto Context::excBase (int incr) -> Value* {
 void Context::raise (Value exc) {
     uint32_t num = 0;
     if (exc.isInt())
-        num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
+        num = exc;              // trigger soft-irq 1..31 (interrupt-safe)
     else
-        event = exc;    // trigger exception or other outer-loop req
+        event() = exc;      // trigger exception or other outer-loop req
 
     Interp::interrupt(num);     // set pending, to force inner loop exit
 }
 
 void Context::caught () {
-    auto e = event;
-    event = {};
+    auto e = event();
     if (e.isNil())
         return; // there was no exception, just an inner loop exit
+    event() = {};
 
     assert(frame().ep > 0); // simple exception, no stack unwind
     auto ep = excBase(0);
@@ -183,9 +184,7 @@ auto Context::next () -> Value {
 
 void Context::marker () const {
     List::marker();
-    event.marker();
     mark(callee);
-    mark(caller);
 }
 
 int Interp::setHandler (Value h) {
@@ -230,21 +229,18 @@ void Interp::snooze (size_t id, int ms, uint32_t flags) {
 
 void Interp::suspend (List& queue) {
     auto t = tasks.pop(0);
-    assert(t.ifType<Context>() == context); (void) t;
-
-    auto n = queue.size(); // TODO use append()
-    queue.insert(n);
-    queue[n] = context;
+    assert(t.ifType<Context>() == context);
+    queue.append(t);
 
     auto ctx = context;
-    context = context->caller;
-    ctx->caller = nullptr;
+    context = context->caller().ifType<Context>();
+    ctx->caller() = {};
 }
 
 void Interp::resume (Context& ctx) {
     assert(context != &ctx);
-    assert(ctx.caller == nullptr);
-    ctx.caller = context;
+    assert(ctx.caller().isNil());
+    ctx.caller() = context;
     context = &ctx;
     interrupt(0); // force inner loop exit
 }

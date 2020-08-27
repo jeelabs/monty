@@ -846,6 +846,11 @@ namespace Monty {
             return Object::repr(buf); // don't print as a list
         }
 
+        // first entries in a context are reserved slots for specific state
+        enum Slot { Caller, Event, NumSlots };
+        auto caller () const -> Value& { return begin()[Caller]; }
+        auto event () const -> Value& { return begin()[Event]; }
+
         struct Frame {
             //    <------- previous ------->  <---- actual ---->
             Value base, spOff, ipOff, callee, ep, locals, result, stack [];
@@ -853,7 +858,10 @@ namespace Monty {
 
         auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
 
-        Context (Context* from =nullptr) : caller (from) {}
+        Context (Context* from =nullptr) {
+            insert(0, NumSlots);
+            caller() = from;
+        }
 
         void enter (Callable const&);
         Value leave (Value v);
@@ -868,7 +876,7 @@ namespace Monty {
             return fastSlot(i).asType<Cell>().val;
         }
 
-        static constexpr int EXC_STEP = 3; // use 3 slots per exception
+        static constexpr int EXC_STEP = 3; // use 3 entries per exception
         auto excBase (int incr =0) -> Value*;
 
         auto globals () const -> Module& { return callee->mo; }
@@ -886,11 +894,6 @@ namespace Monty {
         size_t spOff {0};
         size_t ipOff {0};
         Callable const* callee {nullptr};
-
-        // TODO place at the bottom of the stack for access from VM code
-        Value event;
-        uint32_t deadline;
-        Context* caller;
     };
 
     struct Interp {

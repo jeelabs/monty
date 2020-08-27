@@ -26,8 +26,8 @@ up: platformio.ini
 mon: platformio.ini
 	pio run -t upload -t monitor -s
 
-many: native bluepill_f103c8 disco_f407vg esp8266 tinypico
-native bluepill_f103c8 disco_f407vg esp8266 tinypico:
+many: native bluepill_f103c8 disco_f407vg esp8266 _tinypico
+native bluepill_f103c8 disco_f407vg esp8266 _tinypico:
 	pio run -c configs/$@.ini -s
 
 gen:
