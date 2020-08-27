@@ -1,0 +1,21 @@
+main
+<exception BaseException> abc
+<exception Exception> abc
+<exception StopIteration> abc
+<exception ArithmeticError> abc
+<exception AssertionError> abc
+<exception AttributeError> abc
+<exception EOFError> abc
+<exception ImportError> abc
+<exception LookupError> abc
+<exception IndexError> abc
+<exception KeyError> abc
+<exception MemoryError> abc
+<exception NameError> abc
+<exception OSError> abc
+<exception RuntimeError> abc
+<exception NotImplementedError> abc
+<exception TypeError> abc
+<exception ValueError> abc
+<exception UnicodeError> abc
+done
