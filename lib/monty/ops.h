@@ -44,6 +44,7 @@ namespace Monty {
         Modulo,
         Power,
         //CG>
+        Contains,
     };
 
 } // namespace Monty

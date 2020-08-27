@@ -1,6 +1,7 @@
 // array.cpp - arrays, dicts, and other derived types
 
 #include "monty.h"
+#include "ops.h"
 #include <cassert>
 
 using namespace Monty;
@@ -211,6 +212,12 @@ auto Set::Proxy::operator= (bool f) -> bool {
         s[pos] = v;
     }
     return pos < n;
+}
+
+auto Set::binop (BinOp op, Value rhs) const -> Value {
+    if (op == BinOp::Contains)
+        return Value::asBool(find(rhs) < size());
+    return Object::binop(op, rhs);
 }
 
 auto Set::getAt (Value k) const -> Value {

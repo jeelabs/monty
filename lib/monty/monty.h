@@ -547,6 +547,8 @@ namespace Monty {
         auto has (Value key) const -> bool { return find(key) < size(); }
         auto has (Value key) -> Proxy { return {*this, key}; }
 
+        auto binop (BinOp, Value) const -> Value override;
+
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
     };

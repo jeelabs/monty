@@ -179,6 +179,7 @@ auto Value::unOp (UnOp op) const -> Value {
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
     // TODO the inverted optimisations will fail if a ResumableObj is involved
     switch (op) {
+        case BinOp::In:        return rhs.binOp(BinOp::Contains, *this);
         case BinOp::More:      return rhs.binOp(BinOp::Less, *this);
         case BinOp::LessEqual: return rhs.binOp(BinOp::Less, *this).invert();
         case BinOp::MoreEqual: return binOp(BinOp::Less, rhs).invert();
@@ -310,8 +311,6 @@ auto Object::unop (UnOp) const -> Value {
 }
 
 auto Object::binop (BinOp op, Value rhs) const -> Value {
-printf("bin %d\n", op);
-rhs.dump("rhs");
     Value v = this; v.dump("binop?"); assert(false);
     return {};
 }
