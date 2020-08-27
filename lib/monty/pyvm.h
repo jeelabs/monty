@@ -391,7 +391,7 @@ class PyVM : public Interp {
     void opCallMethod (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw + 1;
-        ArgVec avec = {*context, arg + 1, (int) (sp + 1 - context->begin())};
+        ArgVec avec = {*context, arg + 1, sp + 1};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
         });
@@ -416,7 +416,7 @@ class PyVM : public Interp {
     void opCallFunction (int arg) {
         uint8_t nargs = arg, nkw = arg >> 8;
         sp -= nargs + 2 * nkw;
-        ArgVec avec {*context, arg, (int) (sp + 1 - context->begin())};
+        ArgVec avec {*context, arg, sp + 1};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
         });
@@ -433,7 +433,7 @@ class PyVM : public Interp {
         sp -= num - 1;
         auto bc = context->callee->code[arg];
         auto f = new Callable (bc);
-        ArgVec avec {*context, num, (int) (sp - context->begin())};
+        ArgVec avec {*context, num, sp};
         *sp = new Closure (*f, avec);
     }
     //CG1 op v
@@ -442,8 +442,7 @@ class PyVM : public Interp {
         sp -= 2 + num - 1;
         auto bc = context->callee->code[arg];
         auto f = new Callable (bc, sp[0], sp[1]);
-        ArgVec avec {*context, num, (int) (sp + 2 - context->begin())};
-        *sp = new Closure (*f, avec);
+        *sp = new Closure (*f, {*context, num, sp + 2});
     }
     //CG1 op v
     void opLoadDeref (int arg) {
@@ -461,12 +460,12 @@ class PyVM : public Interp {
 
     //CG1 op
     void opYieldValue () {
-        auto ctx = context;
+        auto caller = context->caller().ifType<Context>();
+        context->caller() = {};
         auto v = contextAdjuster([=]() -> Value {
-            context = context->caller().ifType<Context>();
+            context = caller;
             return *sp;
         });
-        ctx->caller() = {};
         *sp = v;
     }
     //CG1 op
@@ -515,7 +514,7 @@ class PyVM : public Interp {
             assert(init != nullptr);
             mod = init->mo;
             modules.at(arg) = mod;
-            ArgVec avec = {*context, 0, 0};
+            ArgVec avec = {*context, 0, sp};
             contextAdjuster([=]() -> Value {
                 return init->call(avec);
             });

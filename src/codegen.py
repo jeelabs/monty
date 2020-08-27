@@ -430,7 +430,9 @@ if __name__ == '__main__':
     for f in first:
         processFile(root, f)
     # process all files not listed as first or last
-    for f in os.listdir(root):
+    files = os.listdir(root)
+    files.sort();
+    for f in files:
         if not f in first and not f in last:
             if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
                 processFile(root, f)
