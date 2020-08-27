@@ -396,7 +396,7 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
-    protected:
+    // TODO protected:
         Item const* items;
         size_t count;
     };
@@ -433,6 +433,7 @@ namespace Monty {
     struct Exception : Tuple {
         static Type const info;
         auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
 
         struct Extra { int code; };
 
@@ -443,7 +444,9 @@ namespace Monty {
     private:
         Exception (int exc, ArgVec const& args);
 
-        auto extra () -> Extra& { return *(Extra*) end(); }
+        auto binop (BinOp, Value) const -> Value override;
+
+        auto extra () const -> Extra& { return *(Extra*) end(); }
     };
 
     auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }

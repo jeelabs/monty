@@ -218,6 +218,11 @@ Value Dict::repr (Buffer& buf) const {
     return {};
 }
 
+Value Exception::repr (Buffer& buf) const {
+    buf.print("<exception %s>", (char const*) bases.items[extra().code].k);
+    return {};
+}
+
 Value Inst::repr (Buffer& buf) const {
     buf.print("<%s object at %p>", (char const*) type().name, this);
     return {};

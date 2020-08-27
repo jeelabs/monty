@@ -309,7 +309,9 @@ auto Object::unop (UnOp) const -> Value {
     return {};
 }
 
-auto Object::binop (BinOp, Value) const -> Value {
+auto Object::binop (BinOp op, Value rhs) const -> Value {
+printf("bin %d\n", op);
+rhs.dump("rhs");
     Value v = this; v.dump("binop?"); assert(false);
     return {};
 }
@@ -499,6 +501,12 @@ void Tuple::marker () const {
 
 Exception::Exception (int exc, ArgVec const& args) : Tuple (args) {
     extra().code = exc;
+}
+
+auto Exception::binop (BinOp op, Value rhs) const -> Value {
+    if (op == BinOp::ExceptionMatch)
+        return True; // TODO
+    return Tuple::binop(op, rhs);
 }
 
 void Exception::marker () const {
