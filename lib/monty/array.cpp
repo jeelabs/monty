@@ -39,6 +39,35 @@ struct AccessAs : Accessor {
     }
 };
 
+template< int L >                                   // 0 1 2
+struct AccessAsBits : Accessor {                    // P T N
+    constexpr static auto bits = 1 << L;            // 1 2 4
+    constexpr static auto mask = (1 << bits) - 1;   // 1 3 15
+    constexpr static auto shft = 3 - L;             // 3 2 1
+    constexpr static auto rest = (1 << shft) - 1;   // 7 3 1
+
+    auto get (ByteVec& vec, size_t pos) const -> Value override {
+        return (vec[pos>>shft] >> bits * (pos & rest)) & mask;
+    }
+    void set (ByteVec& vec, size_t pos, Value val) const override {
+        auto b = bits * (pos & rest);
+        auto& e = vec[pos>>shft];
+        e = (e & ~(mask << b)) | (((int) val & mask) << b);
+    }
+    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+        assert((pos & rest) == 0 && (num & rest) == 0);
+        vec.fill >>= shft;
+        vec.insert(pos >> shft, num >> shft);
+        vec.fill <<= shft;
+    }
+    void del (ByteVec& vec, size_t pos, size_t num) const override {
+        assert((pos & rest) == 0 && (num & rest) == 0);
+        vec.fill >>= shft;
+        vec.remove(pos >> shft, num >> shft);
+        vec.fill <<= shft;
+    }
+};
+
 struct AccessAsVaryBytes : Accessor {
     auto get (ByteVec& vec, size_t pos) const -> Value override {
         auto& v = (VaryVec&) vec;
@@ -89,6 +118,9 @@ constexpr auto arrayModes = "oPTNbBhHiIlLqQvV"
 // the cost per get/set/ins/del is one table index step, just as with vtables
 
 static AccessAs<Value>    const accessor_o;
+static AccessAsBits<0>    const accessor_P;
+static AccessAsBits<1>    const accessor_T;
+static AccessAsBits<2>    const accessor_N;
 static AccessAs<int8_t>   const accessor_b;
 static AccessAs<uint8_t>  const accessor_B;
 static AccessAs<int16_t>  const accessor_h;
@@ -109,9 +141,9 @@ static AccessAs<double>   const accessor_d;
 // must be in same order as arrayModes
 static Accessor const* accessors [] = {
     &accessor_o,
-    &accessor_B, // TODO P
-    &accessor_B, // TODO T
-    &accessor_B, // TODO N
+    &accessor_P,
+    &accessor_T,
+    &accessor_N,
     &accessor_b,
     &accessor_B,
     &accessor_h,

@@ -169,6 +169,9 @@ Value Array::repr (Buffer& buf) const {
         case 'l': case 'L':                     n <<= 1; // fall through
         case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
         case 'b': case 'B':                     break;
+        case 'P':                               n >>= 1; // fall through
+        case 'T':                               n >>= 1; // fall through
+        case 'N':                               n >>= 1; break;
         case 'v': case 'V': n = ((uint16_t const*) begin())[len()]; break;
     }
     auto p = (uint8_t const*) begin();
