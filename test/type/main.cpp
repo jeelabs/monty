@@ -29,7 +29,6 @@ void typeSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Bytes));
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Str));
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Range));
     TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Lookup));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Tuple));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Exception));
@@ -43,8 +42,9 @@ void typeSizes () {
     TEST_ASSERT_GREATER_OR_EQUAL(sizeof (Packed), sizeof (Int));
     TEST_ASSERT_LESS_OR_EQUAL(sizeof (Normal), sizeof (Int));
 
-    // TODO incorrect formula (size rounded up), but it works on 32b & 64b ...
-    TEST_ASSERT_EQUAL(2*sizeof (void*) + 2*sizeof (uint32_t), sizeof (Slice));
+    // TODO incorrect formulas (size rounded up), but it works on 32b & 64b ...
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Range));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Slice));
 }
 
 void varyVecTests () {

@@ -219,8 +219,8 @@ Value Dict::repr (Buffer& buf) const {
 }
 
 Value Exception::repr (Buffer& buf) const {
-    buf.print("<exception %s>", (char const*) bases.items[extra().code].k);
-    return {};
+    buf.puts(bases.items[extra().code].k);
+    return Tuple::repr(buf);
 }
 
 Value Inst::repr (Buffer& buf) const {
@@ -263,7 +263,7 @@ auto Object::repr (Buffer& buf) const -> Value {
 }
 
 Value Range::repr (Buffer& buf) const {
-    buf.print("<range %d,%d,%d>", start, limit, step);
+    buf.print("range(%d,%d,%d)", start, limit, step);
     return {};
 }
 
@@ -281,7 +281,7 @@ Value Set::repr (Buffer& buf) const {
 }
 
 Value Slice::repr (Buffer& buf) const {
-    buf.print("<slice %d:%d:%d>", off, num, step);
+    buf.print("slice(%d,%d,%d)", off, num, step);
     return {};
 }
 

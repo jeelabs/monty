@@ -1,21 +1,21 @@
 main
-<exception BaseException> abc
-<exception Exception> abc
-<exception StopIteration> abc
-<exception ArithmeticError> abc
-<exception AssertionError> abc
-<exception AttributeError> abc
-<exception EOFError> abc
-<exception ImportError> abc
-<exception LookupError> abc
-<exception IndexError> abc
-<exception KeyError> abc
-<exception MemoryError> abc
-<exception NameError> abc
-<exception OSError> abc
-<exception RuntimeError> abc
-<exception NotImplementedError> abc
-<exception TypeError> abc
-<exception ValueError> abc
-<exception UnicodeError> abc
+BaseException("abc",1,2,3)
+Exception("abc",1,2,3)
+StopIteration("abc",1,2,3)
+ArithmeticError("abc",1,2,3)
+AssertionError("abc",1,2,3)
+AttributeError("abc",1,2,3)
+EOFError("abc",1,2,3)
+ImportError("abc",1,2,3)
+LookupError("abc",1,2,3)
+IndexError("abc",1,2,3)
+KeyError("abc",1,2,3)
+MemoryError("abc",1,2,3)
+NameError("abc",1,2,3)
+OSError("abc",1,2,3)
+RuntimeError("abc",1,2,3)
+NotImplementedError("abc",1,2,3)
+TypeError("abc",1,2,3)
+ValueError("abc",1,2,3)
+UnicodeError("abc",1,2,3)
 done
