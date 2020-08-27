@@ -18,7 +18,6 @@ for exc in [BaseException,
             ValueError,
             UnicodeError]:
     try:
-        e = exc("abc",1,2,3)
-        raise e
-    except:
+        raise exc("abc",1,2,3)
+    except BaseException as e:
         print(e)

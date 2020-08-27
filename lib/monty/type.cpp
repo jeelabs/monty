@@ -310,7 +310,7 @@ auto Object::unop (UnOp) const -> Value {
     return {};
 }
 
-auto Object::binop (BinOp op, Value rhs) const -> Value {
+auto Object::binop (BinOp, Value) const -> Value {
     Value v = this; v.dump("binop?"); assert(false);
     return {};
 }

@@ -167,7 +167,7 @@ void Context::caught () {
 
     assert(frame().ep > 0); // simple exception, no stack unwind
     auto ep = excBase(0);
-    ipOff = ep[0];
+    ipOff = ep[0] & (FinallyTag - 1);
     spOff = ep[1];
     begin()[++spOff] = e.isNil() ? ep[3] : e;
 }

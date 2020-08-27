@@ -892,6 +892,7 @@ namespace Monty {
 
         auto globals () const -> Module& { return callee->mo; }
 
+        constexpr static auto FinallyTag = 1<<20;
         void raise (Value exc ={});
         void caught ();
 

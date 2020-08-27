@@ -347,6 +347,19 @@ class PyVM : public Interp {
         exc[2] = {};
     }
     //CG1 op o
+    void opSetupFinally (int arg) {
+        auto exc = context->excBase(1);
+        exc[0] = ip - context->ipBase() + arg + Context::FinallyTag;
+        exc[1] = sp - context->begin();
+        exc[2] = {};
+    }
+    //CG1 op
+    void opEndFinally () {
+        assert(*sp == Null); // TODO other cases
+        context->excBase(-1);
+        --sp;
+    }
+    //CG1 op o
     void opPopExceptJump (int arg) {
         context->excBase(-1);
         ip += arg;
@@ -723,6 +736,14 @@ class PyVM : public Interp {
                     opSetupExcept(arg);
                     break;
                 }
+                case Op::SetupFinally: {
+                    int arg = fetchO();
+                    opSetupFinally(arg);
+                    break;
+                }
+                case Op::EndFinally:
+                    opEndFinally();
+                    break;
                 case Op::PopExceptJump: {
                     int arg = fetchO();
                     opPopExceptJump(arg);
@@ -843,8 +864,6 @@ class PyVM : public Interp {
                 //CG>
 
                 // TODO
-                case Op::EndFinally:
-                case Op::SetupFinally:
                 case Op::SetupWith:
                 case Op::StoreComp:
                 case Op::UnpackEx:
