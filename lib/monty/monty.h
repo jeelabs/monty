@@ -134,7 +134,6 @@ namespace Monty {
         auto truthy () const -> bool;
 
         auto operator== (Value) const -> bool;
-        auto operator< (Value) const -> bool;
 
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
@@ -280,7 +279,6 @@ namespace Monty {
         auto type () const -> Type const& override;
 
         auto repr (Buffer&) const -> Value override;
-        auto unop (UnOp) const -> Value override;
 
         static None const nullObj;
     private:
@@ -315,7 +313,6 @@ namespace Monty {
 
         operator int64_t () const { return i; }
 
-        auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
 
     private:
@@ -896,7 +893,6 @@ namespace Monty {
         void raise (Value exc ={});
         void caught ();
 
-        auto call (ArgVec const&) const -> Value override;
         auto next () -> Value override;
 
         void marker () const override;

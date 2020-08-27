@@ -115,12 +115,12 @@ auto Value::asObj () const -> Object& {
 
 bool Value::truthy () const {
     switch (tag()) {
-        case Value::Nil: return false;
+        case Value::Nil: break;
         case Value::Int: return (int) *this != 0;
         case Value::Str: return *(char const*) *this != 0;
         case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
     }
-    assert(false);
+    return false;
 }
 
 auto Value::operator== (Value rhs) const -> bool {
@@ -128,8 +128,8 @@ auto Value::operator== (Value rhs) const -> bool {
         return true;
     if (tag() == rhs.tag())
         switch (tag()) {
-            case Nil: assert(false); // handled above
-            case Int: return false;  // handled above
+            case Nil: // fall through
+            case Int: return false;
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
@@ -139,10 +139,6 @@ auto Value::operator== (Value rhs) const -> bool {
         rhs = *this;
     }
     return lhs.binOp(BinOp::Equal, rhs).truthy();
-}
-
-auto Value::operator< (Value rhs) const -> bool {
-    return binOp(BinOp::Less, rhs);
 }
 
 auto Value::unOp (UnOp op) const -> Value {
@@ -340,11 +336,6 @@ auto Object::setAt (Value, Value) -> Value {
     return {};
 }
 
-auto None::unop (UnOp) const -> Value {
-    assert(false);
-    return {}; // TODO
-}
-
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Int:  // fall through
@@ -353,11 +344,6 @@ auto Bool::unop (UnOp op) const -> Value {
         default:         break;
     }
     return Object::unop(op);
-}
-
-auto Int::unop (UnOp) const -> Value {
-    assert(false);
-    return {}; // TODO
 }
 
 auto Int::binop (BinOp op, Value rhs) const -> Value {
@@ -911,7 +897,7 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
     auto v = args[0];
     switch (v.tag()) {
-        case Value::Nil: assert(false); break;
+        case Value::Nil: // fall through
         case Value::Int: return v;
         case Value::Str: return atoi(v);
         case Value::Obj: return v.unOp(UnOp::Int);
@@ -1008,7 +994,7 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
     Value v = args[0];
     switch (v.tag()) {
-        case Value::Nil: assert(false); break;
+        case Value::Nil: break;
         case Value::Int: return "int";
         case Value::Str: return "str";
         case Value::Obj: return v.obj().type().name;
