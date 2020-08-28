@@ -331,7 +331,7 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     auto ctx = Interp::context;
-    assert(ctx != nullptr);
+    assert(ctx != nullptr); (void) ctx;
 
     Value self;
     Value init = attr(Q( 17,"__init__"), self);
@@ -341,6 +341,4 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
         args[-1] = this;
         init.obj().call({args.vec, args.num + 1, args.off - 1});
     }
-
-    ctx->frame().result = this;
 }

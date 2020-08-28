@@ -494,7 +494,6 @@ class PyVM : public Interp {
     //CG1 op
     void opYieldValue () {
         auto caller = context->caller().ifType<Context>();
-        context->caller() = {};
         auto v = contextAdjuster([=]() -> Value {
             context = caller;
             return *sp;

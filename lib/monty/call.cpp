@@ -133,9 +133,7 @@ Value Context::leave (Value v) {
             Interp::tasks.pop(0);
 
         // FIXME ...
-        remove(0, fill); // delete last frame
-        callee = nullptr;
-        caller() = {};
+        remove(NumSlots, fill - NumSlots); // delete last frame
     }
 
     return r;
@@ -227,9 +225,7 @@ void Interp::suspend (List& queue) {
     assert(t.ifType<Context>() == context);
     queue.append(t);
 
-    auto ctx = context;
     context = context->caller().ifType<Context>();
-    ctx->caller() = {};
 }
 
 void Interp::resume (Context& ctx) {
