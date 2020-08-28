@@ -1,5 +1,5 @@
 B = native
-T = call
+T = array
 
 help:
 	# make all    - shorthand for "make run testall verify"

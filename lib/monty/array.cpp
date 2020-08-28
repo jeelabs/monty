@@ -195,6 +195,20 @@ auto Array::setAt (Value k, Value v) -> Value {
     return {};
 }
 
+void Array::insert (size_t idx, size_t num) {
+    auto s = sel();
+    fill &= 0x07FFFFFF;
+    accessors[s]->ins(*this, idx, num);
+    fill = fill + (s << 27);
+}
+
+void Array::remove (size_t idx, size_t num) {
+    auto s = sel();
+    fill &= 0x07FFFFFF;
+    accessors[s]->del(*this, idx, num);
+    fill = fill + (s << 27);
+}
+
 List::List (ArgVec const& args) {
     insert(0, args.num);
     for (int i = 0; i < args.num; ++i)

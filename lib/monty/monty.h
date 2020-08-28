@@ -495,8 +495,8 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
-        //void insert (size_t idx, size_t num =1);
-        //void remove (size_t idx, size_t num =1);
+        void insert (size_t idx, size_t num =1);
+        void remove (size_t idx, size_t num =1);
 
     private:
         auto sel () const -> uint8_t { return fill >> 27; }

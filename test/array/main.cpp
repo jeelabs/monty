@@ -107,6 +107,60 @@ void arrayTypeSizes () {
     TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Inst));
 }
 
+static void arrayInsDel () {
+    static struct { char type; int min, max, log; } tests [] = {
+        { 'b', -128, 127, 3 },
+        { 'B', 0, 255, 3 },
+        { 'h', -32768, 32767, 4 },
+        { 'H', 0, 65535, 4 },
+        { 'i', -32768, 32767, 4 },
+        { 'I', 0, 65535, 4 },
+        { 'l', -1073741824, 1073741823, 5 }, // Value ints are max ±30 bits
+        // TODO no easy way to test 31..64-bit ints yet
+        { 'P', 0, 1, 0 },
+        { 'T', 0, 3, 1 },
+        { 'N', 0, 15, 2 },
+    };
+    for (auto e : tests) {
+        //printf("e %c min %d max %d log %d\n", e.type, e.min, e.max, e.log);
+
+        Array a (e.type);
+        TEST_ASSERT_EQUAL(0, a.len());
+
+        constexpr auto N = 24;
+        a.insert(0, N);
+        TEST_ASSERT_EQUAL(N, a.len());
+
+        int bytes = ((N << e.log) + 7) >> 3;
+        TEST_ASSERT_GREATER_OR_EQUAL(bytes, a.cap());
+        TEST_ASSERT_LESS_OR_EQUAL(bytes + 2 * sizeof (void*), a.cap());
+
+        for (size_t i = 0; i < a.len(); ++i)
+            TEST_ASSERT_EQUAL(0, (int) a.getAt(i));
+
+        a.setAt(0, e.min);
+        a.setAt(1, e.min - 1);
+        a.setAt(N-2, e.max + 1);
+        a.setAt(N-1, e.max);
+        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(0));
+        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-1));
+        TEST_ASSERT_NOT_EQUAL(e.min - 1, (int) a.getAt(1));
+        TEST_ASSERT_NOT_EQUAL(e.max + 1, (int) a.getAt(N-2));
+
+        a.remove(8, 8);
+        TEST_ASSERT_EQUAL(N-8, a.len());
+        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(0));
+        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-8-1));
+
+        a.insert(0, 8);
+        TEST_ASSERT_EQUAL(N, a.len());
+        TEST_ASSERT_EQUAL(0, (int) a.getAt(0));
+        TEST_ASSERT_EQUAL(0, (int) a.getAt(7));
+        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(8));
+        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-1));
+    }
+}
+
 static void listInsDel () {
     List l;
     TEST_ASSERT_EQUAL(0, l.size());
@@ -277,6 +331,7 @@ int main () {
     RUN_TEST(vecOfCopyMove);
 
     RUN_TEST(arrayTypeSizes);
+    RUN_TEST(arrayInsDel);
     RUN_TEST(listInsDel);
     RUN_TEST(setInsDel);
     RUN_TEST(dictInsDel);
