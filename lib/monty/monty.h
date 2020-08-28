@@ -41,7 +41,7 @@ namespace Monty {
         }
 
         auto ptr () const -> uint8_t* { return data; }
-        auto cap () const -> size_t { return capa; }
+        auto cap () const -> size_t   { return capa; }
         auto adj (size_t bytes) -> bool;
 
     private:

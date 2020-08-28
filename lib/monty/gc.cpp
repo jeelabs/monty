@@ -162,7 +162,7 @@ namespace Monty {
     }
 
     auto Vec::slots () const -> uint32_t {
-        return (capa + PTR_SZ) / VS_SZ;
+        return multipleOf<VecSlot>(capa);
     }
 
     auto Vec::findSpace (size_t needs) -> void* {
@@ -193,9 +193,9 @@ namespace Monty {
     auto Vec::adj (size_t sz) -> bool {
         if (!isResizable())
             return false;
-        auto caps = slots();
+        auto capas = slots();
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
-        if (caps != needs) {
+        if (capas != needs) {
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
             if (slot == nullptr) {                  // new alloc
                 slot = (VecSlot*) findSpace(needs);
@@ -204,33 +204,33 @@ namespace Monty {
                 data = slot->buf;
             } else if (needs == 0) {                // delete
                 slot->vec = nullptr;
-                slot->next = slot + caps;
+                slot->next = slot + capas;
                 mergeVecs(*slot);
                 data = nullptr;
             } else {                                // resize
-                auto tail = slot + caps;
+                auto tail = slot + capas;
                 if (tail < vecHigh && tail->isFree())
                     mergeVecs(*tail);
                 if (tail == vecHigh) {              // easy resize
                     if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
-                    vecHigh += needs - caps;
-                } else if (needs < caps)            // split, free at end
-                    splitFreeVec(slot[needs], slot + caps);
+                    vecHigh += needs - capas;
+                } else if (needs < capas)           // split, free at end
+                    splitFreeVec(slot[needs], slot + capas);
                 else if (!tail->isFree() || slot + needs > tail->next) {
                     // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
                     if (nslot == nullptr)           // no room
                         return false;
-                    memcpy(nslot->buf, data, cap()); // copy data over
+                    memcpy(nslot->buf, data, capa); // copy data over
                     data = nslot->buf;
                     slot->vec = nullptr;
-                    slot->next = slot + caps;
+                    slot->next = slot + capas;
                 } else                              // use (part of) next free
                     splitFreeVec(slot[needs], tail->next);
             }
             // clear newly added bytes
-            auto obytes = cap();
+            auto obytes = capa;
             capa = needs > 0 ? needs * VS_SZ - PTR_SZ : 0;
             if (capa > obytes)                      // clear added bytes
                 memset(data + obytes, 0, capa - obytes);
