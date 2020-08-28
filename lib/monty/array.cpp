@@ -207,6 +207,11 @@ void Array::remove (size_t idx, size_t num) {
     fill = fill + (s << 27);
 }
 
+void Array::marker () const {
+    if (sel() == 0)
+        mark((Vector const&) *this);
+}
+
 List::List (ArgVec const& args) {
     insert(0, args.num);
     for (int i = 0; i < args.num; ++i)

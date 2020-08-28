@@ -486,7 +486,7 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        constexpr Array () {} // default is array of Value items
+        //constexpr Array () {} // default is array of Value items
         Array (char type, size_t len =0);
 
         auto mode () const -> char;
@@ -498,6 +498,7 @@ namespace Monty {
         void insert (size_t idx, size_t num =1);
         void remove (size_t idx, size_t num =1);
 
+        void marker () const override;
     private:
         auto sel () const -> uint8_t { return fill >> 27; }
     };

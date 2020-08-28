@@ -422,8 +422,8 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opCallMethod (int arg) {
-        uint8_t nargs = arg, nkw = arg >> 8;
-        sp -= nargs + 2 * nkw + 1;
+        uint8_t npos = arg, nkw = arg >> 8;
+        sp -= npos + 2 * nkw + 1;
         ArgVec avec = {*context, arg + 1, sp + 1};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
@@ -447,8 +447,8 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opCallFunction (int arg) {
-        uint8_t nargs = arg, nkw = arg >> 8;
-        sp -= nargs + 2 * nkw;
+        uint8_t npos = arg, nkw = arg >> 8;
+        sp -= npos + 2 * nkw;
         ArgVec avec {*context, arg, sp + 1};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
