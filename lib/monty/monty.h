@@ -480,7 +480,7 @@ namespace Monty {
 // see array.cpp - arrays, dicts, and other derived types
 
     //CG< type array
-    struct Array : Object, ByteVec {
+    struct Array : Bytes {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
