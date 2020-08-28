@@ -26,9 +26,9 @@ namespace Monty {
     };
 
     struct Vec {
-        constexpr Vec () : caps (0), data (nullptr) {}
-        constexpr Vec (void const* ptr, size_t len =0) // TODO caps b
-                    : caps (len/sizeof (void*)/2), data ((uint8_t*) ptr) {}
+        constexpr Vec () : capa (0), data (nullptr) {}
+        constexpr Vec (void const* ptr, size_t len =0)
+                    : capa (len), data ((uint8_t*) ptr) {}
         ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
@@ -41,13 +41,14 @@ namespace Monty {
         }
 
         auto ptr () const -> uint8_t* { return data; }
-        auto cap () const -> size_t;
+        auto cap () const -> size_t { return capa; }
         auto adj (size_t bytes) -> bool;
 
     private:
-        uint32_t caps; // capacity in slots, see cap() TODO in bytes
-        uint8_t* data; // points into memory pool when cap() > 0
+        uint32_t capa; // capacity in bytes
+        uint8_t* data; // pointer to vector when capa > 0
 
+        auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (size_t) -> void*; // hidden private type
         friend void compact ();
     };

@@ -161,15 +161,15 @@ namespace Monty {
         return start < p && p < vecHigh;
     }
 
-    auto Vec::cap () const -> size_t {
-        return caps > 0 ? (2 * caps - 1) * PTR_SZ : 0;
+    auto Vec::slots () const -> uint32_t {
+        return (capa + PTR_SZ) / VS_SZ;
     }
 
     auto Vec::findSpace (size_t needs) -> void* {
         auto slot = (VecSlot*) start;               // scan all vectors
         while (slot < vecHigh)
             if (!slot->isFree())                    // skip used slots
-                slot += slot->vec->caps;
+                slot += slot->vec->slots();
             else if (mergeVecs(*slot))              // no more free slots
                 break;
             else if (slot + needs > slot->next)     // won't fit
@@ -193,6 +193,7 @@ namespace Monty {
     auto Vec::adj (size_t sz) -> bool {
         if (!isResizable())
             return false;
+        auto caps = slots();
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (caps != needs) {
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
@@ -219,7 +220,7 @@ namespace Monty {
                 else if (!tail->isFree() || slot + needs > tail->next) {
                     // realloc, i.e. del + new
                     auto nslot = (VecSlot*) findSpace(needs);
-                    if (nslot == nullptr)                 // no room
+                    if (nslot == nullptr)           // no room
                         return false;
                     memcpy(nslot->buf, data, cap()); // copy data over
                     data = nslot->buf;
@@ -230,10 +231,9 @@ namespace Monty {
             }
             // clear newly added bytes
             auto obytes = cap();
-            caps = needs;
-            auto nbytes = cap();
-            if (nbytes > obytes)                    // clear added bytes
-                memset(data + obytes, 0, nbytes - obytes);
+            capa = needs > 0 ? needs * VS_SZ - PTR_SZ : 0;
+            if (capa > obytes)                      // clear added bytes
+                memset(data + obytes, 0, capa - obytes);
         }
         assert((uintptr_t) data % VS_SZ == 0);
         return true;
@@ -310,7 +310,7 @@ namespace Monty {
             if (slot->isFree())
                 n = slot->next - slot;
             else {
-                n = slot->vec->caps;
+                n = slot->vec->slots();
                 if (newHigh < slot) {
                     slot->vec->data = newHigh->buf;
                     memmove(newHigh, slot, n * VS_SZ);
