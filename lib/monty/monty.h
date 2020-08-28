@@ -862,6 +862,7 @@ namespace Monty {
         struct Frame {
             //    <------- previous ------->  <---- actual ---->
             Value base, spOff, ipOff, callee, ep, locals, result, stack [];
+            // result must be just below stack for proper module/class init
         };
 
         auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
