@@ -94,24 +94,24 @@ void arrayTypeSizes () {
 }
 
 static void arrayInsDel () {
-    static struct { char type; int min, max, log; } tests [] = {
-    //    type         min         max  log
-        { 'b',        -128,        127, 3 },
-        { 'B',           0,        255, 3 },
-        { 'h',      -32768,      32767, 4 },
-        { 'H',           0,      65535, 4 },
-        { 'i',      -32768,      32767, 4 },
-        { 'I',           0,      65535, 4 },
+    static struct { char typ; int min, max, log; } tests [] = {
+    //    typ          min  max       log
+        { 'P',           0, 1,          0 },
+        { 'T',           0, 3,          1 },
+        { 'N',           0, 15,         2 },
+        { 'b',        -128, 127,        3 },
+        { 'B',           0, 255,        3 },
+        { 'h',      -32768, 32767,      4 },
+        { 'H',           0, 65535,      4 },
+        { 'i',      -32768, 32767,      4 },
+        { 'I',           0, 65535,      4 },
         { 'l', -1073741824, 1073741823, 5 }, // Value ints are max ± 30 bits
     // TODO no easy way to test 31..64-bit ints yet, i.e. L/q/Q
-        { 'P',           0,          1, 0 },
-        { 'T',           0,          3, 1 },
-        { 'N',           0,         15, 2 },
     };
     for (auto e : tests) {
-        //printf("e %c min %d max %d log %d\n", e.type, e.min, e.max, e.log);
+        //printf("e %c min %d max %d log %d\n", e.typ, e.min, e.max, e.log);
 
-        Array a (e.type);
+        Array a (e.typ);
         TEST_ASSERT_EQUAL(0, a.len());
 
         constexpr auto N = 24;

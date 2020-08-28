@@ -105,7 +105,7 @@ struct AccessAsVaryStr : AccessAsVaryBytes {
     }
 };
 
-constexpr auto arrayModes = "oPTNbBhHiIlLqQvV"
+constexpr auto arrayModes = "oPTNbBhHiIlLqvV"
 #if USE_FLOAT
                             "f"
 #endif
@@ -128,7 +128,6 @@ static AccessAs<uint16_t> const accessor_H;
 static AccessAs<int32_t>  const accessor_l;
 static AccessAs<uint32_t> const accessor_L;
 static AccessAs<int64_t>  const accessor_q;
-static AccessAs<uint64_t> const accessor_Q;
 static AccessAsVaryBytes  const accessor_v;
 static AccessAsVaryStr    const accessor_V;
 #if USE_FLOAT
@@ -153,7 +152,6 @@ static Accessor const* accessors [] = {
     &accessor_l,
     &accessor_L,
     &accessor_q,
-    &accessor_Q,
     &accessor_v,
     &accessor_V,
 #if USE_FLOAT
