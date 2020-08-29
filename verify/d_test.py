@@ -3,10 +3,10 @@ print('d_test ...')
 # uart API:
 #
 #   count = uart.read(data, limit=-1, start=0, deadline=-1)
-#       receive bytes, returns number of bytes read
+#       blocking receive, return number of bytes read, always > 0
 #
 #   count = uart.write(data, limit=-1, start=0, deadline=-1)
-#       send bytes, return how many were added without blocking
+#       non-blocking send, return how many were accepted
 #
 uart = machine.uart(1)
 
