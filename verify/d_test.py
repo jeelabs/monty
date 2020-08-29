@@ -35,7 +35,7 @@ def readline(data, delim=10):
     start = 0
     while start == 0 or data[start-1] != delim:
         start += uart.read(data, start+1, start, deadline)
-    return start # include newline
+    return start # include delimiter
 
 def write(data, limit=-1, start=0):
     deadline = machine.ticks() + timeout
