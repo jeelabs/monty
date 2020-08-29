@@ -358,7 +358,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     Value init = attr(Q( 17,"__init__"), self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
-        assert(ctx->begin() == args.vec.begin() && args.off > 0);
+        assert(ctx == &args.vec && args.off > 0);
         args[-1] = this;
         init.obj().call({args.vec, args.num + 1, args.off - 1});
     }

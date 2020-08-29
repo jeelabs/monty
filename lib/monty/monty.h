@@ -487,7 +487,7 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        constexpr Array () {} // default is array of Value items
+        //constexpr Array () {} // default is array of Value items
         Array (char type, size_t len =0);
 
         auto mode () const -> char;
@@ -505,7 +505,7 @@ namespace Monty {
     };
 
     //CG< type list
-    struct List : Array {
+    struct List : Object, Vector {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
@@ -515,26 +515,14 @@ namespace Monty {
         constexpr List () {}
         List (ArgVec const& args);
 
-        operator Vector& () { return vector(); }
-
-        auto begin () const -> Value* { return vector().begin(); }
-        auto end () const -> Value* { return begin() + size(); }
-        auto operator[] (size_t idx) const -> Value& { return begin()[idx]; }
-
         auto pop (int idx) -> Value;
         void append (Value v);
 
-        void insert (size_t idx, size_t num =1) { vector().insert(idx, num); }
-        void remove (size_t idx, size_t num =1) { vector().remove(idx, num); }
-
-        //auto len () const -> size_t override { return size(); }
+        auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-    private:
-        auto vector () const -> Vector& {
-            auto p = (ByteVec*) this;
-            return *(Vector*) p;
-        }
+
+        void marker () const override { mark((Vector const&) *this); }
     };
 
     //CG< type set
