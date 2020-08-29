@@ -518,8 +518,8 @@ namespace Monty {
         operator Vector& () { return vector(); }
 
         auto begin () const -> Value* { return vector().begin(); }
-        auto end () const -> Value* { return vector().end(); }
-        auto operator[] (size_t idx) const -> Value& { return vector()[idx]; }
+        auto end () const -> Value* { return begin() + size(); }
+        auto operator[] (size_t idx) const -> Value& { return begin()[idx]; }
 
         auto pop (int idx) -> Value;
         void append (Value v);
@@ -531,7 +531,10 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
     private:
-        auto vector () const -> Vector& { return (Vector&) (ByteVec&) *this; }
+        auto vector () const -> Vector& {
+            auto p = (ByteVec*) this;
+            return *(Vector*) p;
+        }
     };
 
     //CG< type set

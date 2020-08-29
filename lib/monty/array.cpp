@@ -208,8 +208,10 @@ void Array::remove (size_t idx, size_t num) {
 }
 
 void Array::marker () const {
-    if (sel() == 0)
-        mark((Vector const&) (ByteVec const&) *this);
+    if (sel() == 0) {
+        auto p = (ByteVec const*) this;
+        mark(*(Vector const*) p);
+    }
 }
 
 List::List (ArgVec const& args) {
@@ -220,7 +222,7 @@ List::List (ArgVec const& args) {
 
 auto List::pop (int idx) -> Value {
     auto n = relPos(idx);
-    assert(len() > n);
+    assert(size() > n);
     Value v = (*this)[n];
     remove(n);
     return v;
@@ -235,12 +237,15 @@ void List::append (Value v) {
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = relPos(k);
+    assert(n <= size());
     return n < size() ? (*this)[n] : Value {};
 }
 
 auto List::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
-    return (*this)[relPos(k)] = v;
+    auto n = relPos(k);
+    assert(n < size());
+    return (*this)[n] = v;
 }
 
 auto Set::find (Value v) const -> size_t {
