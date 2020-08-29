@@ -106,6 +106,7 @@ namespace Monty {
         operator char const* () const;
         auto obj () const -> Object& { return *(Object*) v; }
         auto asObj () const -> Object&; // create int/str object if needed
+        auto asInt () const -> int64_t;
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
@@ -310,6 +311,8 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
+        static auto make (int64_t i) -> Value;
+
         constexpr Int (int64_t v) : i (v) {}
 
         operator int64_t () const { return i; }

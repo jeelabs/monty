@@ -94,23 +94,25 @@ void arrayTypeSizes () {
 }
 
 static void arrayInsDel () {
-    static struct { char typ; int min, max, log; } tests [] = {
-    //    typ          min  max       log
-        { 'P',           0, 1,          0 },
-        { 'T',           0, 3,          1 },
-        { 'N',           0, 15,         2 },
-        { 'b',        -128, 127,        3 },
-        { 'B',           0, 255,        3 },
-        { 'h',      -32768, 32767,      4 },
-        { 'H',           0, 65535,      4 },
-        { 'i',      -32768, 32767,      4 },
-        { 'I',           0, 65535,      4 },
-        { 'l', -1073741824, 1073741823, 5 }, // Value ints are max ± 30 bits
-        { 'o', -1073741824, 1073741823, 5 + sizeof (void*) / 8 }, // 32b/64b
-    // TODO no easy way to test 31..64-bit ints yet, i.e. L/q/Q
+    static struct { char typ; int64_t min, max; int log; } tests [] = {
+    //    typ                     min  max                log
+        { 'P',                      0, 1,                   0 },
+        { 'T',                      0, 3,                   1 },
+        { 'N',                      0, 15,                  2 },
+        { 'b',                   -128, 127,                 3 },
+        { 'B',                      0, 255,                 3 },
+        { 'h',                 -32768, 32767,               4 },
+        { 'H',                      0, 65535,               4 },
+        { 'i',                 -32768, 32767,               4 },
+        { 'I',                      0, 65535,               4 },
+        { 'l',            -2147483648, 2147483647,          5 },
+        { 'L',                      0, 4294967295,          5 },
+        { 'q', -9223372036854775807-1, 9223372036854775807, 6 },
+        { 'o', -9223372036854775807-1, 9223372036854775807,
+                                       5 + sizeof (void*) / 8 }, // 32b/64b
     };
     for (auto e : tests) {
-        //printf("e %c min %d max %d log %d\n", e.typ, e.min, e.max, e.log);
+        printf("e %c min %lld max %lld log %d\n", e.typ, e.min, e.max, e.log);
 
         Array a (e.typ);
         TEST_ASSERT_EQUAL(0, a.len());
@@ -126,26 +128,34 @@ static void arrayInsDel () {
         for (size_t i = 0; i < a.len(); ++i)
             TEST_ASSERT_EQUAL(0, (int) a.getAt(i));
 
-        a.setAt(0, e.min);
-        a.setAt(1, e.min - 1);
-        a.setAt(N-2, e.max + 1);
-        a.setAt(N-1, e.max);
-        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(0));
-        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-1));
-        TEST_ASSERT_NOT_EQUAL(e.min - 1, (int) a.getAt(1));
-        TEST_ASSERT_NOT_EQUAL(e.max + 1, (int) a.getAt(N-2));
+        a.setAt(0, Int::make(e.min));
+        a.setAt(1, Int::make(e.min - 1));
+        a.setAt(N-2, Int::make(e.max + 1));
+        a.setAt(N-1, Int::make(e.max));
+
+        TEST_ASSERT_EQUAL_INT64(e.min, a.getAt(0).asInt());
+        TEST_ASSERT_EQUAL_INT64(e.max, a.getAt(N-1).asInt());
+
+        // can't test for overflow using int64_t when storing ± 63-bit ints
+        if (e.max != 9223372036854775807) {
+            // TODO not present in pio's version of Unity ...
+            //TEST_ASSERT_NOT_EQUAL_INT64(e.min - 1, a.getAt(1));
+            //TEST_ASSERT_NOT_EQUAL_INT64(e.max + 1, a.getAt(N-2));
+            TEST_ASSERT(e.min - 1 != a.getAt(1).asInt());
+            TEST_ASSERT(e.max + 1 != a.getAt(N-2).asInt());
+        }
 
         a.remove(8, 8);
         TEST_ASSERT_EQUAL(N-8, a.len());
-        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(0));
-        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-8-1));
+        TEST_ASSERT_EQUAL_INT64(e.min, a.getAt(0).asInt());
+        TEST_ASSERT_EQUAL_INT64(e.max, a.getAt(N-8-1).asInt());
 
         a.insert(0, 8);
         TEST_ASSERT_EQUAL(N, a.len());
         TEST_ASSERT_EQUAL(0, (int) a.getAt(0));
         TEST_ASSERT_EQUAL(0, (int) a.getAt(7));
-        TEST_ASSERT_EQUAL(e.min, (int) a.getAt(8));
-        TEST_ASSERT_EQUAL(e.max, (int) a.getAt(N-1));
+        TEST_ASSERT_EQUAL_INT64(e.min, a.getAt(8).asInt());
+        TEST_ASSERT_EQUAL_INT64(e.max, a.getAt(N-1).asInt());
     }
 }
 

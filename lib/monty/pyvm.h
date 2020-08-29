@@ -104,6 +104,16 @@ class PyVM : public Interp {
         return v;
     }
 
+    auto fetchV64 () -> uint64_t {
+        uint64_t v = *ip & 0x40 ? -1 : 0;
+        uint8_t b = 0x80;
+        while (b & 0x80) {
+            b = *ip++;
+            v = (v << 7) | (b & 0x7F);
+        }
+        return v;
+    }
+
     auto fetchO () -> int {
         int n = *ip++;
         return n | (*ip++ << 8);
@@ -171,7 +181,7 @@ class PyVM : public Interp {
     }
     //CG1 op
     void opLoadConstSmallInt () {
-        *++sp = fetchV((*ip & 0x40) ? ~0 : 0);
+        *++sp = Int::make(fetchV64());
     }
     //CG1 op v
     void opLoadConstObj (int arg) {

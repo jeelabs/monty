@@ -47,6 +47,26 @@ void typeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Slice));
 }
 
+void bigIntTests () {
+    // check that ints over ± 30 bits properly switch to Int objects
+    static int64_t tests [] = { 29, 30, 31, 32, 63 };
+
+    for (auto e : tests) {
+        int64_t pos = (1ULL << e) - 1;
+        int64_t neg = - (1ULL << e);
+        TEST_ASSERT(pos > 0); // make sure there was no overflow
+        TEST_ASSERT(neg < 0); // make sure there was no underflow
+
+        Value v = Int::make(pos);
+        TEST_ASSERT_EQUAL_INT64(pos, v.asInt());
+        TEST_ASSERT(e <= 30 ? v.isInt() : !v.isInt());
+
+        Value w = Int::make(neg);
+        TEST_ASSERT_EQUAL_INT64(neg, w.asInt());
+        TEST_ASSERT(e <= 30 ? w.isInt() : !w.isInt());
+    }
+}
+
 void varyVecTests () {
     VaryVec v;
     TEST_ASSERT_EQUAL(0, v.size());
@@ -120,6 +140,7 @@ int main () {
 
     RUN_TEST(smokeTest);
     RUN_TEST(typeSizes);
+    RUN_TEST(bigIntTests);
     RUN_TEST(varyVecTests);
 
     UNITY_END();

@@ -23,13 +23,19 @@ static auto asVecOf (ByteVec& a) -> VecOf<T>& {
     return (VecOf<T>&) a;
 }
 
-template< typename T >
+template< typename T, int L =0 >
 struct AccessAs : Accessor {
     auto get (ByteVec& vec, size_t pos) const -> Value override {
-        return asVecOf<T>(vec)[pos];
+        if (L)
+            return Int::make(asVecOf<T>(vec)[pos]);
+        else
+            return asVecOf<T>(vec)[pos];
     }
     void set (ByteVec& vec, size_t pos, Value val) const override {
-        asVecOf<T>(vec)[pos] = val;
+        if (L)
+            asVecOf<T>(vec)[pos] = val.asInt();
+        else
+            asVecOf<T>(vec)[pos] = val;
     }
     void ins (ByteVec& vec, size_t pos, size_t num) const override {
         asVecOf<T>(vec).insert(pos, num);
@@ -117,19 +123,19 @@ constexpr auto arrayModes = "oPTNbBhHiIlLqvV"
 // permanent per-type accessors, these are re-used for every Array instance
 // the cost per get/set/ins/del is one table index step, just as with vtables
 
-static AccessAs<Value>    const accessor_o;
-static AccessAsBits<0>    const accessor_P;
-static AccessAsBits<1>    const accessor_T;
-static AccessAsBits<2>    const accessor_N;
-static AccessAs<int8_t>   const accessor_b;
-static AccessAs<uint8_t>  const accessor_B;
-static AccessAs<int16_t>  const accessor_h;
-static AccessAs<uint16_t> const accessor_H;
-static AccessAs<int32_t>  const accessor_l;
-static AccessAs<uint32_t> const accessor_L;
-static AccessAs<int64_t>  const accessor_q;
-static AccessAsVaryBytes  const accessor_v;
-static AccessAsVaryStr    const accessor_V;
+static AccessAs<Value>      const accessor_o;
+static AccessAsBits<0>      const accessor_P;
+static AccessAsBits<1>      const accessor_T;
+static AccessAsBits<2>      const accessor_N;
+static AccessAs<int8_t>     const accessor_b;
+static AccessAs<uint8_t>    const accessor_B;
+static AccessAs<int16_t>    const accessor_h;
+static AccessAs<uint16_t>   const accessor_H;
+static AccessAs<int32_t,1>  const accessor_l;
+static AccessAs<uint32_t,1> const accessor_L;
+static AccessAs<int64_t,1>  const accessor_q;
+static AccessAsVaryBytes    const accessor_v;
+static AccessAsVaryStr      const accessor_V;
 #if USE_FLOAT
 static AccessAs<float>    const accessor_f;
 #endif

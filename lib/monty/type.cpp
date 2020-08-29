@@ -113,6 +113,12 @@ auto Value::asObj () const -> Object& {
     return obj();
 }
 
+auto Value::asInt () const -> int64_t {
+    if (isInt())
+        return (int) *this;
+    return asType<struct Int>();
+}
+
 bool Value::truthy () const {
     switch (tag()) {
         case Value::Nil: break;
@@ -344,6 +350,13 @@ auto Bool::unop (UnOp op) const -> Value {
         default:         break;
     }
     return Object::unop(op);
+}
+
+auto Int::make (int64_t i) -> Value {
+    Value v = (int) i;
+    if ((int) v != i)
+        return new Int (i);
+    return v;
 }
 
 auto Int::binop (BinOp op, Value rhs) const -> Value {
