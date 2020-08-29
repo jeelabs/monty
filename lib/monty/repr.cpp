@@ -238,10 +238,12 @@ Value Int::repr (Buffer& buf) const {
         buf.putc('-');
         val = -i;
     }
-    // print in sections which fit inside a std int
+
+    // need to print in pieces which fit into a std int
     int v1 = val / 1000000000000;
     int v2 = (val / 1000000) % 1000000;
     int v3 = val % 1000000;
+
     if (v1 > 0)
         buf.print("%d%06d%06d", v1, v2, v3);
     else if (v2 > 0)
