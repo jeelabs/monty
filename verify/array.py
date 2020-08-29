@@ -15,11 +15,12 @@ f("b")
 f("h")
 f("i")
 f("l")
+f("q")
 
 f("B")
 f("H")
 f("I")
-f("L") # TODO needs 64-bit ints
+f("L")
 
 f("N",8)
 f("T",8)

@@ -166,6 +166,7 @@ Value Array::repr (Buffer& buf) const {
     auto n = len();
     buf.print("%d%c", n, m);
     switch (m) {
+        case 'q':                               n <<= 1; // fall through
         case 'l': case 'L':                     n <<= 1; // fall through
         case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
         case 'b': case 'B':                     break;
@@ -232,7 +233,22 @@ Value Inst::repr (Buffer& buf) const {
 }
 
 Value Int::repr (Buffer& buf) const {
-    return Object::repr(buf); // TODO
+    uint64_t val = i;
+    if (i < 0) {
+        buf.putc('-');
+        val = -i;
+    }
+    // print in sections which fit inside a std int
+    int v1 = val / 1000000000000;
+    int v2 = (val / 1000000) % 1000000;
+    int v3 = val % 1000000;
+    if (v1 > 0)
+        buf.print("%d%06d%06d", v1, v2, v3);
+    else if (v2 > 0)
+        buf.print("%d%06d", v2, v3);
+    else
+        buf.print("%d", v3);
+    return {};
 }
 
 Value List::repr (Buffer& buf) const {
