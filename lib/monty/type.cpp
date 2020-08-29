@@ -359,6 +359,10 @@ auto Int::make (int64_t i) -> Value {
     return v;
 }
 
+auto Int::conv (char const* s) -> Value {
+    return make(strtoll(s, nullptr, 10));
+}
+
 auto Int::binop (BinOp op, Value rhs) const -> Value {
     switch (op) {
         case BinOp::Equal:
@@ -418,8 +422,7 @@ Str::Str (char const* s, int n) {
 
 auto Str::unop (UnOp op) const -> Value {
     switch (op) {
-        case UnOp::Int:  return Int::make(strtoll((char const*) begin(),
-                                                            nullptr, 10));
+        case UnOp::Int:  return Int::conv((char const*) begin());
         default:         break;
     }
     return Bytes::unop(op);
@@ -913,7 +916,7 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
     switch (v.tag()) {
         case Value::Nil: // fall through
         case Value::Int: return v;
-        case Value::Str: return Int::make(strtoll(v, nullptr, 10));
+        case Value::Str: return Int::conv(v);
         case Value::Obj: return v.unOp(UnOp::Int);
     }
     return {};

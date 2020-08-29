@@ -216,8 +216,7 @@ struct Loader {
                 char buf [25];
                 memcpy(buf, ptr, sz);
                 buf[sz] = 0;
-                int64_t v = strtoll(buf, nullptr, 10);
-                bc.append(Int::make(v));
+                bc.append(Int::conv(buf));
             } else
                 assert(false); // TODO e, f, c
         }

@@ -312,6 +312,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         static auto make (int64_t i) -> Value;
+        static auto conv (char const* s) -> Value;
 
         constexpr Int (int64_t v) : i (v) {}
 
