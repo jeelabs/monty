@@ -29,6 +29,7 @@ def write(data, limit=-1, start=0):
         limit = len(data)
     while start < limit:
         start += uart.write(data, limit, start, deadline)
+    return start
 
 # to be placed elsewhere as i/o utilities, for use with any stream
 
