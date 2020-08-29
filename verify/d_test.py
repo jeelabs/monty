@@ -6,7 +6,7 @@ print('d_test ...')
 #       blocking receive, return number of bytes read, always > 0
 #
 #   count = uart.write(data, limit=-1, start=0, deadline=-1)
-#       non-blocking send, return how many were accepted
+#       blocking send, return how many bytes have been sent out
 #
 uart = machine.uart(1)
 
