@@ -211,8 +211,15 @@ struct Loader {
                 debugf("  obj %d = type %c %db = %s\n",
                         i, type, (int) sz, (char const*) *p);
                 bc.append(p);
+            } else if (type == 'i') {
+                assert(sz < 25);
+                char buf [25];
+                memcpy(buf, ptr, sz);
+                buf[sz] = 0;
+                int64_t v = strtoll(buf, nullptr, 10);
+                bc.append(Int::make(v));
             } else
-                assert(false); // TODO e, i, f, c
+                assert(false); // TODO e, f, c
         }
         for (int i = 0; i < bc.nCode; ++i) {
             debugf("  raw %d:\n", i+bc.nData);

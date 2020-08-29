@@ -418,7 +418,8 @@ Str::Str (char const* s, int n) {
 
 auto Str::unop (UnOp op) const -> Value {
     switch (op) {
-        case UnOp::Int:  return atoi((char const*) begin());
+        case UnOp::Int:  return Int::make(strtoll((char const*) begin(),
+                                                            nullptr, 10));
         default:         break;
     }
     return Bytes::unop(op);
@@ -912,7 +913,7 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
     switch (v.tag()) {
         case Value::Nil: // fall through
         case Value::Int: return v;
-        case Value::Str: return atoi(v);
+        case Value::Str: return Int::make(strtoll(v, nullptr, 10));
         case Value::Obj: return v.unOp(UnOp::Int);
     }
     return {};
