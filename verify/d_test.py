@@ -17,7 +17,7 @@ timeout = 1000000000
 def read(data, limit=-1, start=0):
     deadline = machine.ticks() + timeout
     if limit < 0:
-        limit = len(data)
+        limit = cap(data)
     count = 0
     while count == 0:
         count = uart.read(data, limit, start, deadline)
