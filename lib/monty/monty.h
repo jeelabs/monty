@@ -487,17 +487,17 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        //constexpr Array () {} // default is array of Value items
+        constexpr Array () {} // default is array of Value items
         Array (char type, size_t len =0);
 
         auto mode () const -> char;
 
+        void insert (size_t idx, size_t num =1);
+        void remove (size_t idx, size_t num =1);
+
         auto len () const -> size_t override;
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-
-        void insert (size_t idx, size_t num =1);
-        void remove (size_t idx, size_t num =1);
 
         void marker () const override;
     private:
@@ -505,7 +505,7 @@ namespace Monty {
     };
 
     //CG< type list
-    struct List : Object, Vector {
+    struct List : Array {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type const info;
@@ -515,14 +515,23 @@ namespace Monty {
         constexpr List () {}
         List (ArgVec const& args);
 
+        operator Vector& () { return vector(); }
+
+        auto begin () const -> Value* { return vector().begin(); }
+        auto end () const -> Value* { return vector().end(); }
+        auto operator[] (size_t idx) const -> Value& { return vector()[idx]; }
+
         auto pop (int idx) -> Value;
         void append (Value v);
 
-        auto len () const -> size_t override { return size(); }
+        void insert (size_t idx, size_t num =1) { vector().insert(idx, num); }
+        void remove (size_t idx, size_t num =1) { vector().remove(idx, num); }
+
+        //auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-
-        void marker () const override { mark((Vector const&) *this); }
+    private:
+        auto vector () const -> Vector& { return (Vector&) (ByteVec&) *this; }
     };
 
     //CG< type set

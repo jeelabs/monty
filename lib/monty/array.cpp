@@ -209,7 +209,7 @@ void Array::remove (size_t idx, size_t num) {
 
 void Array::marker () const {
     if (sel() == 0)
-        mark((Vector const&) *this);
+        mark((Vector const&) (ByteVec const&) *this);
 }
 
 List::List (ArgVec const& args) {
@@ -219,11 +219,10 @@ List::List (ArgVec const& args) {
 }
 
 auto List::pop (int idx) -> Value {
-    assert(len() > 0);
-    if (idx < 0)
-        idx += size();
-    Value v = (*this)[idx];
-    remove(idx);
+    auto n = relPos(idx);
+    assert(len() > n);
+    Value v = (*this)[n];
+    remove(n);
     return v;
 }
 
@@ -236,7 +235,7 @@ void List::append (Value v) {
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = relPos(k);
-    return n < fill ? (*this)[n] : Value {};
+    return n < size() ? (*this)[n] : Value {};
 }
 
 auto List::setAt (Value k, Value v) -> Value {
@@ -354,7 +353,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     Value init = attr(Q( 17,"__init__"), self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
-        assert(ctx == &args.vec && args.off > 0);
+        assert(ctx->begin() == args.vec.begin() && args.off > 0);
         args[-1] = this;
         init.obj().call({args.vec, args.num + 1, args.off - 1});
     }

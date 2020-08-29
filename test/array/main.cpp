@@ -106,6 +106,7 @@ static void arrayInsDel () {
         { 'i',      -32768, 32767,      4 },
         { 'I',           0, 65535,      4 },
         { 'l', -1073741824, 1073741823, 5 }, // Value ints are max ± 30 bits
+        { 'o', -1073741824, 1073741823, 5 + sizeof (void*) / 8 }, // 32b/64b
     // TODO no easy way to test 31..64-bit ints yet, i.e. L/q/Q
     };
     for (auto e : tests) {
