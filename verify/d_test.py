@@ -1,81 +1,43 @@
 print('d_test ...')
 
+# uart API:
+#
+#   count = uart.read(data, limit=-1, start=0, deadline=-1)
+#       receive bytes, returns number of bytes read
+#
+#   count = uart.write(data, limit=-1, start=0, deadline=-1)
+#       send bytes, return how many were added without blocking
+#
 uart = machine.uart(1)
 
-# uart API:
+# timeout used for next reads and writes (milliseconds, max ≈ 11 days)
 #
-#   count = uart.send(data, limit, start)
-#       send bytes starting at start, return number of bytes written
-#
-#   uart.done(id)
-#       tell the uart which soft-irq to trigger when done
+timeout = 1000000000
 
-work = []   # list of bytes to send
-queue = []  # list of corresponding tasks
+def read(data, limit=-1, start=0):
+    deadline = machine.ticks() + timeout
+    count = 0
+    while count == 0:
+        count = uart.read(data, limit, start, deadline)
+    return count
+
+def readcount(data, count):
+    deadline = machine.ticks() + timeout
+    start = 0
+    while start < count:
+        start += read(data, count, start, deadline)
+    return count
+
+def readline(data, delim=10):
+    deadline = machine.ticks() + timeout
+    start = 0
+    while start == 0 or data[start-1] != delim:
+        start += read(data, start+1, start, deadline)
+    return start # include newline
 
 def write(data):
-    work.append(data)
-    sys.suspend(queue)
-    sys.trigger(id)
-
-async def handler():
-    data, start, limit = b'', 0, 0
-    while True:
-        yield
-        while queue:
-            if start >= limit:
-                data = work.pop(0)
-                start = 0
-                limit = len(data)
-            start += uart.write(data, limit, start)
-            if start >= limit:
-                sys.resume(queue.pop(0))
-
-id = sys.register(handler())
-uart.done(id)
-
-
-
-
-
-# uart API:
-#
-#   offset = uart.send(data, offset)
-#       send bytes starting at offset, return new offset
-#
-#   uart.done(id)
-#       tell the uart which soft-irq to trigger when done
-
-work = []   # list of bytes to send
-queue = []  # list of corresponding tasks
-remain = 0  # number of bytes left to send in work[0]
-
-def write(data):
-    global remain
-    if remain == 0:
-        remain = len(data) - uart.send(data)
-        if remain == 0:
-            return
-    # what if the uart.done irq happens here?
-    work.append(data)
-    return sys.suspend(queue)
-
-#def write(data):
-#    work.append(data)
-#    sys.suspend(queue)
-#    sys.trigger(id)
-
-async def handler():
-    global remain
-    while True:
-        yield
-        while work:
-            data = work[0]
-            n = len(data)
-            remain = n - uart.send(data, n - remain)
-            if remain == 0:
-                work.pop(0)
-                sys.resume(queue.pop(0))
-
-id = sys.register(handler())
-uart.done(id)
+    deadline = machine.ticks() + timeout
+    start = 0;
+    limit = len(data)
+    while start < limit:
+        start += uart.write(data, limit, start, deadline)
