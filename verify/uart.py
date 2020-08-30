@@ -1,19 +1,4 @@
-writers = [] # TODO
-async def handler():
-    print('h')
-    while True:
-        yield
-        print('R!', len(writers))
-        #for w in writers:
-        #    sys.tasks.append(w)
-        #writers.clear()
-        if len(writers) > 0:
-            sys.tasks.append(writers[0])
-        writers.clear()
-
-h = handler()
-next(h)
-uart = machine.uart(h, writers)
+uart = machine.uart()
 
 n1 = uart.write(b'1234567890\n', -1, 0, -1)
 n2 = uart.write(b'1234567abc\n', -1, 7, -1)
@@ -39,14 +24,13 @@ def cwrite(data, limit=-1, start=0):
     if limit < 0:
         limit = len(data)
     while start < limit:
-        print('#',limit,start)
-        n = uart.write(data, limit, start, deadline)
-        print('<',n)
-        start += n
+        print('#',start)
+        #print()
+        start += uart.write(data, limit, start, deadline)
     return limit
 
 for _ in range(10):
     #console.write(b'12345678901234567890123456789012345678901234567890\n')
-    cwrite(b'1234567890123456789012345678901234567890123456789\n')
+    cwrite(b'123456789-123456789+123456789~123456789=123456789\n')
 
-#uart.close() # TODO
+uart.close() # TODO

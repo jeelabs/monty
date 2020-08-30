@@ -885,7 +885,7 @@ static Method const m_list_clear (d_list_clear);
 
 static Lookup::Item const listMap [] = {
     { Q( 60,"append"), m_list_append },
-    { Q( 60,"clear"), m_list_clear },
+    { Q( 70,"clear"), m_list_clear },
 };
 #endif
 

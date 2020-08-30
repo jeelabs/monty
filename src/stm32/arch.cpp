@@ -26,7 +26,7 @@ static void initLeds () {
 static void initLeds () {}
 #endif
 
-UartBufDev< PINS_CONSOLE, 120 > console;
+UartBufDev< PINS_CONSOLE > console;
 
 int printf (char const* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -103,7 +103,8 @@ Value f_ticker (ArgVec const& args) {
             }
         };
     }
-    tickerId = Interp::setHandler(h);
+    tickerId = Interp::setHandler();
+    Interp::suspend(tickerId, h);
     return tickerId;
 }
 
@@ -123,7 +124,7 @@ struct Uart: Object {
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    Uart (List& queue) : writers (queue) {}
+    Uart () {}
 
     Value read (ArgVec const& args);
     Value write (ArgVec const& args);
@@ -132,26 +133,24 @@ struct Uart: Object {
     auto attr (char const* name, Value& self) const -> Value override;
 
     void marker () const override;
-private:
-    List& writers;
 };
 
 static void (*prevIrq)();
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 3);
-    uartId = Interp::setHandler(args[1]);
+    assert(args.num == 1);
+    uartId = Interp::setHandler();
 printf("uid %d\n", uartId);
 
     prevIrq = VTableRam().usart2;
     VTableRam().usart2 = []() {
         auto f = console.xmit.empty();
         prevIrq();
-        if (!f && console.xmit.empty() && uartId > 0)
+        if (!f && console.xmit.empty())
             Interp::interrupt(uartId); // it became writable again
     };
 
-    return new Uart (args[2].asType<List>());
+    return new Uart;
 }
 
 auto Uart::read (ArgVec const& args) -> Value {
@@ -173,7 +172,7 @@ auto Uart::write (ArgVec const& args) -> Value {
         if (console.writable())
             console.putc(data[i]);
         else {
-            Interp::suspend(writers);
+            Interp::suspend(uartId);
             return i - start;
         }
     return limit - start;
@@ -191,7 +190,7 @@ Value Uart::attr (const char* key, Value&) const {
 }
 
 void Uart::marker () const {
-    writers.marker();
+    // TODO
 }
 
 static auto d_uart_read = Method::wrap(&Uart::read);

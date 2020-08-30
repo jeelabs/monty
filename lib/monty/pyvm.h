@@ -505,6 +505,8 @@ class PyVM : public Interp {
     void opYieldValue () {
         auto caller = context->caller().ifType<Context>();
         auto v = contextAdjuster([=]() -> Value {
+            if (caller == nullptr)
+                tasks.append(context); // task yield appends to runnable tasks
             context = caller;
             return *sp;
         });
@@ -970,9 +972,10 @@ class PyVM : public Interp {
 
             auto irq = nextPending();
             if (irq >= 0) {         // there's a pending soft-irq
-                auto h = handlers[irq];
-                if (h.isObj())
-                    h.obj().next(); // resume the triggered handler
+                auto q = handlers[irq].ifType<List>();
+                if (q != nullptr)
+                    while (q->size() > 0)
+                        tasks.append(q->pop(0)); // TODO use extend()
             }
 
             if (context == nullptr)

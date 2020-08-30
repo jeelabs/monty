@@ -180,18 +180,16 @@ void Context::marker () const {
     mark(callee);
 }
 
-int Interp::setHandler (Value h) {
+int Interp::setHandler (int i) {
     static_assert (MAX_HANDLERS <= 8 * sizeof pending, "MAX_HANDLERS too large");
 
-    if (h.isInt()) {
-        int i = h;
-        if (1 <= i && i < (int) MAX_HANDLERS)
-            handlers[i] = {};
+    if (1 <= i && i < (int) MAX_HANDLERS) {
+        handlers[i] = {};
         return 0;
     }
     for (int i = 1; i < (int) MAX_HANDLERS; ++i)
         if (handlers[i].isNil()) {
-            handlers[i] = h;
+            handlers[i] = new List;
             return i;
         }
     return -1;
@@ -220,12 +218,17 @@ void Interp::snooze (size_t id, int ms, uint32_t flags) {
     idleFlags[id] = flags;
 }
 
-void Interp::suspend (List& queue) {
-    auto t = tasks.pop(0);
-    assert(t.ifType<Context>() == context);
-    queue.append(t);
+void Interp::suspend (int id, Value t) {
+    assert(0 < id && id < MAX_HANDLERS);
+    auto& queue = handlers[id].asType<List>();
 
-    context = context->caller().ifType<Context>();
+    if (t.isNil()) {
+        t = tasks.pop(0);
+        assert(t.ifType<Context>() == context);
+        context = context->caller().ifType<Context>();
+    }
+
+    queue.append(t);
 }
 
 void Interp::resume (Context& ctx) {

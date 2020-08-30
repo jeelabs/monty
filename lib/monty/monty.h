@@ -912,7 +912,7 @@ namespace Monty {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
         static void snooze (size_t id, int ms, uint32_t flags);
-        static void suspend (List& queue);
+        static void suspend (int id, Value ={});
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context
@@ -920,7 +920,7 @@ namespace Monty {
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
-        static int setHandler (Value);
+        static int setHandler (int =-1);
         static bool isAlive ();
 
         static void markAll (); // for gc
