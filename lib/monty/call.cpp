@@ -37,12 +37,12 @@ auto Callable::call (ArgVec const& args) const -> Value {
     int nDef = code.numArgs(1);
     int nKwo = code.numArgs(2);
 
+//Value x = pos; x.dump("pos");
     for (int i = 0; i < nPos; ++i)
         if (i < args.num)
             ctx->fastSlot(i) = args[i];
         else if (pos != nullptr && (size_t) i < nDef + pos->fill)
-            //ctx->fastSlot(i) = (*pos)[(int) (i-nDef)]; // ???
-            ctx->fastSlot(i) = (*pos)[i-args.num]; // FIXME verify/args.py
+            ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
 
     if (code.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) =
