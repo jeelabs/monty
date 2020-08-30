@@ -206,6 +206,14 @@ Value Class::repr (Buffer& buf) const {
     return {};
 }
 
+auto Closure::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
+}
+
+auto Context::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
+}
+
 Value Dict::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     buf.putc('{');

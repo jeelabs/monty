@@ -835,11 +835,7 @@ namespace Monty {
     struct Closure : List {
         static Type const info;
         auto type () const -> Type const& override;
-
-        //using Object::repr; TODO can't be used to bypass List::repr ?
-        auto repr (Buffer& buf) const -> Value override {
-            return Object::repr(buf); // don't print as a list
-        }
+        auto repr (Buffer& buf) const -> Value override;
 
         Closure (Callable const&, ArgVec const&);
 
@@ -854,11 +850,7 @@ namespace Monty {
     struct Context : List {
         static Type const info;
         auto type () const -> Type const& override;
-
-        //using Object::repr; TODO can't be used to bypass List::repr ?
-        auto repr (Buffer& buf) const -> Value override {
-            return Object::repr(buf); // don't print as a list
-        }
+        auto repr (Buffer& buf) const -> Value override;
 
         // first entries in a context are reserved slots for specific state
         enum Slot { Caller, Event, NumSlots };
