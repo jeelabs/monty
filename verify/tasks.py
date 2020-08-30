@@ -1,8 +1,8 @@
 waiting = []
 
-def delay(n):
+async def delay(n):
     for _ in range(n):
-        sys.suspend(waiting)
+        sys.suspend(id, waiting)
 
 async def task(rate):
     i = 0
@@ -23,4 +23,4 @@ def loop():
         yield
     machine.ticker()
 
-machine.ticker(10, loop())
+id = machine.ticker(10, loop())

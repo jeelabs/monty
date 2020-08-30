@@ -223,6 +223,7 @@ void Interp::suspend (int id, Value t) {
     auto& queue = handlers[id].asType<List>();
 
     if (t.isNil()) {
+        assert(tasks.len() > 0);
         t = tasks.pop(0);
         assert(t.ifType<Context>() == context);
         context = context->caller().ifType<Context>();

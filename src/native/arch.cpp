@@ -8,18 +8,23 @@
 
 using namespace Monty;
 
+auto micros () -> uint64_t {
+    struct timespec tv;
+    clock_gettime(CLOCK_MONOTONIC, &tv);
+    return tv.tv_sec * 1000000LL + tv.tv_nsec / 1000; // µs resolution
+}
+
 void archInit () {
     setbuf(stdout, 0);    
     printf("main\n");
 }
 
 auto archTime () -> uint32_t {
-    struct timespec tv;
-    clock_gettime(CLOCK_MONOTONIC, &tv);
-    return tv.tv_sec * 1000 + tv.tv_nsec / 1000000; // ms resolution
+    return micros() / 1000; // 32 bits @ millisecond resolution
 }
 
 void archIdle () {
+    //printf("idle\n");
     timespec ts { 0, 100000 };
     nanosleep(&ts, &ts); // 100 µs, i.e. 10% of ticks' 1 ms resolution
 }
@@ -35,16 +40,23 @@ auto archDone (char const* msg) -> int {
 
 static int ms, tickerId, uartId;
 static uint32_t start, begin, last;
+static uint64_t uartBusy;
 
 // interface exposed to the VM
 
 // simulate in software, see INNER_HOOK in arch.h and monty/pyvm.h
 void timerHook () {
-    uint32_t t = archTime();
+    auto u = micros();
+    uint32_t t = u / 1000;
     if (ms > 0 && (t - start) / ms != last) {
         last = (t - start) / ms;
         if (tickerId > 0)
             Interp::interrupt(tickerId);
+    }
+    if (uartBusy > 0 && u >= uartBusy) {
+        if (uartId > 0)
+            Interp::interrupt(uartId);
+        uartBusy = 0;
     }
 }
 
@@ -78,7 +90,7 @@ struct Uart: Object {
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    Uart (List& queue) : writers (queue) {}
+    Uart () {}
 
     Value read (ArgVec const& args);
     Value write (ArgVec const& args);
@@ -87,14 +99,13 @@ struct Uart: Object {
     auto attr (char const* name, Value& self) const -> Value override;
 
     void marker () const override;
-private:
-    List& writers;
 };
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 3);
-    uartId = Interp::setHandler(args[1]);
-    return new Uart (args[2].asType<List>());
+    assert(args.num == 1);
+    uartId = Interp::setHandler();
+printf("uid %d\n", uartId);
+    return new Uart;
 }
 
 auto Uart::read (ArgVec const& args) -> Value {
@@ -112,8 +123,26 @@ auto Uart::write (ArgVec const& args) -> Value {
     // TODO ignore args[4] deadline for now
     if (limit < 0)
         limit = data.len();
-    for (int i = start; i < limit; ++i)
+
+    if (start >= limit)
+        return 0;
+
+    constexpr auto baud = 19200;            // simulated baudrate
+    constexpr auto pend = 32;               // max number of pending bytes
+    constexpr auto rate = 10000000 / baud;  // time to send one byte in µs
+    constexpr auto full = pend * rate;      // time to send a full "buffer"
+
+    auto t = micros();
+    if (uartBusy == 0)
+        uartBusy = t;
+    for (int i = start; i < limit; ++i) {
+        if (uartBusy > t + full) {
+            Interp::suspend(uartId);
+            return i - start;
+        }
         printf("%c", data[i]);
+        uartBusy += rate;
+    }
     return limit - start;
 }
 
@@ -129,7 +158,7 @@ Value Uart::attr (const char* key, Value&) const {
 }
 
 void Uart::marker () const {
-    writers.marker();
+    // TODO
 }
 
 static auto d_uart_read = Method::wrap(&Uart::read);

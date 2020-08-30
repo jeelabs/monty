@@ -23,8 +23,8 @@ def cwrite(data):
     start = 0
     limit = len(data)
     while start < limit:
-        print('#',start)
-        start += uart.write(data, limit, start, deadline)
+        #print('#',start)
+        start += uart.write(data, limit, start, -1)
     return limit
 
 for _ in range(10):
