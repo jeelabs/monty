@@ -154,7 +154,12 @@ auto Uart::write (ArgVec const& args) -> Value {
     if (limit < 0)
         limit = data.len();
     for (int i = start; i < limit; ++i)
-        printf("%c", data[i]);
+        if (console.writable())
+            console.putc(data[i]);
+        else {
+            archIdle(); // TODO suspend, queue, and resume when ready
+            return i - start;
+        }
     return limit - start;
 }
 

@@ -1,6 +1,5 @@
 uart = machine.uart()
 
-print(uart)
 n1 = uart.write(b'1234567890\n', -1, 0, -1)
 n2 = uart.write(b'1234567abc\n', -1, 7, -1)
 n3 = uart.write(b'123defg\n456', 8, 3, -1)
@@ -18,3 +17,6 @@ def print(*args):
     console.write(b'\n')
 
 print(b'abc', b'def')
+
+for _ in range(10):
+    console.write(b'12345678901234567890123456789012345678901234567890\n')
