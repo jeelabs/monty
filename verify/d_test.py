@@ -20,7 +20,7 @@ uart = machine.uart()
 timeout = 1000000000
 
 # read bytes from stream, return when at least one has been read
-def read(data, limit=-1, start=0):
+def read(self, data, limit=-1, start=0):
     deadline = machine.ticks() + timeout
     if limit < 0:
         limit = cap(data)
@@ -30,7 +30,7 @@ def read(data, limit=-1, start=0):
     return count
 
 # read as long as needed to read exactly the number pf bytes specified
-def readcount(data, count):
+def readcount(self, data, count):
     deadline = machine.ticks() + timeout
     start = 0
     while start < count:
@@ -38,7 +38,7 @@ def readcount(data, count):
     return count
 
 # read bytes up to an end of line mark (or any other delimiter)
-def readline(data, delim=10):
+def readline(self, data, delim=10):
     deadline = machine.ticks() + timeout
     start = 0
     while start == 0 or data[start-1] != delim:
@@ -46,7 +46,7 @@ def readline(data, delim=10):
     return start # include delimiter
 
 # write specified bytes to the stream, return once all have been written
-def write(data, limit=-1, start=0):
+def write(self, data, limit=-1, start=0):
     deadline = machine.ticks() + timeout
     if limit < 0:
         limit = len(data)

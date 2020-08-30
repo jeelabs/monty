@@ -1,3 +1,7 @@
+// Monty, a stackless VM - main header
+//
+// See https://monty.jeelabs.org/ and https://git.jeelabs.org/jcw/monty
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>

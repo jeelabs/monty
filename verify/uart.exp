@@ -1,0 +1,10 @@
+main
+<<uart> at 20008680>
+1234567890
+abc
+defg
+11 4 5
+d_test ...
+console write
+abc def
+done
