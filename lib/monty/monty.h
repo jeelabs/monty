@@ -525,6 +525,7 @@ namespace Monty {
 
         auto pop (int idx) -> Value;
         void append (Value v);
+        Value clear () { remove(0, size()); return {}; }
 
         auto len () const -> size_t override { return size(); }
         auto getAt (Value k) const -> Value override;

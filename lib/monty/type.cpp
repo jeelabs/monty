@@ -880,8 +880,12 @@ static Lookup::Item const listMap [] = {
 static auto d_list_append = Method::wrap(&List::append);
 static Method const m_list_append (d_list_append);
 
+static auto d_list_clear = Method::wrap(&List::clear);
+static Method const m_list_clear (d_list_clear);
+
 static Lookup::Item const listMap [] = {
     { Q( 60,"append"), m_list_append },
+    { Q( 60,"clear"), m_list_clear },
 };
 #endif
 

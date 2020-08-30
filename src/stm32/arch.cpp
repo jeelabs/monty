@@ -26,7 +26,7 @@ static void initLeds () {
 static void initLeds () {}
 #endif
 
-UartBufDev< PINS_CONSOLE > console;
+UartBufDev< PINS_CONSOLE, 120 > console;
 
 int printf (char const* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -80,13 +80,13 @@ auto archDone (char const* msg) -> int {
     //return msg == nullptr ? 0 : 1);
 }
 
-static int ms, id;
+static int ms, tickerId, uartId;
 static uint32_t start, begin, last;
 
 // interface exposed to the VM
 
 Value f_ticker (ArgVec const& args) {
-    Value h = id;
+    Value h = tickerId;
     if (args.num > 1) {
         if (args.num != 3 || !args[1].isInt())
             return -1;
@@ -98,13 +98,13 @@ Value f_ticker (ArgVec const& args) {
             uint32_t t = ++ticks;
             if (ms > 0 && (t - start) / ms != last) {
                 last = (t - start) / ms;
-                if (id > 0)
-                    Interp::interrupt(id);
+                if (tickerId > 0)
+                    Interp::interrupt(tickerId);
             }
         };
     }
-    id = Interp::setHandler(h);
-    return id;
+    tickerId = Interp::setHandler(h);
+    return tickerId;
 }
 
 Value f_ticks (ArgVec const&) {
@@ -123,19 +123,35 @@ struct Uart: Object {
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    Uart () {}
+    Uart (List& queue) : writers (queue) {}
 
     Value read (ArgVec const& args);
     Value write (ArgVec const& args);
+    Value close ();
 
     auto attr (char const* name, Value& self) const -> Value override;
 
     void marker () const override;
+private:
+    List& writers;
 };
 
+static void (*prevIrq)();
+
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
-    return new Uart;
+    assert(args.num == 3);
+    uartId = Interp::setHandler(args[1]);
+printf("uid %d\n", uartId);
+
+    prevIrq = VTableRam().usart2;
+    VTableRam().usart2 = []() {
+        auto f = console.xmit.empty();
+        prevIrq();
+        if (!f && console.xmit.empty() && uartId > 0)
+            Interp::interrupt(uartId); // it became writable again
+    };
+
+    return new Uart (args[2].asType<List>());
 }
 
 auto Uart::read (ArgVec const& args) -> Value {
@@ -157,10 +173,17 @@ auto Uart::write (ArgVec const& args) -> Value {
         if (console.writable())
             console.putc(data[i]);
         else {
-            archIdle(); // TODO suspend, queue, and resume when ready
+            Interp::suspend(writers);
             return i - start;
         }
     return limit - start;
+}
+
+auto Uart::close () -> Value {
+    if (uartId > 0)
+        Interp::setHandler(uartId);
+    uartId = 0;
+    return {};
 }
 
 Value Uart::attr (const char* key, Value&) const {
@@ -168,7 +191,7 @@ Value Uart::attr (const char* key, Value&) const {
 }
 
 void Uart::marker () const {
-    // TODO
+    writers.marker();
 }
 
 static auto d_uart_read = Method::wrap(&Uart::read);
@@ -177,9 +200,13 @@ static Method const m_uart_read (d_uart_read);
 static auto d_uart_write = Method::wrap(&Uart::write);
 static Method const m_uart_write (d_uart_write);
 
+static auto d_uart_close = Method::wrap(&Uart::close);
+static Method const m_uart_close (d_uart_close);
+
 static const Lookup::Item uartMap [] = {
     { "read", m_uart_read },
     { "write", m_uart_write },
+    { "close", m_uart_close },
 };
 
 const Lookup Uart::attrs (uartMap, sizeof uartMap);
