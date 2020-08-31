@@ -183,17 +183,17 @@ void Context::marker () const {
 
 auto Interp::findTask (Context& ctx, bool add) -> int {
     for (auto& e : tasks)
-        if (e == &ctx)
+        if (&e.obj() == &ctx)
             return &e - tasks.begin();
     int n = -1;
     if (add) {
         n = tasks.size();
-        tasks.append(&ctx);
+        tasks.append(ctx);
     }
     return n;
 }
 
-auto Interp::getQueueId () -> uint32_t {
+auto Interp::getQueueId () -> int {
     static_assert (MAX_QUEUES <= 8 * sizeof pending, "MAX_QUEUES too large");
 
     for (uint32_t id = 1; id < MAX_QUEUES; ++id) {
@@ -203,14 +203,19 @@ auto Interp::getQueueId () -> uint32_t {
             return id;
         }
     }
-    return 0;
+    return -1;
 }
 
-void Interp::dropQueueId (uint32_t id) {
+void Interp::dropQueueId (int id) {
     auto mask = 1U << id;
     assert(queueIds & mask);
     queueIds &= ~mask;
-    // TODO deal with tasks pending on this event
+    // deal with tasks pending on this queue
+    for (auto e : tasks) {
+        auto& ctx = e.asType<Context>();
+        if (ctx.qid == id)
+            ctx.qid = 0; // make runnable again TODO also raise an exception?
+    }
 }
 
 bool Interp::isAlive () {
@@ -219,7 +224,7 @@ bool Interp::isAlive () {
 
 void Interp::markAll () {
     //printf("\tgc started ...\n");
-    mark(context);
+    mark(context); // TODO assert(findTask(context) >= 0); ?
     tasks.marker();
 }
 
@@ -236,11 +241,12 @@ void Interp::suspend (uint32_t id, Value t) {
     auto ctx = t.ifType<Context>();
     if (ctx == nullptr) {
         assert(context != nullptr);
-        t = context;
-        context = context->caller().ifType<Context>();
+        ctx = context;
+        context = ctx->caller().ifType<Context>();
+        ctx->caller() = {};
     }
 
-    findTask(*ctx, true); // make sure it's in the task list
+    assert(findTask(*ctx) >= 0); // make sure it's on the tasks list
     ctx->qid = id;
 }
 
@@ -249,7 +255,6 @@ void Interp::resume (Context& ctx) {
     assert(ctx.caller().isNil());
     ctx.caller() = context;
     context = &ctx;
-    interrupt(0); // force inner loop exit
 }
 
 void Interp::exception (Value v) {

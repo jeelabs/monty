@@ -922,8 +922,8 @@ namespace Monty {
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
         static auto findTask (Context& ctx, bool add =false) -> int;
-        static auto getQueueId () -> uint32_t;
-        static void dropQueueId (uint32_t);
+        static auto getQueueId () -> int;
+        static void dropQueueId (int);
         static auto isAlive () -> bool;
 
         static void markAll (); // for gc

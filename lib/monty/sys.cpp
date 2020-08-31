@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.93-150-g7110f04");
+constexpr auto VERSION = Q(167,"v0.93-151-gbc96be1");
 
 static auto f_snooze (ArgVec const& args) -> Value {
     assert(2 <= args.num && args.num <= 4 && args[1].isInt());
@@ -39,7 +39,9 @@ static auto f_suspend (ArgVec const& args) -> Value {
     if (args.num >= 3)
         queue = &args[2].asType<Context>();
 
-    Interp::suspend(args[1], queue);
+    int id = args[1];
+    if (id >= 0)
+        Interp::suspend(id, queue);
     return {};
 }
 

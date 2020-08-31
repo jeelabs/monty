@@ -86,14 +86,13 @@ static uint32_t start, begin, last;
 // interface exposed to the VM
 
 Value f_ticker (ArgVec const& args) {
-    Value h = tickerId;
     if (args.num > 1) {
         if (args.num != 3 || !args[1].isInt())
             return -1;
         ms = args[1];
-        h = args[2];
         start = ticks; // set first timeout relative to now
         last = 0;
+        tickerId = Interp::getQueueId();
         VTableRam().systick = []() {
             uint32_t t = ++ticks;
             if (ms > 0 && (t - start) / ms != last) {
@@ -102,9 +101,10 @@ Value f_ticker (ArgVec const& args) {
                     Interp::interrupt(tickerId);
             }
         };
+    } else {
+        Interp::dropQueueId(tickerId);
+        tickerId = -1;
     }
-    tickerId = Interp::getQueueId();
-    Interp::suspend(tickerId, h);
     return tickerId;
 }
 
@@ -140,7 +140,6 @@ static void (*prevIrq)();
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
     uartId = Interp::getQueueId();
-printf("uid %d\n", uartId);
 
     prevIrq = VTableRam().usart2;
     VTableRam().usart2 = []() {

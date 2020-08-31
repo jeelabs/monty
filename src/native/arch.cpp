@@ -70,7 +70,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
         assert(tickerId > 0);
     } else {
         Interp::dropQueueId(tickerId);
-        tickerId = 0;
+        tickerId = -1;
     }
     return tickerId;
 }
@@ -105,7 +105,6 @@ struct Uart: Object {
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
     uartId = Interp::getQueueId();
-printf("uid %d\n", uartId);
     return new Uart;
 }
 
