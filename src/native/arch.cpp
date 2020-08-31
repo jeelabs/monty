@@ -61,16 +61,17 @@ void timerHook () {
 }
 
 static auto f_ticker (ArgVec const& args) -> Value {
-    Value h = tickerId;
     if (args.num > 1) {
-        if (args.num != 3 || !args[1].isInt())
-            return -1;
+        assert(args.num == 2 && args[1].isInt());
         ms = args[1];
-        h = args[2];
         start = archTime(); // set first timeout relative to now
         last = 0;
+        tickerId = Interp::getQueueId();
+        assert(tickerId > 0);
+    } else {
+        Interp::dropQueueId(tickerId);
+        tickerId = 0;
     }
-    tickerId = Interp::setHandler(h);
     return tickerId;
 }
 
@@ -103,7 +104,7 @@ struct Uart: Object {
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
-    uartId = Interp::setHandler();
+    uartId = Interp::getQueueId();
 printf("uid %d\n", uartId);
     return new Uart;
 }
@@ -148,7 +149,7 @@ auto Uart::write (ArgVec const& args) -> Value {
 
 auto Uart::close () -> Value {
     if (uartId > 0)
-        Interp::setHandler(uartId);
+        Interp::dropQueueId(uartId);
     uartId = 0;
     return {};
 }

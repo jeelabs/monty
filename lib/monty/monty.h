@@ -911,8 +911,8 @@ namespace Monty {
     struct Interp {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
-        static void snooze (size_t id, int ms, uint32_t flags);
-        static void suspend (int id, Value ={});
+        static void snooze (uint32_t id, int ms, uint32_t flags);
+        static void suspend (uint32_t id, Value ={});
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context
@@ -920,19 +920,20 @@ namespace Monty {
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
-        static int setHandler (int =-1);
-        static bool isAlive ();
+        static auto getQueueId () -> uint32_t;
+        static void dropQueueId (uint32_t);
+        static auto isAlive () -> bool;
 
         static void markAll (); // for gc
 
-        static constexpr auto MAX_HANDLERS = 32;
+        static constexpr auto MAX_QUEUES = 32;
 
         static volatile uint32_t pending;   // for irq-safe inner loop exit
+        static uint32_t queueIds;           // which queues are in use
+        static List tasks;                  // list of all tasks
+        static ByteVec queues;              // in which queue is each task
         static Context* context;            // current context, if any
-        static List tasks;                  // runnable task queue
-        static Dict modules;                // module cache
-    protected:
-        static Value handlers [];           // installed soft-irq handlers
+        static Dict modules;                // loaded modules
     };
 
 // see import.cpp - importing and loading bytecodes

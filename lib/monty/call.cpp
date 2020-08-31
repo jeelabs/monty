@@ -12,13 +12,14 @@ extern auto archTime () -> uint32_t;
 #endif
 
 volatile uint32_t Interp::pending;
-Context*          Interp::context;
+uint32_t          Interp::queueIds;
 List              Interp::tasks;
+ByteVec           Interp::queues;
 Dict              Interp::modules;
-Value             Interp::handlers [MAX_HANDLERS];
+Context*          Interp::context;
 
-static uint32_t deadlines [Interp::MAX_HANDLERS]; // when to wake up handlers
-static uint32_t idleFlags [Interp::MAX_HANDLERS]; // requirements while idling
+static uint32_t deadlines [Interp::MAX_QUEUES]; // when to wake up handlers
+static uint32_t idleFlags [Interp::MAX_QUEUES]; // requirements while idling
 
 Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
@@ -180,26 +181,31 @@ void Context::marker () const {
     mark(callee);
 }
 
-int Interp::setHandler (int i) {
-    static_assert (MAX_HANDLERS <= 8 * sizeof pending, "MAX_HANDLERS too large");
+auto Interp::getQueueId () -> uint32_t {
+    static_assert (MAX_QUEUES <= 8 * sizeof pending, "MAX_QUEUES too large");
 
-    if (1 <= i && i < (int) MAX_HANDLERS) {
-        handlers[i] = {};
-        return 0;
-    }
-    for (int i = 1; i < (int) MAX_HANDLERS; ++i)
-        if (handlers[i].isNil()) {
-            handlers[i] = new List;
-            return i;
+    for (uint32_t id = 1; id < MAX_QUEUES; ++id) {
+        auto mask = 1U << id;
+        if ((queueIds & mask) == 0) {
+            queueIds |= mask;
+            return id;
         }
-    return -1;
+    }
+    return 0;
+}
+
+void Interp::dropQueueId (uint32_t id) {
+    auto mask = 1U << id;
+    assert(queueIds & mask);
+    queueIds &= ~mask;
+    // TODO deal with tasks pending on this event
 }
 
 bool Interp::isAlive () {
     if (context != nullptr || pending != 0 || tasks.len() > 0)
         return true;
-    for (size_t i = 1; i < MAX_HANDLERS; ++i)
-        if (!handlers[i].isNil())
+    for (auto e : tasks)
+        if (!e.isNil())
             return true;
     return false;
 }
@@ -207,29 +213,33 @@ bool Interp::isAlive () {
 void Interp::markAll () {
     //printf("\tgc started ...\n");
     mark(context);
-    for (size_t i = 0; i < MAX_HANDLERS; ++i)
-        handlers[i].marker();
+    tasks.marker();
 }
 
-void Interp::snooze (size_t id, int ms, uint32_t flags) {
-    assert(id < MAX_HANDLERS);
-    assert(handlers[id].isObj());
+void Interp::snooze (uint32_t id, int ms, uint32_t flags) {
+    assert(id < MAX_QUEUES);
+    assert(queueIds & (1U << id));
     deadlines[id] = archTime() + ms;
     idleFlags[id] = flags;
 }
 
-void Interp::suspend (int id, Value t) {
-    assert(0 < id && id < MAX_HANDLERS);
-    auto& queue = handlers[id].asType<List>();
+void Interp::suspend (uint32_t id, Value t) {
+    assert(id < MAX_QUEUES);
 
     if (t.isNil()) {
-        assert(tasks.len() > 0);
-        t = tasks.pop(0);
-        assert(t.ifType<Context>() == context);
+        assert(context != nullptr);
+        t = context;
         context = context->caller().ifType<Context>();
     }
 
-    queue.append(t);
+    for (auto& e : tasks)
+        if (e == t) {
+            auto pos = &e - tasks.begin();
+            queues[pos] = id;
+            return;
+        }
+
+    assert(false); // TODO put this on the tasks list? find a new slot?
 }
 
 void Interp::resume (Context& ctx) {
@@ -247,21 +257,21 @@ void Interp::exception (Value v) {
 }
 
 void Interp::interrupt (uint32_t num) {
-    assert(num < MAX_HANDLERS);
+    assert(num < MAX_QUEUES);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
 auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (size_t num = 0; num < MAX_HANDLERS; ++num)
+        for (size_t num = 0; num < MAX_QUEUES; ++num)
             if (pendingBit(num))
                 return num;
     return -1;
 }
 
 auto Interp::pendingBit (uint32_t num) -> bool {
-    assert(num < MAX_HANDLERS);
+    assert(num < MAX_QUEUES);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     return (__atomic_fetch_and(&pending, ~mask, __ATOMIC_RELAXED) & mask) != 0;

@@ -103,7 +103,7 @@ Value f_ticker (ArgVec const& args) {
             }
         };
     }
-    tickerId = Interp::setHandler();
+    tickerId = Interp::getQueueId();
     Interp::suspend(tickerId, h);
     return tickerId;
 }
@@ -139,7 +139,7 @@ static void (*prevIrq)();
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 1);
-    uartId = Interp::setHandler();
+    uartId = Interp::getQueueId();
 printf("uid %d\n", uartId);
 
     prevIrq = VTableRam().usart2;
@@ -180,7 +180,7 @@ auto Uart::write (ArgVec const& args) -> Value {
 
 auto Uart::close () -> Value {
     if (uartId > 0)
-        Interp::setHandler(uartId);
+        Interp::dropQueueId(uartId);
     uartId = 0;
     return {};
 }

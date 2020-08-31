@@ -971,12 +971,10 @@ class PyVM : public Interp {
             INNER_HOOK              // optional, to simulate interrupts
 
             auto irq = nextPending();
-            if (irq >= 0) {         // there's a pending soft-irq
-                auto q = handlers[irq].ifType<List>();
-                if (q != nullptr)
-                    while (q->size() > 0)
-                        tasks.append(q->pop(0)); // TODO use extend()
-            }
+            if (irq > 0)            // there's a pending trigger
+                for (auto& e : queues)
+                    if (e == irq)
+                        e = 0;      // make runnable
 
             if (context == nullptr)
                 break;              // no runnable context left
