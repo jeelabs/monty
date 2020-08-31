@@ -907,7 +907,6 @@ namespace Monty {
     struct Interp {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
-        static void snooze (uint32_t id, int ms, uint32_t flags);
         static void suspend (uint32_t id);
         static void resume (Context& ctx);
 
@@ -919,7 +918,10 @@ namespace Monty {
         static auto findTask (Context& ctx) -> int;
         static auto getQueueId () -> int;
         static void dropQueueId (int);
-        static auto isAlive () -> bool;
+
+        static auto isAlive () -> bool {
+            return context != nullptr || tasks.len() > 0;
+        }
 
         static void markAll (); // for gc
 

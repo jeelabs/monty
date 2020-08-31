@@ -5,20 +5,11 @@
 
 using namespace Monty;
 
-#ifdef UNIT_TEST
-static auto archTime () -> uint32_t { assert(false); }
-#else
-extern auto archTime () -> uint32_t;
-#endif
-
 volatile uint32_t Interp::pending;
 uint32_t          Interp::queueIds;
 List              Interp::tasks;
 Dict              Interp::modules;
 Context*          Interp::context;
-
-static uint32_t deadlines [Interp::MAX_QUEUES]; // when to wake up handlers
-static uint32_t idleFlags [Interp::MAX_QUEUES]; // requirements while idling
 
 Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
@@ -215,22 +206,11 @@ void Interp::dropQueueId (int id) {
     }
 }
 
-bool Interp::isAlive () {
-    return context != nullptr || tasks.len() > 0;
-}
-
 void Interp::markAll () {
     //printf("\tgc started ...\n");
+    assert(context != nullptr);
     mark(context); // TODO
     assert(findTask(*context) >= 0);
-    //tasks.marker();
-}
-
-void Interp::snooze (uint32_t id, int ms, uint32_t flags) {
-    assert(id < MAX_QUEUES);
-    assert(queueIds & (1U << id));
-    deadlines[id] = archTime() + ms;
-    idleFlags[id] = flags;
 }
 
 void Interp::suspend (uint32_t id) {
