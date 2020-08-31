@@ -16,7 +16,6 @@ for i in [2, 3, 5]:
 
 async def timeout():
     delay(35)
-    machine.ticker()
     sys.tasks.clear() # a bit harsh ...
 
 sys.tasks.append(timeout())
