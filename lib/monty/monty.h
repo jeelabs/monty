@@ -505,7 +505,6 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
-        void marker () const override;
     private:
         auto sel () const -> uint8_t { return fill >> 27; }
     };

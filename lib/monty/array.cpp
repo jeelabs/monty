@@ -111,7 +111,7 @@ struct AccessAsVaryStr : AccessAsVaryBytes {
     }
 };
 
-constexpr auto arrayModes = "oPTNbBhHiIlLqvV"
+constexpr auto arrayModes = "PTNbBhHiIlLqvV"
 #if USE_FLOAT
                             "f"
 #endif
@@ -123,7 +123,6 @@ constexpr auto arrayModes = "oPTNbBhHiIlLqvV"
 // permanent per-type accessors, these are re-used for every Array instance
 // the cost per get/set/ins/del is one table index step, just as with vtables
 
-static AccessAs<Value>      const accessor_o;
 static AccessAsBits<0>      const accessor_P;
 static AccessAsBits<1>      const accessor_T;
 static AccessAsBits<2>      const accessor_N;
@@ -145,7 +144,6 @@ static AccessAs<double>   const accessor_d;
 
 // must be in same order as arrayModes
 static Accessor const* accessors [] = {
-    &accessor_o,
     &accessor_P,
     &accessor_T,
     &accessor_N,
@@ -211,13 +209,6 @@ void Array::remove (size_t idx, size_t num) {
     fill &= 0x07FFFFFF;
     accessors[s]->del(*this, idx, num);
     fill = fill + (s << 27);
-}
-
-void Array::marker () const {
-    if (sel() == 0) {
-        auto p = (ByteVec const*) this;
-        mark(*(Vector const*) p);
-    }
 }
 
 List::List (ArgVec const& args) {

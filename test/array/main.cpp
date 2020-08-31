@@ -108,8 +108,6 @@ static void arrayInsDel () {
         { 'l',            -2147483648, 2147483647,          5 },
         { 'L',                      0, 4294967295,          5 },
         { 'q', -9223372036854775807-1, 9223372036854775807, 6 },
-        { 'o', -9223372036854775807-1, 9223372036854775807,
-                                       5 + sizeof (void*) / 8 }, // 32b/64b
     };
     for (auto e : tests) {
         printf("e %c min %lld max %lld log %d\n", e.typ, e.min, e.max, e.log);
