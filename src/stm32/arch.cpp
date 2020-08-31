@@ -87,8 +87,7 @@ static uint32_t start, begin, last;
 
 Value f_ticker (ArgVec const& args) {
     if (args.num > 1) {
-        if (args.num != 3 || !args[1].isInt())
-            return -1;
+        assert(args.num == 2 && args[1].isInt());
         ms = args[1];
         start = ticks; // set first timeout relative to now
         last = 0;
