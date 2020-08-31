@@ -6,7 +6,7 @@ def delay(n):
 
 async def task(rate):
     i = 0
-    while True:
+    while qid > 0:
         delay(rate)
         print('t', machine.ticks(), 'rate', rate, 'i', i)
         i += 1
@@ -15,7 +15,8 @@ for i in [2, 3, 5]:
     sys.tasks.append(task(i))
 
 async def timeout():
+    global qid
     delay(35)
-    sys.tasks.clear() # a bit harsh ...
+    qid = machine.ticker() # stops ticker and returns -1
 
 sys.tasks.append(timeout())

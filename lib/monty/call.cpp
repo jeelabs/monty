@@ -219,7 +219,7 @@ void Interp::dropQueueId (int id) {
 }
 
 bool Interp::isAlive () {
-    return context != nullptr || pending != 0 || tasks.len() > 0;
+    return context != nullptr || tasks.len() > 0;
 }
 
 void Interp::markAll () {

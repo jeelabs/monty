@@ -34,4 +34,7 @@ t 300 rate 2 i 15
 t 310 rate 3 i 10
 t 320 rate 2 i 16
 t 330 rate 5 i 6
+t 330 rate 2 i 17
+t 330 rate 5 i 7
+t 330 rate 3 i 11
 done
