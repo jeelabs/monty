@@ -14,7 +14,6 @@ extern auto archTime () -> uint32_t;
 volatile uint32_t Interp::pending;
 uint32_t          Interp::queueIds;
 List              Interp::tasks;
-ByteVec           Interp::queues;
 Dict              Interp::modules;
 Context*          Interp::context;
 
@@ -88,6 +87,13 @@ auto Closure::call (ArgVec const& args) const -> Value {
     for (int i = 0; i < args.num; ++i)
         v[n+i] = args[i];
     return func.call({v, n + args.num, 0});
+}
+
+auto Context::taskPos () const -> int {
+    for (auto e : Interp::tasks)
+        if (e == this)
+            return &e - Interp::tasks.begin();
+    return -1;
 }
 
 void Context::enter (Callable const& func) {
@@ -232,14 +238,7 @@ void Interp::suspend (uint32_t id, Value t) {
         context = context->caller().ifType<Context>();
     }
 
-    for (auto& e : tasks)
-        if (e == t) {
-            auto pos = &e - tasks.begin();
-            queues[pos] = id;
-            return;
-        }
-
-    assert(false); // TODO put this on the tasks list? find a new slot?
+    t.asType<Context>().qid = id;
 }
 
 void Interp::resume (Context& ctx) {

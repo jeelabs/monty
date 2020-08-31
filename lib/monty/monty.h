@@ -875,8 +875,9 @@ namespace Monty {
             caller() = from;
         }
 
+        auto taskPos () const -> int;
         void enter (Callable const&);
-        Value leave (Value v);
+        auto leave (Value v) -> Value;
 
         auto spBase () const -> Value* { return frame().stack; }
         auto ipBase () const -> uint8_t const* { return callee->code.start(); }
@@ -901,10 +902,11 @@ namespace Monty {
 
         void marker () const override;
 
+        int8_t qid {-1};
         // previous values are saved in current stack frame
-        size_t base {0};
-        size_t spOff {0};
-        size_t ipOff {0};
+        uint16_t base {0};
+        uint16_t spOff {0};
+        uint16_t ipOff {0};
         Callable const* callee {nullptr};
     };
 
@@ -931,7 +933,6 @@ namespace Monty {
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static uint32_t queueIds;           // which queues are in use
         static List tasks;                  // list of all tasks
-        static ByteVec queues;              // in which queue is each task
         static Context* context;            // current context, if any
         static Dict modules;                // loaded modules
     };

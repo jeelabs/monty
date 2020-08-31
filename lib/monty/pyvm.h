@@ -968,18 +968,20 @@ class PyVM : public Interp {
 
     void outer () {
         while (true) {
-            INNER_HOOK              // optional, to simulate interrupts
+            INNER_HOOK                  // optional, to simulate interrupts
 
             auto irq = nextPending();
-            if (irq > 0)            // there's a pending trigger
-                for (auto& e : queues)
-                    if (e == irq)
-                        e = 0;      // make runnable
+            if (irq > 0)                // there's a pending trigger
+                for (auto e : tasks) {
+                    auto& t = e.asType<Context>();
+                    if (t.qid == irq)
+                        t.qid = 0;      // make runnable
+                }
 
             if (context == nullptr)
-                break;              // no runnable context left
+                break;                  // no runnable context left
 
-            inner();                // go process lots of bytecodes
+            inner();                    // go process lots of bytecodes
 
             if (gcCheck()) {
                 archMode(RunMode::GC);
