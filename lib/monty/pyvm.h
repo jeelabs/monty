@@ -224,38 +224,31 @@ class PyVM : public Interp {
     //CG1 op s
     void opJump (int arg) {
         ip += arg;
-        loopCheck(arg);
     }
     //CG1 op s
     void opPopJumpIfFalse (int arg) {
-        if (!sp->truthy()) {
+        if (!sp->truthy())
             ip += arg;
-            loopCheck(arg);
-        }
         --sp;
     }
     //CG1 op s
     void opJumpIfFalseOrPop (int arg) {
-        if (!sp->truthy()) {
+        if (!sp->truthy())
             ip += arg;
-            loopCheck(arg);
-        } else
+        else
             --sp;
     }
     //CG1 op s
     void opPopJumpIfTrue (int arg) {
-        if (sp->truthy()) {
+        if (sp->truthy())
             ip += arg;
-            loopCheck(arg);
-        }
         --sp;
     }
     //CG1 op s
     void opJumpIfTrueOrPop (int arg) {
-        if (sp->truthy()) {
+        if (sp->truthy())
             ip += arg;
-            loopCheck(arg);
-        } else
+        else
             --sp;
     }
 
@@ -411,7 +404,6 @@ class PyVM : public Interp {
         int ep = frame().ep;
         frame().ep = ep - *ip; // TODO hardwired for simplest case
         ip += arg;
-        loopCheck(arg);
     }
 
     //CG1 op
@@ -672,26 +664,31 @@ class PyVM : public Interp {
                 case Op::Jump: {
                     int arg = fetchO()-0x8000;
                     opJump(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::PopJumpIfFalse: {
                     int arg = fetchO()-0x8000;
                     opPopJumpIfFalse(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::JumpIfFalseOrPop: {
                     int arg = fetchO()-0x8000;
                     opJumpIfFalseOrPop(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::PopJumpIfTrue: {
                     int arg = fetchO()-0x8000;
                     opPopJumpIfTrue(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::JumpIfTrueOrPop: {
                     int arg = fetchO()-0x8000;
                     opJumpIfTrueOrPop(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::LoadName: {
@@ -819,6 +816,7 @@ class PyVM : public Interp {
                 case Op::UnwindJump: {
                     int arg = fetchO()-0x8000;
                     opUnwindJump(arg);
+                    loopCheck(arg);
                     break;
                 }
                 case Op::LoadBuildClass:

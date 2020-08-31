@@ -202,19 +202,15 @@ def BUILTIN(block, name):
 # generate opcode switch entries
 opdefs = []
 opmulti = []
-opraises = []
 
 def OP_INIT(block):
     opdefs.clear()
     opmulti.clear()
-    opraises.clear()
 def OP_EMIT(block, sel=0):
     if sel == 'd':
         return opdefs
     if sel == 'm':
         return opmulti
-    else:
-        return opraises
 
 def OP(block, typ='', multi=0):
     op = block[0].split()[1][2:]
@@ -249,23 +245,14 @@ def OP(block, typ='', multi=0):
             if fmt == ' %s': info = ', (char const*) arg' # convert from qstr
             if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
             opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
-        if 'r' in typ:
-            a = 'arg' if arg else '0'
-            opdefs.append('    ctx->raise(Op::%s, %s);' % (op, a))
-        else:
-            a = 'arg' if arg else ''
-            opdefs.append('    %s(%s);' % (name, a))
+        opdefs.append('    %s(%s);' % (name, 'arg' if arg else ''))
+        if 's' in typ:
+            opdefs.append('    loopCheck(arg);')
         opdefs.append('    break;')
         if arg:
             opdefs.append('}')
 
     out = ['void %s (%s) {' % (name, decl)]
-
-    if 'r' in typ:
-        out.append('    // note: called outside inner loop')
-        opraises.append('case Op::%s:' % op)
-        a = 'arg' if arg else ''
-        opraises.append('    %s(%s); break;' % (name, a))
 
     return out
 
