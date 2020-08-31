@@ -25,7 +25,7 @@ static void runInterp (Monty::Callable& init) {
     Monty::PyVM vm (init);
 
     while (vm.isAlive()) {
-        vm.runner();
+        vm.scheduler();
         //archIdle();
     }
 

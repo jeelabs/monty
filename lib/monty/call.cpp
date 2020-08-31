@@ -89,13 +89,6 @@ auto Closure::call (ArgVec const& args) const -> Value {
     return func.call({v, n + args.num, 0});
 }
 
-auto Context::taskPos () const -> int {
-    for (auto e : Interp::tasks)
-        if (e == this)
-            return &e - Interp::tasks.begin();
-    return -1;
-}
-
 void Context::enter (Callable const& func) {
     auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
     int need = (frame().stack + frameSize) - (begin() + base);
@@ -136,8 +129,9 @@ Value Context::leave (Value v) {
     } else {
         // last frame, drop context, restore caller
         Interp::context = caller().ifType<Context>();
-        if (this == &Interp::tasks[0].obj())
-            Interp::tasks.pop(0);
+        auto n = Interp::findTask(*this);
+        if (n >= 0)
+            Interp::tasks.remove(n);
 
         // FIXME ...
         remove(NumSlots, fill - NumSlots); // delete last frame
@@ -187,6 +181,18 @@ void Context::marker () const {
     mark(callee);
 }
 
+auto Interp::findTask (Context& ctx, bool add) -> int {
+    for (auto& e : tasks)
+        if (e == &ctx)
+            return &e - tasks.begin();
+    int n = -1;
+    if (add) {
+        n = tasks.size();
+        tasks.append(&ctx);
+    }
+    return n;
+}
+
 auto Interp::getQueueId () -> uint32_t {
     static_assert (MAX_QUEUES <= 8 * sizeof pending, "MAX_QUEUES too large");
 
@@ -208,12 +214,7 @@ void Interp::dropQueueId (uint32_t id) {
 }
 
 bool Interp::isAlive () {
-    if (context != nullptr || pending != 0 || tasks.len() > 0)
-        return true;
-    for (auto e : tasks)
-        if (!e.isNil())
-            return true;
-    return false;
+    return context != nullptr || pending != 0 || tasks.len() > 0;
 }
 
 void Interp::markAll () {
@@ -232,13 +233,15 @@ void Interp::snooze (uint32_t id, int ms, uint32_t flags) {
 void Interp::suspend (uint32_t id, Value t) {
     assert(id < MAX_QUEUES);
 
-    if (t.isNil()) {
+    auto ctx = t.ifType<Context>();
+    if (ctx == nullptr) {
         assert(context != nullptr);
         t = context;
         context = context->caller().ifType<Context>();
     }
 
-    t.asType<Context>().qid = id;
+    findTask(*ctx, true); // make sure it's in the task list
+    ctx->qid = id;
 }
 
 void Interp::resume (Context& ctx) {

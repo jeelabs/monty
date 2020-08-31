@@ -506,7 +506,7 @@ class PyVM : public Interp {
         auto caller = context->caller().ifType<Context>();
         auto v = contextAdjuster([=]() -> Value {
             if (caller == nullptr)
-                tasks.append(context); // task yield appends to runnable tasks
+                suspend(0, context); // no caller, stay runnable on task list
             context = caller;
             return *sp;
         });
@@ -967,21 +967,8 @@ class PyVM : public Interp {
     }
 
     void outer () {
-        while (true) {
-            INNER_HOOK                  // optional, to simulate interrupts
-
-            auto irq = nextPending();
-            if (irq > 0)                // there's a pending trigger
-                for (auto e : tasks) {
-                    auto& t = e.asType<Context>();
-                    if (t.qid == irq)
-                        t.qid = 0;      // make runnable
-                }
-
-            if (context == nullptr)
-                break;                  // no runnable context left
-
-            inner();                    // go process lots of bytecodes
+        while (context != nullptr) {
+            inner();
 
             if (gcCheck()) {
                 archMode(RunMode::GC);
@@ -991,6 +978,8 @@ class PyVM : public Interp {
                 archMode(RunMode::Run);
             }
         }
+
+        INNER_HOOK // can be used to simulate interrupts
     }
 
 public:
@@ -998,19 +987,35 @@ public:
         auto ctx = new Monty::Context;
         ctx->enter(init);
         ctx->frame().locals = &init.mo;
-
-        tasks.insert(0);
-        tasks[0] = ctx;
+        tasks.append(ctx);
     }
 
-    void runner () {
-        while (true) {
+    void scheduler () {
+        size_t last = 0; // remember last task for round-robin scheduling
+
+        do {
             outer();
-            if (tasks.len() == 0)
-                break;
-            auto& ctx = tasks.getAt(0).asType<Context>();
-            resume(ctx);
-        }
+
+            auto irq = nextPending();
+            if (irq > 0)
+                for (auto e : tasks) {
+                    auto& t = e.asType<Context>();
+                    if (t.qid == irq)
+                        t.qid = 0; // make runnable
+                }
+
+            auto n = tasks.size();
+            for (size_t i = 0; i < n; ++i) {
+                if (++last >= n)
+                    last = 0;
+                auto& ctx = tasks[last].asType<Context>();
+                if (ctx.qid == 0) {
+                    resume(ctx);
+                    break;
+                }
+            }
+        } while (context != nullptr);
+
         // no current context and no runnable tasks at this point
     }
 };

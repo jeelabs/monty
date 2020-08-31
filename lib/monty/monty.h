@@ -875,7 +875,6 @@ namespace Monty {
             caller() = from;
         }
 
-        auto taskPos () const -> int;
         void enter (Callable const&);
         auto leave (Value v) -> Value;
 
@@ -902,7 +901,7 @@ namespace Monty {
 
         void marker () const override;
 
-        int8_t qid {-1};
+        int8_t qid {0};
         // previous values are saved in current stack frame
         uint16_t base {0};
         uint16_t spOff {0};
@@ -922,6 +921,7 @@ namespace Monty {
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
+        static auto findTask (Context& ctx, bool add =false) -> int;
         static auto getQueueId () -> uint32_t;
         static void dropQueueId (uint32_t);
         static auto isAlive () -> bool;

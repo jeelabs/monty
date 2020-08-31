@@ -1,8 +1,8 @@
-waiting = []
+qid = machine.ticker(10)
 
-async def delay(n):
+def delay(n):
     for _ in range(n):
-        sys.suspend(id, waiting)
+        sys.suspend(qid)
 
 async def task(rate):
     i = 0
@@ -14,13 +14,8 @@ async def task(rate):
 for i in [2, 3, 5]:
     sys.tasks.append(task(i))
 
-def loop():
-    global waiting
-    for _ in range(35):
-        for w in waiting:
-            sys.tasks.append(w)
-        waiting = []
-        yield
+async def timeout():
+    delay(35)
     machine.ticker()
 
-id = machine.ticker(10, loop())
+sys.tasks.append(timeout())
