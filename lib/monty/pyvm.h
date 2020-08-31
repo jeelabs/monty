@@ -504,9 +504,11 @@ class PyVM : public Interp {
     //CG1 op
     void opYieldValue () {
         auto caller = context->caller().ifType<Context>();
+        if (caller == nullptr) {
+            assert(findTask(*context) >= 0);
+            assert(context->qid == 0); // must stay runnable
+        }
         auto v = contextAdjuster([=]() -> Value {
-            if (caller == nullptr)
-                suspend(0, context); // no caller, stay runnable on task list
             context = caller;
             return *sp;
         });

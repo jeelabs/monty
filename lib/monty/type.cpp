@@ -319,7 +319,9 @@ auto Object::binop (BinOp, Value) const -> Value {
 
 auto Object::attr (char const* name, Value&) const -> Value {
     auto atab = type().chain;
-    return atab != 0 ? atab->getAt(name) : getAt(name);
+    if (atab == nullptr)
+        atab = this;
+    return atab->getAt(name);
 }
 
 auto Object::next  () -> Value {

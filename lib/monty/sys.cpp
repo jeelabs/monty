@@ -33,15 +33,10 @@ static auto f_snooze (ArgVec const& args) -> Value {
 static Function const fo_snooze (f_snooze);
 
 static auto f_suspend (ArgVec const& args) -> Value {
-    assert(args.num >= 2 && args[1].isInt());
-
-    Value queue;
-    if (args.num >= 3)
-        queue = &args[2].asType<Context>();
-
+    assert(args.num == 2 && args[1].isInt());
     int id = args[1];
     if (id >= 0)
-        Interp::suspend(id, queue);
+        Interp::suspend(id);
     return {};
 }
 

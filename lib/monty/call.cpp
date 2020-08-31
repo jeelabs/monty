@@ -133,8 +133,8 @@ Value Context::leave (Value v) {
         if (n >= 0)
             Interp::tasks.remove(n);
 
-        // FIXME ...
-        remove(NumSlots, fill - NumSlots); // delete last frame
+        fill = 0; // delete stack entries
+        adj(0); // release vector
     }
 
     return r;
@@ -172,6 +172,7 @@ void Context::caught () {
 }
 
 auto Context::next () -> Value {
+    assert(fill > 0); // can only resume if not ended
     Interp::resume(*this);
     return {}; // no result yet
 }
@@ -181,16 +182,11 @@ void Context::marker () const {
     mark(callee);
 }
 
-auto Interp::findTask (Context& ctx, bool add) -> int {
+auto Interp::findTask (Context& ctx) -> int {
     for (auto& e : tasks)
         if (&e.obj() == &ctx)
             return &e - tasks.begin();
-    int n = -1;
-    if (add) {
-        n = tasks.size();
-        tasks.append(ctx);
-    }
-    return n;
+    return -1;
 }
 
 auto Interp::getQueueId () -> int {
@@ -210,6 +206,7 @@ void Interp::dropQueueId (int id) {
     auto mask = 1U << id;
     assert(queueIds & mask);
     queueIds &= ~mask;
+
     // deal with tasks pending on this queue
     for (auto e : tasks) {
         auto& ctx = e.asType<Context>();
@@ -224,8 +221,9 @@ bool Interp::isAlive () {
 
 void Interp::markAll () {
     //printf("\tgc started ...\n");
-    mark(context); // TODO assert(findTask(context) >= 0); ?
-    tasks.marker();
+    mark(context); // TODO
+    assert(findTask(*context) >= 0);
+    //tasks.marker();
 }
 
 void Interp::snooze (uint32_t id, int ms, uint32_t flags) {
@@ -235,18 +233,15 @@ void Interp::snooze (uint32_t id, int ms, uint32_t flags) {
     idleFlags[id] = flags;
 }
 
-void Interp::suspend (uint32_t id, Value t) {
+void Interp::suspend (uint32_t id) {
     assert(id < MAX_QUEUES);
 
-    auto ctx = t.ifType<Context>();
-    if (ctx == nullptr) {
-        assert(context != nullptr);
-        ctx = context;
-        context = ctx->caller().ifType<Context>();
-        ctx->caller() = {};
-    }
+    assert(context != nullptr);
+    assert(findTask(*context) >= 0);
+    auto ctx = context;
+    context = ctx->caller().ifType<Context>();
+    //ctx->caller() = {};
 
-    assert(findTask(*ctx) >= 0); // make sure it's on the tasks list
     ctx->qid = id;
 }
 

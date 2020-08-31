@@ -31,8 +31,8 @@ namespace Monty {
 
     struct Vec {
         constexpr Vec () : capa (0), data (nullptr) {}
-        constexpr Vec (void const* ptr, size_t len =0)
-                    : capa (len), data ((uint8_t*) ptr) {}
+        constexpr Vec (void const* ptr, size_t num =0)
+                    : capa (num), data ((uint8_t*) ptr) {}
         ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
@@ -224,9 +224,7 @@ namespace Monty {
     void mark (Vector const&);
 
     struct VaryVec : private ByteVec {
-        constexpr VaryVec (void const* ptr =nullptr, size_t len =0)
-            : ByteVec (ptr, len) {}
-
+        using ByteVec::ByteVec;
         using ByteVec::size;
 
         auto atGet (size_t i) const -> uint8_t* {
@@ -235,8 +233,8 @@ namespace Monty {
         auto atLen (size_t i) const -> size_t {
             return pos(i+1) - pos(i);
         }
-        void atAdj (size_t idx, size_t len);
-        void atSet (size_t i, void const* ptr, size_t len);
+        void atAdj (size_t idx, size_t num);
+        void atSet (size_t i, void const* ptr, size_t num);
 
         void insert (size_t idx, size_t num =1);
         void remove (size_t idx, size_t num =1);
@@ -341,7 +339,7 @@ namespace Monty {
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
-        auto len () const -> size_t override { return size(); }
+        auto len () const -> size_t override { return fill; }
         auto getAt (Value k) const -> Value override;
     };
 
@@ -424,7 +422,7 @@ namespace Monty {
         auto end () const -> Value const* { return begin() + size(); }
         auto operator[] (size_t idx) const -> Value { return begin()[idx]; }
 
-        auto len () const -> size_t override { return size(); }
+        auto len () const -> size_t override { return fill; }
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
@@ -478,7 +476,7 @@ namespace Monty {
 
         bool sep {false};
     protected:
-        virtual void write (uint8_t const* ptr, size_t len) const;
+        virtual void write (uint8_t const* ptr, size_t num) const;
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
@@ -496,7 +494,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         //constexpr Array () {} // default is array of Value items
-        Array (char type, size_t len =0);
+        Array (char type, size_t num =0);
 
         auto mode () const -> char;
 
@@ -527,7 +525,7 @@ namespace Monty {
         void append (Value v);
         Value clear () { remove(0, size()); return {}; }
 
-        auto len () const -> size_t override { return size(); }
+        auto len () const -> size_t override { return fill; }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
@@ -743,8 +741,6 @@ namespace Monty {
 
         Module (Lookup const* lu) : Dict (lu) {}
 
-        Value attr (char const* s, Value&) const override { return getAt(s); }
-
         void marker () const override { Dict::marker(); }
     };
 
@@ -913,7 +909,7 @@ namespace Monty {
         static auto frame () -> Context::Frame& { return context->frame(); }
 
         static void snooze (uint32_t id, int ms, uint32_t flags);
-        static void suspend (uint32_t id, Value ={});
+        static void suspend (uint32_t id);
         static void resume (Context& ctx);
 
         static void exception (Value exc);  // throw exception in curr context
@@ -921,7 +917,7 @@ namespace Monty {
         static auto nextPending () -> int;  // next pending or -1 (irq-safe)
         static auto pendingBit (uint32_t) -> bool; // test and clear bit
 
-        static auto findTask (Context& ctx, bool add =false) -> int;
+        static auto findTask (Context& ctx) -> int;
         static auto getQueueId () -> int;
         static void dropQueueId (int);
         static auto isAlive () -> bool;
