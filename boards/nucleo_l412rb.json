@@ -1,0 +1,42 @@
+{
+  "build": {
+    "cpu": "cortex-m4",
+    "extra_flags": "-DSTM32L412xx",
+    "f_cpu": "32000000L",
+    "mcu": "stm32l412rbt6",
+    "product_line": "STM32L412xx",
+    "variant": "NUCLEO_L412RB"
+  },
+  "debug": {
+    "default_tools": [
+      "stlink"
+    ],
+    "jlink_device": "STM32L412RB",
+    "onboard_tools": [
+      "stlink"
+    ],
+    "openocd_target": "stm32l4x",
+    "svd_path": "STM32L4x2.svd"
+  },
+  "frameworks": [
+    "arduino",
+    "cmsis",
+    "mbed",
+    "stm32cube",
+    "libopencm3"
+  ],
+  "name": "ST Nucleo L412RB",
+  "upload": {
+    "maximum_ram_size": 40960,
+    "maximum_size": 131072,
+    "protocol": "stlink",
+    "protocols": [
+      "jlink",
+      "stlink",
+      "blackmagic",
+      "mbed"
+    ]
+  },
+  "url": "https://developer.mbed.org/platforms/ST-Nucleo-L412RB/",
+  "vendor": "ST"
+}
