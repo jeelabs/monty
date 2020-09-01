@@ -750,8 +750,6 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
 
         Module (Lookup const* lu) : Dict (lu) {}
-
-        void marker () const override { Dict::marker(); }
     };
 
     //CG3 type <bytecode>
