@@ -6,7 +6,7 @@
 
 using namespace Monty;
 
-void Monty::mark (Vector const& vec) {
+void Monty::markVec (Vector const& vec) {
     for (auto e : vec)
         e.marker();
 }

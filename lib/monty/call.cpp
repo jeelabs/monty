@@ -11,38 +11,37 @@ List              Interp::tasks;
 Dict              Interp::modules;
 Context*          Interp::context;
 
-Callable::Callable (Value bc, Tuple* t, Dict* d, Module* mod)
+Callable::Callable (Value callee, Tuple* t, Dict* d, Module* mod)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
-          code (bc.asType<Bytecode>()), pos (t), kw (d) {
+          bc (callee.asType<Bytecode>()), pos (t), kw (d) {
 }
 
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = Interp::context;
-    auto coro = code.isGenerator();
+    auto coro = bc.isGenerator();
     if (coro)
         ctx = new Context;
 
     ctx->enter(*this);
 
-    int nPos = code.numArgs(0);
-    int nDef = code.numArgs(1);
-    int nKwo = code.numArgs(2);
+    int nPos = bc.numArgs(0);
+    int nDef = bc.numArgs(1);
+    int nKwo = bc.numArgs(2);
 
-//Value x = pos; x.dump("pos");
     for (int i = 0; i < nPos; ++i)
         if (i < args.num)
             ctx->fastSlot(i) = args[i];
         else if (pos != nullptr && (size_t) i < nDef + pos->fill)
             ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
 
-    if (code.hasVarArgs())
+    if (bc.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) =
             Tuple::create({args.vec, args.num-nPos, args.off+nPos});
 
     // TODO this isn't quite right, inside bc, there's a list of indices ...
     //  but why not lazily turn the first deref load into a new cell?
     //  ... or keep a bitmap of which fast slots are / should be cells?
-    for (size_t i = 0; i < code.numCells(); ++i)
+    for (size_t i = 0; i < bc.numCells(); ++i)
         ctx->fastSlot(i) = new Cell (ctx->fastSlot(i));
 
     return coro ? ctx : Value {};
@@ -50,7 +49,7 @@ auto Callable::call (ArgVec const& args) const -> Value {
 
 void Callable::marker () const {
     mo.marker();
-    code.marker();
+    mark(bc);
     mark(pos);
     mark(kw);
 }
@@ -81,7 +80,7 @@ auto Closure::call (ArgVec const& args) const -> Value {
 }
 
 void Context::enter (Callable const& func) {
-    auto frameSize = func.code.fastSlotTop() + EXC_STEP * func.code.excLevel();
+    auto frameSize = func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
     int need = (frame().stack + frameSize) - (begin() + base);
 
     auto curr = base;           // current frame offset
@@ -136,7 +135,7 @@ auto Context::excBase (int incr) -> Value* {
     frame().ep = ep + incr;
     if (incr <= 0)
         --ep;
-    return frame().stack + callee->code.fastSlotTop() + EXC_STEP * ep;
+    return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
 }
 
 void Context::raise (Value exc) {

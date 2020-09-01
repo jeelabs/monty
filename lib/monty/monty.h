@@ -71,6 +71,8 @@ namespace Monty {
     };
     extern GCStats gcStats;
 
+    void gcObjDump ();
+
     inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);
     void sweep ();   // reclaim all unmarked objects
@@ -230,7 +232,7 @@ namespace Monty {
     using ByteVec = VecOf<uint8_t>;
     using Vector = VecOf<Value>;
 
-    void mark (Vector const&);
+    void markVec (Vector const&);
 
     struct VaryVec : private ByteVec {
         using ByteVec::ByteVec;
@@ -537,7 +539,7 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
-        void marker () const override { mark((Vector const&) *this); }
+        void marker () const override { markVec(*this); }
     };
 
     //CG< type set
@@ -808,7 +810,7 @@ namespace Monty {
 
     // TODO private:
         Module& mo;
-        Bytecode const& code;
+        Bytecode const& bc;
         Tuple* pos;
         Dict* kw;
     };
@@ -883,10 +885,10 @@ namespace Monty {
         auto leave (Value v) -> Value;
 
         auto spBase () const -> Value* { return frame().stack; }
-        auto ipBase () const -> uint8_t const* { return callee->code.start(); }
+        auto ipBase () const -> uint8_t const* { return callee->bc.start(); }
 
         auto fastSlot (size_t i) const -> Value& {
-            return spBase()[callee->code.fastSlotTop() + ~i];
+            return spBase()[callee->bc.fastSlotTop() + ~i];
         }
         auto derefSlot (size_t i) const -> Value& {
             return fastSlot(i).asType<Cell>().val;

@@ -124,7 +124,6 @@ namespace Monty {
 
     auto Obj::operator new (size_t sz) -> void* {
         auto needs = multipleOf<ObjSlot>(sz + PTR_SZ);
-//printf("n %d %d\n", sz, needs);
 
         ++gcStats.toa;
         ++gcStats.coa;
@@ -139,9 +138,16 @@ namespace Monty {
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
             if (slot->isFree()) {
                 mergeFreeObjs(*slot);
-                auto space = slot->chain - slot;
-                if (space >= (int) needs)
+
+                auto slack = slot->chain - slot - needs;
+                if (slack >= 0) {
+                    if (slack > 0) { // put object at end of free space
+                        slot->chain -= needs;
+                        slot += slack;
+                        slot->chain = slot + needs;
+                    }
                     return &slot->obj;
+                }
             }
 
         if (objLow - needs < (void*) vecHigh)
@@ -161,15 +167,11 @@ namespace Monty {
         assert(slot != nullptr);
 
         --gcStats.coa;
-//printf("d %p %p %d %d\n", slot->chain, slot, slot->chain - slot);
-if (slot->chain - slot < 15) // FIXME what are those 500+ values ???
         gcStats.cob -= (slot->chain - slot) * OS_SZ;
-//else printf("d %p %p %d %d\n",
-        //slot->chain, slot, slot->chain - slot, inPool(p));
 
         slot->vt = nullptr; // mark this object as free and make it unusable
 
-        //mergeFreeObjs(*slot);
+        mergeFreeObjs(*slot);
 
         // try to raise objLow, this will cascade when freeing during a sweep
         if (slot == objLow)
@@ -307,6 +309,21 @@ if (slot->chain - slot < 15) // FIXME what are those 500+ values ???
         ++gcStats.checks;
         auto total = (uintptr_t) limit - (uintptr_t) start;
         return avail() < total / 4; // TODO crude
+    }
+
+    void gcObjDump () {
+        printf("gc objects: %p .. %p\n", objLow, limit);
+        for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
+            if (slot->chain == 0)
+                break;
+            printf("#%d", (int) (slot->chain - slot));
+            if (slot->isFree())
+                printf("\t\tfree %p\n", &slot->obj);
+            else {
+                Value x {(Object const&) slot->obj};
+                x.dump("\t obj");
+            }
+        }
     }
 
     void mark (Obj const& obj) {
