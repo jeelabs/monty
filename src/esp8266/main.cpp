@@ -47,7 +47,7 @@ void setup () {
         return;
     }
 
-    constexpr auto N = 12*1024;
+    constexpr auto N = 32*1024;
     auto myMem = malloc(N);
     Monty::setup(myMem, N);
 
