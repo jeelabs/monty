@@ -59,8 +59,10 @@ namespace Monty {
 
     void setup (void* base, size_t size); // configure the memory pool
 
-    auto avail () -> size_t; // free bytes between the object & vector areas
-    auto gcCheck () -> bool; // true when it's time to collect the garbage
+    auto gcAvail () -> size_t;  // free bytes between the object & vector areas
+    auto gcCheck () -> bool;    // true when it's time to collect the garbage
+    void gcNow ();              // uses Interp::markAll in call.cpp
+    void gcObjDump ();          // like sweep, but only to print all obj+free
 
     struct GCStats {
         uint32_t
@@ -70,8 +72,6 @@ namespace Monty {
             moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
     };
     extern GCStats gcStats;
-
-    void gcObjDump ();
 
     inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);

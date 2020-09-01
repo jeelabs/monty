@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.94-5-g2c46720");
+constexpr auto VERSION = Q(167,"v0.94-6-g48ef228");
 
 static auto f_suspend (ArgVec const& args) -> Value {
     assert(args.num == 2 && args[1].isInt());
@@ -16,32 +16,45 @@ static auto f_suspend (ArgVec const& args) -> Value {
     return {};
 }
 
-static Function const fo_suspend (f_suspend);
+static auto f_gcavail (ArgVec const& args) -> Value {
+    assert(args.num == 1);
+    return gcAvail();
+}
+
+static auto f_gcnow (ArgVec const& args) -> Value {
+    assert(args.num == 1);
+    gcNow();
+    return {};
+}
 
 static List gcdata; // keep this around to avoid reallocating on each call
 
 static auto f_gcstats (ArgVec const& args) -> Value {
     assert(args.num == 1);
     constexpr auto NSTATS = sizeof gcStats / sizeof (uint32_t);
-    if (gcdata.size() != NSTATS+1) {
+    if (gcdata.size() != NSTATS) {
         gcdata.remove(0, gcdata.size());
-        gcdata.insert(0, NSTATS+1);
+        gcdata.insert(0, NSTATS);
     }
-    gcdata.setAt(0, avail());
     for (size_t i = 0; i < NSTATS; ++i)
-        gcdata.setAt(1+i, ((uint32_t const*) &gcStats)[i]);
+        gcdata.setAt(i, ((uint32_t const*) &gcStats)[i]);
     return gcdata;
 }
 
+static Function const fo_suspend (f_suspend);
+static Function const fo_gcavail (f_gcavail);
+static Function const fo_gcnow (f_gcnow);
 static Function const fo_gcstats (f_gcstats);
 
 static Lookup::Item const lo_sys [] = {
-    { Q(168,"suspend"), fo_suspend },
-    { Q(169,"tasks"), Interp::tasks },
-    { Q(170,"modules"), Interp::modules },
-    { Q(171,"gcstats"), fo_gcstats },
-    { Q(172,"implementation"), Q(173,"monty") },
-    { Q(174,"version"), VERSION },
+    { Q(168,"tasks"), Interp::tasks },
+    { Q(169,"modules"), Interp::modules },
+    { Q(170,"suspend"), fo_suspend },
+    { Q(171,"gc_avail"), fo_gcavail },
+    { Q(172,"gc_now"), fo_gcnow },
+    { Q(173,"gc_stats"), fo_gcstats },
+    { Q(174,"implementation"), Q(175,"monty") },
+    { Q(176,"version"), VERSION },
 };
 
 static Lookup const ma_sys (lo_sys, sizeof lo_sys);

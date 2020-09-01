@@ -301,14 +301,14 @@ namespace Monty {
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
     }
 
-    auto avail () -> size_t {
+    auto gcAvail () -> size_t {
         return (uintptr_t) objLow - (uintptr_t) vecHigh;
     }
 
     auto gcCheck () -> bool {
         ++gcStats.checks;
         auto total = (uintptr_t) limit - (uintptr_t) start;
-        return avail() < total / 4; // TODO crude
+        return gcAvail() < total / 4; // TODO crude
     }
 
     void gcObjDump () {
@@ -370,6 +370,12 @@ namespace Monty {
                 newHigh += n;
             }
         vecHigh = newHigh;
+    }
+
+    void gcNow () {
+        Interp::markAll();
+        sweep();
+        compact();
     }
 
 } // namespace Monty

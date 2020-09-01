@@ -972,9 +972,7 @@ class PyVM : public Interp {
 
             if (gcCheck()) {
                 archMode(RunMode::GC);
-                markAll();
-                sweep();
-                compact();
+                gcNow();
                 archMode(RunMode::Run);
             }
         }

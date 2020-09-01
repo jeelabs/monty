@@ -21,13 +21,13 @@ struct TestBuffer : Buffer {
 
 void setUp () {
     setup(memory, sizeof memory);
-    memAvail = avail();
+    memAvail = gcAvail();
 }
 
 void tearDown () {
     sweep();
     compact();
-    TEST_ASSERT_EQUAL(memAvail, avail());
+    TEST_ASSERT_EQUAL(memAvail, gcAvail());
 }
 
 void smokeTest () {

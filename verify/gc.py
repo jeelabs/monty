@@ -1,8 +1,8 @@
-print(sys.gcstats())
-print(sys.gcstats())
+print(sys.gc_avail(), sys.gc_stats())
+print(sys.gc_avail(), sys.gc_stats())
 a = []
-print(sys.gcstats())
-print(sys.gcstats())
+print(sys.gc_avail(), sys.gc_stats())
+print(sys.gc_avail(), sys.gc_stats())
 
 t0 = machine.ticks()
 for z in range(25):
@@ -11,6 +11,17 @@ for z in range(25):
 t1 = machine.ticks()
 
 print(t1-t0, 'ms')
-print(sys.gcstats())
-l.clear()
-print(sys.gcstats())
+print(sys.gc_avail(), sys.gc_stats())
+
+sys.gc_now()
+print(sys.gc_avail(), sys.gc_stats())
+
+del a
+del l
+del t0
+del t1
+del z
+del i
+
+sys.gc_now()
+print(sys.gc_avail(), sys.gc_stats())
