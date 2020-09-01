@@ -15,14 +15,20 @@ void archMode (RunMode) {
     // whoops, no LEDs ...
 }
 
-static auto bi_blah (ArgVec const& args) -> Value {
+static auto f_ticker (ArgVec const& args) -> Value {
     return args.num;
 }
 
-static Function const f_blah (bi_blah);
+static auto f_ticks (ArgVec const& args) -> Value {
+    return args.num;
+}
+
+static Function const fo_ticker (f_ticker);
+static Function const fo_ticks (f_ticks);
 
 static Lookup::Item const lo_machine [] = {
-    { "blah", &f_blah },
+    { "ticker", &fo_ticker },
+    { "ticks", &fo_ticks },
 };
 
 static Lookup const ma_machine (lo_machine, sizeof lo_machine);

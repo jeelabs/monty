@@ -17,7 +17,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
 }
 
 static auto f_ticks (ArgVec const& args) -> Value {
-    return args.num;
+    return millis();
 }
 
 static Function const fo_ticker (f_ticker);

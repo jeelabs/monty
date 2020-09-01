@@ -139,7 +139,7 @@ namespace Monty {
             if (slot->isFree()) {
                 mergeFreeObjs(*slot);
 
-                auto slack = slot->chain - slot - needs;
+                int slack = slot->chain - slot - needs;
                 if (slack >= 0) {
                     if (slack > 0) { // put object at end of free space
                         slot->chain -= needs;

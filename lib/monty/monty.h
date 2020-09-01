@@ -774,10 +774,9 @@ namespace Monty {
     private:
         Bytecode () {}
 
+        int32_t spare; // future bc format ...
         int16_t code;
         int16_t stackSz;
-        int16_t hdrSz;
-        int16_t size;
 
         int8_t flags;
         int8_t nData;
