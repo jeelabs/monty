@@ -62,6 +62,15 @@ namespace Monty {
     auto avail () -> size_t; // free bytes between the object & vector areas
     auto gcCheck () -> bool; // true when it's time to collect the garbage
 
+    struct GCStats {
+        uint32_t
+            checks, sweeps, compacts,
+            toa, tob, tva, tvb, // totalObjAllocs/Bytes, totalVecAllocs/Bytes
+            coa, cob, cva, cvb, // currObjAllocs/Bytes,  currVecAllocs/Bytes
+            moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
+    };
+    extern GCStats gcStats;
+
     inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);
     void sweep ();   // reclaim all unmarked objects

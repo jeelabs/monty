@@ -61,6 +61,8 @@ static uintptr_t* limit;    // limit of memory pool, aligned to OS_SZ-PTR_SZ
 static ObjSlot* objLow;     // low water mark of object memory pool
 static VecSlot* vecHigh;    // high water mark of vector memory pool
 
+GCStats Monty::gcStats;
+
 template< typename T >
 static auto roundUp (size_t n) -> size_t {
     constexpr auto mask = sizeof (T) - 1;
@@ -122,6 +124,16 @@ namespace Monty {
 
     auto Obj::operator new (size_t sz) -> void* {
         auto needs = multipleOf<ObjSlot>(sz + PTR_SZ);
+//printf("n %d %d\n", sz, needs);
+
+        ++gcStats.toa;
+        ++gcStats.coa;
+        if (gcStats.moa < gcStats.coa)
+            gcStats.moa = gcStats.coa;
+        gcStats.tob += needs * OS_SZ;
+        gcStats.cob += needs * OS_SZ;
+        if (gcStats.mob < gcStats.cob)
+            gcStats.mob = gcStats.cob;
 
         // traverse object pool, merge free slots, loop until first fit
         for (auto slot = objLow; !slot->isLast(); slot = slot->next())
@@ -148,9 +160,16 @@ namespace Monty {
         auto slot = obj2slot(*(Obj*) p);
         assert(slot != nullptr);
 
+        --gcStats.coa;
+//printf("d %p %p %d %d\n", slot->chain, slot, slot->chain - slot);
+if (slot->chain - slot < 15) // FIXME what are those 500+ values ???
+        gcStats.cob -= (slot->chain - slot) * OS_SZ;
+//else printf("d %p %p %d %d\n",
+        //slot->chain, slot, slot->chain - slot, inPool(p));
+
         slot->vt = nullptr; // mark this object as free and make it unusable
 
-        mergeFreeObjs(*slot);
+        //mergeFreeObjs(*slot);
 
         // try to raise objLow, this will cascade when freeing during a sweep
         if (slot == objLow)
@@ -196,13 +215,26 @@ namespace Monty {
         auto capas = slots();
         auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
         if (capas != needs) {
+            if (needs > capas)
+                gcStats.tvb += (needs - capas) * VS_SZ;
+            gcStats.cvb += (needs - capas) * VS_SZ;
+            if (gcStats.mvb < gcStats.cvb)
+                gcStats.mvb = gcStats.cvb;
+
             auto slot = data != nullptr ? (VecSlot*) (data - PTR_SZ) : nullptr;
             if (slot == nullptr) {                  // new alloc
+                ++gcStats.tva;
+                ++gcStats.cva;
+                if (gcStats.mva < gcStats.cva)
+                    gcStats.mva = gcStats.cva;
+
                 slot = (VecSlot*) findSpace(needs);
                 if (slot == nullptr)                // no room
                     return false;
                 data = slot->buf;
             } else if (needs == 0) {                // delete
+                --gcStats.cva;
+
                 slot->vec = nullptr;
                 slot->next = slot + capas;
                 mergeVecs(*slot);
@@ -272,6 +304,7 @@ namespace Monty {
     }
 
     auto gcCheck () -> bool {
+        ++gcStats.checks;
         auto total = (uintptr_t) limit - (uintptr_t) start;
         return avail() < total / 4; // TODO crude
     }
@@ -291,6 +324,7 @@ namespace Monty {
 
     void sweep () {
         D( printf("\tsweeping ...\n"); )
+        ++gcStats.sweeps;
         for (auto slot = objLow; slot != nullptr; slot = slot->chain)
             if (slot->isMarked())
                 slot->clearMark();
@@ -304,6 +338,7 @@ namespace Monty {
 
     void compact () {
         D( printf("\tcompacting ...\n"); )
+        ++gcStats.compacts;
         auto newHigh = (VecSlot*) start;
         size_t n;
         for (auto slot = newHigh; slot < vecHigh; slot += n)
