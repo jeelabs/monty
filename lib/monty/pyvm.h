@@ -363,16 +363,20 @@ class PyVM : public Interp {
     }
     //CG1 op o
     void opSetupFinally (int arg) {
-        auto exc = context->excBase(1);
-        exc[0] = ip - context->ipBase() + arg + Context::FinallyTag;
-        exc[1] = sp - context->begin();
-        exc[2] = {};
+        opSetupExcept(arg + Context::FinallyTag);
     }
     //CG1 op
     void opEndFinally () {
-        assert(*sp == Null); // TODO other cases
         context->excBase(-1);
-        --sp;
+        if (*sp == Null)
+            --sp;
+        else if (!sp->isInt())
+            opRaiseObj();
+        else if ((int) *sp < 0) {
+            --sp;
+            opReturnValue();
+        } else
+            assert(false); // TODO unwind jump
     }
     //CG1 op
     void opSetupWith () {
