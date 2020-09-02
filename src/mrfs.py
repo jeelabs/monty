@@ -29,7 +29,7 @@ for fn in args:
     fnOut = base + '.mrfs'
 
     info = os.stat(fn)
-    date = datetime.fromtimestamp(info.st_mtime).strftime('%y%m%d.%H%M')
+    date = datetime.fromtimestamp(info.st_mtime).strftime('%y%m%d@%H%M')
 
     if ext == '.py':
         subprocess.run(['mpy-cross', fn], check=True)
@@ -60,7 +60,11 @@ for fn in args:
             raise SystemExit('%s: bad header at offset %d' %
                                 (fn, size - len(dat)))
     else:
-        nam = base if ext == '.mpy' else fn
+        nam = fn
+        if ext in ['.mpy','.mty']: # TODO just .mty ...
+            nam = base
+            if '.' not in nam:
+                nam = nam.replace('/', '.')
         txt = ('%s %s' % (date, nam)).encode() + b'\0'
         vec = struct.pack('4H', 8, 8, 8, 8+len(txt)) + txt
         while len(vec) % 8 != 0:
