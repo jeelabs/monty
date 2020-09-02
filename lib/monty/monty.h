@@ -37,7 +37,6 @@ namespace Monty {
 
         Vec (Vec const&) = delete;
         auto operator= (Vec const&) -> Vec& = delete;
-        // TODO Vec (Vec&& v); auto operator= (Vec&& v) -> Vec&;
 
         static auto inPool (void const* p) -> bool;
         auto isResizable () const -> bool {
@@ -59,10 +58,11 @@ namespace Monty {
 
     void setup (void* base, size_t size); // configure the memory pool
 
-    auto gcAvail () -> size_t;  // free bytes between the object & vector areas
-    auto gcCheck () -> bool;    // true when it's time to collect the garbage
-    void gcNow ();              // uses Interp::markAll in call.cpp
-    void gcObjDump ();          // like sweep, but only to print all obj+free
+    auto gcAvail () -> size_t;   // free bytes between the object & vector areas
+    auto gcCheck () -> bool;     // true when it's time to collect the garbage
+    void gcNow ();               // uses Interp::markAll in call.cpp
+    void gcObjDump ();           // like sweep, but only to print all obj+free
+    void gcReport (bool =false); // print summary, optionally preceded by a GC
 
     struct GCStats {
         uint32_t

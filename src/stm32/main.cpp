@@ -36,5 +36,6 @@ int main () {
 
     runInterp(*init);
 
+    //Monty::gcReport(true);
     return archDone();
 }

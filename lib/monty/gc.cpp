@@ -378,4 +378,23 @@ namespace Monty {
         compact();
     }
 
+    void gcReport (bool collect) {
+        if (collect) {
+            if (Interp::context != nullptr)
+                Interp::markAll();
+            else
+                Interp::tasks.marker();
+            sweep();
+            compact();
+        }
+        printf("gc: avail %d b, %d checks, %d sweeps, %d compacts\n",
+                (int) gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
+        printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
+                gcStats.toa, gcStats.tob, gcStats.tva, gcStats.tvb);
+        printf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",
+                gcStats.coa, gcStats.cob, gcStats.cva, gcStats.cvb);
+        printf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
+                gcStats.moa, gcStats.mob, gcStats.mva, gcStats.mvb);
+    }
+
 } // namespace Monty

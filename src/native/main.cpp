@@ -68,5 +68,6 @@ int main (int argc, const char* argv []) {
 
     // simulated rom data no longer needed
     free((void*) Monty::fsBase);
+    //Monty::gcReport(true);
     return archDone();
 }
