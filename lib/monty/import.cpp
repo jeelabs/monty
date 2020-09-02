@@ -118,13 +118,28 @@ struct Loader {
         len >>= 1;
 
         char qBuf [30]; // TODO yuck, temp buf to terminate with a null byte
-        assert(len < sizeof qBuf);
+        assert(len < sizeof qBuf - 1);
         for (int i = 0; i < len; ++i)
             qBuf[i] = *dp++;
         qBuf[len] = 0;
         debugf("q:%s\n", qBuf);
 
         int n = Q::make(qBuf);
+        if (vvec != nullptr) {
+            assert(n > 256); //
+            if (n > 256) { // not in std set
+                n = n & 0xFF;
+                if (n >= vvec->size()) {
+                    vvec->insert(n);
+                    vvec->atSet(n, qBuf, len+1);
+                    uint8_t h = Q::hash(qBuf, len);
+                    vvec->atAdj(0, n+1);
+                    vvec->atGet(0)[n] = h;
+                    printf("lq %02x %02x %s\n", n, h, qBuf);
+                }
+                n += 0x100;
+            }
+        }
 
         qWin.remove(qWin.fill-1);
         qWin.insert(0);
@@ -319,7 +334,7 @@ auto Monty::loader (Value name, uint8_t const* addr) -> Callable* {
 
 auto Monty::converter (uint8_t const* addr) -> VaryVec* {
     auto vv = new VaryVec;
-    vv->insert(0, 0); // TODO get the first entry right, yuck
+    vv->insert(0, 1); // TODO get the first entry right, yuck
     Loader ldr (vv);
     return ldr.load(addr) != nullptr ? vv : nullptr;
 }

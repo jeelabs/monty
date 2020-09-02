@@ -20,8 +20,8 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
-constexpr int QID_RAM_BASE = 10000;
-constexpr int QID_RAM_LAST = 20000;
+constexpr int QID_RAM_BASE = 10240;
+constexpr int QID_RAM_LAST = 20480;
 
 static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
 static VaryVec qstrRamMap;
