@@ -63,6 +63,7 @@ static auto mpy2mty (char const* fn) -> char const* {
     fclose(fp);
 
     free((void*) bcData);
+    free(buf);
     return nullptr;
 }
 

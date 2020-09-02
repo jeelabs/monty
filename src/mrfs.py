@@ -62,7 +62,7 @@ for fn in args:
     else:
         nam = base if ext == '.mpy' else fn
         txt = ('%s %s' % (date, nam)).encode() + b'\0'
-        vec = struct.pack('4H', 8, 8, 8+len(txt), 8+len(txt)) + txt
+        vec = struct.pack('4H', 8, 8, 8, 8+len(txt)) + txt
         while len(vec) % 8 != 0:
             vec += b'\0'
 
