@@ -185,16 +185,16 @@ struct Loader {
         debugf("subs %08x\n", *(const uint32_t*) dp);
         //debugf("jump %08x\n", *(const uint32_t*) bc.code);
 
-        bc.nData = varInt();
-        bc.nCode = varInt();
-        debugf("nData %d nCode %d\n", bc.nData, bc.nCode);
+        auto nData = varInt();
+        auto nCode = varInt();
+        debugf("nData %d nCode %d\n", nData, nCode);
 
-        bc.adj(bc.n_pos + bc.n_kwonly + bc.nData + bc.nCode); // pre-alloc
+        bc.adj(bc.n_pos + bc.n_kwonly + nData + nCode); // pre-alloc
 
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
             bc.append(loadQstr());
 
-        for (int i = 0; i < bc.nData; ++i) {
+        for (size_t i = 0; i < nData; ++i) {
             auto type = *dp++;
             (void) type;
             assert(type != 'e'); // TODO ellipsis
@@ -218,8 +218,8 @@ struct Loader {
             } else
                 assert(false); // TODO e, f, c
         }
-        for (int i = 0; i < bc.nCode; ++i) {
-            debugf("  raw %d:\n", i+bc.nData);
+        for (size_t i = 0; i < nCode; ++i) {
+            debugf("  raw %d:\n", i+nData);
             bc.append(loadRaw());
         }
 
