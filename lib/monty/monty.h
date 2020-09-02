@@ -283,7 +283,6 @@ namespace Monty {
         virtual auto len   () const -> size_t;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
-        virtual auto next  () -> Value;
     };
 
     void Value::marker () const { if (isObj()) mark(obj()); }
@@ -900,7 +899,7 @@ namespace Monty {
         void raise (Value exc ={});
         void caught ();
 
-        auto next () -> Value override;
+        auto next () -> Value;
 
         void marker () const override;
 

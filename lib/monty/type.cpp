@@ -324,11 +324,6 @@ auto Object::attr (char const* name, Value&) const -> Value {
     return atab->getAt(name);
 }
 
-auto Object::next  () -> Value {
-    Value v = this; v.dump("next?"); assert(false);
-    return {};
-}
-
 auto Object::len () const -> size_t {
     Value v = this; v.dump("len?"); assert(false);
     return {};
@@ -761,7 +756,7 @@ static Function const f_print (bi_print);
 
 static auto bi_next (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isObj());
-    return args[0].obj().next();
+    return args[0].asType<Context>().next();
 }
 
 static Function const f_next (bi_next);
