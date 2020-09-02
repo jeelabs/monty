@@ -37,8 +37,50 @@ static void runInterp (Monty::Callable& init) {
     // nothing left to do or wait for, at this point
 }
 
+static auto mpy2mty (char const* fn) -> char const* {
+    auto buf = strdup(fn);
+    auto dot = strrchr(buf, '.');
+    if (dot == nullptr || strcmp(dot, ".mpy") != 0) {
+        printf("%s: ", fn);
+        return "not a .mpy file";
+    }
+
+    auto bcData = loadFile(buf);
+    if (bcData == nullptr)
+        return "can't load bytecode";
+
+    auto vvCode = Monty::converter(bcData);
+    if (vvCode == nullptr)
+        return "can't load module";
+
+    strcpy(dot, ".mty");
+    printf("%s: ", buf);
+    FILE* fp = fopen(buf, "wb");
+    if (fp == nullptr)
+        return "can't write .mty file";
+    fwrite(vvCode->first(), 1, vvCode->limit() - vvCode->first(), fp);
+    printf("%db\n", (int) ftell(fp));
+    fclose(fp);
+
+    free((void*) bcData);
+    return nullptr;
+}
+
 int main (int argc, const char* argv []) {
     archInit();
+
+    // the loader uses garbage-collected memory
+    Monty::setup(myMem, sizeof myMem);
+
+    // special convert mode to generate new-format .mty files
+    if (argc >= 3 && strcmp(argv[1], "-c") == 0) {
+        for (int i = 2; i < argc; ++i) {
+            auto msg = mpy2mty (argv[i]);
+            if (msg != nullptr)
+                archDone(msg);
+        }
+        return archDone();
+    }
 
     // load simulated "rom" from "file"
     Monty::fsBase = loadFile(argc >= 3 ? argv[2] : "rom.mrfs");
@@ -51,9 +93,6 @@ int main (int argc, const char* argv []) {
         bc = Monty::fsLookup(argv[1]);
     if (bc == nullptr)
         return archDone("can't load bytecode");
-
-    // the loader uses garbage-collected memory
-    Monty::setup(myMem, sizeof myMem);
 
     // construct in-memory bytecode objects and sub-objects
     auto init = Monty::loader("__main__", bc);

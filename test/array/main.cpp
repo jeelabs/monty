@@ -110,7 +110,7 @@ static void arrayInsDel () {
         { 'q', -9223372036854775807-1, 9223372036854775807, 6 },
     };
     for (auto e : tests) {
-        printf("e %c min %lld max %lld log %d\n", e.typ, e.min, e.max, e.log);
+        //printf("e %c min %lld max %lld log %d\n", e.typ, e.min, e.max, e.log);
 
         Array a (e.typ);
         TEST_ASSERT_EQUAL(0, a.len());

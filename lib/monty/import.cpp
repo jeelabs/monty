@@ -19,6 +19,7 @@ struct Loader {
     uint8_t* bcBuf;
     uint8_t* bcNext;
     uint8_t* bcLimit;
+    VaryVec* vvec;
 
     struct Prelude {
         uint32_t n_state;
@@ -68,6 +69,8 @@ struct Loader {
             return n_info + n_cell;
         }
     } prelude;
+
+    Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
     Callable* load (const uint8_t* data) {
         dp  = data;
@@ -312,4 +315,11 @@ auto Monty::loader (Value name, uint8_t const* addr) -> Callable* {
     if (init != nullptr)
         init->mo.at(Q( 23,"__name__")) = name;
     return init;
+}
+
+auto Monty::converter (uint8_t const* addr) -> VaryVec* {
+    auto vv = new VaryVec;
+    vv->insert(0, 0); // TODO get the first entry right, yuck
+    Loader ldr (vv);
+    return ldr.load(addr) != nullptr ? vv : nullptr;
 }

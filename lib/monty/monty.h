@@ -238,6 +238,9 @@ namespace Monty {
         using ByteVec::ByteVec;
         using ByteVec::size;
 
+        auto first () const -> uint8_t const* { return begin(); }
+        auto limit () const -> uint8_t const* { return begin() + pos(fill); }
+
         auto atGet (size_t i) const -> uint8_t* {
             return begin() + pos(i);
         }
@@ -946,5 +949,6 @@ namespace Monty {
     extern uint8_t const* fsBase;
     auto fsLookup (char const* name) -> uint8_t const*;
     auto loader (Value name, uint8_t const* addr) -> Callable*;
+    auto converter (uint8_t const* addr) -> VaryVec*;
 
 } // namespace Monty
