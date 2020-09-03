@@ -64,14 +64,14 @@ static VecSlot* vecHigh;    // high water mark of vector memory pool
 GCStats Monty::gcStats;
 
 template< typename T >
-static auto roundUp (size_t n) -> size_t {
+static auto roundUp (uint32_t n) -> uint32_t {
     constexpr auto mask = sizeof (T) - 1;
     static_assert ((sizeof (T) & mask) == 0, "must be power of 2");
     return (n + mask) & ~mask;
 }
 
 template< typename T >
-static auto multipleOf (size_t n) -> size_t {
+static auto multipleOf (uint32_t n) -> uint32_t {
     return roundUp<T>(n) / sizeof (T);
 }
 
@@ -186,7 +186,7 @@ namespace Monty {
         return multipleOf<VecSlot>(capa);
     }
 
-    auto Vec::findSpace (size_t needs) -> void* {
+    auto Vec::findSpace (uint32_t needs) -> void* {
         auto slot = (VecSlot*) start;               // scan all vectors
         while (slot < vecHigh)
             if (!slot->isFree())                    // skip used slots
@@ -211,7 +211,7 @@ namespace Monty {
     }
 
     // many tricky cases, to merge/reuse free slots as much as possible
-    auto Vec::adj (size_t sz) -> bool {
+    auto Vec::adj (uint32_t sz) -> bool {
         if (!isResizable())
             return false;
         auto capas = slots();
@@ -273,7 +273,7 @@ namespace Monty {
         return true;
     }
 
-    void setup (void* base, size_t size) {
+    void setup (void* base, uint32_t size) {
         assert(size > 2 * VS_SZ);
 
         // to get alignment right, simply increase base and decrease size a bit
@@ -301,7 +301,7 @@ namespace Monty {
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
     }
 
-    auto gcAvail () -> size_t {
+    auto gcAvail () -> uint32_t {
         return (uintptr_t) objLow - (uintptr_t) vecHigh;
     }
 
@@ -357,7 +357,7 @@ namespace Monty {
         D( printf("\tcompacting ...\n"); )
         ++gcStats.compacts;
         auto newHigh = (VecSlot*) start;
-        size_t n;
+        uint32_t n;
         for (auto slot = newHigh; slot < vecHigh; slot += n)
             if (slot->isFree())
                 n = slot->next - slot;
@@ -388,7 +388,7 @@ namespace Monty {
             compact();
         }
         printf("gc: avail %d b, %d checks, %d sweeps, %d compacts\n",
-                (int) gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
+                gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
         printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
                 gcStats.toa, gcStats.tob, gcStats.tva, gcStats.tvb);
         printf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",

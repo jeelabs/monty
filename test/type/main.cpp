@@ -4,7 +4,7 @@
 using namespace Monty;
 
 uint8_t memory [3*1024];
-size_t memAvail;
+uint32_t memAvail;
 
 void setUp () {
     setup(memory, sizeof memory);

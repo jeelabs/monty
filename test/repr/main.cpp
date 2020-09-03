@@ -4,7 +4,7 @@
 using namespace Monty;
 
 uint8_t memory [3*1024];
-size_t memAvail;
+uint32_t memAvail;
 
 static char buf [250];
 static char* fill;
@@ -13,7 +13,7 @@ struct TestBuffer : Buffer {
     TestBuffer () { fill = buf; }
     ~TestBuffer () override { *fill = 0; }
 
-    void write (uint8_t const* ptr, size_t len) const override {
+    void write (uint8_t const* ptr, uint32_t len) const override {
         while (len-- > 0 && fill < buf + sizeof buf - 1)
             *fill++ = *ptr++;
     }

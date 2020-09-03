@@ -1,5 +1,5 @@
 B = native
-T = array
+T = gc
 
 help:
 	# make all    - shorthand for "make run testall verify"

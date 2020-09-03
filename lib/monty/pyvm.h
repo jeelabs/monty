@@ -993,7 +993,7 @@ public:
     }
 
     void scheduler () {
-        size_t last = 0; // remember last task for round-robin scheduling
+        uint32_t last = 0; // remember last task for round-robin scheduling
 
         do {
             outer();
@@ -1007,7 +1007,7 @@ public:
                 }
 
             auto n = tasks.size();
-            for (size_t i = 0; i < n; ++i) {
+            for (uint32_t i = 0; i < n; ++i) {
                 if (++last >= n)
                     last = 0;
                 auto& ctx = tasks[last].asType<Context>();

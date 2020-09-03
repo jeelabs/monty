@@ -10,7 +10,7 @@ static const uint8_t* loadBytecode (const char* fname) {
     File f = LittleFS.open(fname, "r");
     if (!f)
         return 0;
-    size_t bytes = f.size();
+    uint32_t bytes = f.size();
     printf("bytecode size %db\n", (int) bytes);
     auto buf = (uint8_t*) malloc(bytes);
     auto len = f.read(buf, bytes);

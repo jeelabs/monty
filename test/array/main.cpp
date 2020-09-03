@@ -4,7 +4,7 @@
 using namespace Monty;
 
 uint8_t memory [3*1024];
-size_t memAvail;
+uint32_t memAvail;
 VecOf<int> v;
 
 void setUp () {
@@ -123,7 +123,7 @@ static void arrayInsDel () {
         TEST_ASSERT_GREATER_OR_EQUAL(bytes, a.cap());
         TEST_ASSERT_LESS_OR_EQUAL(bytes + 2 * sizeof (void*), a.cap());
 
-        for (size_t i = 0; i < a.len(); ++i)
+        for (uint32_t i = 0; i < a.len(); ++i)
             TEST_ASSERT_EQUAL(0, (int) a.getAt(i));
 
         a.setAt(0, Int::make(e.min));
@@ -167,7 +167,7 @@ static void listInsDel () {
     for (auto e : l)
         TEST_ASSERT(e.isNil());
 
-    for (size_t i = 0; i < 5; ++i)
+    for (uint32_t i = 0; i < 5; ++i)
         l[i] = 10 + i;
 
     for (auto& e : l) {
@@ -310,7 +310,7 @@ static void dictInsDel () {
 
 #if 0
     auto p = d.begin(); // a sneaky way to access the underlying VecOf<Value>
-    for (size_t i = 0; i < 2 * d.size(); ++i)
+    for (uint32_t i = 0; i < 2 * d.size(); ++i)
         printf("%d, ", (int) p[i]);
     printf("\n");
 #endif

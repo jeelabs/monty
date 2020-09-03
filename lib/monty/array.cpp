@@ -12,10 +12,10 @@ void Monty::markVec (Vector const& vec) {
 }
 
 struct Accessor {
-    virtual auto get (ByteVec&, size_t) const -> Value  = 0;
-    virtual void set (ByteVec&, size_t, Value) const = 0;
-    virtual void ins (ByteVec&, size_t, size_t) const = 0;
-    virtual void del (ByteVec&, size_t, size_t) const = 0;
+    virtual auto get (ByteVec&, uint32_t) const -> Value  = 0;
+    virtual void set (ByteVec&, uint32_t, Value) const = 0;
+    virtual void ins (ByteVec&, uint32_t, uint32_t) const = 0;
+    virtual void del (ByteVec&, uint32_t, uint32_t) const = 0;
 };
 
 template< typename T >
@@ -25,22 +25,22 @@ static auto asVecOf (ByteVec& a) -> VecOf<T>& {
 
 template< typename T, int L =0 >
 struct AccessAs : Accessor {
-    auto get (ByteVec& vec, size_t pos) const -> Value override {
+    auto get (ByteVec& vec, uint32_t pos) const -> Value override {
         if (L)
             return Int::make(asVecOf<T>(vec)[pos]);
         else
             return asVecOf<T>(vec)[pos];
     }
-    void set (ByteVec& vec, size_t pos, Value val) const override {
+    void set (ByteVec& vec, uint32_t pos, Value val) const override {
         if (L)
             asVecOf<T>(vec)[pos] = val.asInt();
         else
             asVecOf<T>(vec)[pos] = val;
     }
-    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+    void ins (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         asVecOf<T>(vec).insert(pos, num);
     }
-    void del (ByteVec& vec, size_t pos, size_t num) const override {
+    void del (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         asVecOf<T>(vec).remove(pos, num);
     }
 };
@@ -52,21 +52,21 @@ struct AccessAsBits : Accessor {                    // P T N
     constexpr static auto shft = 3 - L;             // 3 2 1
     constexpr static auto rest = (1 << shft) - 1;   // 7 3 1
 
-    auto get (ByteVec& vec, size_t pos) const -> Value override {
+    auto get (ByteVec& vec, uint32_t pos) const -> Value override {
         return (vec[pos>>shft] >> bits * (pos & rest)) & mask;
     }
-    void set (ByteVec& vec, size_t pos, Value val) const override {
+    void set (ByteVec& vec, uint32_t pos, Value val) const override {
         auto b = bits * (pos & rest);
         auto& e = vec[pos>>shft];
         e = (e & ~(mask << b)) | (((int) val & mask) << b);
     }
-    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+    void ins (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         assert((pos & rest) == 0 && (num & rest) == 0);
         vec.fill >>= shft;
         vec.insert(pos >> shft, num >> shft);
         vec.fill <<= shft;
     }
-    void del (ByteVec& vec, size_t pos, size_t num) const override {
+    void del (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         assert((pos & rest) == 0 && (num & rest) == 0);
         vec.fill >>= shft;
         vec.remove(pos >> shft, num >> shft);
@@ -75,11 +75,11 @@ struct AccessAsBits : Accessor {                    // P T N
 };
 
 struct AccessAsVaryBytes : Accessor {
-    auto get (ByteVec& vec, size_t pos) const -> Value override {
+    auto get (ByteVec& vec, uint32_t pos) const -> Value override {
         auto& v = (VaryVec&) vec;
         return new Bytes (v.atGet(pos), v.atLen(pos));
     }
-    void set (ByteVec& vec, size_t pos, Value val) const override {
+    void set (ByteVec& vec, uint32_t pos, Value val) const override {
         auto& v = (VaryVec&) vec;
         if (val.isNil())
             v.remove(pos);
@@ -88,19 +88,19 @@ struct AccessAsVaryBytes : Accessor {
             v.atSet(pos, b.begin(), b.size());
         }
     }
-    void ins (ByteVec& vec, size_t pos, size_t num) const override {
+    void ins (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         ((VaryVec&) vec).insert(pos, num);
     }
-    void del (ByteVec& vec, size_t pos, size_t num) const override {
+    void del (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         ((VaryVec&) vec).remove(pos, num);
     }
 };
 
 struct AccessAsVaryStr : AccessAsVaryBytes {
-    auto get (ByteVec& vec, size_t pos) const -> Value override {
+    auto get (ByteVec& vec, uint32_t pos) const -> Value override {
         return new Str ((char const*) ((VaryVec&) vec).atGet(pos));
     }
-    void set (ByteVec& vec, size_t pos, Value val) const override {
+    void set (ByteVec& vec, uint32_t pos, Value val) const override {
         auto& v = (VaryVec&) vec;
         if (val.isNil())
             v.remove(pos);
@@ -166,7 +166,7 @@ static Accessor const* accessors [] = {
 #endif
 };
 
-Array::Array (char type, size_t len) {
+Array::Array (char type, uint32_t len) {
     auto p = strchr(arrayModes, type);
     auto s = p != nullptr ? p - arrayModes : 0; // use Value if unknown type
     accessors[s]->ins(*this, 0, len);
@@ -177,7 +177,7 @@ auto Array::mode () const -> char {
     return arrayModes[fill >> 27];
 }
 
-auto Array::len () const -> size_t {
+auto Array::len () const -> uint32_t {
     return size() & 0x07FFFFFF;
 }
 
@@ -197,14 +197,14 @@ auto Array::setAt (Value k, Value v) -> Value {
     return {};
 }
 
-void Array::insert (size_t idx, size_t num) {
+void Array::insert (uint32_t idx, uint32_t num) {
     auto s = sel();
     fill &= 0x07FFFFFF;
     accessors[s]->ins(*this, idx, num);
     fill = fill + (s << 27);
 }
 
-void Array::remove (size_t idx, size_t num) {
+void Array::remove (uint32_t idx, uint32_t num) {
     auto s = sel();
     fill &= 0x07FFFFFF;
     accessors[s]->del(*this, idx, num);
@@ -245,7 +245,7 @@ auto List::setAt (Value k, Value v) -> Value {
     return (*this)[n] = v;
 }
 
-auto Set::find (Value v) const -> size_t {
+auto Set::find (Value v) const -> uint32_t {
     for (auto& e : *this)
         if (v == e)
             return &e - begin();
@@ -318,7 +318,7 @@ auto Dict::at (Value k) const -> Value {
 
 void Dict::marker () const {
     auto& v = (Vector const&) *this;
-    for (size_t i = 0; i < 2 * fill; ++i) // note: twice the fill
+    for (uint32_t i = 0; i < 2 * fill; ++i) // note: twice the fill
         v[i].marker();
     mark(chain);
 }

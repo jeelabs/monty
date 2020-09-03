@@ -26,10 +26,10 @@ constexpr int QID_RAM_LAST = 20480;
 static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
 static VaryVec qstrRamMap;
 
-auto Q::hash (void const* p, size_t n) -> uint32_t {
+auto Q::hash (void const* p, uint32_t n) -> uint32_t {
     // see http://www.cse.yorku.ca/~oz/hash.html
     uint32_t h = 5381;
-    for (size_t i = 0; i < n; ++i)
+    for (uint32_t i = 0; i < n; ++i)
         h = ((h<<5) + h) ^ ((uint8_t const*) p)[i];
     return h;
 }
@@ -45,7 +45,7 @@ static auto qstrFind (VaryVec const& v, char const* s, uint8_t h) -> uint16_t {
     if (v.size() > 0) {
         auto p = v.atGet(0);
         auto n = v.atLen(0);
-        for (size_t i = 0; i < n; ++i)
+        for (uint32_t i = 0; i < n; ++i)
             if (h == p[i] && strcmp(s, (char const*) v.atGet(i+1)) == 0)
                 return i+1;
     }
@@ -245,7 +245,7 @@ void Value::verify (Type const& t) const {
     assert(f);
 }
 
-void VaryVec::atAdj (size_t idx, size_t len) {
+void VaryVec::atAdj (uint32_t idx, uint32_t len) {
     assert(idx < fill);
     auto olen = atLen(idx);
     if (len == olen)
@@ -258,16 +258,16 @@ void VaryVec::atAdj (size_t idx, size_t len) {
         ByteVec::remove(pos(idx) + len, olen - len);
     fill = ofill;
 
-    for (size_t i = idx + 1; i <= fill; ++i)
+    for (uint32_t i = idx + 1; i <= fill; ++i)
         pos(i) += len - olen;
 }
 
-void VaryVec::atSet (size_t idx, void const* ptr, size_t len) {
+void VaryVec::atSet (uint32_t idx, void const* ptr, uint32_t len) {
     atAdj(idx, len);
     memcpy(begin() + pos(idx), ptr, len);
 }
 
-void VaryVec::insert (size_t idx, size_t num) {
+void VaryVec::insert (uint32_t idx, uint32_t num) {
     assert(idx <= fill);
     if (cap() == 0) {
         ByteVec::insert(0, 2);
@@ -280,13 +280,13 @@ void VaryVec::insert (size_t idx, size_t num) {
     ByteVec::insert(2 * idx, 2 * num);
     fill = ofill + num;
 
-    for (size_t i = 0; i <= fill; ++i)
+    for (uint32_t i = 0; i <= fill; ++i)
         pos(i) += 2 * num;
-    for (size_t i = 0; i < num; ++i)
+    for (uint32_t i = 0; i < num; ++i)
         pos(idx+i) = pos(idx+num);
 }
 
-void VaryVec::remove (size_t idx, size_t num) {
+void VaryVec::remove (uint32_t idx, uint32_t num) {
     assert(idx + num <= fill);
     auto diff = pos(idx+num) - pos(idx);
 
@@ -296,9 +296,9 @@ void VaryVec::remove (size_t idx, size_t num) {
     ByteVec::remove(2 * idx, 2 * num);
     fill = ofill - num;
 
-    for (size_t i = 0; i <= fill; ++i)
+    for (uint32_t i = 0; i <= fill; ++i)
         pos(i) -= 2 * num;
-    for (size_t i = idx; i <= fill; ++i)
+    for (uint32_t i = idx; i <= fill; ++i)
         pos(i) -= diff;
 }
 
@@ -324,7 +324,7 @@ auto Object::attr (char const* name, Value&) const -> Value {
     return atab->getAt(name);
 }
 
-auto Object::len () const -> size_t {
+auto Object::len () const -> uint32_t {
     Value v = this; v.dump("len?"); assert(false);
     return {};
 }
@@ -371,7 +371,7 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
     return {}; // TODO
 }
 
-Bytes::Bytes (void const* ptr, size_t len) {
+Bytes::Bytes (void const* ptr, uint32_t len) {
     insert(0, len);
     memcpy(begin(), ptr, len);
 }
@@ -475,7 +475,7 @@ Slice::Slice (Value a, Value b, Value c) {
 }
 
 auto Lookup::operator[] (char const* key) const -> Value {
-    for (size_t i = 0; i < count; ++i)
+    for (uint32_t i = 0; i < count; ++i)
         if (strcmp(key, items[i].k) == 0)
             return items[i].v;
     return {};
@@ -487,7 +487,7 @@ auto Lookup::getAt (Value k) const -> Value {
 }
 
 void Lookup::marker () const {
-    for (size_t i = 0; i < count; ++i)
+    for (uint32_t i = 0; i < count; ++i)
         items[i].v.marker();
 }
 
@@ -501,7 +501,7 @@ auto Tuple::getAt (Value k) const -> Value {
 }
 
 void Tuple::marker () const {
-    for (size_t i = 0; i < fill; ++i)
+    for (uint32_t i = 0; i < fill; ++i)
         data()[i].marker();
 }
 
@@ -932,7 +932,7 @@ auto Bytes::create (ArgVec const& args, Type const*) -> Value {
         return o;
     }
     const void* p = 0;
-    size_t n = 0;
+    uint32_t n = 0;
     if (v.isStr()) {
         p = (char const*) v;
         n = strlen((char const*) p);
@@ -987,7 +987,7 @@ auto Exception::create (int exc, ArgVec const& args) -> Value {
 auto Array::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num >= 1 && args[0].isStr());
     char type = *((char const*) args[0]);
-    size_t len = 0;
+    uint32_t len = 0;
     if (args.num == 2) {
         assert(args[1].isInt());
         len = args[1];

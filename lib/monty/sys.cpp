@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.94-26-g4a73d5a");
+constexpr auto VERSION = Q(167,"v0.94-27-g74f2cee");
 
 static auto f_suspend (ArgVec const& args) -> Value {
     assert(args.num == 2 && args[1].isInt());
@@ -36,7 +36,7 @@ static auto f_gcstats (ArgVec const& args) -> Value {
         gcdata.remove(0, gcdata.size());
         gcdata.insert(0, NSTATS);
     }
-    for (size_t i = 0; i < NSTATS; ++i)
+    for (uint32_t i = 0; i < NSTATS; ++i)
         gcdata.setAt(i, ((uint32_t const*) &gcStats)[i]);
     return gcdata;
 }

@@ -18,7 +18,7 @@ namespace Monty {
         auto isCollectable () const -> bool { return inPool(this); }
 
         auto operator new (size_t bytes) -> void*;
-        auto operator new (size_t bytes, size_t extra) -> void* {
+        auto operator new (size_t bytes, uint32_t extra) -> void* {
             return operator new (bytes + extra);
         }
         void operator delete (void*);
@@ -31,7 +31,7 @@ namespace Monty {
 
     struct Vec {
         constexpr Vec () : capa (0), data (nullptr) {}
-        constexpr Vec (void const* ptr, size_t num =0)
+        constexpr Vec (void const* ptr, uint32_t num =0)
                     : capa (num), data ((uint8_t*) ptr) {}
         ~Vec () { (void) adj(0); }
 
@@ -44,21 +44,21 @@ namespace Monty {
         }
 
         auto ptr () const -> uint8_t* { return data; }
-        auto cap () const -> size_t   { return capa; }
-        auto adj (size_t bytes) -> bool;
+        auto cap () const -> uint32_t { return capa; }
+        auto adj (uint32_t bytes) -> bool;
 
     private:
         uint32_t capa; // capacity in bytes
         uint8_t* data; // pointer to vector when capa > 0
 
         auto slots () const -> uint32_t; // capacity in vecslots
-        auto findSpace (size_t) -> void*; // hidden private type
+        auto findSpace (uint32_t) -> void*; // hidden private type
         friend void compact ();
     };
 
-    void setup (void* base, size_t size); // configure the memory pool
+    void setup (void* base, uint32_t size); // configure the memory pool
 
-    auto gcAvail () -> size_t;   // free bytes between the object & vector areas
+    auto gcAvail () -> uint32_t; // free bytes between the object & vector areas
     auto gcCheck () -> bool;     // true when it's time to collect the garbage
     void gcNow ();               // uses Interp::markAll in call.cpp
     void gcObjDump ();           // like sweep, but only to print all obj+free
@@ -98,7 +98,7 @@ namespace Monty {
 
         operator char const* () const { return str(id); }
 
-        static auto hash (void const*, size_t) -> uint32_t;
+        static auto hash (void const*, uint32_t) -> uint32_t;
         static auto str (uint16_t) -> char const*;
         static auto find (char const*) -> uint16_t;
         static auto make (char const*) -> uint16_t;
@@ -182,25 +182,25 @@ namespace Monty {
     struct VecOf : private Vec {
         using Vec::Vec;
 
-        auto cap () const -> size_t { return Vec::cap() / sizeof (T); }
-        auto adj (size_t num) -> bool { return Vec::adj(num * sizeof (T)); }
+        auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
+        auto adj (uint32_t num) -> bool { return Vec::adj(num * sizeof (T)); }
 
-        auto size () const -> size_t { return fill; }
+        auto size () const -> uint32_t { return fill; }
         auto begin () const -> T* { return (T*) Vec::ptr(); }
         auto end () const -> T* { return begin() + fill; }
-        auto operator[] (size_t idx) const -> T& { return begin()[idx]; }
+        auto operator[] (uint32_t idx) const -> T& { return begin()[idx]; }
 
         auto relPos (int i) const -> uint32_t { return i < 0 ? i + fill : i; }
 
-        void move (size_t pos, size_t num, int off) {
+        void move (uint32_t pos, uint32_t num, int off) {
             memmove((void*) (begin() + pos + off),
                         (void const*) (begin() + pos), num * sizeof (T));
         }
-        void wipe (size_t pos, size_t num) {
+        void wipe (uint32_t pos, uint32_t num) {
             memset((void*) (begin() + pos), 0, num * sizeof (T));
         }
 
-        void insert (size_t idx, size_t num =1) {
+        void insert (uint32_t idx, uint32_t num =1) {
             if (fill > cap())
                 fill = cap();
             if (idx > fill) {
@@ -215,7 +215,7 @@ namespace Monty {
             fill += num;
         }
 
-        void remove (size_t idx, size_t num =1) {
+        void remove (uint32_t idx, uint32_t num =1) {
             if (fill > cap())
                 fill = cap();
             if (idx >= fill)
@@ -241,19 +241,19 @@ namespace Monty {
         auto first () const -> uint8_t const* { return begin(); }
         auto limit () const -> uint8_t const* { return begin() + pos(fill); }
 
-        auto atGet (size_t i) const -> uint8_t* {
+        auto atGet (uint32_t i) const -> uint8_t* {
             return begin() + pos(i);
         }
-        auto atLen (size_t i) const -> size_t {
+        auto atLen (uint32_t i) const -> uint32_t {
             return pos(i+1) - pos(i);
         }
-        void atAdj (size_t idx, size_t num);
-        void atSet (size_t i, void const* ptr, size_t num);
+        void atAdj (uint32_t idx, uint32_t num);
+        void atSet (uint32_t i, void const* ptr, uint32_t num);
 
-        void insert (size_t idx, size_t num =1);
-        void remove (size_t idx, size_t num =1);
+        void insert (uint32_t idx, uint32_t num =1);
+        void remove (uint32_t idx, uint32_t num =1);
     private:
-        auto pos (size_t i) const -> uint16_t& {
+        auto pos (uint32_t i) const -> uint16_t& {
             return ((uint16_t*) begin())[i];
         }
     };
@@ -263,10 +263,10 @@ namespace Monty {
             : ArgVec (v, n, p - v.begin()) {}
         ArgVec (Vector const& v, int n, int o) : vec (v), num (n), off (o) {}
 
-        //auto size () const -> size_t { return num; }
+        //auto size () const -> uint32_t { return num; }
         auto begin () const -> Value const* { return vec.begin() + off; }
         auto end () const -> Value const* { return begin() + num; }
-        auto operator[] (size_t idx) const -> Value& { return vec[off+idx]; }
+        auto operator[] (uint32_t idx) const -> Value& { return vec[off+idx]; }
 
         Vector const& vec;
         int num;
@@ -283,7 +283,7 @@ namespace Monty {
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
         virtual auto attr  (char const*, Value&) const -> Value;
-        virtual auto len   () const -> size_t;
+        virtual auto len   () const -> uint32_t;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
     };
@@ -348,11 +348,11 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr Bytes () {}
-        Bytes (void const*, size_t =0);
+        Bytes (void const*, uint32_t =0);
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
-        auto len () const -> size_t override { return fill; }
+        auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
     };
 
@@ -408,18 +408,18 @@ namespace Monty {
 
         struct Item { Value k, v; }; // TODO plain const Value list or dict ?
 
-        constexpr Lookup (Item const* p, size_t sz)
+        constexpr Lookup (Item const* p, uint32_t sz)
                         : items (p), count (sz / sizeof (Item)) {}
 
         auto operator[] (char const* key) const -> Value;
 
-        auto len () const -> size_t override { return count; }
+        auto len () const -> uint32_t override { return count; }
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
     // TODO protected:
         Item const* items;
-        size_t count;
+        uint32_t count;
     };
 
     //CG< type tuple
@@ -430,17 +430,17 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        auto size () const -> size_t { return fill; }
+        auto size () const -> uint32_t { return fill; }
         auto begin () const -> Value const* { return data(); }
         auto end () const -> Value const* { return begin() + size(); }
-        auto operator[] (size_t idx) const -> Value { return begin()[idx]; }
+        auto operator[] (uint32_t idx) const -> Value { return begin()[idx]; }
 
-        auto len () const -> size_t override { return fill; }
+        auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
 
-        size_t const fill;
+        uint32_t const fill;
 
         static Tuple const emptyObj;
     protected:
@@ -489,7 +489,7 @@ namespace Monty {
 
         bool sep {false};
     protected:
-        virtual void write (uint8_t const* ptr, size_t num) const;
+        virtual void write (uint8_t const* ptr, uint32_t num) const;
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
@@ -507,14 +507,14 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         //constexpr Array () {} // default is array of Value items
-        Array (char type, size_t num =0);
+        Array (char type, uint32_t num =0);
 
         auto mode () const -> char;
 
-        void insert (size_t idx, size_t num =1);
-        void remove (size_t idx, size_t num =1);
+        void insert (uint32_t idx, uint32_t num =1);
+        void remove (uint32_t idx, uint32_t num =1);
 
-        auto len () const -> size_t override;
+        auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
@@ -537,7 +537,7 @@ namespace Monty {
         void append (Value v);
         Value clear () { remove(0, size()); return {}; }
 
-        auto len () const -> size_t override { return fill; }
+        auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
 
@@ -554,7 +554,7 @@ namespace Monty {
     //CG>
         using List::List;
 
-        auto find (Value v) const -> size_t;
+        auto find (Value v) const -> uint32_t;
 
         struct Proxy { Set& s; Value v;
             operator bool () const { return ((Set const&) s).has(v); }
@@ -580,7 +580,7 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr Dict (Object const* ch =nullptr) : chain (ch) {}
-        Dict (size_t n) { adj(2*n); }
+        Dict (uint32_t n) { adj(2*n); }
 
         struct Proxy { Dict& d; Value k;
             operator Value () const { return ((Dict const&) d).at(k); }
@@ -759,11 +759,11 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        auto fastSlotTop () const -> size_t { return stackSz; }
-        auto excLevel () const -> size_t { return excDepth; }
+        auto fastSlotTop () const -> uint32_t { return stackSz; }
+        auto excLevel () const -> uint32_t { return excDepth; }
         auto isGenerator () const -> bool { return (flags & 1) != 0; }
         auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
-        auto numCells () const -> size_t { return n_cell; }
+        auto numCells () const -> uint32_t { return n_cell; }
 
         auto numArgs (int t) const -> uint32_t {
             return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
@@ -886,10 +886,10 @@ namespace Monty {
         auto spBase () const -> Value* { return frame().stack; }
         auto ipBase () const -> uint8_t const* { return callee->bc.start(); }
 
-        auto fastSlot (size_t i) const -> Value& {
+        auto fastSlot (uint32_t i) const -> Value& {
             return spBase()[callee->bc.fastSlotTop() + ~i];
         }
-        auto derefSlot (size_t i) const -> Value& {
+        auto derefSlot (uint32_t i) const -> Value& {
             return fastSlot(i).asType<Cell>().val;
         }
 

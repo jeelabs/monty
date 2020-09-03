@@ -45,8 +45,8 @@ static void putsEsc (Buffer& buf, Value s) {
     buf.putc('"');
 }
 
-void Buffer::write (uint8_t const* ptr, size_t len) const {
-    for (size_t i = 0; i < len; ++i)
+void Buffer::write (uint8_t const* ptr, uint32_t len) const {
+    for (uint32_t i = 0; i < len; ++i)
         printf("%c", ptr[i]); // TODO yuck
 }
 
@@ -176,7 +176,7 @@ Value Array::repr (Buffer& buf) const {
         case 'v': case 'V': n = ((uint16_t const*) begin())[len()]; break;
     }
     auto p = (uint8_t const*) begin();
-    for (size_t i = 0; i < n; ++i)
+    for (uint32_t i = 0; i < n; ++i)
         buf.print("%02x", p[i]);
     return {};
 }
@@ -217,7 +217,7 @@ auto Context::repr (Buffer& buf) const -> Value {
 Value Dict::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     buf.putc('{');
-    for (size_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
             buf.putc(',');
         buf.sep = false;
@@ -264,7 +264,7 @@ Value Int::repr (Buffer& buf) const {
 Value List::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     buf.putc('[');
-    for (size_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
             buf.putc(',');
         buf.sep = false;
@@ -299,7 +299,7 @@ Value Range::repr (Buffer& buf) const {
 Value Set::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     buf.putc('{');
-    for (size_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
             buf.putc(',');
         buf.sep = false;
@@ -323,7 +323,7 @@ Value Str::repr (Buffer& buf) const {
 Value Tuple::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     buf.putc('(');
-    for (size_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
             buf.putc(',');
         buf.sep = false;

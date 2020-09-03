@@ -14,7 +14,7 @@ static const uint8_t* loadBytecode (const char* fname) {
     if (fp == 0)
         return 0;
     fseek(fp, 0, SEEK_END);
-    size_t bytes = ftell(fp);
+    uint32_t bytes = ftell(fp);
     fseek(fp, 0, SEEK_SET);
     //printf("bytecode size %db\n", (int) bytes);
     auto buf = (uint8_t*) malloc(bytes);

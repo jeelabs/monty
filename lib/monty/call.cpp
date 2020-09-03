@@ -31,7 +31,7 @@ auto Callable::call (ArgVec const& args) const -> Value {
     for (int i = 0; i < nPos; ++i)
         if (i < args.num)
             ctx->fastSlot(i) = args[i];
-        else if (pos != nullptr && (size_t) i < nDef + pos->fill)
+        else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
             ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
 
     if (bc.hasVarArgs())
@@ -41,7 +41,7 @@ auto Callable::call (ArgVec const& args) const -> Value {
     // TODO this isn't quite right, inside bc, there's a list of indices ...
     //  but why not lazily turn the first deref load into a new cell?
     //  ... or keep a bitmap of which fast slots are / should be cells?
-    for (size_t i = 0; i < bc.numCells(); ++i)
+    for (uint32_t i = 0; i < bc.numCells(); ++i)
         ctx->fastSlot(i) = new Cell (ctx->fastSlot(i));
 
     return coro ? ctx : Value {};
@@ -131,7 +131,7 @@ Value Context::leave (Value v) {
 }
 
 auto Context::excBase (int incr) -> Value* {
-    size_t ep = frame().ep;
+    uint32_t ep = frame().ep;
     frame().ep = ep + incr;
     if (incr <= 0)
         --ep;
@@ -245,7 +245,7 @@ void Interp::interrupt (uint32_t num) {
 
 auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (size_t num = 0; num < MAX_QUEUES; ++num)
+        for (uint32_t num = 0; num < MAX_QUEUES; ++num)
             if (pendingBit(num))
                 return num;
     return -1;

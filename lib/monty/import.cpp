@@ -128,7 +128,7 @@ struct Loader {
     }
 
     // poor man's varyint emitter, works for up to 14-bit ints
-    auto constInsertVaryInt (size_t pos, size_t val) -> size_t {
+    auto constInsertVaryInt (uint32_t pos, uint32_t val) -> uint32_t {
         assert(val < 16384);
         constData.insert(pos + (val < 128 ? 1 : 2));
         if (val < 128)
@@ -271,7 +271,7 @@ struct Loader {
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
             bc.append(loadQstr());
 
-        for (size_t i = 0; i < nData; ++i) {
+        for (uint32_t i = 0; i < nData; ++i) {
             auto type = *dp++;
             (void) type;
             if (type == 'e') {
@@ -310,7 +310,7 @@ struct Loader {
             // store known positions of sub-bc's as const ints
             // careful with the fact that new qstrs still get added!
             auto pos = constData.size() - vvec->atLen(0);
-            for (size_t i = 0; i < nCode; ++i) {
+            for (uint32_t i = 0; i < nCode; ++i) {
                 debugf("  raw %d:\n", i+nData);
                 pos += vvec->atLen(0);
                 pos = constInsertVaryInt(pos, constNext);
@@ -318,7 +318,7 @@ struct Loader {
                 bc.append(loadRaw());
             }
         } else
-            for (size_t i = 0; i < nCode; ++i) {
+            for (uint32_t i = 0; i < nCode; ++i) {
                 debugf("  raw %d:\n", i+nData);
                 bc.append(loadRaw());
             }
