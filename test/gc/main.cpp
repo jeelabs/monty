@@ -3,8 +3,7 @@
 
 using namespace Monty;
 
-constexpr auto MEMSZ = 1024;
-uintptr_t memory [MEMSZ];
+uint8_t memory [3*1024];
 int created, destroyed, marked, failed;
 size_t memAvail;
 
@@ -186,12 +185,12 @@ void mergeMulti () {
 }
 
 void outOfObjs () {
-    constexpr auto N = 100 * sizeof (uintptr_t);
+    constexpr auto N = 400;
     for (int i = 0; i < 12; ++i)
         new (N) MarkObj;
     TEST_ASSERT_LESS_THAN(N, gcAvail());
     TEST_ASSERT_EQUAL(12, created);
-    TEST_ASSERT_EQUAL(3, failed);
+    TEST_ASSERT_EQUAL(5, failed);
 
     destroyed += failed; // avoid assertion in tearDown()
 }
@@ -489,7 +488,7 @@ void gcRomOrRam () {
     auto heapObj = new Object;
 
     auto heap = (void*) heapObj;
-    TEST_ASSERT(memory <= heap && heap < memory + MEMSZ);
+    TEST_ASSERT(memory <= heap && heap < memory + sizeof memory);
 
     auto stack = (void*) &stackObj;
     TEST_ASSERT(heap <= stack);

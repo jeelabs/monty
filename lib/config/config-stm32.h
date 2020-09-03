@@ -28,7 +28,9 @@
     #define UART_BUSDIV 1
 #endif
 
-#if STM32L0 || STM32F1 || INCLUDE_NETWORK
+#if STM32L053xx
+    #define MEM_BYTES (3*1024) // Nucleo L053 has only 8 kB RAM
+#elif STM32L0 || STM32F1 || INCLUDE_NETWORK
     #define MEM_BYTES (12*1024) // e.g. Blue Pill
 #else
     #define MEM_BYTES (32*1024) // will fit in ≥ 40 KB ram
