@@ -172,7 +172,7 @@ struct Loader {
                 uint8_t h = Q::hash(qBuf, len);
                 vvec->atAdj(0, n+1);
                 vvec->atGet(0)[n] = h;
-                printf("lq %02x %02x %s\n", n, h, qBuf);
+                debugf("lq %02x %02x %s\n", n, h, qBuf);
             }
             n += 0x100;
         }
