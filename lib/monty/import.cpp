@@ -19,7 +19,10 @@ struct Loader {
     uint8_t* bcBuf;
     uint8_t* bcNext;
     uint8_t* bcLimit;
-    VaryVec* vvec;
+
+    VaryVec* vvec;          // convert: new module format if converting, else 0
+    ByteVec constData;      // convert: all collected const data
+    uint16_t constNext {0}; // convert: index of next unused const entry
 
     struct Prelude {
         uint32_t n_state;
@@ -70,6 +73,18 @@ struct Loader {
         }
     } prelude;
 
+    struct CodePrefix {
+        int8_t constOff;
+        int8_t code;
+        int8_t stackSz;
+        int8_t flags;
+        int8_t excDepth;
+        int8_t n_pos;
+        int8_t n_kwonly;
+        int8_t n_def_pos;
+        int8_t n_cell;
+    };
+
     Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
     Callable* load (const uint8_t* data) {
@@ -86,6 +101,12 @@ struct Loader {
         qWin.insert(0, n); // qstr window
 
         auto& bc = loadRaw();
+
+        if (vvec != nullptr) {
+            auto n = vvec->size();
+            vvec->insert(n, 2);
+            vvec->atSet(n, constData.begin(), constData.size());
+        }
 
         debugf("qLast %d %s\n", Q::last(), Q::str(Q::last()));
 
@@ -124,21 +145,19 @@ struct Loader {
         qBuf[len] = 0;
         debugf("q:%s\n", qBuf);
 
-        int n = Q::make(qBuf);
+        auto n = Q::make(qBuf);
         if (vvec != nullptr) {
-            assert(n > 256); //
-            if (n > 256) { // not in std set
-                n = n & 0xFF;
-                if (n >= vvec->size()) {
-                    vvec->insert(n);
-                    vvec->atSet(n, qBuf, len+1);
-                    uint8_t h = Q::hash(qBuf, len);
-                    vvec->atAdj(0, n+1);
-                    vvec->atGet(0)[n] = h;
-                    printf("lq %02x %02x %s\n", n, h, qBuf);
-                }
-                n += 0x100;
+            assert(n > 256); // not in std set
+            n = n & 0xFF;
+            if (n >= vvec->size()) {
+                vvec->insert(n);
+                vvec->atSet(n, qBuf, len+1);
+                uint8_t h = Q::hash(qBuf, len);
+                vvec->atAdj(0, n+1);
+                vvec->atGet(0)[n] = h;
+                printf("lq %02x %02x %s\n", n, h, qBuf);
             }
+            n += 0x100;
         }
 
         qWin.remove(qWin.fill-1);
@@ -207,7 +226,30 @@ struct Loader {
         auto nCode = varInt();
         debugf("nData %d nCode %d\n", nData, nCode);
 
+        if (vvec != nullptr) {
+            CodePrefix pfx; // new bytecode prefix when converting
+            pfx.constOff = constNext;
+            pfx.code = bc.code;
+            pfx.stackSz = bc.stackSz;
+            pfx.flags = bc.flags;
+            pfx.excDepth = bc.excDepth;
+            pfx.n_pos = bc.n_pos;
+            pfx.n_kwonly = bc.n_kwonly;
+            pfx.n_def_pos = bc.n_def_pos;
+            pfx.n_cell = bc.n_cell;
+
+            int n = vvec->size();
+            vvec->insert(n);
+            vvec->atAdj(n, sizeof pfx + bCount);
+            auto p = vvec->atGet(n);
+            memcpy(p, &pfx, sizeof pfx);
+            memcpy(p + sizeof pfx, (uint8_t const*) (&bc + 1), bCount);
+        }
+
         bc.adj(bc.n_pos + bc.n_kwonly + nData + nCode); // pre-alloc
+        constNext += bc.n_pos + bc.n_kwonly + nData + nCode;
+
+        auto dpOff = dp;
 
         for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
             bc.append(loadQstr());
@@ -236,6 +278,14 @@ struct Loader {
             } else
                 assert(false); // TODO e, f, c
         }
+
+        if (vvec != nullptr) {
+            auto dpLen = dp - dpOff;
+            auto cEnd = constData.size();
+            constData.insert(cEnd, dpLen);
+            memcpy(constData.begin() + cEnd, dpOff, dpLen);
+        }
+
         for (size_t i = 0; i < nCode; ++i) {
             debugf("  raw %d:\n", i+nData);
             bc.append(loadRaw());
