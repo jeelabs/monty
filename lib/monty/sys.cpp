@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.94-21-gf12b0b3");
+constexpr auto VERSION = Q(167,"v0.94-23-g30efbe8");
 
 static auto f_suspend (ArgVec const& args) -> Value {
     assert(args.num == 2 && args[1].isInt());

@@ -105,7 +105,10 @@ struct Loader {
         if (vvec != nullptr) {
             auto n = vvec->size();
             vvec->insert(n, 2);
-            vvec->atSet(n, constData.begin(), constData.size());
+            constInsertVaryInt(0, constNext);
+            debugf("vvec %d: %d consts in %d bytes\n",
+                    (int) n, constNext, (int) constData.size());
+            vvec->atSet(n, constData.begin(), (int) constData.size());
         }
 
         debugf("qLast %d %s\n", Q::last(), Q::str(Q::last()));
@@ -122,6 +125,18 @@ struct Loader {
             v = (v << 7) | (b & 0x7F);
         }
         return v;
+    }
+
+    // poor man's varyint emitter, works up to 16383
+    void constInsertVaryInt (size_t pos, size_t val) {
+        assert(val < 16384);
+        constData.insert(pos + (val < 128 ? 1 : 2));
+        if (val < 128)
+            constData[pos] = val;
+        else {
+            constData[pos] = val | 0x80;
+            constData[pos+1] = val >> 7;
+        }
     }
 
     const uint8_t* skip (uint32_t n) {
@@ -155,7 +170,7 @@ struct Loader {
                 uint8_t h = Q::hash(qBuf, len);
                 vvec->atAdj(0, n+1);
                 vvec->atGet(0)[n] = h;
-                printf("lq %02x %02x %s\n", n, h, qBuf);
+                debugf("lq %02x %02x %s\n", n, h, qBuf);
             }
             n += 0x100;
         }
@@ -248,6 +263,7 @@ struct Loader {
 
         bc.adj(bc.n_pos + bc.n_kwonly + nData + nCode); // pre-alloc
         constNext += bc.n_pos + bc.n_kwonly + nData + nCode;
+        auto codeBase = constNext - nCode; // where sub-bc's will be stored
 
         auto dpOff = dp;
 
@@ -257,7 +273,10 @@ struct Loader {
         for (size_t i = 0; i < nData; ++i) {
             auto type = *dp++;
             (void) type;
-            assert(type != 'e'); // TODO ellipsis
+            if (type == 'e') {
+                bc.append({}); // TODO ellipsis
+                continue;
+            }
             auto sz = varInt();
             auto ptr = skip(sz);
             if (type == 'b') {
@@ -275,8 +294,10 @@ struct Loader {
                 memcpy(buf, ptr, sz);
                 buf[sz] = 0;
                 bc.append(Int::conv(buf));
-            } else
-                assert(false); // TODO e, f, c
+            } else {
+                //assert(false); // TODO f)loat and c)omplex
+                bc.append(new (sz) Bytes (ptr,sz));
+            }
         }
 
         if (vvec != nullptr) {
@@ -284,6 +305,11 @@ struct Loader {
             auto cEnd = constData.size();
             constData.insert(cEnd, dpLen);
             memcpy(constData.begin() + cEnd, dpOff, dpLen);
+
+            // store known positions of sub-bc's as const ints
+            // actual bc's will be converted in the loop at end of loadRaw
+            for (size_t i = 0; i < nCode; ++i)
+                constInsertVaryInt(constData.size(), codeBase + i);
         }
 
         for (size_t i = 0; i < nCode; ++i) {

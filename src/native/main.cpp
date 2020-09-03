@@ -6,7 +6,8 @@
 
 #include <cstdio>
 
-static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
+//static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
+static uint8_t myMem [128*1024];
 
 static const uint8_t* loadFile (const char* fname) {
     FILE* fp = fopen(fname, "rb");
