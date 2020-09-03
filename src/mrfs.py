@@ -28,7 +28,7 @@ def dumpVaryVec(vv):
 
     hashes = vAt(0)
     print(vnum, 'items')
-    print('  0: %d hashes & qstrs, file format %d' % (len(hashes)-1, hashes[0]))
+    print('  0: %d hashes & qstrs, file format 0x%02X' % (len(hashes)-1, hashes[0]))
     for i in range(1,len(hashes)):
         print('%3d: hash 0x%02X, str "%s"' % (i, hashes[i], vAt(i).decode()))
     for i in range(len(hashes), vnum-2):
