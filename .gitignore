@@ -4,4 +4,5 @@
 CMakeLists.txt
 sdkconfig
 *.mpy
+*.mty
 /monty

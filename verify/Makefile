@@ -54,7 +54,7 @@ fresh:
 	@ rm -f $(out)
 
 clean:
-	rm -f dog *.mpy *.out
+	rm -f dog *.mpy *.mty *.out
 
 # compare output to expected (show first 10 diff lines), else show word count
 %.exp : %.out %.mpy

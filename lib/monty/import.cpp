@@ -127,16 +127,17 @@ struct Loader {
         return v;
     }
 
-    // poor man's varyint emitter, works up to 16383
-    void constInsertVaryInt (size_t pos, size_t val) {
+    // poor man's varyint emitter, works for up to 14-bit ints
+    auto constInsertVaryInt (size_t pos, size_t val) -> size_t {
         assert(val < 16384);
         constData.insert(pos + (val < 128 ? 1 : 2));
         if (val < 128)
-            constData[pos] = val;
+            constData[pos++] = val;
         else {
-            constData[pos] = val | 0x80;
-            constData[pos+1] = val >> 7;
+            constData[pos++] = val | 0x80;
+            constData[pos++] = val >> 7;
         }
+        return pos;
     }
 
     const uint8_t* skip (uint32_t n) {
@@ -164,13 +165,14 @@ struct Loader {
         if (vvec != nullptr) {
             assert(n > 256); // not in std set
             n = n & 0xFF;
-            if (n >= vvec->size()) {
+            auto nq = vvec->atLen(0);
+            if (n == nq) {
                 vvec->insert(n);
                 vvec->atSet(n, qBuf, len+1);
                 uint8_t h = Q::hash(qBuf, len);
                 vvec->atAdj(0, n+1);
                 vvec->atGet(0)[n] = h;
-                debugf("lq %02x %02x %s\n", n, h, qBuf);
+                printf("lq %02x %02x %s\n", n, h, qBuf);
             }
             n += 0x100;
         }
@@ -263,7 +265,6 @@ struct Loader {
 
         bc.adj(bc.n_pos + bc.n_kwonly + nData + nCode); // pre-alloc
         constNext += bc.n_pos + bc.n_kwonly + nData + nCode;
-        auto codeBase = constNext - nCode; // where sub-bc's will be stored
 
         auto dpOff = dp;
 
@@ -307,15 +308,20 @@ struct Loader {
             memcpy(constData.begin() + cEnd, dpOff, dpLen);
 
             // store known positions of sub-bc's as const ints
-            // actual bc's will be converted in the loop at end of loadRaw
-            for (size_t i = 0; i < nCode; ++i)
-                constInsertVaryInt(constData.size(), codeBase + i);
-        }
-
-        for (size_t i = 0; i < nCode; ++i) {
-            debugf("  raw %d:\n", i+nData);
-            bc.append(loadRaw());
-        }
+            // careful with the fact that new qstrs still get added!
+            auto pos = constData.size() - vvec->atLen(0);
+            for (size_t i = 0; i < nCode; ++i) {
+                debugf("  raw %d:\n", i+nData);
+                pos += vvec->atLen(0);
+                pos = constInsertVaryInt(pos, constNext);
+                pos -= vvec->atLen(0);
+                bc.append(loadRaw());
+            }
+        } else
+            for (size_t i = 0; i < nCode; ++i) {
+                debugf("  raw %d:\n", i+nData);
+                bc.append(loadRaw());
+            }
 
         return bc;
     }
@@ -411,6 +417,7 @@ auto Monty::loader (Value name, uint8_t const* addr) -> Callable* {
 auto Monty::converter (uint8_t const* addr) -> VaryVec* {
     auto vv = new VaryVec;
     vv->insert(0, 1); // TODO get the first entry right, yuck
+    vv->atAdj(0, 1);
     Loader ldr (vv);
     return ldr.load(addr) != nullptr ? vv : nullptr;
 }
