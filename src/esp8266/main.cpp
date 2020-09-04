@@ -4,7 +4,12 @@
 #include <cassert>
 #include "pyvm.h"
 
+#include "../../ssidpass.h"
+
+#include <ESP8266WebServer.h>
 #include <LittleFS.h>
+
+ESP8266WebServer server (80);
 
 static const uint8_t* loadBytecode (const char* fname) {
     File f = LittleFS.open(fname, "r");
@@ -21,15 +26,18 @@ static const uint8_t* loadBytecode (const char* fname) {
     return 0;
 }
 
-static void runInterp (Monty::Callable& init) {
-    Monty::PyVM vm (init);
-
-    while (vm.isAlive()) {
-        vm.scheduler();
-        //archIdle();
-    }
-
-    // nothing left to do or wait for, at this point
+void handleNotFound(){
+    String message = "File Not Found\n\n";
+    message += "URI: ";
+    message += server.uri();
+    message += "\nMethod: ";
+    message += server.method() == HTTP_GET ? "GET" : "POST";
+    message += "\nArguments: ";
+    message += server.args();
+    message += "\n";
+    for (uint8_t i = 0; i < server.args(); ++i)
+        message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
+    server.send(404, "text/plain", message);
 }
 
 void setup () {
@@ -38,6 +46,25 @@ void setup () {
 
     if (LittleFS.begin())
         printf("LittleFS mounted\n");
+
+    WiFi.mode(WIFI_STA);
+    WiFi.begin(WIFI_SSID, WIFI_PASS);
+
+    while (WiFi.status() != WL_CONNECTED) {
+        delay(500);
+        Serial.print(".");
+    }
+    Serial.println(" connected to " WIFI_SSID);
+    Serial.print("IP address: ");
+    Serial.println(WiFi.localIP());
+
+    server.on("/", [](){
+        server.send(200, "text/plain", "howdy monty");
+    });
+    server.onNotFound(handleNotFound);
+
+    server.begin();
+    Serial.println("HTTP server started");
 
     const char* fname = "/demo.mpy";
     auto bcData = loadBytecode(fname);
@@ -59,7 +86,15 @@ void setup () {
 
     free((void*) bcData);
 
-    runInterp(*init);
+    {
+        Monty::PyVM vm (*init);
+
+        while (true || vm.isAlive()) {
+            vm.scheduler();
+            //archIdle();
+            server.handleClient();
+        }
+    }
 
     printf("done\n");
 }
