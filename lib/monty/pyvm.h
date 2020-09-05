@@ -416,12 +416,10 @@ class PyVM : public Interp {
     }
     //CG1 op q
     void opLoadMethod (Q arg) {
-        //sp[1] = *sp;
         sp[1] = {};
         *sp = sp->asObj().attr(arg, sp[1]);
         assert(!sp->isNil());
         ++sp;
-        //assert(!sp->isNil());
     }
     //CG1 op q
     void opLoadSuperMethod (Q arg) {
