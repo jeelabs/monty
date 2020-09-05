@@ -16,7 +16,7 @@ gdb = /dev/cu.usbmodemE4D3BFC11
 tty = /dev/cu.usbmodemE4D3BFC13
 ram = 0x2000F000 # 64 kB
 else ifeq ($(BOARD),disco_f407vg)
-tty = /dev/cu.usbmodem1431103
+tty = /dev/cu.usbmodem1431303
 ram = 0x2001F000 # 192 kB
 else ifeq ($(BOARD),nucleo_l010rb)
 tty = /dev/cu.usbmodem1461203
