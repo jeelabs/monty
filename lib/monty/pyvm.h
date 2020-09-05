@@ -368,11 +368,11 @@ class PyVM : public Interp {
     //CG1 op
     void opEndFinally () {
         context->excBase(-1);
-        if (&sp->obj() == &Null.obj()) // TODO can't use ==, messed up ...
+        if (sp->isNull())
             --sp;
         else if (!sp->isInt())
             opRaiseObj();
-        else if ((int) *sp < 0) {
+        else if (*sp < 0) {
             --sp;
             opReturnValue();
         } else
@@ -430,7 +430,7 @@ class PyVM : public Interp {
         uint8_t npos = arg, nkw = arg >> 8;
         sp -= npos + 2 * nkw + 1;
         auto skipSelf = sp[1].isNil();
-        ArgVec avec = {*context, arg + 1 - skipSelf, sp + 1 + skipSelf};
+        ArgVec avec {*context, arg + 1 - skipSelf, sp + 1 + skipSelf};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
         });
@@ -560,7 +560,7 @@ class PyVM : public Interp {
             assert(init != nullptr);
             mod = init->mo;
             modules.at(arg) = mod;
-            ArgVec avec = {*context, 0, sp};
+            ArgVec avec {*context, 0, sp};
             contextAdjuster([=]() -> Value {
                 return init->call(avec);
             });

@@ -24,23 +24,23 @@ for exc in [BaseException,
 
 def boom1():
     print('start 1')
-    raise RuntimeError
-    print('wrong 1')
+    raise RuntimeError()
+    print('oops! 1')
 
 try:
     boom1()
 except:
-    print('gotcha 1')
+    print('bingo 1')
 
 def boom2():
     print('start 2')
     try:
         raise RuntimeError()
     finally:
-        print('finally 2')
-    print('wrong boom2')
+        print('final 2')
+    print('oops! 2')
 
 try:
     boom2()
 except:
-    print('gotcha 2')
+    print('bingo 2')
