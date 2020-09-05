@@ -139,12 +139,7 @@ auto Value::operator== (Value rhs) const -> bool {
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
-    Value lhs = *this;
-    if (!isObj()) {
-        lhs = rhs;
-        rhs = *this;
-    }
-    return lhs.binOp(BinOp::Equal, rhs).truthy();
+    return false;
 }
 
 auto Value::unOp (UnOp op) const -> Value {
@@ -575,6 +570,7 @@ void Exception::marker () const {
 //CG: exception Exception BaseException
 //CG: exception StopIteration Exception
 //CG: exception ArithmeticError Exception
+//CG: exception ZeroDivisionError ArithmeticError
 //CG: exception AssertionError Exception
 //CG: exception AttributeError Exception
 //CG: exception EOFError Exception
@@ -597,21 +593,22 @@ static Lookup::Item const exceptionMap [] = {
     { Q( 36,"Exception")           ,  0 }, //  1 -> BaseException
     { Q( 51,"StopIteration")       ,  1 }, //  2 -> Exception
     { Q( 30,"ArithmeticError")     ,  1 }, //  3 -> Exception
-    { Q( 31,"AssertionError")      ,  1 }, //  4 -> Exception
-    { Q( 32,"AttributeError")      ,  1 }, //  5 -> Exception
-    { Q( 34,"EOFError")            ,  1 }, //  6 -> Exception
-    { Q( 38,"ImportError")         ,  1 }, //  7 -> Exception
-    { Q( 43,"LookupError")         ,  1 }, //  8 -> Exception
-    { Q( 40,"IndexError")          ,  8 }, //  9 -> LookupError
-    { Q( 41,"KeyError")            ,  8 }, // 10 -> LookupError
-    { Q( 44,"MemoryError")         ,  1 }, // 11 -> Exception
-    { Q( 45,"NameError")           ,  1 }, // 12 -> Exception
-    { Q( 48,"OSError")             ,  1 }, // 13 -> Exception
-    { Q( 50,"RuntimeError")        ,  1 }, // 14 -> Exception
-    { Q( 47,"NotImplementedError") , 14 }, // 15 -> RuntimeError
-    { Q( 54,"TypeError")           ,  1 }, // 16 -> Exception
-    { Q( 55,"ValueError")          ,  1 }, // 17 -> Exception
-    { Q(177,"UnicodeError")        , 17 }, // 18 -> ValueError
+    { Q( 56,"ZeroDivisionError")   ,  3 }, //  4 -> ArithmeticError
+    { Q( 31,"AssertionError")      ,  1 }, //  5 -> Exception
+    { Q( 32,"AttributeError")      ,  1 }, //  6 -> Exception
+    { Q( 34,"EOFError")            ,  1 }, //  7 -> Exception
+    { Q( 38,"ImportError")         ,  1 }, //  8 -> Exception
+    { Q( 43,"LookupError")         ,  1 }, //  9 -> Exception
+    { Q( 40,"IndexError")          ,  9 }, // 10 -> LookupError
+    { Q( 41,"KeyError")            ,  9 }, // 11 -> LookupError
+    { Q( 44,"MemoryError")         ,  1 }, // 12 -> Exception
+    { Q( 45,"NameError")           ,  1 }, // 13 -> Exception
+    { Q( 48,"OSError")             ,  1 }, // 14 -> Exception
+    { Q( 50,"RuntimeError")        ,  1 }, // 15 -> Exception
+    { Q( 47,"NotImplementedError") , 15 }, // 16 -> RuntimeError
+    { Q( 54,"TypeError")           ,  1 }, // 17 -> Exception
+    { Q( 55,"ValueError")          ,  1 }, // 18 -> Exception
+    { Q(177,"UnicodeError")        , 18 }, // 19 -> ValueError
     //CG>
 };
 
@@ -638,78 +635,83 @@ static auto e_ArithmeticError (ArgVec const& args) -> Value {
 }
 static Function const f_ArithmeticError (e_ArithmeticError);
 
-static auto e_AssertionError (ArgVec const& args) -> Value {
+static auto e_ZeroDivisionError (ArgVec const& args) -> Value {
     return Exception::create(4, args);
+}
+static Function const f_ZeroDivisionError (e_ZeroDivisionError);
+
+static auto e_AssertionError (ArgVec const& args) -> Value {
+    return Exception::create(5, args);
 }
 static Function const f_AssertionError (e_AssertionError);
 
 static auto e_AttributeError (ArgVec const& args) -> Value {
-    return Exception::create(5, args);
+    return Exception::create(6, args);
 }
 static Function const f_AttributeError (e_AttributeError);
 
 static auto e_EOFError (ArgVec const& args) -> Value {
-    return Exception::create(6, args);
+    return Exception::create(7, args);
 }
 static Function const f_EOFError (e_EOFError);
 
 static auto e_ImportError (ArgVec const& args) -> Value {
-    return Exception::create(7, args);
+    return Exception::create(8, args);
 }
 static Function const f_ImportError (e_ImportError);
 
 static auto e_LookupError (ArgVec const& args) -> Value {
-    return Exception::create(8, args);
+    return Exception::create(9, args);
 }
 static Function const f_LookupError (e_LookupError);
 
 static auto e_IndexError (ArgVec const& args) -> Value {
-    return Exception::create(9, args);
+    return Exception::create(10, args);
 }
 static Function const f_IndexError (e_IndexError);
 
 static auto e_KeyError (ArgVec const& args) -> Value {
-    return Exception::create(10, args);
+    return Exception::create(11, args);
 }
 static Function const f_KeyError (e_KeyError);
 
 static auto e_MemoryError (ArgVec const& args) -> Value {
-    return Exception::create(11, args);
+    return Exception::create(12, args);
 }
 static Function const f_MemoryError (e_MemoryError);
 
 static auto e_NameError (ArgVec const& args) -> Value {
-    return Exception::create(12, args);
+    return Exception::create(13, args);
 }
 static Function const f_NameError (e_NameError);
 
 static auto e_OSError (ArgVec const& args) -> Value {
-    return Exception::create(13, args);
+    return Exception::create(14, args);
 }
 static Function const f_OSError (e_OSError);
 
 static auto e_RuntimeError (ArgVec const& args) -> Value {
-    return Exception::create(14, args);
+    return Exception::create(15, args);
 }
 static Function const f_RuntimeError (e_RuntimeError);
 
 static auto e_NotImplementedError (ArgVec const& args) -> Value {
-    return Exception::create(15, args);
+    return Exception::create(16, args);
 }
 static Function const f_NotImplementedError (e_NotImplementedError);
 
 static auto e_TypeError (ArgVec const& args) -> Value {
-    return Exception::create(16, args);
+    return Exception::create(17, args);
 }
 static Function const f_TypeError (e_TypeError);
 
 static auto e_ValueError (ArgVec const& args) -> Value {
-    return Exception::create(17, args);
+    return Exception::create(18, args);
 }
 static Function const f_ValueError (e_ValueError);
 
 static auto e_UnicodeError (ArgVec const& args) -> Value {
-    return Exception::create(18, args);
+    return Exception::create(19, args);
 }
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
@@ -854,6 +856,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 36,"Exception")           , f_Exception },
     { Q( 51,"StopIteration")       , f_StopIteration },
     { Q( 30,"ArithmeticError")     , f_ArithmeticError },
+    { Q( 56,"ZeroDivisionError")   , f_ZeroDivisionError },
     { Q( 31,"AssertionError")      , f_AssertionError },
     { Q( 32,"AttributeError")      , f_AttributeError },
     { Q( 34,"EOFError")            , f_EOFError },
