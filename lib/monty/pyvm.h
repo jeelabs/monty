@@ -416,11 +416,12 @@ class PyVM : public Interp {
     }
     //CG1 op q
     void opLoadMethod (Q arg) {
-        sp[1] = *sp;
+        //sp[1] = *sp;
+        sp[1] = {};
         *sp = sp->asObj().attr(arg, sp[1]);
         assert(!sp->isNil());
         ++sp;
-        assert(!sp->isNil());
+        //assert(!sp->isNil());
     }
     //CG1 op q
     void opLoadSuperMethod (Q arg) {
@@ -430,7 +431,8 @@ class PyVM : public Interp {
     void opCallMethod (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         sp -= npos + 2 * nkw + 1;
-        ArgVec avec = {*context, arg + 1, sp + 1};
+        auto skipSelf = sp[1].isNil();
+        ArgVec avec = {*context, arg + 1 - skipSelf, sp + 1 + skipSelf};
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
         });

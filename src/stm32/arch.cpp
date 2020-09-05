@@ -86,9 +86,9 @@ static uint32_t start, begin, last;
 // interface exposed to the VM
 
 Value f_ticker (ArgVec const& args) {
-    if (args.num > 1) {
-        assert(args.num == 2 && args[1].isInt());
-        ms = args[1];
+    if (args.num > 0) {
+        assert(args.num == 1 && args[0].isInt());
+        ms = args[0];
         start = ticks; // set first timeout relative to now
         last = 0;
         tickerId = Interp::getQueueId();
@@ -137,7 +137,7 @@ struct Uart: Object {
 static void (*prevIrq)();
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     uartId = Interp::getQueueId();
 
     prevIrq = VTableRam().usart2;
@@ -152,18 +152,18 @@ auto Uart::create (ArgVec const& args, Type const*) -> Value {
 }
 
 auto Uart::read (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     assert(false); // TODO
     return {};
 }
 
 auto Uart::write (ArgVec const& args) -> Value {
-    assert(args.num == 5);
-    assert(args[2].isInt() && args[3].isInt());
-    auto& data = args[1].asType<Bytes>();
-    int limit = args[2];
-    int start = args[3];
-    // TODO ignore args[4] deadline for now
+    assert(args.num == 4);
+    assert(args[1].isInt() && args[2].isInt());
+    auto& data = args[0].asType<Bytes>();
+    int limit = args[1];
+    int start = args[2];
+    // TODO ignore args[3] deadline for now
     if (limit < 0)
         limit = data.len();
     for (int i = start; i < limit; ++i)

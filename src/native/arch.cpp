@@ -61,9 +61,9 @@ void timerHook () {
 }
 
 static auto f_ticker (ArgVec const& args) -> Value {
-    if (args.num > 1) {
-        assert(args.num == 2 && args[1].isInt());
-        ms = args[1];
+    if (args.num > 0) {
+        assert(args.num == 1 && args[0].isInt());
+        ms = args[0];
         start = archTime(); // set first timeout relative to now
         last = 0;
         tickerId = Interp::getQueueId();
@@ -75,7 +75,8 @@ static auto f_ticker (ArgVec const& args) -> Value {
     return tickerId;
 }
 
-static auto f_ticks (ArgVec const&) -> Value {
+static auto f_ticks (ArgVec const& args) -> Value {
+    (void) args; assert(args.num == 0);
     uint32_t t = archTime();
     if (begin == 0)
         begin = t;
@@ -103,24 +104,24 @@ struct Uart: Object {
 };
 
 auto Uart::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     uartId = Interp::getQueueId();
     return new Uart;
 }
 
 auto Uart::read (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     assert(false); // TODO
     return {};
 }
 
 auto Uart::write (ArgVec const& args) -> Value {
-    assert(args.num == 5);
-    assert(args[2].isInt() && args[3].isInt());
-    auto& data = args[1].asType<Bytes>();
-    int limit = args[2];
-    int start = args[3];
-    // TODO ignore args[4] deadline for now
+    assert(args.num == 4);
+    assert(args[1].isInt() && args[2].isInt());
+    auto& data = args[0].asType<Bytes>();
+    int limit = args[1];
+    int start = args[2];
+    // TODO ignore args[3] deadline for now
     if (limit < 0)
         limit = data.len();
 

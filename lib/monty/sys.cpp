@@ -6,23 +6,23 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.94-30-g17e515d");
+constexpr auto VERSION = Q(167,"v0.94-31-g9bb7e96");
 
 static auto f_suspend (ArgVec const& args) -> Value {
-    assert(args.num == 2 && args[1].isInt());
-    int id = args[1];
+    assert(args.num == 1 && args[0].isInt());
+    int id = args[0];
     if (id >= 0)
         Interp::suspend(id);
     return {};
 }
 
 static auto f_gcavail (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     return gcAvail();
 }
 
 static auto f_gcnow (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     gcNow();
     return {};
 }
@@ -30,7 +30,7 @@ static auto f_gcnow (ArgVec const& args) -> Value {
 static List gcdata; // keep this around to avoid reallocating on each call
 
 static auto f_gcstats (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args.num == 0);
     constexpr auto NSTATS = sizeof gcStats / sizeof (uint32_t);
     if (gcdata.size() != NSTATS) {
         gcdata.remove(0, gcdata.size());

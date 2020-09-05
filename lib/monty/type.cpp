@@ -317,10 +317,12 @@ auto Object::binop (BinOp, Value) const -> Value {
     return {};
 }
 
-auto Object::attr (char const* name, Value&) const -> Value {
+auto Object::attr (char const* name, Value& self) const -> Value {
     auto atab = type().chain;
     if (atab == nullptr)
         atab = this;
+    else
+        self = this;
     return atab->getAt(name);
 }
 
