@@ -329,14 +329,14 @@ namespace Monty {
         static auto make (int64_t i) -> Value;
         static auto conv (char const* s) -> Value;
 
-        constexpr Int (int64_t v) : i (v) {}
+        constexpr Int (int64_t v) : i64 (v) {}
 
-        operator int64_t () const { return i; }
+        operator int64_t () const { return i64; }
 
         auto binop (BinOp, Value) const -> Value override;
 
     private:
-        int64_t i __attribute__((packed));
+        int64_t i64 __attribute__((packed));
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
     //CG< type bytes

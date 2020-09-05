@@ -241,10 +241,10 @@ Value Inst::repr (Buffer& buf) const {
 }
 
 Value Int::repr (Buffer& buf) const {
-    uint64_t val = i;
-    if (i < 0) {
+    uint64_t val = i64;
+    if (i64 < 0) {
         buf.putc('-');
-        val = -i;
+        val = -i64;
     }
 
     // need to print in pieces which fit into a std int

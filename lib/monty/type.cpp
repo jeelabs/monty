@@ -196,18 +196,36 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 switch (op) {
                     case BinOp::Less:            return asBool(l < r);
                     case BinOp::Equal:           return asBool(l == r);
+                    case BinOp::Or:
+                    case BinOp::InplaceOr:       return l | r;
+                    case BinOp::Xor:
+                    case BinOp::InplaceXor:      return l ^ r;
+                    case BinOp::And:
+                    case BinOp::InplaceAnd:      return l & r;
+                    case BinOp::Lshift:
+                    case BinOp::InplaceLshift:   return l << r;
+                    case BinOp::Rshift:
+                    case BinOp::InplaceRshift:   return l >> r;
                     case BinOp::Add:
                     case BinOp::InplaceAdd:      return l + r;
                     case BinOp::Subtract:
                     case BinOp::InplaceSubtract: return l - r;
                     case BinOp::Multiply:
                     case BinOp::InplaceMultiply: return l * r;
+                    case BinOp::InplaceFloorDivide:
                     case BinOp::FloorDivide:
                         if (r == 0) {
                             Interp::exception("blah"); // TODO
                             return 0;
                         }
                         return l / r;
+                    case BinOp::InplaceModulo:
+                    case BinOp::Modulo:
+                        if (r == 0) {
+                            Interp::exception("blah"); // TODO
+                            return 0;
+                        }
+                        return l % r;
                     default: break;
                 }
                 break;
@@ -363,11 +381,42 @@ auto Int::conv (char const* s) -> Value {
 }
 
 auto Int::binop (BinOp op, Value rhs) const -> Value {
+    // TODO use templates to share code with Value::binOp ?
+    auto r64 = rhs.asInt();
     switch (op) {
-        case BinOp::Equal:
-            return false; // FIXME
-        default:
-            break;
+        case BinOp::Less:            return Value::asBool(i64 < r64);
+        case BinOp::Equal:           return Value::asBool(i64 == r64);
+        case BinOp::Or:
+        case BinOp::InplaceOr:       return make(i64 | r64);
+        case BinOp::Xor:
+        case BinOp::InplaceXor:      return make(i64 ^ r64);
+        case BinOp::And:
+        case BinOp::InplaceAnd:      return make(i64 & r64);
+        case BinOp::Lshift:
+        case BinOp::InplaceLshift:   return make(i64 << r64);
+        case BinOp::Rshift:
+        case BinOp::InplaceRshift:   return make(i64 >> r64);
+        case BinOp::Add:
+        case BinOp::InplaceAdd:      return make(i64 + r64);
+        case BinOp::Subtract:
+        case BinOp::InplaceSubtract: return make(i64 - r64);
+        case BinOp::Multiply:
+        case BinOp::InplaceMultiply: return make(i64 * r64);
+        case BinOp::InplaceFloorDivide:
+        case BinOp::FloorDivide:
+            if (r64 == 0) {
+                Interp::exception("blah"); // TODO
+                return 0;
+            }
+            return i64 / r64;
+        case BinOp::InplaceModulo:
+        case BinOp::Modulo:
+            if (r64 == 0) {
+                Interp::exception("blah"); // TODO
+                return 0;
+            }
+            return i64 % r64;
+        default:                     break;
     }
     (void) rhs; assert(false);
     return {}; // TODO
