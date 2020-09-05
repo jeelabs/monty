@@ -143,7 +143,7 @@ void Context::raise (Value exc) {
     if (exc.isInt())
         num = exc;              // trigger soft-irq 1..31 (interrupt-safe)
     else
-        event() = exc;      // trigger exception or other outer-loop req
+        event() = exc;          // trigger exception or other outer-loop req
 
     Interp::interrupt(num);     // set pending, to force inner loop exit
 }
@@ -154,11 +154,15 @@ void Context::caught () {
         return; // there was no exception, just an inner loop exit
     event() = {};
 
-    assert(frame().ep > 0); // simple exception, no stack unwind
-    auto ep = excBase(0);
-    ipOff = ep[0] & (FinallyTag - 1);
-    spOff = ep[1];
-    begin()[++spOff] = e.isNil() ? ep[3] : e;
+    if (frame().ep > 0) { // simple exception, no stack unwind
+        auto ep = excBase(0);
+        ipOff = ep[0] & (FinallyTag - 1);
+        spOff = ep[1];
+        begin()[++spOff] = e.isNil() ? ep[3] : e;
+    } else {
+        leave({});
+        raise(e);
+    }
 }
 
 auto Context::next () -> Value {

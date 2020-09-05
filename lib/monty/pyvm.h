@@ -368,7 +368,7 @@ class PyVM : public Interp {
     //CG1 op
     void opEndFinally () {
         context->excBase(-1);
-        if (*sp == Null)
+        if (&sp->obj() == &Null.obj()) // TODO can't use ==, messed up ...
             --sp;
         else if (!sp->isInt())
             opRaiseObj();

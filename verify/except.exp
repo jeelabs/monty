@@ -18,4 +18,9 @@ NotImplementedError("abc",1,2,3)
 TypeError("abc",1,2,3)
 ValueError("abc",1,2,3)
 UnicodeError("abc",1,2,3)
+start 1
+gotcha 1
+start 2
+finally 2
+gotcha 2
 done
