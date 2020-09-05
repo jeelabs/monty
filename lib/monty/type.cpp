@@ -210,15 +210,16 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::InplaceFloorDivide:
                     case BinOp::FloorDivide:
                         if (r == 0) {
-                            Interp::exception("blah"); // TODO
-                            return 0;
+                            //Interp::exception("blah"); // TODO
+Exception::raise(Exception::E_ZeroDivisionError, "divide by zero");
+                            return *this;
                         }
                         return l / r;
                     case BinOp::InplaceModulo:
                     case BinOp::Modulo:
                         if (r == 0) {
                             Interp::exception("blah"); // TODO
-                            return 0;
+                            return *this;
                         }
                         return l % r;
                     default: break;
@@ -1030,6 +1031,13 @@ auto Tuple::create (ArgVec const& args, Type const*) -> Value {
     if (args.num == 0)
         return Empty; // there's one unique empty tuple
     return new (args.num * sizeof (Value)) Tuple (args);
+}
+
+void Exception::raise (int exc, Value details) {
+    Vector v {&details, sizeof details};
+    auto e = create(exc, {v, !details.isNil(), 0});
+    assert(Interp::context != nullptr);
+    Interp::context->raise(e);
 }
 
 auto Exception::create (int exc, ArgVec const& args) -> Value {

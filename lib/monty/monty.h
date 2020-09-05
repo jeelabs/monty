@@ -456,8 +456,32 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
+        enum {
+            E_BaseException,
+            E_Exception,
+            E_StopIteration,
+            E_ArithmeticError,
+            E_ZeroDivisionError,
+            E_AssertionError,
+            E_AttributeError,
+            E_EOFError,
+            E_ImportError,
+            E_LookupError,
+            E_IndexError,
+            E_KeyError,
+            E_MemoryError,
+            E_NameError,
+            E_OSError,
+            E_RuntimeError,
+            E_NotImplementedError,
+            E_TypeError,
+            E_ValueError,
+            E_UnicodeError,
+        };
+
         struct Extra { int code; };
 
+        static void raise (int, Value ={});
         static auto create (int, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
 

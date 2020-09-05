@@ -45,3 +45,8 @@ try:
     boom2()
 except:
     print('bingo 2')
+
+try:
+    a = 1 // 0
+except BaseException as e:
+    print(e)

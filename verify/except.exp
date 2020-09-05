@@ -24,4 +24,5 @@ bingo 1
 start 2
 final 2
 bingo 2
+ZeroDivisionError("divide by zero")
 done
