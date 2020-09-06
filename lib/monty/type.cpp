@@ -157,8 +157,9 @@ auto Value::unOp (UnOp op) const -> Value {
                 case UnOp::Int:  // fall through
                 case UnOp::Pos:  // fall through
                 case UnOp::Hash: return *this;
-                case UnOp::Abs:  if (n > 0) return *this; // else fall through
-                case UnOp::Neg:  return -n; // TODO overflow
+                case UnOp::Abs:  if (n > 0) return *this;
+                                 // else fall through
+                case UnOp::Neg:  return Int::make(-n);
                 case UnOp::Inv:  return ~n;
                 case UnOp::Not:  return asBool(!n);
                 case UnOp::Boln: return asBool(n);
@@ -205,7 +206,8 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::And:
                     case BinOp::InplaceAnd:      return l & r;
                     case BinOp::Lshift:
-                    case BinOp::InplaceLshift:   return l << r;
+                    case BinOp::InplaceLshift:
+                        return Int::make((int64_t) l << r);
                     case BinOp::Rshift:
                     case BinOp::InplaceRshift:   return l >> r;
                     case BinOp::Add:
@@ -213,16 +215,15 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::Subtract:
                     case BinOp::InplaceSubtract: return l - r;
                     case BinOp::Multiply:
-                    case BinOp::InplaceMultiply: return l * r;
+                    case BinOp::InplaceMultiply:
+                        return Int::make((int64_t) l * r);
                     case BinOp::InplaceFloorDivide:
                     case BinOp::FloorDivide:
-                        if (r == 0)
-                            return E::ZeroDivisionError;
+                        if (r == 0) return E::ZeroDivisionError;
                         return l / r;
                     case BinOp::InplaceModulo:
                     case BinOp::Modulo:
-                        if (r == 0)
-                            return E::ZeroDivisionError;
+                        if (r == 0) return E::ZeroDivisionError;
                         return l % r;
                     default: break;
                 }
@@ -378,6 +379,22 @@ auto Int::conv (char const* s) -> Value {
     return make(strtoll(s, nullptr, 10));
 }
 
+auto Int::unop (UnOp op) const -> Value {
+    // TODO use templates to share code with Value::binOp ?
+    switch (op) {
+        case UnOp::Int:  // fall through
+        case UnOp::Pos:  return *this;
+        case UnOp::Hash: return Q::hash(&i64, sizeof i64);
+        case UnOp::Abs:  if (i64 > 0) return *this; // else fall through
+        case UnOp::Neg:  return make(-i64);
+        case UnOp::Inv:  return make(~i64);
+        case UnOp::Not:  return Value::asBool(i64 == 0);
+        case UnOp::Boln: return Value::asBool(i64 != 0);
+    }
+    assert(false);
+    return {};
+}
+
 auto Int::binop (BinOp op, Value rhs) const -> Value {
     // TODO use templates to share code with Value::binOp ?
     auto r64 = rhs.asInt();
@@ -402,14 +419,12 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
         case BinOp::InplaceMultiply: return make(i64 * r64);
         case BinOp::InplaceFloorDivide:
         case BinOp::FloorDivide:
-                                     if (r64 == 0)
-                                        return E::ZeroDivisionError;
-                                     return i64 / r64;
+            if (r64 == 0) return E::ZeroDivisionError;
+            return i64 / r64;
         case BinOp::InplaceModulo:
         case BinOp::Modulo:
-                                     if (r64 == 0)
-                                        return E::ZeroDivisionError;
-                                     return i64 % r64;
+            if (r64 == 0) return E::ZeroDivisionError;
+            return i64 % r64;
         default:                     break;
     }
     (void) rhs; assert(false);

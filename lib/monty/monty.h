@@ -357,6 +357,7 @@ namespace Monty {
 
         operator int64_t () const { return i64; }
 
+        auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
 
     private:
