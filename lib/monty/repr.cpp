@@ -231,7 +231,7 @@ Value Dict::repr (Buffer& buf) const {
 }
 
 Value Exception::repr (Buffer& buf) const {
-    buf.puts(bases.items[extra().code].k);
+    buf.puts(bases.items[(int) extra().code].k);
     return Tuple::repr(buf);
 }
 

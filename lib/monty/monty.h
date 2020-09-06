@@ -89,6 +89,7 @@ namespace Monty {
     struct Lookup;
     struct Buffer;
     struct Type;
+    struct Callable;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -107,7 +108,7 @@ namespace Monty {
         uint16_t id;
     };
 
-    enum class E {
+    enum class E : uint8_t {
         BaseException,
         Exception,
         StopIteration,
@@ -481,7 +482,8 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
-        struct Extra { int code; };
+        struct Extra { E code; uint16_t ipOff; Callable const* callee; };
+        auto extra () const -> Extra& { return *(Extra*) end(); }
 
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
@@ -491,8 +493,6 @@ namespace Monty {
         Exception (E exc, ArgVec const& args);
 
         auto binop (BinOp, Value) const -> Value override;
-
-        auto extra () const -> Extra& { return *(Extra*) end(); }
     };
 
     auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }

@@ -574,7 +574,7 @@ void Tuple::marker () const {
 }
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
-    extra().code = (int) exc;
+    extra() = { .code=exc, .ipOff=0, .callee=nullptr };
 }
 
 auto Exception::binop (BinOp op, Value rhs) const -> Value {
@@ -585,7 +585,7 @@ auto Exception::binop (BinOp op, Value rhs) const -> Value {
 
 void Exception::marker () const {
     Tuple::marker();
-    // TODO Extra fields
+    mark(extra().callee);
 }
 
 //CG: exception BaseException

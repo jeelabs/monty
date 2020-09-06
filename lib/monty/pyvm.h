@@ -399,7 +399,10 @@ class PyVM : public Interp {
     }
     //CG1 op
     void opRaiseLast () {
-        context->raise(""); // TODO
+        Value e;
+        // TODO re-raise previous exception, if there is one, else:
+        e = {E::RuntimeError, "no active exception"};
+        context->raise(e);
     }
     //CG1 op
     void opRaiseObj () {
