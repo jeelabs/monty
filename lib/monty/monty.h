@@ -107,6 +107,29 @@ namespace Monty {
         uint16_t id;
     };
 
+    enum class E {
+        BaseException,
+        Exception,
+        StopIteration,
+        ArithmeticError,
+        ZeroDivisionError,
+        AssertionError,
+        AttributeError,
+        EOFError,
+        ImportError,
+        LookupError,
+        IndexError,
+        KeyError,
+        MemoryError,
+        NameError,
+        OSError,
+        RuntimeError,
+        NotImplementedError,
+        TypeError,
+        ValueError,
+        UnicodeError,
+    };
+
     struct Value {
         enum Tag { Nil, Int, Str, Obj };
 
@@ -116,6 +139,7 @@ namespace Monty {
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
+                  Value (E, Value ={}); // creates *and* raises an exception
 
         operator int () const { return (intptr_t) v >> 1; }
         operator char const* () const;
@@ -456,38 +480,14 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
-        enum {
-            E_BaseException,
-            E_Exception,
-            E_StopIteration,
-            E_ArithmeticError,
-            E_ZeroDivisionError,
-            E_AssertionError,
-            E_AttributeError,
-            E_EOFError,
-            E_ImportError,
-            E_LookupError,
-            E_IndexError,
-            E_KeyError,
-            E_MemoryError,
-            E_NameError,
-            E_OSError,
-            E_RuntimeError,
-            E_NotImplementedError,
-            E_TypeError,
-            E_ValueError,
-            E_UnicodeError,
-        };
-
         struct Extra { int code; };
 
-        static void raise (int, Value ={});
-        static auto create (int, ArgVec const&) -> Value; // diff API
+        static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
 
         void marker () const override;
     private:
-        Exception (int exc, ArgVec const& args);
+        Exception (E exc, ArgVec const& args);
 
         auto binop (BinOp, Value) const -> Value override;
 

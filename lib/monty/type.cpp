@@ -94,6 +94,13 @@ Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
+Value::Value (E exc, Value details) {
+    Vector v {&details, sizeof details};
+    *this = Exception::create(exc, {v, !details.isNil(), 0});
+    assert(Interp::context != nullptr);
+    Interp::context->raise(*this);
+}
+
 Value::operator char const* () const {
     if (!isStr())
         return asType<struct Str>();
@@ -209,18 +216,13 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::InplaceMultiply: return l * r;
                     case BinOp::InplaceFloorDivide:
                     case BinOp::FloorDivide:
-                        if (r == 0) {
-                            //Interp::exception("blah"); // TODO
-Exception::raise(Exception::E_ZeroDivisionError, "divide by zero");
-                            return *this;
-                        }
+                        if (r == 0)
+                            return { E::ZeroDivisionError, "divide by zero" };
                         return l / r;
                     case BinOp::InplaceModulo:
                     case BinOp::Modulo:
-                        if (r == 0) {
-                            Interp::exception("blah"); // TODO
-                            return *this;
-                        }
+                        if (r == 0)
+                            return { E::ZeroDivisionError, "divide by zero" };
                         return l % r;
                     default: break;
                 }
@@ -400,18 +402,16 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
         case BinOp::InplaceMultiply: return make(i64 * r64);
         case BinOp::InplaceFloorDivide:
         case BinOp::FloorDivide:
-            if (r64 == 0) {
-                Interp::exception("blah"); // TODO
-                return 0;
-            }
-            return i64 / r64;
+                                     if (r64 == 0)
+                                        return { E::ZeroDivisionError,
+                                                        "divide by zero" };
+                                     return i64 / r64;
         case BinOp::InplaceModulo:
         case BinOp::Modulo:
-            if (r64 == 0) {
-                Interp::exception("blah"); // TODO
-                return 0;
-            }
-            return i64 % r64;
+                                     if (r64 == 0)
+                                        return { E::ZeroDivisionError,
+                                                        "divide by zero" };
+                                     return i64 % r64;
         default:                     break;
     }
     (void) rhs; assert(false);
@@ -552,8 +552,8 @@ void Tuple::marker () const {
         data()[i].marker();
 }
 
-Exception::Exception (int exc, ArgVec const& args) : Tuple (args) {
-    extra().code = exc;
+Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
+    extra().code = (int) exc;
 }
 
 auto Exception::binop (BinOp op, Value rhs) const -> Value {
@@ -617,102 +617,102 @@ Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
 
 //CG< exception-emit f
 static auto e_BaseException (ArgVec const& args) -> Value {
-    return Exception::create(0, args);
+    return Exception::create(E::BaseException, args);
 }
 static Function const f_BaseException (e_BaseException);
 
 static auto e_Exception (ArgVec const& args) -> Value {
-    return Exception::create(1, args);
+    return Exception::create(E::Exception, args);
 }
 static Function const f_Exception (e_Exception);
 
 static auto e_StopIteration (ArgVec const& args) -> Value {
-    return Exception::create(2, args);
+    return Exception::create(E::StopIteration, args);
 }
 static Function const f_StopIteration (e_StopIteration);
 
 static auto e_ArithmeticError (ArgVec const& args) -> Value {
-    return Exception::create(3, args);
+    return Exception::create(E::ArithmeticError, args);
 }
 static Function const f_ArithmeticError (e_ArithmeticError);
 
 static auto e_ZeroDivisionError (ArgVec const& args) -> Value {
-    return Exception::create(4, args);
+    return Exception::create(E::ZeroDivisionError, args);
 }
 static Function const f_ZeroDivisionError (e_ZeroDivisionError);
 
 static auto e_AssertionError (ArgVec const& args) -> Value {
-    return Exception::create(5, args);
+    return Exception::create(E::AssertionError, args);
 }
 static Function const f_AssertionError (e_AssertionError);
 
 static auto e_AttributeError (ArgVec const& args) -> Value {
-    return Exception::create(6, args);
+    return Exception::create(E::AttributeError, args);
 }
 static Function const f_AttributeError (e_AttributeError);
 
 static auto e_EOFError (ArgVec const& args) -> Value {
-    return Exception::create(7, args);
+    return Exception::create(E::EOFError, args);
 }
 static Function const f_EOFError (e_EOFError);
 
 static auto e_ImportError (ArgVec const& args) -> Value {
-    return Exception::create(8, args);
+    return Exception::create(E::ImportError, args);
 }
 static Function const f_ImportError (e_ImportError);
 
 static auto e_LookupError (ArgVec const& args) -> Value {
-    return Exception::create(9, args);
+    return Exception::create(E::LookupError, args);
 }
 static Function const f_LookupError (e_LookupError);
 
 static auto e_IndexError (ArgVec const& args) -> Value {
-    return Exception::create(10, args);
+    return Exception::create(E::IndexError, args);
 }
 static Function const f_IndexError (e_IndexError);
 
 static auto e_KeyError (ArgVec const& args) -> Value {
-    return Exception::create(11, args);
+    return Exception::create(E::KeyError, args);
 }
 static Function const f_KeyError (e_KeyError);
 
 static auto e_MemoryError (ArgVec const& args) -> Value {
-    return Exception::create(12, args);
+    return Exception::create(E::MemoryError, args);
 }
 static Function const f_MemoryError (e_MemoryError);
 
 static auto e_NameError (ArgVec const& args) -> Value {
-    return Exception::create(13, args);
+    return Exception::create(E::NameError, args);
 }
 static Function const f_NameError (e_NameError);
 
 static auto e_OSError (ArgVec const& args) -> Value {
-    return Exception::create(14, args);
+    return Exception::create(E::OSError, args);
 }
 static Function const f_OSError (e_OSError);
 
 static auto e_RuntimeError (ArgVec const& args) -> Value {
-    return Exception::create(15, args);
+    return Exception::create(E::RuntimeError, args);
 }
 static Function const f_RuntimeError (e_RuntimeError);
 
 static auto e_NotImplementedError (ArgVec const& args) -> Value {
-    return Exception::create(16, args);
+    return Exception::create(E::NotImplementedError, args);
 }
 static Function const f_NotImplementedError (e_NotImplementedError);
 
 static auto e_TypeError (ArgVec const& args) -> Value {
-    return Exception::create(17, args);
+    return Exception::create(E::TypeError, args);
 }
 static Function const f_TypeError (e_TypeError);
 
 static auto e_ValueError (ArgVec const& args) -> Value {
-    return Exception::create(18, args);
+    return Exception::create(E::ValueError, args);
 }
 static Function const f_ValueError (e_ValueError);
 
 static auto e_UnicodeError (ArgVec const& args) -> Value {
-    return Exception::create(19, args);
+    return Exception::create(E::UnicodeError, args);
 }
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
@@ -1033,14 +1033,7 @@ auto Tuple::create (ArgVec const& args, Type const*) -> Value {
     return new (args.num * sizeof (Value)) Tuple (args);
 }
 
-void Exception::raise (int exc, Value details) {
-    Vector v {&details, sizeof details};
-    auto e = create(exc, {v, !details.isNil(), 0});
-    assert(Interp::context != nullptr);
-    Interp::context->raise(e);
-}
-
-auto Exception::create (int exc, ArgVec const& args) -> Value {
+auto Exception::create (E exc, ArgVec const& args) -> Value {
     // single alloc: first a tuple with args.num values, then exception info
     auto sz = args.num * sizeof (Value) + sizeof (Extra);
     return new (sz) Exception (exc, args);
