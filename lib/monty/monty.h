@@ -906,7 +906,7 @@ namespace Monty {
         }
 
         void enter (Callable const&);
-        auto leave (Value v) -> Value;
+        auto leave (Value v ={}) -> Value;
 
         auto spBase () const -> Value* { return frame().stack; }
         auto ipBase () const -> uint8_t const* { return callee->bc.start(); }

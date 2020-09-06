@@ -422,7 +422,7 @@ class PyVM : public Interp {
         auto v = contextAdjuster([=]() -> Value {
             return sp->obj().call(avec);
         });
-        *sp = Null;
+        *sp = v;
     }
     //CG1 op o
     void opPopExceptJump (int arg) {

@@ -20,8 +20,8 @@ Value const Monty::False {Bool::falseObj};
 Value const Monty::True  {Bool::trueObj};
 Value const Monty::Empty {Tuple::emptyObj};
 
-constexpr int QID_RAM_BASE = 10240;
-constexpr int QID_RAM_LAST = 20480;
+constexpr int QID_RAM_BASE = 32*1024;
+constexpr int QID_RAM_LAST = 48*1024;
 
 static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
 static VaryVec qstrRamMap;
@@ -97,8 +97,7 @@ Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
 Value::Value (E exc, Value details) {
     Vector v {&details, sizeof details};
     *this = Exception::create(exc, {v, !details.isNil(), 0});
-    assert(Interp::context != nullptr);
-    Interp::context->raise(*this);
+    Interp::exception(*this);
 }
 
 Value::operator char const* () const {

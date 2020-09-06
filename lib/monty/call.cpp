@@ -164,7 +164,7 @@ void Context::caught () {
         spOff = ep[1];
         begin()[++spOff] = e.isNil() ? ep[3] : e;
     } else {
-        leave({});
+        leave();
         raise(e);
     }
 }
