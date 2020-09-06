@@ -287,10 +287,11 @@ class PyVM : public Interp {
     //CG1 op q
     void opLoadAttr (Q arg) {
         Value self;
-        *sp = sp->obj().attr(arg, self);
-        if (sp->isNil())
-            *sp = {E::AttributeError, arg};
+        Value v = sp->obj().attr(arg, self);
+        if (v.isNil())
+            *sp = {E::AttributeError, arg, sp->asObj().type().name};
         else {
+            *sp = v;
             // TODO should this be moved into Inst::attr ???
             auto f = sp->ifType<Callable>();
             if (!self.isNil() && f != 0)
@@ -459,8 +460,8 @@ class PyVM : public Interp {
     void opLoadMethod (Q arg) {
         sp[1] = {};
         auto v = sp->asObj().attr(arg, sp[1]);
-        if (v.isNil())
-            *sp = {E::AttributeError, *sp, arg};
+        if (v.isNil()) // TODO duplicate code, move test & exception into attr?
+            *sp = {E::AttributeError, arg, sp->asObj().type().name};
         else
             *sp = v;
         ++sp;

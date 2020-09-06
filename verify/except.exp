@@ -26,6 +26,6 @@ final 2
 bingo 2
 ZeroDivisionError()
 NameError("xx")
-AttributeError("yy")
+AttributeError("yy","A")
 KeyError("zz")
 done
