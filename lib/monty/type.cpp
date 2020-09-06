@@ -94,9 +94,13 @@ Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
-Value::Value (E exc, Value details) {
-    Vector v {&details, sizeof details};
-    *this = Exception::create(exc, {v, !details.isNil(), 0});
+Value::Value (E exc, Value arg1, Value arg2) {
+    Vector v;
+    v.insert(0, 2);
+    v[0] = arg1;
+    v[1] = arg2;
+    auto nargs = arg1.isNil() ? 0 : arg2.isNil() ? 1 : 2;
+    *this = Exception::create(exc, {v, nargs, 0});
     Interp::exception(*this);
 }
 

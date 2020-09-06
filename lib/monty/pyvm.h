@@ -458,9 +458,11 @@ class PyVM : public Interp {
     //CG1 op q
     void opLoadMethod (Q arg) {
         sp[1] = {};
-        *sp = sp->asObj().attr(arg, sp[1]);
-        if (sp->isNil())
-            *sp = {E::AttributeError, arg}; // TODO also report original *sp
+        auto v = sp->asObj().attr(arg, sp[1]);
+        if (v.isNil())
+            *sp = {E::AttributeError, *sp, arg};
+        else
+            *sp = v;
         ++sp;
     }
     //CG1 op q
