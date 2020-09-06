@@ -384,13 +384,45 @@ class PyVM : public Interp {
         } else
             assert(false); // TODO unwind jump
     }
-    //CG1 op
-    void opSetupWith () {
-        assert(false); // TODO
+    //CG1 op o
+    void opSetupWith (int arg) {
+        auto exit = Q( 13,"__exit__");
+        sp[1] = {};
+        *sp = sp->asObj().attr(exit, sp[1]);
+        if (sp->isNil()) {
+            *sp = {E::AttributeError, exit};
+            return;
+        }
+
+        auto enter = Q( 12,"__enter__");
+        sp[2] = sp[1].asObj().attr(enter, sp[3]);
+        if (sp->isNil()) {
+            sp[2] = {E::AttributeError, enter};
+            return;
+        }
+
+        ++sp;
+        opSetupExcept(arg);
+        ++sp;
+
+        ArgVec avec {*context, 1, sp};
+        auto v = contextAdjuster([=]() -> Value {
+            return sp->obj().call(avec);
+        });
+        *sp = v;
     }
     //CG1 op
     void opWithCleanup () {
-        assert(false); // TODO
+        assert(sp->isNull()); // TODO other cases
+        sp[1] = Null;
+        sp[2] = Null;
+        sp -= 2;
+
+        ArgVec avec {*context, 4, sp + 1};
+        auto v = contextAdjuster([=]() -> Value {
+            return sp->obj().call(avec);
+        });
+        *sp = Null;
     }
     //CG1 op o
     void opPopExceptJump (int arg) {
@@ -427,7 +459,8 @@ class PyVM : public Interp {
     void opLoadMethod (Q arg) {
         sp[1] = {};
         *sp = sp->asObj().attr(arg, sp[1]);
-        assert(!sp->isNil());
+        if (sp->isNil())
+            *sp = {E::AttributeError, arg}; // TODO also report original *sp
         ++sp;
     }
     //CG1 op q
@@ -806,9 +839,11 @@ class PyVM : public Interp {
                 case Op::EndFinally:
                     opEndFinally();
                     break;
-                case Op::SetupWith:
-                    opSetupWith();
+                case Op::SetupWith: {
+                    int arg = fetchO();
+                    opSetupWith(arg);
                     break;
+                }
                 case Op::WithCleanup:
                     opWithCleanup();
                     break;

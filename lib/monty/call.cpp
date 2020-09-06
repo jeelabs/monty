@@ -123,8 +123,8 @@ Value Context::leave (Value v) {
         if (n >= 0)
             Interp::tasks.remove(n);
 
-        fill = 0; // delete stack entries
-        adj(0); // release vector
+        fill = NumSlots; // delete stack entries
+        adj(NumSlots); // release vector
     }
 
     return r;
