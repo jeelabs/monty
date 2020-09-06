@@ -217,12 +217,12 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                     case BinOp::InplaceFloorDivide:
                     case BinOp::FloorDivide:
                         if (r == 0)
-                            return { E::ZeroDivisionError, "divide by zero" };
+                            return E::ZeroDivisionError;
                         return l / r;
                     case BinOp::InplaceModulo:
                     case BinOp::Modulo:
                         if (r == 0)
-                            return { E::ZeroDivisionError, "divide by zero" };
+                            return E::ZeroDivisionError;
                         return l % r;
                     default: break;
                 }
@@ -403,14 +403,12 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
         case BinOp::InplaceFloorDivide:
         case BinOp::FloorDivide:
                                      if (r64 == 0)
-                                        return { E::ZeroDivisionError,
-                                                        "divide by zero" };
+                                        return E::ZeroDivisionError;
                                      return i64 / r64;
         case BinOp::InplaceModulo:
         case BinOp::Modulo:
                                      if (r64 == 0)
-                                        return { E::ZeroDivisionError,
-                                                        "divide by zero" };
+                                        return E::ZeroDivisionError;
                                      return i64 % r64;
         default:                     break;
     }
