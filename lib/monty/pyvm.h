@@ -356,7 +356,7 @@ class PyVM : public Interp {
     void opUnpackSequence (int arg) {
         auto& seq = sp->asObj(); // TODO iterators
         if ((int) seq.len() != arg)
-            *sp = {E::ValueError, "unpack count mismatch", seq.len()};
+            *sp = {E::ValueError, "unpack count mismatch", (int) seq.len()};
         else {
             for (int i = 0; i < arg; ++i)
                 sp[arg-i-1] = seq.getAt(i);
