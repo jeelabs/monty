@@ -50,3 +50,21 @@ try:
     a = 1 // 0
 except BaseException as e:
     print(e)
+
+try:
+    print(xx)
+except BaseException as e:
+    print(e)
+
+class A: pass
+a = A()
+try:
+    print(a.yy)
+except BaseException as e:
+    print(e)
+
+a = {}
+try:
+    print(a['zz'])
+except BaseException as e:
+    print(e)

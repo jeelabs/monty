@@ -25,4 +25,7 @@ start 2
 final 2
 bingo 2
 ZeroDivisionError()
+NameError("xx")
+AttributeError("yy")
+KeyError("zz")
 done

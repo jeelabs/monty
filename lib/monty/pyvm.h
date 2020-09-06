@@ -256,7 +256,8 @@ class PyVM : public Interp {
     void opLoadName (Q arg) {
         assert(frame().locals.isObj());
         *++sp = frame().locals.obj().getAt(arg);
-        assert(!sp->isNil());
+        if (sp->isNil())
+            *sp = {E::NameError, arg};
     }
     //CG1 op q
     void opStoreName (Q arg) {
@@ -287,11 +288,14 @@ class PyVM : public Interp {
     void opLoadAttr (Q arg) {
         Value self;
         *sp = sp->obj().attr(arg, self);
-        assert(!sp->isNil());
-        // TODO should this be moved into Inst::attr ???
-        auto f = sp->ifType<Callable>();
-        if (!self.isNil() && f != 0)
-            *sp = new BoundMeth (*f, self);
+        if (sp->isNil())
+            *sp = {E::AttributeError, arg};
+        else {
+            // TODO should this be moved into Inst::attr ???
+            auto f = sp->ifType<Callable>();
+            if (!self.isNil() && f != 0)
+                *sp = new BoundMeth (*f, self);
+        }
     }
     //CG1 op q
     void opStoreAttr (Q arg) {
@@ -303,6 +307,8 @@ class PyVM : public Interp {
     void opLoadSubscr () {
         --sp;
         *sp = sp->asObj().getAt(sp[1]);
+        if (sp->isNil())
+            *sp = {E::KeyError, sp[1]};
     }
     //CG1 op
     void opStoreSubscr () {
