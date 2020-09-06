@@ -1,0 +1,15 @@
+main
+11 22 33
+ValueError("unpack count mismatch",2)
+ValueError("unpack count mismatch",4)
+11 22 []
+11 22 [33]
+11 22 [33,44]
+ValueError("unpack needs more items",1)
+11 [] 22
+11 [22] 33
+11 [22,33] 44
+[] 11 22
+[11] 22 33
+[11,22] 33 44
+done

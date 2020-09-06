@@ -354,11 +354,30 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opUnpackSequence (int arg) {
-        (void) arg; assert(false); // TODO
+        auto& seq = sp->asObj(); // TODO iterators
+        if ((int) seq.len() != arg)
+            *sp = {E::ValueError, "unpack count mismatch", seq.len()};
+        else {
+            for (int i = 0; i < arg; ++i)
+                sp[arg-i-1] = seq.getAt(i);
+            sp += arg - 1;
+        }
     }
     //CG1 op v
     void opUnpackEx (int arg) {
-        (void) arg; assert(false); // TODO
+        auto& seq = sp->asType<List>(); // TODO tuples and iterators
+        uint8_t left = arg, right = arg >> 8;
+        int got = seq.len();
+        if (got < left + right)
+            *sp = {E::ValueError, "unpack needs more items", got};
+        else {
+            for (int i = 0; i < right; ++i)
+                sp[i] = seq.getAt(got-i-1);
+            sp[right] = new List ({seq, got - left - right, left});
+            for (int i = 0; i < left; ++i)
+                sp[right+1+i] = seq.getAt(left-i-1);
+            sp += left + right;
+        }
     }
 
     //CG1 op o
