@@ -1,4 +1,4 @@
-// The opcodes and unary/binary operators, as emitted by MicroPython 1.12.
+// the opcodes and unary/binary operators, as emitted by MicroPython 1.13
 
 namespace Monty {
     enum UnOp : uint8_t {
