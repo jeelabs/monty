@@ -26,7 +26,7 @@ static void initLeds () {
 static void initLeds () {}
 #endif
 
-UartBufDev< PINS_CONSOLE > console;
+UartBufDev< CONSOLE_UART_PINS > console;
 
 int printf (char const* fmt, ...) {
     va_list ap; va_start(ap, fmt);
@@ -130,8 +130,6 @@ struct Uart: Object {
     Value close ();
 
     auto attr (char const* name, Value& self) const -> Value override;
-
-    void marker () const override;
 };
 
 static void (*prevIrq)();
@@ -185,10 +183,6 @@ auto Uart::close () -> Value {
 
 Value Uart::attr (const char* key, Value&) const {
     return attrs.getAt(key);
-}
-
-void Uart::marker () const {
-    // TODO
 }
 
 static auto d_uart_read = Method::wrap(&Uart::read);

@@ -11,7 +11,7 @@ using namespace Monty;
 
 // the FatFS implementation in JeeH is a bit weird, unfortunately ...
 
-static SpiGpio< PINS_SDCARD > spi;
+static SpiGpio< SDCARD_SPI_PINS > spi;
 static SdCard< decltype (spi) > sd;
 static FatFS< decltype (sd) > fs;
 

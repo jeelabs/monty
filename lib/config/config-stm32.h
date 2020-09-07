@@ -6,7 +6,7 @@
     #define INCLUDE_NETWORK 1
     #define NETWORK_SPI_PINS PinA<7>, PinA<6>, PinA<5>, PinC<4>
     #define INCLUDE_SDCARD 1
-    #define PINS_SDCARD PinD<2>, PinC<8>, PinC<12>, PinC<11>
+    #define SDCARD_SPI_PINS PinD<2>, PinC<8>, PinC<12>, PinC<11>
 #elif CONFIG == F103ZE_NET
     #define INCLUDE_NETWORK 1
     #define NETWORK_SPI_PINS PinA<7>, PinA<6>, PinA<5>, PinA<4>
@@ -14,13 +14,13 @@
 #endif
 
 #if BOARD_discovery_f4 || STM32L0 || STM32L4
-    #define PINS_CONSOLE PinA<2>, PinA<3> // TODO rx on PA15 for L432?
+    #define CONSOLE_UART_PINS PinA<2>, PinA<3> // TODO rx on PA15 for L432?
 #elif STM32H743xx // nucleo-144
-    #define PINS_CONSOLE PinD<8>, PinD<9>
+    #define CONSOLE_UART_PINS PinD<8>, PinD<9>
 #elif CONFIG == GOLD_DRAGON
-    #define PINS_CONSOLE PinC<10>, PinC<11>
+    #define CONSOLE_UART_PINS PinC<10>, PinC<11>
 #else
-    #define PINS_CONSOLE PinA<9>, PinA<10>
+    #define CONSOLE_UART_PINS PinA<9>, PinA<10>
 #endif
 
 #if BOARD_discovery_f4 || STM32H743xx || CONFIG == GOLD_DRAGON
