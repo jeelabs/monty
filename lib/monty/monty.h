@@ -412,6 +412,9 @@ namespace Monty {
     //CG>
         Range (Value a, Value b, Value c);
 
+        auto len () const -> uint32_t override;
+        auto getAt (Value k) const -> Value override;
+        auto iter  () const -> Value override { return 0; }
     private:
         int32_t start, limit, step;
     };

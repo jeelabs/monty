@@ -548,6 +548,15 @@ Range::Range (Value a, Value b, Value c) {
     step = c.isInt() ? (int) c : 1;
 }
 
+auto Range::len () const -> uint32_t {
+    auto n = (limit - start + step + (step > 0 ? -1 : 1)) / step;
+    return n < 0 ? 0 : n;
+}
+
+auto Range::getAt (Value k) const -> Value {
+    return start + k * step;
+}
+
 Slice::Slice (Value a, Value b, Value c) {
     assert(a.isInt() && b.isInt());
     off = a;
