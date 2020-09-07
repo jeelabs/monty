@@ -595,7 +595,8 @@ class PyVM : public Interp {
     void opGetIterStack () {
         // TODO the compiler assumes 4 stack entries are used!
         //  layout [seq,nil,nil,(idx|iter)]
-        auto v = sp->asObj().iter(); // will be 0 for indexed iteration
+        *sp = sp->asObj(); // for qstrs, etc
+        auto v = sp->obj().iter(); // will be 0 for indexed iteration
         *++sp = {};
         *++sp = {};
         *++sp = v;

@@ -382,6 +382,7 @@ namespace Monty {
         auto binop (BinOp, Value) const -> Value override;
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
+        auto iter  () const -> Value override { return 0; }
     };
 
     //CG< type str
