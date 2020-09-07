@@ -5,7 +5,7 @@
 #include "unittest_transport.h"
 #include <jee.h>
 
-UartBufDev< PINS_CONSOLE > console;
+UartBufDev< CONSOLE_UART_PINS > console;
 
 void unittest_uart_begin () {
     console.init();

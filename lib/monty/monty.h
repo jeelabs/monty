@@ -372,14 +372,14 @@ namespace Monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Iterator (Object& obj, int pos =-1) : iobj (obj), ipos (pos) {}
+        Iterator (Object& obj, int pos =-1) : ipos (pos), iobj (obj) {}
 
         auto next() -> Value override;
 
         void marker () const override { mark(iobj); }
     private:
-        Object& iobj;
         int ipos;
+        Object& iobj;
     };
 
     //CG< type bytes
