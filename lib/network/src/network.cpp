@@ -27,12 +27,12 @@ extern "C" {
 
 using namespace Monty;
 
-static SpiGpio< PINS_NETWORK > spi;
+static SpiGpio< NETWORK_SPI_PINS > spi;
 
 void enchw_setup (enchw_device_t*) {
     spi.init();
-#if CONFIG == F103ZE_NET
-    PinA<3> reset; reset.mode(Pinmode::out);
+#ifdef NETWORK_RESET_PIN
+    NETWORK_RESET_PIN reset; reset.mode(Pinmode::out);
     reset = 0; wait_ms(2); reset = 1; wait_ms(10);
 #endif
 }
@@ -104,7 +104,7 @@ static Value f_poll (ArgVec const& args) {
     assert(args.num == 0);
     mn_poll(&enc_if);
     sys_check_timeouts();
-    return Value ();
+    return {};
 }
 
 static Value f_ifconfig (ArgVec const& args) {
@@ -133,7 +133,7 @@ static Value f_ifconfig (ArgVec const& args) {
     netif_set_default(&enc_if);
     netif_set_up(&enc_if);
 
-    return Value ();
+    return {};
 }
 
 struct Socket: Object {
@@ -142,9 +142,7 @@ struct Socket: Object {
     static Type const info;
     auto type () const -> Type const& override { return info; }
 
-    Socket (tcp_pcb* p) : socket (p) {
-        tcp_arg(socket, this);
-    }
+    Socket (tcp_pcb* p) : socket (p) { tcp_arg(socket, this); }
 
     Value bind (int arg);
     Value connect (ArgVec const& args);
@@ -160,10 +158,10 @@ private:
     bool sendIt (Value arg);
 
     tcp_pcb* socket;
-    Callable* accepter = 0;
+    Callable* accepter {nullptr};
     List readQueue, writeQueue; // TODO don't use queues: fix suspend!
     Value toSend;
-    Array* recvBuf = 0;
+    Array* recvBuf {nullptr};
 };
 
 auto Socket::create (ArgVec const& args, Type const*) -> Value {
@@ -188,7 +186,7 @@ Value Socket::attr (const char* key, Value& self) const {
 Value Socket::bind (int arg) {
     auto r = tcp_bind(socket, IP_ADDR_ANY, arg);
     (void) r; assert(r == 0);
-    return Value ();
+    return {};
 }
 
 Value Socket::connect (ArgVec const& args) {
@@ -207,7 +205,7 @@ Value Socket::connect (ArgVec const& args) {
     (void) r; assert(r == 0);
 
     Interp::suspend(readQueue);
-    return Value ();
+    return {};
 }
 
 Value Socket::listen (ArgVec const& args) {
@@ -223,17 +221,17 @@ Value Socket::listen (ArgVec const& args) {
         auto& self = *(Socket*) arg;
         assert(self.accepter != 0);
 
-        Vector args;
-        args.insert(0);
-        args[0] = new Socket (newpcb);
+        Vector avec;
+        avec.insert(0);
+        avec[0] = new Socket (newpcb);
 
-        Value v = self.accepter->call({args, 1, 0});
+        Value v = self.accepter->call({avec, 1, 0});
         assert(v.isObj());
         Interp::tasks.append(v);
         return ERR_OK;
     });
 
-    return Value ();
+    return {};
 }
 
 Value Socket::read (Value arg) {
@@ -257,7 +255,7 @@ Value Socket::read (Value arg) {
         return ERR_OK;
     });
 
-    return Value ();
+    return {};
 }
 
 bool Socket::sendIt (Value arg) {
@@ -288,7 +286,7 @@ bool Socket::sendIt (Value arg) {
 Value Socket::write (Value arg) {
     assert(toSend.isNil()); // don't allow multiple outstanding sends
     if (sendIt(arg))
-        return Value ();
+        return {};
 
     toSend = arg;
     printf("suspending write\n");
@@ -301,7 +299,7 @@ Value Socket::write (Value arg) {
             assert(self.socket == tpcb);
             if (self.sendIt(self.toSend)) {
                 tcp_sent(tpcb, 0);
-                self.toSend = Value ();
+                self.toSend = {};
                 assert(self.writeQueue.len() > 0);
                 Interp::tasks.append(self.writeQueue.pop(0));
             }
@@ -309,7 +307,7 @@ Value Socket::write (Value arg) {
         return ERR_OK;
     });
 
-    return Value ();
+    return {};
 }
 
 Value Socket::close () {
@@ -320,41 +318,41 @@ Value Socket::close () {
         tcp_close(socket);
         socket = 0;
     }
-    toSend = Value ();
+    toSend = {};
     if (readQueue.len() > 0)
         readQueue.pop(0); // TODO throw Interp::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
     if (writeQueue.len() > 0)
         writeQueue.pop(0); // TODO throw Interp::tasks.append(writeQueue.pop(0));
     assert(writeQueue.len() == 0);
-    return Value ();
+    return {};
 }
 
-static const auto m_bind = Method::wrap(&Socket::bind);
-static const Method mo_bind = m_bind;
+static const auto d_socket_bind = Method::wrap(&Socket::bind);
+static const Method m_socket_bind = d_socket_bind;
 
-static const auto m_connect = Method::wrap(&Socket::connect);
-static const Method mo_connect = m_connect;
+static const auto d_socket_connect = Method::wrap(&Socket::connect);
+static const Method m_socket_connect = d_socket_connect;
 
-static const auto m_listen = Method::wrap(&Socket::listen);
-static const Method mo_listen = m_listen;
+static const auto d_socket_listen = Method::wrap(&Socket::listen);
+static const Method m_socket_listen = d_socket_listen;
 
-static const auto m_read = Method::wrap(&Socket::read);
-static const Method mo_read = m_read;
+static const auto d_socket_read = Method::wrap(&Socket::read);
+static const Method m_socket_read = d_socket_read;
 
-static const auto m_write = Method::wrap(&Socket::write);
-static const Method mo_write = m_write;
+static const auto d_socket_write = Method::wrap(&Socket::write);
+static const Method m_socket_write = d_socket_write;
 
-static const auto m_close = Method::wrap(&Socket::close);
-static const Method mo_close = m_close;
+static const auto d_socket_close = Method::wrap(&Socket::close);
+static const Method m_socket_close = d_socket_close;
 
 static const Lookup::Item socketMap [] = {
-    { "bind", mo_bind },
-    { "connect", mo_connect },
-    { "listen", mo_listen },
-    { "read", mo_read },
-    { "write", mo_write },
-    { "close", mo_close },
+    { "bind", m_socket_bind },
+    { "connect", m_socket_connect },
+    { "listen", m_socket_listen },
+    { "read", m_socket_read },
+    { "write", m_socket_write },
+    { "close", m_socket_close },
 };
 
 const Lookup Socket::attrs (socketMap, sizeof socketMap);

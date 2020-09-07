@@ -4,12 +4,13 @@
 
 #if CONFIG == F103RC_NET
     #define INCLUDE_NETWORK 1
-    #define PINS_NETWORK PinA<7>, PinA<6>, PinA<5>, PinC<4>
+    #define NETWORK_SPI_PINS PinA<7>, PinA<6>, PinA<5>, PinC<4>
     #define INCLUDE_SDCARD 1
     #define PINS_SDCARD PinD<2>, PinC<8>, PinC<12>, PinC<11>
 #elif CONFIG == F103ZE_NET
     #define INCLUDE_NETWORK 1
-    #define PINS_NETWORK PinA<7>, PinA<6>, PinA<5>, PinA<4>
+    #define NETWORK_SPI_PINS PinA<7>, PinA<6>, PinA<5>, PinA<4>
+    #define NETWORK_RESET_PIN PinA<3>
 #endif
 
 #if BOARD_discovery_f4 || STM32L0 || STM32L4
