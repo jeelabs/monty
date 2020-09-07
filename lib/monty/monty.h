@@ -627,9 +627,30 @@ namespace Monty {
         auto getAt (Value k) const -> Value override { return at(k); }
         auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
 
+        auto keys () -> Value;
+        auto values () -> Value;
+        auto items () -> Value;
+
         void marker () const override;
     // TODO protected:
         Object const* chain {nullptr};
+    };
+
+    //CG3 type <dictview>
+    struct DictView : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        DictView (Dict const& d, int vt) : dict (d), vtype (vt) {}
+
+        auto len () const -> uint32_t override { return dict.fill; }
+        auto getAt (Value k) const -> Value override;
+        auto iter  () const -> Value override { return 0; }
+
+        void marker () const override { dict.marker(); }
+    // TODO protected:
+        Dict const& dict;
+        int vtype;
     };
 
     //CG< type type

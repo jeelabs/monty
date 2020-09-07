@@ -316,11 +316,37 @@ auto Dict::at (Value k) const -> Value {
             chain != nullptr ? chain->getAt(k) : Value {};
 }
 
+auto Dict::keys () -> Value {
+    return new DictView (*this, 0);
+}
+
+auto Dict::values () -> Value {
+    return new DictView (*this, 1);
+}
+
+auto Dict::items () -> Value {
+    return new DictView (*this, 2);
+}
+
 void Dict::marker () const {
     auto& v = (Vector const&) *this;
     for (uint32_t i = 0; i < 2 * fill; ++i) // note: twice the fill
         v[i].marker();
     mark(chain);
+}
+
+auto DictView::getAt (Value k) const -> Value {
+    assert(k.isInt());
+    int n = k;
+    if (vtype == 1)
+        n += dict.fill;
+    if (vtype <= 1)
+        return dict[n];
+    Vector avec;
+    avec.insert(0, 2);
+    avec[0] = dict[n];
+    avec[1] = dict[n+dict.fill];
+    return Tuple::create({avec, 2, 0});
 }
 
 auto Type::call (ArgVec const& args) const -> Value {
