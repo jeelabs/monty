@@ -633,12 +633,17 @@ class PyVM : public Interp {
                 pos = n + 1;
             }
         } else {
-            //assert(false); // TODO but how: contextAdjuster? next? resume?
+            // TODO yuck, bump sp for result if switching away, else restore
+            //  the logic to check for a context switch here is also worrying
+            // FIXME also, looks like this doesn't finish iteration properly
+            ++sp;
+            auto ctxSave = context;
             v = contextAdjuster([=]() -> Value {
                 return pos.obj().next();
             });
-            *++sp = v;
-            return;
+            if (context != ctxSave)
+                return; // switched away, the generator will supply next result
+            --sp;
         }
         if (v.isNil()) {
             sp -= 4;
