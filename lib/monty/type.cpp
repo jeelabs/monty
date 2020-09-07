@@ -1101,7 +1101,7 @@ auto Range::create (ArgVec const& args, Type const*) -> Value {
     assert(1 <= args.num && args.num <= 3);
     Value a = args.num > 1 ? args[0] : Value (0);
     Value b = args.num == 1 ? args[0] : args[1];
-    Value c = args.num > 2 ? args[2] : b;
+    Value c = args.num > 2 ? (int) args[2] : 1;
     return new Range (a, b, c);
 }
 

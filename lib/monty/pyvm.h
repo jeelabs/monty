@@ -139,6 +139,19 @@ class PyVM : public Interp {
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
+        static Context* prevCtx;
+        if (prevCtx != context) {
+            if (prevCtx != nullptr) {
+                printf("\tip %04d sp %2d e ? ", prevCtx->ipOff,
+                                                prevCtx->spOff - 9);
+                printf("op 0x%02x : ", *(prevCtx->ipOff + prevCtx->ipBase()));
+                if (prevCtx->spOff >= 9)
+                    (prevCtx->spOff + prevCtx->spBase())->dump();
+                printf("\n");
+            }
+            printf("### context changed from %p to %p ###\n", prevCtx, context);
+            prevCtx = context;
+        }
         printf("\tip %04d sp %2d e %d ", (int) (ip - context->ipBase()),
                                          (int) (sp - context->spBase()),
                                          (int) frame().ep);

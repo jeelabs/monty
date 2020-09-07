@@ -1,7 +1,14 @@
-a = (i*i for i in range(5))
+a = iter(range(5))
 print(type(a))
 print(next(a))
-#print(next(a)) # TODO fails, wrong answer
-#print(next(a)) # TODO fails, crashes ...
-#for i in a:
+print(next(a))
+print(next(a))
+
+b = (i*i for i in range(5))
+print(type(b))
+print(next(b))
+print(next(b))
+print(next(b))
+
+#for i in b:
 #    print(i)

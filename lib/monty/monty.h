@@ -663,7 +663,7 @@ namespace Monty {
         auto iter  () const -> Value override { return 0; }
 
         void marker () const override { dict.marker(); }
-    // TODO protected:
+    private:
         Dict const& dict;
         int vtype;
     };
