@@ -397,7 +397,7 @@ namespace Monty {
         auto binop (BinOp, Value) const -> Value override;
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
     };
 
     //CG< type str
@@ -429,7 +429,7 @@ namespace Monty {
 
         auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
     private:
         int32_t start, limit, step;
     };
@@ -484,7 +484,7 @@ namespace Monty {
 
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
 
         void marker () const override;
 
@@ -564,7 +564,7 @@ namespace Monty {
         auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
 
     private:
         auto sel () const -> uint8_t { return fill >> 27; }
@@ -588,7 +588,7 @@ namespace Monty {
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
 
         void marker () const override { markVec(*this); }
     };
@@ -660,7 +660,7 @@ namespace Monty {
 
         auto len () const -> uint32_t override { return dict.fill; }
         auto getAt (Value k) const -> Value override;
-        auto iter  () const -> Value override { return 0; }
+        auto iter () const -> Value override { return 0; }
 
         void marker () const override { dict.marker(); }
     private:
@@ -972,7 +972,7 @@ namespace Monty {
         void raise (Value exc ={});
         void caught ();
 
-        auto iter  () const -> Value override { return this; }
+        auto iter () const -> Value override { return this; }
         auto next () -> Value override;
 
         void marker () const override;
