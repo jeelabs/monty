@@ -139,6 +139,14 @@ auto Context::excBase (int incr) -> Value* {
 }
 
 void Context::raise (Value exc) {
+    if (Interp::context == nullptr) {
+        Buffer buf; // TODO wrong place: bail out and print exception details
+        buf.print("uncaught exception: ");
+        exc.obj().repr(buf);
+        buf.putc('\n');
+        return;
+    }
+
     uint32_t num = 0;
     if (exc.isInt())
         num = exc;              // trigger soft-irq 1..31 (interrupt-safe)

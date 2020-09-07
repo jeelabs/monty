@@ -364,6 +364,16 @@ auto Object::setAt (Value, Value) -> Value {
     return {};
 }
 
+auto Object::iter () const -> Value {
+    assert(false);
+    return {};
+}
+
+auto Object::next () -> Value {
+    assert(false);
+    return {};
+}
+
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Int:  // fall through
@@ -832,9 +842,17 @@ static auto bi_print (ArgVec const& args) -> Value {
 
 static Function const f_print (bi_print);
 
+static auto bi_iter (ArgVec const& args) -> Value {
+    assert(args.num == 1 && args[0].isObj());
+    return args[0].obj().iter();
+    // TODO convert 0 to real iterator
+}
+
+static Function const f_iter (bi_iter);
+
 static auto bi_next (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isObj());
-    return args[0].asType<Context>().next();
+    return args[0].obj().next();
 }
 
 static Function const f_next (bi_next);
@@ -899,6 +917,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q(177,"UnicodeError")        , f_UnicodeError },
     //CG>
     { Q(123,"print"), f_print },
+    { Q(103,"iter"),  f_iter },
     { Q(116,"next"),  f_next },
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },

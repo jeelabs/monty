@@ -588,28 +588,37 @@ class PyVM : public Interp {
 
     //CG1 op
     void opGetIter () {
-        assert(false); // TODO
+        *sp = sp->asObj().iter();
+        // TODO convert 0 to real iterator
     }
     //CG1 op
     void opGetIterStack () {
-        // TODO yuck, the compiler assumes 4 stack entries are used!
-        //  layout [seq,idx,nil,nil]
-        *++sp = 0;
+        // TODO the compiler assumes 4 stack entries are used!
+        //  layout [seq,nil,nil,(idx|iter)]
+        auto v = sp->asObj().iter(); // will be 0 for indexed iteration
         *++sp = {};
         *++sp = {};
+        *++sp = v;
     }
     //CG1 op o
     void opForIter (int arg) {
-        assert(sp->isNil());
-        int n = sp[-2];
-        Value v = sp[-3].obj().getAt(n++);
+        Value v;
+        if (sp->isInt()) {
+            auto& seq = sp[-3].obj();
+            int n = *sp;
+            if (n < (int) seq.len()) {
+                if (&seq.type() == &Dict::info || &seq.type() == &Set::info)
+                    v = ((List&) seq)[n]; // avoid keyed access
+                else
+                    v = seq.getAt(n);
+                *sp = n + 1;
+            }
+        }
         if (v.isNil()) {
             sp -= 4;
             ip += arg;
-        } else {
-            sp[-2] = n;
+        } else
             *++sp = v;
-        }
     }
 
     //CG1 op q

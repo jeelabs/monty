@@ -234,8 +234,8 @@ void List::append (Value v) {
 auto List::getAt (Value k) const -> Value {
     assert(k.isInt());
     auto n = relPos(k);
-    assert(n <= size());
-    return n < size() ? (*this)[n] : Value {};
+    assert(n < size());
+    return (*this)[n];
 }
 
 auto List::setAt (Value k, Value v) -> Value {
