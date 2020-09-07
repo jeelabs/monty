@@ -28,4 +28,12 @@ ZeroDivisionError()
 NameError("xx")
 AttributeError("yy","A")
 KeyError("zz")
+98
+TypeError("index not int","a")
+e
+TypeError("index not int","a")
+2
+TypeError("index not int","a")
+4
+TypeError("index not int","a")
 done

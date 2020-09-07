@@ -292,7 +292,7 @@ auto Object::repr (Buffer& buf) const -> Value {
 }
 
 Value Range::repr (Buffer& buf) const {
-    buf.print("range(%d,%d,%d)", start, limit, step);
+    buf.print("range(%d,%d,%d)", from, to, by);
     return {};
 }
 

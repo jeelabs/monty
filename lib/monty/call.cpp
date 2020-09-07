@@ -183,11 +183,6 @@ auto Context::next () -> Value {
     return {}; // no result yet
 }
 
-void Context::marker () const {
-    List::marker();
-    mark(callee);
-}
-
 auto Interp::findTask (Context& ctx) -> int {
     for (auto& e : tasks)
         if (&e.obj() == &ctx)
@@ -196,9 +191,9 @@ auto Interp::findTask (Context& ctx) -> int {
 }
 
 auto Interp::getQueueId () -> int {
-    static_assert (MAX_QUEUES <= 8 * sizeof pending, "MAX_QUEUES too large");
+    static_assert (NUM_QUEUES <= 8 * sizeof pending, "NUM_QUEUES too large");
 
-    for (uint32_t id = 1; id < MAX_QUEUES; ++id) {
+    for (uint32_t id = 1; id < NUM_QUEUES; ++id) {
         auto mask = 1U << id;
         if ((queueIds & mask) == 0) {
             queueIds |= mask;
@@ -229,7 +224,7 @@ void Interp::markAll () {
 }
 
 void Interp::suspend (uint32_t id) {
-    assert(id < MAX_QUEUES);
+    assert(id < NUM_QUEUES);
 
     assert(context != nullptr);
     assert(findTask(*context) >= 0);
@@ -254,21 +249,21 @@ void Interp::exception (Value v) {
 }
 
 void Interp::interrupt (uint32_t num) {
-    assert(num < MAX_QUEUES);
+    assert(num < NUM_QUEUES);
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
 }
 
 auto Interp::nextPending () -> int {
     if (pending != 0)
-        for (uint32_t num = 0; num < MAX_QUEUES; ++num)
+        for (uint32_t num = 0; num < NUM_QUEUES; ++num)
             if (pendingBit(num))
                 return num;
     return -1;
 }
 
 auto Interp::pendingBit (uint32_t num) -> bool {
-    assert(num < MAX_QUEUES);
+    assert(num < NUM_QUEUES);
     auto mask = 1U << num;
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
     return (__atomic_fetch_and(&pending, ~mask, __ATOMIC_RELAXED) & mask) != 0;

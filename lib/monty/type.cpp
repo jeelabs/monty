@@ -491,7 +491,8 @@ auto Bytes::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Bytes::getAt (Value k) const -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     return (*this)[k];
 }
 
@@ -545,27 +546,18 @@ auto Str::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Str::getAt (Value k) const -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     int idx = k;
     if (idx < 0)
         idx += size();
     return new Str ((char const*) begin() + idx, 1); // TODO utf-8
 }
 
-Range::Range (Value a, Value b, Value c) {
-    assert(a.isInt() && b.isInt());
-    start = a;
-    limit = b;
-    step = c.isInt() ? (int) c : 1;
-}
-
 auto Range::len () const -> uint32_t {
-    auto n = (limit - start + step + (step > 0 ? -1 : 1)) / step;
+    assert(by != 0);
+    auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
     return n < 0 ? 0 : n;
-}
-
-auto Range::getAt (Value k) const -> Value {
-    return start + k * step;
 }
 
 Slice::Slice (Value a, Value b, Value c) {
@@ -597,7 +589,8 @@ Tuple::Tuple (ArgVec const& args) : fill (args.num) {
 }
 
 auto Tuple::getAt (Value k) const -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     return data()[k];
 }
 
@@ -1099,9 +1092,9 @@ auto Str::create (ArgVec const& args, Type const*) -> Value {
 
 auto Range::create (ArgVec const& args, Type const*) -> Value {
     assert(1 <= args.num && args.num <= 3);
-    Value a = args.num > 1 ? args[0] : Value (0);
-    Value b = args.num == 1 ? args[0] : args[1];
-    Value c = args.num > 2 ? (int) args[2] : 1;
+    int a = args.num > 1 ? (int) args[0] : 0;
+    int b = args.num == 1 ? args[0] : args[1];
+    int c = args.num > 2 ? (int) args[2] : 1;
     return new Range (a, b, c);
 }
 

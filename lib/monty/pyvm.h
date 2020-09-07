@@ -386,7 +386,7 @@ class PyVM : public Interp {
         else {
             for (int i = 0; i < right; ++i)
                 sp[i] = seq.getAt(got-i-1);
-            sp[right] = new List ({seq, got - left - right, left});
+            sp[right] = List::create({seq, got - left - right, left});
             for (int i = 0; i < left; ++i)
                 sp[right+1+i] = seq.getAt(left-i-1);
             sp += left + right;

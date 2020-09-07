@@ -425,13 +425,14 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Range (Value a, Value b, Value c);
+        Range (Value a, Value b, Value c) : from (a), to (b), by (c) {}
 
         auto len () const -> uint32_t override;
-        auto getAt (Value k) const -> Value override;
+        auto getAt (Value k) const -> Value override { return from + k * by; }
         auto iter () const -> Value override { return 0; }
+
     private:
-        int32_t start, limit, step;
+        int32_t from, to, by;
     };
 
     //CG< type slice
@@ -579,7 +580,6 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr List () {}
-        List (ArgVec const& args);
 
         auto pop (int idx) -> Value;
         void append (Value v);
@@ -591,6 +591,8 @@ namespace Monty {
         auto iter () const -> Value override { return 0; }
 
         void marker () const override { markVec(*this); }
+    protected:
+        List (ArgVec const& args);
     };
 
     //CG< type set
@@ -629,7 +631,6 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr Dict (Object const* ch =nullptr) : chain (ch) {}
-        Dict (uint32_t n) { adj(2*n); }
 
         struct Proxy { Dict& d; Value k;
             operator Value () const { return ((Dict const&) d).at(k); }
@@ -649,6 +650,8 @@ namespace Monty {
         void marker () const override;
     // TODO protected:
         Object const* chain {nullptr};
+    private:
+        Dict (uint32_t n) { adj(2*n); }
     };
 
     //CG3 type <dictview>
@@ -701,10 +704,11 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
+    private:
         Class (ArgVec const& args);
     };
 
-    // can't use CG, because type() must not be auto-generated
+    // can't use CG, because type() can't be auto-generated
     struct Inst : Dict {
         static auto create (ArgVec const&, Type const*) -> Value;
         static Lookup const attrs;
@@ -737,7 +741,7 @@ namespace Monty {
             return func(args);
         }
 
-    protected:
+    private:
         Prim func;
     };
 
@@ -975,7 +979,7 @@ namespace Monty {
         auto iter () const -> Value override { return this; }
         auto next () -> Value override;
 
-        void marker () const override;
+        void marker () const override { List::marker(); mark(callee); }
 
         int8_t qid {0};
         // previous values are saved in current stack frame
@@ -1000,18 +1004,16 @@ namespace Monty {
         static auto getQueueId () -> int;
         static void dropQueueId (int);
 
-        static auto isAlive () -> bool {
-            return context != nullptr || tasks.len() > 0;
-        }
+        static auto isAlive () -> bool { return tasks.len() > 0; }
 
         static void markAll (); // for gc
 
-        static constexpr auto MAX_QUEUES = 32;
+        static constexpr auto NUM_QUEUES = 32;
 
         static volatile uint32_t pending;   // for irq-safe inner loop exit
         static uint32_t queueIds;           // which queues are in use
-        static List tasks;                  // list of all tasks
         static Context* context;            // current context, if any
+        static List tasks;                  // list of all tasks
         static Dict modules;                // loaded modules
     };
 

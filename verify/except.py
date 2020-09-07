@@ -68,3 +68,15 @@ try:
     print(a['zz'])
 except BaseException as e:
     print(e)
+
+def f(t):
+    print(t[1])
+    try:
+        print(t["a"])
+    except BaseException as e:
+        print(e)
+
+f(b'abc')
+f("def")
+f([1,2,3])
+f((3,4,5))

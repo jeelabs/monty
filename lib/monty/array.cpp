@@ -182,13 +182,15 @@ auto Array::len () const -> uint32_t {
 }
 
 auto Array::getAt (Value k) const -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     auto n = k; // TODO relPos(k);
     return accessors[sel()]->get(const_cast<Array&>(*this), n);
 }
 
 auto Array::setAt (Value k, Value v) -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     auto n = k; // TODO relPos(k);
     auto s = sel();
     fill &= 0x07FFFFFF;
@@ -232,14 +234,16 @@ void List::append (Value v) {
 }
 
 auto List::getAt (Value k) const -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     auto n = relPos(k);
     assert(n < size());
     return (*this)[n];
 }
 
 auto List::setAt (Value k, Value v) -> Value {
-    assert(k.isInt());
+    if (!k.isInt())
+        return {E::TypeError, "index not int", k};
     auto n = relPos(k);
     assert(n < size());
     return (*this)[n] = v;
