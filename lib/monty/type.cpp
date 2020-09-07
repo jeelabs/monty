@@ -452,6 +452,20 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
     return {}; // TODO
 }
 
+auto Iterator::next() -> Value {
+    Value v;
+    if (ipos < (int) iobj.len()) {
+        // TODO duplicate code, see opForIter in pyvm.h
+        if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
+            v = ((List&) iobj)[ipos]; // avoid keyed access
+        else
+            v = iobj.getAt(ipos);
+        ++ipos;
+    } else
+        v = {E::StopIteration};
+    return v;
+}
+
 Bytes::Bytes (void const* ptr, uint32_t len) {
     insert(0, len);
     memcpy(begin(), ptr, len);
@@ -760,10 +774,10 @@ static auto e_UnicodeError (ArgVec const& args) -> Value {
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(194,"<object>"));
+Type const Object::info (Q(195,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-Type const Inst::info (Q(195,"<instance>"));
+Type const Inst::info (Q(196,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
 Type const    BoundMeth::info (Q(178,"<boundmeth>"));
@@ -776,21 +790,22 @@ Type const      Context::info (Q(184,"<context>"));
 Type const     DictView::info (Q(185,"<dictview>"));
 Type const    Exception::info (Q(186,"<exception>"));
 Type const     Function::info (Q(187,"<function>"));
-Type const       Lookup::info (Q(188,"<lookup>"));
-Type const       Method::info (Q(189,"<method>"));
+Type const     Iterator::info (Q(188,"<iterator>"));
+Type const       Lookup::info (Q(189,"<lookup>"));
+Type const       Method::info (Q(190,"<method>"));
 Type const       Module::info (Q(  7,"<module>"));
-Type const         None::info (Q(190,"<none>"));
+Type const         None::info (Q(191,"<none>"));
 
-Type const    Array::info (Q(191,"array") ,  Array::create, &Array::attrs);
+Type const    Array::info (Q(192,"array") ,  Array::create, &Array::attrs);
 Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type const    Class::info (Q(192,"class") ,  Class::create, &Class::attrs);
+Type const    Class::info (Q(193,"class") ,  Class::create, &Class::attrs);
 Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
 Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(193,"slice") ,  Slice::create, &Slice::attrs);
+Type const    Slice::info (Q(194,"slice") ,  Slice::create, &Slice::attrs);
 Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
@@ -805,6 +820,7 @@ auto      Context::type () const -> Type const& { return info; }
 auto     DictView::type () const -> Type const& { return info; }
 auto    Exception::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
+auto     Iterator::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Method::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
@@ -855,8 +871,11 @@ static Function const f_print (bi_print);
 
 static auto bi_iter (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isObj());
-    return args[0].obj().iter();
-    // TODO convert 0 to real iterator
+    auto& o = args[0].obj();
+    auto v = o.iter();
+    if (v.isInt())
+        v = new Iterator (o);
+    return v;
 }
 
 static Function const f_iter (bi_iter);
@@ -891,16 +910,16 @@ static Function const f_hash (bi_hash);
 
 static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
-    { Q(191,"array") , Array::info },
+    { Q(192,"array") , Array::info },
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(192,"class") , Class::info },
+    { Q(193,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(193,"slice") , Slice::info },
+    { Q(194,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
     { Q(157,"tuple") , Tuple::info },
     { Q(158,"type")  , Type::info },
@@ -933,16 +952,16 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
-    { Q(196,"sys"),   m_sys },
+    { Q(197,"sys"),   m_sys },
 #ifndef UNIT_TEST
-    { Q(197,"machine"), m_machine },
+    { Q(198,"machine"), m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { Q(198,"network"), m_network },
+    { Q(199,"network"), m_network },
 #endif
 #if INCLUDE_SDCARD
-    { Q(199,"sdcard"), m_sdcard },
+    { Q(200,"sdcard"), m_sdcard },
 #endif
 #endif
 };

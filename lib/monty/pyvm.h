@@ -589,7 +589,8 @@ class PyVM : public Interp {
     //CG1 op
     void opGetIter () {
         *sp = sp->asObj().iter();
-        // TODO convert 0 to real iterator
+        if (sp->isInt())
+            *sp = new Iterator (sp->asObj());
     }
     //CG1 op
     void opGetIterStack () {

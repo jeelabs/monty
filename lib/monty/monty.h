@@ -366,6 +366,21 @@ namespace Monty {
     private:
         int64_t i64 __attribute__((packed));
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
+    //
+    //CG3 type <iterator>
+    struct Iterator : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Iterator (Object const& o) : iobj (o), ipos (0) {}
+
+        auto next() -> Value override;
+
+        void marker () const override { mark(iobj); }
+    private:
+        Object const& iobj;
+        int ipos;
+    };
 
     //CG< type bytes
     struct Bytes : Object, ByteVec {

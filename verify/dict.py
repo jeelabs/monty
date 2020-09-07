@@ -33,7 +33,27 @@ print(type(d), len(d))
 for i in d:
     print(i)
 
-#i = iter(a)
-#print(next(i))
-#print(next(i))
-#print(next(i))
+i = iter(a)
+print(next(i))
+print(next(i))
+print(next(i))
+
+try:
+    print(next(i))
+except BaseException as e:
+    print(e);
+
+i = iter(a.keys())
+print(next(i))
+print(next(i))
+print(next(i))
+
+i = iter(a.values())
+print(next(i))
+print(next(i))
+print(next(i))
+
+i = iter(a.items())
+print(next(i))
+print(next(i))
+print(next(i))
