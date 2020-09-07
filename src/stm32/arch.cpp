@@ -2,10 +2,6 @@
 #include "arch.h"
 
 #include <cassert>
-#include <cstdint>
-#include <cstdlib>
-#include <cstring>
-
 #include <jee.h>
 
 using namespace Monty;
