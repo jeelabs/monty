@@ -453,17 +453,14 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Iterator::next() -> Value {
-    Value v;
-    if (ipos < (int) iobj.len()) {
-        // TODO duplicate code, see opForIter in pyvm.h
-        if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
-            v = ((List&) iobj)[ipos]; // avoid keyed access
-        else
-            v = iobj.getAt(ipos);
-        ++ipos;
-    } else
-        v = {E::StopIteration};
-    return v;
+    if (ipos < 0)
+        return iobj.next();
+    if (ipos >= (int) iobj.len())
+        return E::StopIteration;
+    // TODO duplicate code, see opForIter in pyvm.h
+    if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
+        return ((List&) iobj)[ipos++]; // avoid keyed access
+    return iobj.getAt(ipos++);
 }
 
 Bytes::Bytes (void const* ptr, uint32_t len) {
@@ -874,7 +871,7 @@ static auto bi_iter (ArgVec const& args) -> Value {
     auto& o = args[0].obj();
     auto v = o.iter();
     if (v.isInt())
-        v = new Iterator (o);
+        v = new Iterator (o, v);
     return v;
 }
 

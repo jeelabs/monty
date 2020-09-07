@@ -564,6 +564,7 @@ class PyVM : public Interp {
     //CG1 op
     void opYieldValue () {
         auto caller = context->caller().ifType<Context>();
+        context->caller() = {};
         if (caller == nullptr) {
             assert(findTask(*context) >= 0);
             assert(context->qid == 0); // must stay runnable
@@ -588,33 +589,43 @@ class PyVM : public Interp {
 
     //CG1 op
     void opGetIter () {
-        *sp = sp->asObj().iter();
-        if (sp->isInt())
-            *sp = new Iterator (sp->asObj());
+        auto v = sp->asObj().iter();
+        if (v.isInt())
+            v = new Iterator (sp->asObj(), v);
+        *sp = v;
     }
     //CG1 op
     void opGetIterStack () {
         // TODO the compiler assumes 4 stack entries are used!
-        //  layout [seq,nil,nil,(idx|iter)]
+        //  layout [seq,(idx|iter),nil,nil]
         *sp = sp->asObj(); // for qstrs, etc
         auto v = sp->obj().iter(); // will be 0 for indexed iteration
-        *++sp = {};
-        *++sp = {};
         *++sp = v;
+        *++sp = {};
+        *++sp = {};
     }
     //CG1 op o
     void opForIter (int arg) {
         Value v;
-        if (sp->isInt()) {
+        auto& pos = sp[-2];
+        if (pos.isInt()) {
+            assert(sp[-3].isObj());
             auto& seq = sp[-3].obj();
-            int n = *sp;
+            int n = pos;
             if (n < (int) seq.len()) {
                 if (&seq.type() == &Dict::info || &seq.type() == &Set::info)
                     v = ((List&) seq)[n]; // avoid keyed access
                 else
                     v = seq.getAt(n);
-                *sp = n + 1;
+                pos = n + 1;
             }
+        } else {
+            //assert(false); // TODO but how: contextAdjuster? next? resume?
+            v = contextAdjuster([=]() -> Value {
+                return pos.obj().next();
+            });
+            *++sp = v;
+            return;
         }
         if (v.isNil()) {
             sp -= 4;
