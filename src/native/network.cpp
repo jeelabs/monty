@@ -5,7 +5,7 @@
 
 #include <cassert>
 #include <cstdio>
-#include <cunistd>
+#include <unistd.h>
 
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -13,33 +13,35 @@
 #include <sys/select.h>
 #include <netinet/in.h>
 
-static struct SocketObj* sockets [20];
+using namespace Monty;
 
-static Value f_ifconfig (int argc, Value argv []) {
+static struct Socket* sockets [20];
+
+static auto f_ifconfig (ArgVec const& args) -> Value {
     // nothing to do
-    return Value ();
+    return {};
 }
 
-struct SocketObj : Object {
-    static Value create (const TypeObj&, int argc, Value argv[]);
-    static const LookupObj attrs;
-    static TypeObj info;
+struct Socket : Object {
+    static auto create (ArgVec const& args, Type const*) -> Value;
+    static const Lookup attrs;
+    static Type const info;
 
-    SocketObj (int sd);
-    ~SocketObj () override { dropFromPoll(); }
+    Socket (int sd);
+    ~Socket () override { dropFromPoll(); }
 
-    TypeObj& type () const override;
-    void mark (void (*gc)(const Object&)) const override;
+    Type const& type () const override;
+    void marker () const override;
     Value attr (const char* key, Value& self) const override;
 
-    Value bind (int arg);
-    Value connect (int argc, Value argv []);
-    Value listen (int argc, Value argv []);
-    Value read (Value arg);
-    Value write (Value arg);
-    Value close ();
+    auto bind (int arg) -> Value;
+    auto connect (ArgVec const& args) -> Value;
+    auto listen (ArgVec const& args) -> Value;
+    auto read (Value arg) -> Value;
+    auto write (Value arg) -> Value;
+    auto close () -> Value;
 
-    static Value poll (int argc, Value argv []);
+    static auto poll (ArgVec const& args) -> Value;
 private:
     void acceptSession ();
     void readData ();
@@ -59,13 +61,13 @@ private:
     }
 
     int sock;
-    CallArgsObj* accepter = 0;
-    ListObj readQueue, writeQueue; // TODO don't use queues: fix suspend!
+    Callable* accepter = 0;
+    List readQueue, writeQueue; // TODO don't use queues: fix suspend!
     Value toSend;
-    ArrayObj* recvBuf = 0;
+    Array* recvBuf = 0;
 };
 
-SocketObj::SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
+Socket::Socket (int sd) : sock (sd) {
     int on = 1;
     auto r1 = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, &on, sizeof on);
     auto r2 = ioctl(sock, FIONBIO, &on);
@@ -73,31 +75,27 @@ SocketObj::SocketObj (int sd) : sock (sd), readQueue (0, 0), writeQueue (0, 0) {
     addToPoll();
 }
 
-Value SocketObj::create (const TypeObj&, int argc, Value argv[]) {
-    assert(argc == 1);
+auto Socket::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 0);
     auto sd = socket(AF_INET, SOCK_STREAM, 0);
     assert(sd >= 0);
-    return new SocketObj (sd);
+    return new Socket (sd);
 }
 
-void SocketObj::mark (void (*gc)(const Object&)) const {
-    gc(readQueue);
-    gc(writeQueue);
-    if (accepter != 0)
-        gc(*accepter);
-    if (toSend.isObj())
-        gc(toSend.obj());
-    if (recvBuf != 0)
-        gc(*recvBuf);
+void Socket::marker () const {
+    mark(readQueue);
+    mark(writeQueue);
+    mark(accepter);
+    mark(toSend.obj());
+    mark(recvBuf);
 }
 
-Value SocketObj::attr (const char* key, Value& self) const {
-    self = Value ();
-    return attrs.at(key);
+auto Socket::attr (const char* key, Value& self) const -> Value {
+    return attrs.getAt(key);
 }
 
-Value SocketObj::poll (int argc, Value argv []) {
-    assert(argc == 1);
+auto Socket::poll (ArgVec const& args) -> Value {
+    assert(args.num == 0);
 
     fd_set fdIn;
     FD_ZERO(&fdIn);
@@ -121,53 +119,53 @@ Value SocketObj::poll (int argc, Value argv []) {
                     assert(false);
             }
 
-    return Value ();
+    return {};
 }
 
-Value SocketObj::bind (int arg) {
+auto Socket::bind (int arg) -> Value {
     sockaddr_in addr;
     addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(arg);
     auto r = ::bind(sock, (sockaddr*) &addr, sizeof addr);
     assert(r == 0);
-    return Value ();
+    return {};
 }
 
-Value SocketObj::connect (int argc, Value argv []) {
-    assert(argc == 2 && argv[0].isStr() && argv[1].isInt());
+auto Socket::connect (ArgVec const& args) -> Value {
+    assert(args.num == 2 && args[0].isStr() && args[1].isInt());
     // TODO
-    return Value ();
+    return {};
 }
 
-Value SocketObj::listen (int argc, Value argv[]) {
-    assert(argc == 3 && argv[2].isInt());
-    auto& cao = argv[1].asType<CallArgsObj>();
-    assert(cao.isCoro());
+auto Socket::listen (ArgVec const& args) -> Value {
+    assert(args.num == 2 && args[1].isInt());
+    auto& cao = args[0].asType<Callable>();
+    assert(cao.bc.isGenerator());
 
-    auto r = ::listen(sock, argv[2]);
+    auto r = ::listen(sock, args[1]);
     assert(r == 0);
     accepter = &cao;
-    return Value ();
+    return {};
 }
 
-void SocketObj::acceptSession () {
+void Socket::acceptSession () {
     auto newsd = ::accept(sock, 0, 0);
     assert(newsd >= 0);
-    Value argv = new SocketObj (newsd);
+    Value argv = new Socket (newsd);
     Value v = accepter->call(1, &argv);
     assert(!v.isNil());
-    Context::tasks.append(v);
+    Interp::tasks.append(v);
 }
 
-Value SocketObj::read (Value arg) {
-    recvBuf = arg.isInt() ? new ArrayObj ('B', arg) : &arg.asType<ArrayObj>();
+auto Socket::read (Value arg) -> Value {
+    recvBuf = arg.isInt() ? new Array ('B', arg) : &arg.asType<Array>();
     assert(recvBuf->isBuffer());
-    Context::suspend(readQueue);
-    return Value ();
+    Interp::suspend(readQueue);
+    return {};
 }
 
-void SocketObj::readData () {
+void Socket::readData () {
     uint8_t buf [100];
     auto len = ::recv(sock, buf, sizeof buf, 0);
     assert(len >= 0);
@@ -180,78 +178,78 @@ void SocketObj::readData () {
         close();
 }
 
-Value SocketObj::write (Value arg) {
-    const void* p;
+auto Socket::write (Value arg) -> Value {
+    void const* p;
     int n;
     if (arg.isStr()) {
         p = (const char*) arg;
         n = strlen(arg);
     } else {
-        auto& o = arg.asType<BytesObj>();
-        p = (const uint8_t*) o;
-        n = o.len();
+        auto& o = arg.asType<Bytes>();
+        p = o.begin();
+        n = o.size();
     }
     auto r = send(sock, p, n, 0);
     assert(r == n);
-    return Value ();
+    return {};
 }
 
-Value SocketObj::close () {
+auto Socket::close () -> Value {
     printf("\t CLOSE! %d r %d w %d\n",
             sock, (int) readQueue.len(), (int) writeQueue.len());
     dropFromPoll(); // TODO yuck ...
     ::close(sock);
     if (readQueue.len() > 0)
-        readQueue.pop(0); // TODO throw Context::tasks.append(readQueue.pop(0));
+        readQueue.pop(0); // TODO throw Interp::tasks.append(readQueue.pop(0));
     assert(readQueue.len() == 0);
     if (writeQueue.len() > 0)
-        writeQueue.pop(0); // TODO throw Context::tasks.append(writeQueue.pop(0));
+        writeQueue.pop(0); // TODO throw Interp::tasks.append(writeQueue.pop(0));
     assert(writeQueue.len() == 0);
-    return Value ();
+    return {};
 }
 
-static const auto m_bind = MethObj::wrap(&SocketObj::bind);
-static const MethObj mo_bind = m_bind;
+static const auto d_socket_bind = Method::wrap(&Socket::bind);
+static const Method m_socket_bind = d_socket_bind;
 
-static const auto m_connect = MethObj::wrap(&SocketObj::connect);
-static const MethObj mo_connect = m_connect;
+static const auto d_socket_connect = Method::wrap(&Socket::connect);
+static const Method m_socket_connect = d_socket_connect;
 
-static const auto m_listen = MethObj::wrap(&SocketObj::listen);
-static const MethObj mo_listen = m_listen;
+static const auto d_socket_listen = Method::wrap(&Socket::listen);
+static const Method m_socket_listen = d_socket_listen;
 
-static const auto m_read = MethObj::wrap(&SocketObj::read);
-static const MethObj mo_read = m_read;
+static const auto d_socket_read = Method::wrap(&Socket::read);
+static const Method m_socket_read = d_socket_read;
 
-static const auto m_write = MethObj::wrap(&SocketObj::write);
-static const MethObj mo_write = m_write;
+static const auto d_socket_write = Method::wrap(&Socket::write);
+static const Method m_socket_write = d_socket_write;
 
-static const auto m_close = MethObj::wrap(&SocketObj::close);
-static const MethObj mo_close = m_close;
+static const auto d_socket_close = Method::wrap(&Socket::close);
+static const Method m_socket_close = d_socket_close;
 
-static const LookupObj::Item socketMap [] = {
-    { "bind", &mo_bind },
-    { "connect", &mo_connect },
-    { "listen", &mo_listen },
-    { "read", &mo_read },
-    { "write", &mo_write },
-    { "close", &mo_close },
+static const Lookup::Item socketMap [] = {
+    { "bind", m_socket_bind },
+    { "connect", m_socket_connect },
+    { "listen", m_socket_listen },
+    { "read", m_socket_read },
+    { "write", m_socket_write },
+    { "close", m_socket_close },
 };
 
-const LookupObj SocketObj::attrs (socketMap, sizeof socketMap / sizeof *socketMap);
+const Lookup Socket::attrs (socketMap, sizeof socketMap);
 
-TypeObj SocketObj::info ("<socket>", SocketObj::create, &SocketObj::attrs);
-TypeObj& SocketObj::type () const { return info; }
+Type const Socket::info ("<socket>", Socket::create, &Socket::attrs);
+auto Socket::type () const -> Type const& { return info; }
 
-const FunObj fo_ifconfig = f_ifconfig;
-const FunObj fo_poll = SocketObj::poll;
+const Function fo_ifconfig = f_ifconfig;
+const Function fo_poll = Socket::poll;
 
-static const LookupObj::Item lo_network [] = {
-    { "ifconfig", &fo_ifconfig },
-    { "poll", &fo_poll },
-    { "socket", &SocketObj::info },
+static const Lookup::Item lo_network [] = {
+    { "ifconfig", fo_ifconfig },
+    { "poll", fo_poll },
+    { "socket", Socket::info },
 };
 
-static const LookupObj ma_network (lo_network, sizeof lo_network / sizeof *lo_network);
-const ModuleObj m_network (&ma_network);
+static const Lookup ma_network (lo_network, sizeof lo_network);
+const Module m_network (&ma_network);
 
 #endif // INCLUDE_NETWORK
