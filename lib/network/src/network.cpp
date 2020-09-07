@@ -100,25 +100,25 @@ static err_t mn_init (netif* netif) {
     return ERR_OK;
 }
 
-static Value f_poll (int argc, Value argv []) {
-    assert(argc == 1);
+static Value f_poll (ArgVec const& args) {
+    assert(args.num == 0);
     mn_poll(&enc_if);
     sys_check_timeouts();
     return Value ();
 }
 
-static Value f_ifconfig (int argc, Value argv []) {
+static Value f_ifconfig (ArgVec const& args) {
     static bool inited = false;
     if (!inited) {
         inited = true;
         lwip_init();
     }
 
-    assert(argc == 5);
+    assert(args.num == 4);
     ip4_addr ifconf [4];
     for (int i = 0; i < 4; ++i) {
-        assert(argv[i+1].isStr());
-        auto ok = ip4addr_aton(argv[i+1], ifconf + i);
+        assert(args[i].isStr());
+        auto ok = ip4addr_aton(args[i], ifconf + i);
         (void) ok; assert(ok == 1);
     }
 
@@ -137,7 +137,7 @@ static Value f_ifconfig (int argc, Value argv []) {
 }
 
 struct Socket: Object {
-    static auto create (Vector const&, int, int, Type const*) -> Value;
+    static auto create (ArgVec const&, Type const*) -> Value;
     static Lookup const attrs;
     static Type const info;
     auto type () const -> Type const& override { return info; }
@@ -147,8 +147,8 @@ struct Socket: Object {
     }
 
     Value bind (int arg);
-    Value connect (int argc, Value argv []);
-    Value listen (int argc, Value argv []);
+    Value connect (ArgVec const& args);
+    Value listen (ArgVec const& args);
     Value read (Value arg);
     Value write (Value arg);
     Value close ();
@@ -166,8 +166,8 @@ private:
     Array* recvBuf = 0;
 };
 
-auto Socket::create (Vector const&, int argc, int, Type const*) -> Value {
-    assert(argc == 1);
+auto Socket::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 0);
     auto p = tcp_new();
     assert(p != 0);
     return new Socket (p);
@@ -191,13 +191,13 @@ Value Socket::bind (int arg) {
     return Value ();
 }
 
-Value Socket::connect (int argc, Value argv []) {
-    assert(argc == 2 && argv[0].isStr() && argv[1].isInt());
+Value Socket::connect (ArgVec const& args) {
+    assert(args.num == 2 && args[0].isStr() && args[1].isInt());
     ip4_addr host;
-    auto ok = ip4addr_aton(argv[0], &host);
+    auto ok = ip4addr_aton(args[0], &host);
     (void) ok; assert(ok == 1);
 
-    auto r = tcp_connect(socket, &host, argv[1], [](void *arg, tcp_pcb *tpcb, err_t err) -> err_t {
+    auto r = tcp_connect(socket, &host, args[1], [](void *arg, tcp_pcb *tpcb, err_t err) -> err_t {
         auto& self = *(Socket*) arg;
         assert(self.socket == tpcb);
         assert(self.readQueue.len() > 0);
@@ -210,12 +210,12 @@ Value Socket::connect (int argc, Value argv []) {
     return Value ();
 }
 
-Value Socket::listen (int argc, Value argv []) {
-    assert(argc == 3 && argv[2].isInt());
-    auto& cao = argv[1].asType<Callable>();
-    assert(cao.code.isGenerator());
+Value Socket::listen (ArgVec const& args) {
+    assert(args.num == 2 && args[1].isInt());
+    auto& cao = args[0].asType<Callable>();
+    assert(cao.bc.isGenerator());
 
-    socket = tcp_listen_with_backlog(socket, argv[2]);
+    socket = tcp_listen_with_backlog(socket, args[1]);
     assert(socket != NULL);
 
     accepter = &cao;
@@ -223,11 +223,11 @@ Value Socket::listen (int argc, Value argv []) {
         auto& self = *(Socket*) arg;
         assert(self.accepter != 0);
 
-        Vector argv;
-        argv.insert(0);
-        argv[0] = new Socket (newpcb);
+        Vector args;
+        args.insert(0);
+        args[0] = new Socket (newpcb);
 
-        Value v = self.accepter->call(argv, 1, 0);
+        Value v = self.accepter->call({args, 1, 0});
         assert(v.isObj());
         Interp::tasks.append(v);
         return ERR_OK;
@@ -268,7 +268,7 @@ bool Socket::sendIt (Value arg) {
         n = strlen(arg);
     } else {
         auto& o = arg.asType<Bytes>();
-        p = o.begin()l
+        p = o.begin();
         n = o.size();
     }
     if (n + 50 > tcp_sndbuf(socket)) // check for some spare room, just in case

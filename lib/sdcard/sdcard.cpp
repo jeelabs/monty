@@ -16,7 +16,7 @@ static SdCard< decltype (spi) > sd;
 static FatFS< decltype (sd) > fs;
 
 struct File : Object {
-    static auto create (Vector const&, int, int, Type const*) -> Value;
+    static auto create (ArgVec const&, Type const*) -> Value;
     static Lookup const attrs;
     static Type const info;
     auto type () const -> Type const& override { return info; }
@@ -35,9 +35,9 @@ private:
     size_t limit;
 };
 
-auto File::create (Vector const& vec, int argc, int args, Type const*) -> Value {
-    assert(argc == 2 && vec[args+1].isStr());
-    return new File (vec[args+1]);
+auto File::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1 && args[0].isStr());
+    return new File (args[0]);
 }
 
 Value File::attr (const char* key, Value& self) const {
@@ -70,8 +70,8 @@ const Lookup File::attrs (fileMap, sizeof fileMap);
 
 Type const File::info ("<file>", File::create, &File::attrs);
 
-static Value f_init (int argc, Value argv []) {
-    assert(argc == 1);
+static Value f_init (ArgVec const& args) {
+    assert(args.num == 0);
     spi.init();
     if (!sd.init())
         return 0;
@@ -79,17 +79,17 @@ static Value f_init (int argc, Value argv []) {
     return 1;
 }
 
-static Value f_sdread (int argc, Value argv []) {
-    assert(argc == 2 && argv[1].isInt());
-    sd.read512(argv[1], fs.buf);
+static Value f_sdread (ArgVec const& args) {
+    assert(args.num == 1 && args[0].isInt());
+    sd.read512(args[0], fs.buf);
     // TODO return buf as bytes
     return {};
 }
 
-static Value f_sdwrite (int argc, Value argv []) {
-    assert(argc == 3 && argv[1].isInt());
-    // TODO copy arggv[2] to fs.buf
-    sd.write512(argv[1], fs.buf);
+static Value f_sdwrite (ArgVec const& args) {
+    assert(args.num == 2 && args[0].isInt());
+    // TODO copy arggv[1] to fs.buf
+    sd.write512(args[0], fs.buf);
     return {};
 }
 
