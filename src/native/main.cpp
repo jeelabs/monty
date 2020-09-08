@@ -10,8 +10,10 @@ static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
 
 static auto compileFile (const char* fname) -> char const* {
     auto buf = (char*) malloc(20 + strlen(fname));
-    if (system(strcat(strcpy(buf, "mpy-cross "), fname)) != 0)
+    if (system(strcat(strcpy(buf, "mpy-cross "), fname)) != 0) {
+        perror(fname);
         return nullptr;
+    }
     strcpy(strcpy(buf, fname) + strlen(fname) - 3, ".mpy");
     return buf;
 }
