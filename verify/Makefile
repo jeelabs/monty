@@ -62,7 +62,7 @@ clean:
 
 # 1) store bytecode in ram, 2) reset the µC, 3) capture output to file
 %.out : %.mpy rom.mrfs
-	@ echo $@
+	@ echo "   $@:"
 ifeq ($(BOARD), native)
 	@ ../.pio/build/native/program $^ >$@
 else ifdef gdb

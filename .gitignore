@@ -1,8 +1,11 @@
-.pio
+/.pio
+/demo.py
+/monty
 /platformio.ini
 /NOCOMMIT/
+
 CMakeLists.txt
 sdkconfig
+
 *.mpy
 *.mty
-/monty

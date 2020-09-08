@@ -1,3 +1,7 @@
+print(sys.implementation)
+#print(sys.version)
+print(machine.ticks())
+
 try:
     str.count
 except AttributeError:
