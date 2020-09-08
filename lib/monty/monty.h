@@ -91,6 +91,7 @@ namespace Monty {
     struct Type;
     struct Callable;
     struct Range;
+    struct Function;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -521,6 +522,7 @@ namespace Monty {
 
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
+        static auto findId (Function const&) -> int; // find in builtinsMap
 
         void marker () const override;
     private:

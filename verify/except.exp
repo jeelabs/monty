@@ -36,4 +36,9 @@ TypeError("index not int or slice","a")
 TypeError("index not int or slice","a")
 4
 TypeError("index not int or slice","a")
+arithmetic error: ZeroDivisionError()
+runtime error: NotImplementedError()
+exception: EOFError()
+base exception: BaseException()
+exception: UnicodeError()
 done

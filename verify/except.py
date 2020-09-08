@@ -80,3 +80,23 @@ f(b'abc')
 f("def")
 f([1,2,3])
 f((3,4,5))
+
+def g(e):
+    try:
+        raise(e())
+    except RuntimeError as e:
+        print('runtime error:', e)
+    except ArithmeticError as e:
+        print('arithmetic error:', e)
+    except Exception as e:
+        print('exception:', e)
+    except BaseException as e:
+        print('base exception:', e)
+    except ValueError as e:
+        print('value error:', e)
+
+g(ZeroDivisionError)
+g(NotImplementedError)
+g(EOFError)
+g(BaseException)
+g(UnicodeError)

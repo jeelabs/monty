@@ -643,21 +643,6 @@ void Tuple::marker () const {
         data()[i].marker();
 }
 
-Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
-    extra() = { .code=exc, .ipOff=0, .callee=nullptr };
-}
-
-auto Exception::binop (BinOp op, Value rhs) const -> Value {
-    if (op == BinOp::ExceptionMatch)
-        return True; // TODO
-    return Tuple::binop(op, rhs);
-}
-
-void Exception::marker () const {
-    Tuple::marker();
-    mark(extra().callee);
-}
-
 //CG: exception BaseException
 //CG: exception Exception BaseException
 //CG: exception StopIteration Exception
@@ -705,6 +690,29 @@ static Lookup::Item const exceptionMap [] = {
 };
 
 Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
+
+Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
+    extra() = { .code=exc, .ipOff=0, .callee=nullptr };
+}
+
+auto Exception::binop (BinOp op, Value rhs) const -> Value {
+    if (op == BinOp::ExceptionMatch) {
+        auto id = findId(rhs.asType<Function>());
+        auto code = (int) extra().code;
+        do {
+            if (code == id)
+                return True;
+            code = exceptionMap[code].v;
+        } while (code >= 0);
+        return False;
+    }
+    return Tuple::binop(op, rhs);
+}
+
+void Exception::marker () const {
+    Tuple::marker();
+    mark(extra().callee);
+}
 
 //CG< exception-emit f
 static auto e_BaseException (ArgVec const& args) -> Value {
@@ -943,21 +951,7 @@ static auto bi_hash (ArgVec const& args) -> Value {
 static Function const f_hash (bi_hash);
 
 static Lookup::Item const builtinsMap [] = {
-    //CG< builtin-emit 1
-    { Q(192,"array") , Array::info },
-    { Q( 62,"bool")  , Bool::info },
-    { Q( 66,"bytes") , Bytes::info },
-    { Q(193,"class") , Class::info },
-    { Q( 75,"dict")  , Dict::info },
-    { Q( 94,"int")   , Int::info },
-    { Q(108,"list")  , List::info },
-    { Q(124,"range") , Range::info },
-    { Q(140,"set")   , Set::info },
-    { Q(194,"slice") , Slice::info },
-    { Q(151,"str")   , Str::info },
-    { Q(157,"tuple") , Tuple::info },
-    { Q(158,"type")  , Type::info },
-    //CG>
+    // exceptions must be first in the map, see Exception::findId
     //CG< exception-emit d
     { Q( 33,"BaseException")       , f_BaseException },
     { Q( 36,"Exception")           , f_Exception },
@@ -980,6 +974,21 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 55,"ValueError")          , f_ValueError },
     { Q(177,"UnicodeError")        , f_UnicodeError },
     //CG>
+    //CG< builtin-emit 1
+    { Q(192,"array") , Array::info },
+    { Q( 62,"bool")  , Bool::info },
+    { Q( 66,"bytes") , Bytes::info },
+    { Q(193,"class") , Class::info },
+    { Q( 75,"dict")  , Dict::info },
+    { Q( 94,"int")   , Int::info },
+    { Q(108,"list")  , List::info },
+    { Q(124,"range") , Range::info },
+    { Q(140,"set")   , Set::info },
+    { Q(194,"slice") , Slice::info },
+    { Q(151,"str")   , Str::info },
+    { Q(157,"tuple") , Tuple::info },
+    { Q(158,"type")  , Type::info },
+    //CG>
     { Q(123,"print"), f_print },
     { Q(103,"iter"),  f_iter },
     { Q(116,"next"),  f_next },
@@ -1001,6 +1010,15 @@ static Lookup::Item const builtinsMap [] = {
 };
 
 Lookup const Monty::builtins (builtinsMap, sizeof builtinsMap);
+
+auto Exception::findId (Function const& f) -> int {
+    for (auto& e : builtinsMap)
+        if (&f == &e.v.obj())
+            return &e - builtinsMap;
+    // searches too many entries, but the assumption is that f will be found
+    assert(false);
+    return -1;
+}
 
 static auto str_count (ArgVec const&) -> Value {
     return 9; // TODO, hardcoded for features.py
