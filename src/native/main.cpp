@@ -6,8 +6,7 @@
 
 #include <cstdio>
 
-//static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
-static uint8_t myMem [128*1024];
+static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
 
 static auto compileFile (const char* fname) -> char const* {
     auto buf = (char*) malloc(20 + strlen(fname));
