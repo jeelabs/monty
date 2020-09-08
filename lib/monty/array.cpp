@@ -111,7 +111,7 @@ struct AccessAsVaryStr : AccessAsVaryBytes {
     }
 };
 
-constexpr auto arrayModes = "PTNbBhHiIlLqvV"
+constexpr char arrayModes [] = "PTNbBhHiIlLqvV"
 #if USE_FLOAT
                             "f"
 #endif
@@ -166,19 +166,24 @@ static Accessor const* accessors [] = {
 #endif
 };
 
+static_assert (sizeof arrayModes - 1 <= 1 << (32 - Array::LEN_BITS),
+                "not enough bits for accessor modes");
+static_assert (sizeof arrayModes - 1 == sizeof accessors / sizeof *accessors,
+                "incorrect number of accessors");
+
 Array::Array (char type, uint32_t len) {
     auto p = strchr(arrayModes, type);
     auto s = p != nullptr ? p - arrayModes : 0; // use Value if unknown type
     accessors[s]->ins(*this, 0, len);
-    fill |= s << 27;
+    fill |= s << LEN_BITS;
 }
 
 auto Array::mode () const -> char {
-    return arrayModes[fill >> 27];
+    return arrayModes[fill >> LEN_BITS];
 }
 
 auto Array::len () const -> uint32_t {
-    return size() & 0x07FFFFFF;
+    return size() & ((1 << LEN_BITS) - 1);
 }
 
 auto Array::getAt (Value k) const -> Value {
@@ -195,7 +200,7 @@ auto Array::setAt (Value k, Value v) -> Value {
     auto s = sel();
     fill &= 0x07FFFFFF;
     accessors[s]->set(*this, n, v);
-    fill |= s << 27;
+    fill |= s << LEN_BITS;
     return {};
 }
 
@@ -203,14 +208,14 @@ void Array::insert (uint32_t idx, uint32_t num) {
     auto s = sel();
     fill &= 0x07FFFFFF;
     accessors[s]->ins(*this, idx, num);
-    fill = fill + (s << 27);
+    fill = fill + (s << LEN_BITS);
 }
 
 void Array::remove (uint32_t idx, uint32_t num) {
     auto s = sel();
     fill &= 0x07FFFFFF;
     accessors[s]->del(*this, idx, num);
-    fill = fill + (s << 27);
+    fill = fill + (s << LEN_BITS);
 }
 
 List::List (ArgVec const& args) {

@@ -556,6 +556,8 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
+        constexpr static auto LEN_BITS = 27;
+
         //constexpr Array () {} // default is array of Value items
         Array (char type, uint32_t num =0);
 
@@ -567,10 +569,9 @@ namespace Monty {
         auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-        auto iter () const -> Value override { return 0; }
 
     private:
-        auto sel () const -> uint8_t { return fill >> 27; }
+        auto sel () const -> uint8_t { return fill >> LEN_BITS; }
     };
 
     //CG< type list
