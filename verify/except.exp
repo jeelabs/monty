@@ -41,4 +41,5 @@ runtime error: NotImplementedError()
 exception: EOFError()
 base exception: BaseException()
 exception: UnicodeError()
+AttributeError("blah","str")
 done

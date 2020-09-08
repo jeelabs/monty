@@ -100,3 +100,8 @@ g(NotImplementedError)
 g(EOFError)
 g(BaseException)
 g(UnicodeError)
+
+try:
+    print("abcde".blah())
+except Exception as e:
+    print(e)

@@ -27,4 +27,5 @@ NotImplementedError("assign to extended slice",slice(null,null,2))
 -5
 9
 [1,2,52,50,48,5,6]
+TypeError("index not int or slice",(1,slice(2,3,null),slice(4,5,6)))
 done

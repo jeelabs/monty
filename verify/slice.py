@@ -48,3 +48,8 @@ for i in a:
 l = [1,2,3,4,5,6]
 l[2:4] = "01234"[::-2]
 print(l)
+
+try:
+    a[1,2:3,4:5:6]
+except Exception as e:
+    print(e)
