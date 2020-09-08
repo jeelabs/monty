@@ -46,7 +46,7 @@ void typeSizes () {
 
     // TODO incorrect formulas (size rounded up), but it works on 32b & 64b ...
     TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Range));
-    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Slice));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Slice));
 }
 
 void bigIntTests () {

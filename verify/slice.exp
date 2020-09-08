@@ -1,3 +1,7 @@
 main
 slice(1,2,3)
+slice(null,null,null)
+slice(null,4,null)
+slice(null,5,null)
+slice(null,null,6)
 done

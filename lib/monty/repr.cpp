@@ -310,7 +310,16 @@ Value Set::repr (Buffer& buf) const {
 }
 
 Value Slice::repr (Buffer& buf) const {
-    buf.print("slice(%d,%d,%d)", off, num, step);
+    buf.puts("slice(");
+    buf.sep = false;
+    buf << off;
+    buf.putc(',');
+    buf.sep = false;
+    buf << num;
+    buf.putc(',');
+    buf.sep = false;
+    buf << step;
+    buf.putc(')');
     return {};
 }
 

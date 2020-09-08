@@ -342,10 +342,10 @@ auto Object::binop (BinOp, Value) const -> Value {
 
 auto Object::attr (char const* name, Value& self) const -> Value {
     auto atab = type().chain;
-    if (atab == nullptr)
-        atab = this;
-    else
+    if (atab != nullptr)
         self = this;
+    else
+        atab = this;
     return atab->getAt(name);
 }
 
@@ -558,13 +558,6 @@ auto Range::len () const -> uint32_t {
     assert(by != 0);
     auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
     return n < 0 ? 0 : n;
-}
-
-Slice::Slice (Value a, Value b, Value c) {
-    assert(a.isInt() && b.isInt());
-    off = a;
-    num = b;
-    step = c.isInt() ? (int) c : 1;
 }
 
 auto Lookup::operator[] (char const* key) const -> Value {
@@ -1100,9 +1093,9 @@ auto Range::create (ArgVec const& args, Type const*) -> Value {
 
 auto Slice::create (ArgVec const& args, Type const*) -> Value {
     assert(1 <= args.num && args.num <= 3);
-    Value a = args.num > 1 ? args[0] : Value (0);
+    Value a = args.num > 1 ? args[0] : Null;
     Value b = args.num == 1 ? args[0] : args[1];
-    Value c = args.num > 2 ? args[2] : b;
+    Value c = args.num > 2 ? args[2] : Null;
     return new Slice (a, b, c);
 }
 

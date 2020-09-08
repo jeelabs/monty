@@ -425,13 +425,13 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Range (Value a, Value b, Value c) : from (a), to (b), by (c) {}
-
         auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override { return from + k * by; }
         auto iter () const -> Value override { return 0; }
 
     private:
+        Range (int a, int b, int c) : from (a), to (b), by (c) {}
+
         int32_t from, to, by;
     };
 
@@ -443,10 +443,10 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
-        Slice (Value a, Value b, Value c);
-
     private:
-        int32_t off, num, step;
+        Slice (Value a, Value b, Value c) : off (a), num (b), step (c) {}
+
+        Value off, num, step;
     };
 
     //CG3 type <lookup>
@@ -465,9 +465,11 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
 
         void marker () const override;
-    // TODO protected:
+    private:
         Item const* items;
         uint32_t count;
+
+        friend struct Exception; // to get exception's string name
     };
 
     //CG< type tuple
@@ -648,7 +650,7 @@ namespace Monty {
         auto items () -> Value;
 
         void marker () const override;
-    // TODO protected:
+
         Object const* chain {nullptr};
     private:
         Dict (uint32_t n) { adj(2*n); }
@@ -718,7 +720,7 @@ namespace Monty {
         auto type () const -> Type const& override { return *(Type*) chain; }
         auto attr (char const* name, Value& self) const -> Value override {
             self = this;
-            return Dict::attr(name, self);
+            return Object::attr(name, self);
         }
 
     private:
