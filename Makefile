@@ -31,7 +31,7 @@ native bluepill_f103c8 disco_f407vg esp8266 _tinypico:
 	pio run -c configs/$@.ini -s
 
 monty: gen native
-	cp -a .pio/build/native/program $@
+	@ cp -a .pio/build/native/program $@
 
 gen:
 	src/codegen.py qstr.h lib/monty/ qstr.cpp

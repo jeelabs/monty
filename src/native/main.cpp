@@ -9,7 +9,15 @@
 //static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
 static uint8_t myMem [128*1024];
 
-static const uint8_t* loadFile (const char* fname) {
+static auto compileFile (const char* fname) -> char const* {
+    auto buf = (char*) malloc(20 + strlen(fname));
+    if (system(strcat(strcpy(buf, "mpy-cross "), fname)) != 0)
+        return nullptr;
+    strcpy(strcpy(buf, fname) + strlen(fname) - 3, ".mpy");
+    return buf;
+}
+
+static auto loadFile (const char* fname) -> const uint8_t* {
     FILE* fp = fopen(fname, "rb");
     if (fp == 0)
         return 0;
@@ -88,13 +96,21 @@ int main (int argc, const char* argv []) {
     Monty::fsBase = loadFile(argc >= 3 ? argv[2] : "rom.mrfs");
 
     // name of the bytecode to run
-    auto bcData = loadFile(argc >= 2 ? argv[1] : "demo.mpy");
+    auto fname = argc >= 2 ? argv[1] : "demo.py";
+    if (strlen(fname) > 3 && strcmp(fname + strlen(fname) - 3, ".py") == 0) {
+        fname = compileFile(fname);
+        if (fname == nullptr)
+            return archDone("can't compile source file");
+    }
+    auto bcData = loadFile(fname);
 
     auto bc = bcData;
     if (bc == nullptr && argc >= 3) // no such file, try mrfs
         bc = Monty::fsLookup(argv[1]);
-    if (bc == nullptr)
+    if (bc == nullptr) {
+        perror(fname);
         return archDone("can't load bytecode");
+    }
 
     // construct in-memory bytecode objects and sub-objects
     auto init = Monty::loader("__main__", bc);
