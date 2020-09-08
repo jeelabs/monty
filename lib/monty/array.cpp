@@ -188,14 +188,14 @@ auto Array::len () const -> uint32_t {
 
 auto Array::getAt (Value k) const -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceGetter(k);
     auto n = k; // TODO relPos(k);
     return accessors[sel()]->get(const_cast<Array&>(*this), n);
 }
 
 auto Array::setAt (Value k, Value v) -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceSetter(k, v);
     auto n = k; // TODO relPos(k);
     auto s = sel();
     fill &= 0x07FFFFFF;
@@ -216,6 +216,27 @@ void Array::remove (uint32_t idx, uint32_t num) {
     fill &= 0x07FFFFFF;
     accessors[s]->del(*this, idx, num);
     fill = fill + (s << LEN_BITS);
+}
+
+auto Array::copy (Range const& r) const -> Value {
+    auto n = r.len();
+    auto v = new Array (mode(), n);
+    for (uint32_t i = 0; i < n; ++i)
+        v->setAt(i, getAt(r.getAt(i)));
+    return v;
+}
+
+auto Array::store (Range const& r, Object const& v) -> Value {
+    assert(r.by == 1);
+    int olen = r.len();
+    int nlen = v.len();
+    if (nlen < olen)
+        remove(r.from + nlen, olen - nlen);
+    else if (nlen > olen)
+        insert(r.from + olen, nlen - olen);
+    for (int i = 0; i < nlen; ++i)
+        setAt(r.getAt(i), v.getAt(i));
+    return {};
 }
 
 List::List (ArgVec const& args) {
@@ -240,7 +261,7 @@ void List::append (Value v) {
 
 auto List::getAt (Value k) const -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceGetter(k);
     auto n = relPos(k);
     assert(n < size());
     return (*this)[n];
@@ -248,10 +269,32 @@ auto List::getAt (Value k) const -> Value {
 
 auto List::setAt (Value k, Value v) -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceSetter(k, v);
     auto n = relPos(k);
     assert(n < size());
     return (*this)[n] = v;
+}
+
+auto List::copy (Range const& r) const -> Value {
+    auto n = r.len();
+    auto v = new List;
+    v->insert(0, n);
+    for (uint32_t i = 0; i < n; ++i)
+        (*v)[i] = (*this)[r.getAt(i)];
+    return v;
+}
+
+auto List::store (Range const& r, Object const& v) -> Value {
+    assert(r.by == 1);
+    int olen = r.len();
+    int nlen = v.len();
+    if (nlen < olen)
+        remove(r.from + nlen, olen - nlen);
+    else if (nlen > olen)
+        insert(r.from + olen, nlen - olen);
+    for (int i = 0; i < nlen; ++i)
+        (*this)[r.getAt(i)] = v.getAt(i);
+    return {};
 }
 
 auto Set::find (Value v) const -> uint32_t {

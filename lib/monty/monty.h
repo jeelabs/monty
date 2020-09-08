@@ -90,6 +90,7 @@ namespace Monty {
     struct Buffer;
     struct Type;
     struct Callable;
+    struct Range;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -313,6 +314,11 @@ namespace Monty {
         virtual auto setAt (Value, Value) -> Value;
         virtual auto iter  () const -> Value;
         virtual auto next  () -> Value;
+        virtual auto copy  (Range const&) const -> Value;
+        virtual auto store (Range const&, Object const&) -> Value;
+
+        auto sliceGetter (Value k) const -> Value;
+        auto sliceSetter (Value k, Value v) -> Value;
     };
 
     void Value::marker () const { if (isObj()) mark(obj()); }
@@ -398,6 +404,7 @@ namespace Monty {
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
         auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
     };
 
     //CG< type str
@@ -426,10 +433,9 @@ namespace Monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         auto len () const -> uint32_t override;
-        auto getAt (Value k) const -> Value override { return from + k * by; }
+        auto getAt (Value k) const -> Value override;
         auto iter () const -> Value override { return 0; }
 
-    private:
         Range (int a, int b, int c) : from (a), to (b), by (c) {}
 
         int32_t from, to, by;
@@ -443,6 +449,8 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
+        auto asRange (int sz) const -> Range;
+
     private:
         Slice (Value a, Value b, Value c) : off (a), num (b), step (c) {}
 
@@ -488,6 +496,7 @@ namespace Monty {
         auto len () const -> uint32_t override { return fill; }
         auto getAt (Value k) const -> Value override;
         auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
 
         void marker () const override;
 
@@ -569,6 +578,8 @@ namespace Monty {
         auto len () const -> uint32_t override;
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
+        auto copy (Range const&) const -> Value override;
+        auto store (Range const&, Object const&) -> Value override;
 
     private:
         auto sel () const -> uint8_t { return fill >> LEN_BITS; }
@@ -592,6 +603,8 @@ namespace Monty {
         auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
         auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
+        auto store (Range const&, Object const&) -> Value override;
 
         void marker () const override { markVec(*this); }
     protected:
@@ -693,9 +706,9 @@ namespace Monty {
         }
 
         Value name;
-    private:
         Factory factory;
 
+    private:
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 

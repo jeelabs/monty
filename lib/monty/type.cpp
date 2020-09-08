@@ -374,6 +374,33 @@ auto Object::next () -> Value {
     return {};
 }
 
+auto Object::copy (Range const&) const -> Value {
+    assert(false);
+    return {};
+}
+
+auto Object::store (Range const&, Object const&) -> Value {
+    assert(false);
+    return {};
+}
+
+auto Object::sliceGetter (Value k) const -> Value {
+    auto ks = k.ifType<Slice>();
+    if (ks == nullptr)
+        return {E::TypeError, "index not int or slice", k};
+    return copy(ks->asRange(len()));
+}
+
+auto Object::sliceSetter (Value k, Value v) -> Value {
+    auto ks = k.ifType<Slice>();
+    if (ks == nullptr)
+        return {E::TypeError, "index not int or slice", k};
+    auto r = ks->asRange(len());
+    if (r.by != 1)
+        return {E::NotImplementedError, "assign to extended slice", k};
+    return store(r, v.asObj());
+}
+
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Int:  // fall through
@@ -492,8 +519,17 @@ auto Bytes::binop (BinOp op, Value rhs) const -> Value {
 
 auto Bytes::getAt (Value k) const -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceGetter(k);
     return (*this)[k];
+}
+
+auto Bytes::copy (Range const& r) const -> Value {
+    auto n = r.len();
+    auto v = new Bytes;
+    v->insert(0, n);
+    for (uint32_t i = 0; i < n; ++i)
+        (*v)[i] = (*this)[r.getAt(i)];
+    return v;
 }
 
 Str::Str (char const* s, int n) {
@@ -547,7 +583,7 @@ auto Str::binop (BinOp op, Value rhs) const -> Value {
 
 auto Str::getAt (Value k) const -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceGetter(k);
     int idx = k;
     if (idx < 0)
         idx += size();
@@ -558,6 +594,10 @@ auto Range::len () const -> uint32_t {
     assert(by != 0);
     auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
     return n < 0 ? 0 : n;
+}
+
+auto Range::getAt (Value k) const -> Value {
+    return from + k * by;
 }
 
 auto Lookup::operator[] (char const* key) const -> Value {
@@ -583,8 +623,19 @@ Tuple::Tuple (ArgVec const& args) : fill (args.num) {
 
 auto Tuple::getAt (Value k) const -> Value {
     if (!k.isInt())
-        return {E::TypeError, "index not int", k};
+        return sliceGetter(k);
     return data()[k];
+}
+
+auto Tuple::copy (Range const& r) const -> Value {
+    int n = r.len();
+    Vector avec; // TODO messy way to create tuple via sized vec with no data
+    avec.insert(0, n);
+    auto v = Tuple::create({avec, n, 0});
+    auto p = (Value*) (&v.asType<Tuple>() + 1);
+    for (int i = 0; i < n; ++i)
+        p[i] = getAt(r.getAt(i));
+    return v;
 }
 
 void Tuple::marker () const {
@@ -1097,6 +1148,22 @@ auto Slice::create (ArgVec const& args, Type const*) -> Value {
     Value b = args.num == 1 ? args[0] : args[1];
     Value c = args.num > 2 ? args[2] : Null;
     return new Slice (a, b, c);
+}
+
+auto Slice::asRange (int sz) const -> Range {
+    int from = off.isInt() ? (int) off : 0;
+    int to = num.isInt() ? (int) num : sz;
+    int by = step.isInt() ? (int) step : 1;
+    if (from < 0)
+        from += sz;
+    if (to < 0)
+        to += sz;
+    if (by < 0) {
+        auto t = from - 1;
+        from = to - 1;
+        to = t;
+    }
+    return {from, to, by};
 }
 
 auto Tuple::create (ArgVec const& args, Type const*) -> Value {
