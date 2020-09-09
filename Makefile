@@ -52,6 +52,7 @@ cov:
 	for i in $V/*.py; do \
 	    .pio/build/native/program $$i $V/rom.mrfs; \
 	done | wc
+	.pio/build/native/program -c $V/hello.mpy
 	lcov -d .pio/build/native/ -c -o coverage/lcov.info
 	genhtml -o coverage/ --demangle-cpp coverage/lcov.info
 	cd coverage && python -m SimpleHTTPServer 8000
