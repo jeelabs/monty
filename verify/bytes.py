@@ -35,3 +35,5 @@ for i in a:
 print(117)
 for i in b:
     print(i)
+
+print(118,b'.\t.\r.\n')

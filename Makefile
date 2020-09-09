@@ -1,5 +1,6 @@
 B = native
 T = gc
+V = verify
 
 help:
 	# make all    - shorthand for "make run testall verify"
@@ -11,8 +12,8 @@ help:
 
 all: run testall verify
 
-run: gen native verify/features.mpy
-	.pio/build/native/program verify/features.mpy verify/rom.mrfs
+run: gen native $V/features.mpy
+	.pio/build/native/program $V/features.mpy $V/rom.mrfs
 
 test: gen platformio.ini
 	pio test -c configs/$B.ini -f $T
@@ -44,6 +45,17 @@ else
 endif
 	@ make -C $@ BOARD=$B
 
+cov:
+	rm -rf cov
+	mkdir cov
+	pio run
+	for i in $V/*.py; do \
+	    .pio/build/native/program $$i $V/rom.mrfs; \
+	done | wc
+	lcov -d .pio/build/native/ -c -o lcov.info
+	genhtml -o cov/ --demangle-cpp lcov.info
+	cd cov && python -m SimpleHTTPServer 8000
+
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.
 	#
@@ -73,4 +85,4 @@ tags:
 clean:
 	rm -rf .pio monty
 
-.PHONY: docs tags test verify
+.PHONY: cov docs tags test verify

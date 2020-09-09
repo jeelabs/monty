@@ -66,3 +66,5 @@ i = iter(a.items())
 print(next(i))
 print(next(i))
 print(next(i))
+
+[1,2,3].clear() # wrong place

@@ -10,5 +10,10 @@ print(next(b))
 print(next(b))
 print(next(b))
 
+print(type(iter(b)))
+
 #for i in b:
 #    print(i)
+
+for i in (11,22,33):
+    print(i)
