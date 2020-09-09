@@ -313,7 +313,6 @@ class PyVM : public Interp {
     }
     //CG1 op q
     void opStoreAttr (Q arg) {
-        assert(&sp->obj().type().type() == &Class::info);
         sp->obj().setAt(arg, sp[-1]);
         sp -= 2;
     }

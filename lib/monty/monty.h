@@ -736,7 +736,7 @@ namespace Monty {
         auto type () const -> Type const& override { return *(Type*) chain; }
         auto attr (char const* name, Value& self) const -> Value override {
             self = this;
-            return Object::attr(name, self);
+            return getAt(name);
         }
 
     private:
@@ -843,7 +843,11 @@ namespace Monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
-        Module (Lookup const* lu) : Dict (lu) {}
+        Module (Lookup const& lu) : Dict (&lu) {}
+
+        auto attr (char const* name, Value&) const -> Value override {
+            return getAt(name);
+        }
     };
 
     //CG3 type <bytecode>

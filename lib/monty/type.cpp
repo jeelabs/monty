@@ -341,12 +341,8 @@ auto Object::binop (BinOp, Value) const -> Value {
 }
 
 auto Object::attr (char const* name, Value& self) const -> Value {
-    auto atab = type().chain;
-    if (atab != nullptr)
-        self = this;
-    else
-        atab = this;
-    return atab->getAt(name);
+    self = this;
+    return type().getAt(name);
 }
 
 auto Object::len () const -> uint32_t {
@@ -403,6 +399,7 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
 
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
+        case UnOp::Not:  return Value::asBool(this != &trueObj);
         case UnOp::Int:  // fall through
         case UnOp::Hash: return this == &trueObj;
         case UnOp::Boln: return *this;

@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(167,"v0.94-76-g201b5ba");
+constexpr auto VERSION = Q(167,"v0.94-77-g37e3cca");
 
 static auto f_suspend (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isInt());
@@ -58,4 +58,4 @@ static Lookup::Item const lo_sys [] = {
 };
 
 static Lookup const ma_sys (lo_sys, sizeof lo_sys);
-extern Module const m_sys (&ma_sys);
+extern Module const m_sys (ma_sys);

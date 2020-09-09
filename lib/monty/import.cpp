@@ -113,7 +113,7 @@ struct Loader {
 
         debugf("qLast %d %s\n", Q::last(), Q::str(Q::last()));
 
-        auto mod = new Module (&builtins);
+        auto mod = new Module (builtins);
         return new Callable (bc, mod);
     }
 
