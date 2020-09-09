@@ -46,15 +46,15 @@ endif
 	@ make -C $@ BOARD=$B
 
 cov:
-	rm -rf cov
-	mkdir cov
+	rm -rf coverage/
+	mkdir coverage
 	pio run
 	for i in $V/*.py; do \
 	    .pio/build/native/program $$i $V/rom.mrfs; \
 	done | wc
-	lcov -d .pio/build/native/ -c -o lcov.info
-	genhtml -o cov/ --demangle-cpp lcov.info
-	cd cov && python -m SimpleHTTPServer 8000
+	lcov -d .pio/build/native/ -c -o coverage/lcov.info
+	genhtml -o coverage/ --demangle-cpp coverage/lcov.info
+	cd coverage && python -m SimpleHTTPServer 8000
 
 platformio.ini:
 	# To get started, please create a "platformio.ini" file.
@@ -85,4 +85,4 @@ tags:
 clean:
 	rm -rf .pio monty
 
-.PHONY: cov docs tags test verify
+.PHONY: docs tags test verify

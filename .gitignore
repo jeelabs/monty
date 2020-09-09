@@ -1,4 +1,5 @@
 /.pio
+/coverage
 /demo.py
 /monty
 /platformio.ini
