@@ -22,10 +22,10 @@ else ifeq ($(BOARD),nucleo_l010rb)
 tty = /dev/cu.usbmodem1461203
 ram = 0x20004000 # 20 kB
 else ifeq ($(BOARD),nucleo_l412kb)
-tty = /dev/cu.usbmodem1461103
+tty = /dev/cu.usbmodem1431203
 ram = 0x20009000 # 40 kB
 else ifeq ($(BOARD),nucleo_l432kc)
-tty = /dev/cu.usbmodem1461103
+tty = /dev/cu.usbmodem1431203
 ram = 0x2000B000 # 48 kB
 endif
 
