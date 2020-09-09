@@ -27,8 +27,9 @@ auto Callable::call (ArgVec const& args) const -> Value {
     int nPos = bc.numArgs(0);
     int nDef = bc.numArgs(1);
     int nKwo = bc.numArgs(2);
+    int nc = bc.numCells();
 
-    for (int i = 0; i < nPos; ++i)
+    for (int i = 0; i < nPos + nc; ++i)
         if (i < args.num)
             ctx->fastSlot(i) = args[i];
         else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
@@ -38,11 +39,11 @@ auto Callable::call (ArgVec const& args) const -> Value {
         ctx->fastSlot(nPos+nKwo) =
             Tuple::create({args.vec, args.num-nPos, args.off+nPos});
 
-    // TODO this isn't quite right, inside bc, there's a list of indices ...
-    //  but why not lazily turn the first deref load into a new cell?
-    //  ... or keep a bitmap of which fast slots are / should be cells?
-    for (uint32_t i = 0; i < bc.numCells(); ++i)
-        ctx->fastSlot(i) = new Cell (ctx->fastSlot(i));
+    uint8_t const* cellMap = bc.start() - nc;
+    for (int i = 0; i < nc; ++i) {
+        auto slot = cellMap[i];
+        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
+    }
 
     return coro ? ctx : Value {};
 }

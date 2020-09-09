@@ -232,6 +232,8 @@ struct Loader {
         for (int i = 4; i < nskip; ++i)
             *bcNext++ = *dp++;
 
+        for (int i = -bc.n_cell; i < 0; ++i)
+            debugf("deref %d: %d\n", i, bcNext[i]);
         bc.code = bcNext - bcBuf;
 
         loadOps();

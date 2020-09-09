@@ -846,6 +846,7 @@ Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
 Type const    Slice::info (Q(194,"slice") ,  Slice::create, &Slice::attrs);
 Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
+Type const    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
@@ -875,6 +876,7 @@ auto        Range::type () const -> Type const& { return info; }
 auto          Set::type () const -> Type const& { return info; }
 auto        Slice::type () const -> Type const& { return info; }
 auto          Str::type () const -> Type const& { return info; }
+auto        Super::type () const -> Type const& { return info; }
 auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
@@ -983,6 +985,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q(140,"set")   , Set::info },
     { Q(194,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
+    { Q(154,"super") , Super::info },
     { Q(157,"tuple") , Tuple::info },
     { Q(158,"type")  , Type::info },
     //CG>
@@ -1095,6 +1098,7 @@ Lookup const    Array::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
 Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
+Lookup const    Super::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
 
 auto Bool::create (ArgVec const& args, Type const*) -> Value {
@@ -1232,6 +1236,10 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
 auto Class::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num >= 2 && args[0].isObj() && args[1].isStr());
     return new Class (args);
+}
+
+auto Super::create (ArgVec const& args, Type const*) -> Value {
+    return new Super (args);
 }
 
 auto Inst::create (ArgVec const& args, Type const* t) -> Value {

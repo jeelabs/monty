@@ -499,7 +499,9 @@ class PyVM : public Interp {
     }
     //CG1 op q
     void opLoadSuperMethod (Q arg) {
-        (void) arg; assert(false); // TODO
+        --sp;
+        sp[-1] = sp->obj().getAt(arg);
+        *sp = sp[1];
     }
     //CG1 op v
     void opCallMethod (int arg) {

@@ -425,6 +425,12 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     ctx->frame().locals = this;
 }
 
+Super::Super (ArgVec const& args) {
+    assert(args.num == 2);
+    sclass = args[0];
+    sinst = args[1];
+}
+
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     auto ctx = Interp::context;
     assert(ctx != nullptr); (void) ctx;

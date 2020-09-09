@@ -726,6 +726,23 @@ namespace Monty {
         Class (ArgVec const& args);
     };
 
+    //CG< type super
+    struct Super : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+
+        void marker () const override { sclass.marker(); sinst.marker(); }
+    private:
+        Super (ArgVec const& args);
+
+        Value sclass;
+        Value sinst;
+    };
+
     // can't use CG, because type() can't be auto-generated
     struct Inst : Dict {
         static auto create (ArgVec const&, Type const*) -> Value;
