@@ -1,4 +1,4 @@
-// builtin.cpp - built-in types and definitions, partly autp-generated
+// builtin.cpp - built-in types and definitions, partly auto-generated
 
 #include "monty.h"
 #include "ops.h"

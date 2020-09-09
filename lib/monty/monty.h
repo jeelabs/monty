@@ -110,6 +110,7 @@ namespace Monty {
         uint16_t id;
     };
 
+    // TODO keep in sync with exceptionMap in builtin.cpp, should be generated
     enum class E : uint8_t {
         BaseException,
         Exception,
@@ -511,6 +512,12 @@ namespace Monty {
         auto data () const -> Value const* { return (Value const*) (this + 1); }
     };
 
+    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
+    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
+    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
+
+// see builtin.cpp - built-in types and definitions, partly auto-generated
+
     //CG3 type <exception>
     struct Exception : Tuple {
         static Type const info;
@@ -530,10 +537,6 @@ namespace Monty {
 
         auto binop (BinOp, Value) const -> Value override;
     };
-
-    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
-    auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
-    auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
 // see repr.cpp - repr, printing, and buffering
 
