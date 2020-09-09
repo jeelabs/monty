@@ -22,8 +22,8 @@ b.f()
 
 class C(B):
     def f(self):
-        super().f()
-        # TODO print("C:f", type(self))
+        # TODO super().f()
+        print("C:f", type(self))
 
 print("cn", C.__name__)
 print("cb", C.__bases__)

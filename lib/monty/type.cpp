@@ -420,7 +420,7 @@ auto Int::conv (char const* s) -> Value {
 }
 
 auto Int::unop (UnOp op) const -> Value {
-    // TODO use templates to share code with Value::binOp ?
+    // TODO use templates to share code with Value::unOp ?
     switch (op) {
         case UnOp::Int:  // fall through
         case UnOp::Pos:  return *this;
