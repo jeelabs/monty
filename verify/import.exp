@@ -18,5 +18,10 @@ h 4 5 6 7 8 14
 h 5 6 7 8 9 10
 f 123 (9,8,7)
 g 987 9
+NameError("h")
 {"hello":<module 'hello'>,"args":<module 'args'>}
+NameError("f")
+f 123 (99,88,77)
+g 998877 9
+h 99 88 77 66 13 14
 done

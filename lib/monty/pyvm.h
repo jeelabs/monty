@@ -679,7 +679,15 @@ class PyVM : public Interp {
     }
     //CG1 op
     void opImportStar () {
-        assert(false); // TODO
+        auto& dest = context->globals();
+        auto& from = sp->asType<Module>();
+        for (uint8_t i = 0; i < from.len(); ++i) {
+            auto k = from[i];
+            assert(k.isStr());
+            if (*((char const*) k) != '_')
+                dest.setAt(k, from.at(k));
+        }
+        --sp;
     }
 
     //CG1 op m 64
