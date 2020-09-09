@@ -239,6 +239,17 @@ auto Array::store (Range const& r, Object const& v) -> Value {
     return {};
 }
 
+auto Array::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num >= 1 && args[0].isStr());
+    char type = *((char const*) args[0]);
+    uint32_t len = 0;
+    if (args.num == 2) {
+        assert(args[1].isInt());
+        len = args[1];
+    }
+    return new Array (type, len);
+}
+
 List::List (ArgVec const& args) {
     insert(0, args.num);
     for (int i = 0; i < args.num; ++i)
@@ -297,6 +308,10 @@ auto List::store (Range const& r, Object const& v) -> Value {
     return {};
 }
 
+auto List::create (ArgVec const& args, Type const*) -> Value {
+    return new List (args);
+}
+
 auto Set::find (Value v) const -> uint32_t {
     for (auto& e : *this)
         if (v == e)
@@ -332,6 +347,10 @@ auto Set::setAt (Value k, Value v) -> Value {
     assert(k.isInt());
     auto f = (*this)[k] = v.truthy();
     return Value::asBool(f);
+}
+
+auto Set::create (ArgVec const& args, Type const*) -> Value {
+    return new Set (args);
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()
@@ -387,6 +406,11 @@ void Dict::marker () const {
     mark(chain);
 }
 
+auto Dict::create (ArgVec const&, Type const*) -> Value {
+    // TODO pre-alloc space to support fast add, needs vals midway cap iso len
+    return new Dict;
+}
+
 auto DictView::getAt (Value k) const -> Value {
     assert(k.isInt());
     int n = k;
@@ -410,6 +434,18 @@ auto Type::noFactory (ArgVec const&, const Type*) -> Value {
     return {};
 }
 
+auto Type::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    Value v = args[0];
+    switch (v.tag()) {
+        case Value::Nil: break;
+        case Value::Int: return "int";
+        case Value::Str: return "str";
+        case Value::Obj: return v.obj().type().name;
+    }
+    return {};
+}
+
 Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     assert(2 <= args.num && args.num <= 3); // no support for multiple inheritance
     if (args.num > 2)
@@ -425,10 +461,19 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     ctx->frame().locals = this;
 }
 
+auto Class::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num >= 2 && args[0].isObj() && args[1].isStr());
+    return new Class (args);
+}
+
 Super::Super (ArgVec const& args) {
     assert(args.num == 2);
     sclass = args[0];
     sinst = args[1];
+}
+
+auto Super::create (ArgVec const& args, Type const*) -> Value {
+    return new Super (args);
 }
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
@@ -443,4 +488,9 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
         args[-1] = this;
         init.obj().call({args.vec, args.num + 1, args.off - 1});
     }
+}
+
+auto Inst::create (ArgVec const& args, Type const* t) -> Value {
+    Value v = t;
+    return new Inst (args, v.asType<Class>());
 }

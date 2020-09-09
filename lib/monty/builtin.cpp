@@ -80,6 +80,12 @@ void Exception::marker () const {
     mark(extra().callee);
 }
 
+auto Exception::create (E exc, ArgVec const& args) -> Value {
+    // single alloc: first a tuple with args.num values, then exception info
+    auto sz = args.num * sizeof (Value) + sizeof (Extra);
+    return new (sz) Exception (exc, args);
+}
+
 //CG< exception-emit f
 static auto e_BaseException (ArgVec const& args) -> Value {
     return Exception::create(E::BaseException, args);
@@ -454,8 +460,7 @@ static Lookup::Item const dictMap [] = {
 
 Lookup const Dict::attrs (dictMap, sizeof dictMap);
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// TODO added to satisfy linker
+// added to satisfy linker
 
 Lookup const     Bool::attrs {nullptr, 0};
 Lookup const      Int::attrs {nullptr, 0};
@@ -469,149 +474,3 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const    Super::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
-
-auto Bool::create (ArgVec const& args, Type const*) -> Value {
-    if (args.num == 1)
-        return args[0].unOp(UnOp::Boln);
-    assert(args.num == 0);
-    return False;
-}
-
-auto Int::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
-    auto v = args[0];
-    switch (v.tag()) {
-        case Value::Nil: // fall through
-        case Value::Int: return v;
-        case Value::Str: return Int::conv(v);
-        case Value::Obj: return v.unOp(UnOp::Int);
-    }
-    return {};
-}
-
-auto Bytes::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
-    Value v = args[0];
-    if (v.isInt()) {
-        auto o = new Bytes ();
-        o->insert(0, v);
-        return o;
-    }
-    const void* p = 0;
-    uint32_t n = 0;
-    if (v.isStr()) {
-        p = (char const*) v;
-        n = strlen((char const*) p);
-    } else {
-        auto ps = v.ifType<Str>();
-        auto pb = v.ifType<Bytes>();
-        if (ps != 0) {
-            p = (char const*) *ps;
-            n = strlen((char const*) p); // TODO
-        } else if (pb != 0) {
-            p = pb->begin();
-            n = pb->size();
-        } else
-            assert(false); // TODO iterables
-    }
-    return new Bytes (p, n);
-}
-
-auto Str::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1 && args[0].isStr());
-    return new Str (args[0]);
-}
-
-auto Range::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args.num && args.num <= 3);
-    int a = args.num > 1 ? (int) args[0] : 0;
-    int b = args.num == 1 ? args[0] : args[1];
-    int c = args.num > 2 ? (int) args[2] : 1;
-    return new Range (a, b, c);
-}
-
-auto Slice::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args.num && args.num <= 3);
-    Value a = args.num > 1 ? args[0] : Null;
-    Value b = args.num == 1 ? args[0] : args[1];
-    Value c = args.num > 2 ? args[2] : Null;
-    return new Slice (a, b, c);
-}
-
-auto Slice::asRange (int sz) const -> Range {
-    int from = off.isInt() ? (int) off : 0;
-    int to = num.isInt() ? (int) num : sz;
-    int by = step.isInt() ? (int) step : 1;
-    if (from < 0)
-        from += sz;
-    if (to < 0)
-        to += sz;
-    if (by < 0) {
-        auto t = from - 1;
-        from = to - 1;
-        to = t;
-    }
-    return {from, to, by};
-}
-
-auto Tuple::create (ArgVec const& args, Type const*) -> Value {
-    if (args.num == 0)
-        return Empty; // there's one unique empty tuple
-    return new (args.num * sizeof (Value)) Tuple (args);
-}
-
-auto Exception::create (E exc, ArgVec const& args) -> Value {
-    // single alloc: first a tuple with args.num values, then exception info
-    auto sz = args.num * sizeof (Value) + sizeof (Extra);
-    return new (sz) Exception (exc, args);
-}
-
-auto Array::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num >= 1 && args[0].isStr());
-    char type = *((char const*) args[0]);
-    uint32_t len = 0;
-    if (args.num == 2) {
-        assert(args[1].isInt());
-        len = args[1];
-    }
-    return new Array (type, len);
-}
-
-auto List::create (ArgVec const& args, Type const*) -> Value {
-    return new List (args);
-}
-
-auto Set::create (ArgVec const& args, Type const*) -> Value {
-    return new Set (args);
-}
-
-auto Dict::create (ArgVec const&, Type const*) -> Value {
-    // TODO pre-alloc space to support fast add, needs vals midway cap iso len
-    return new Dict;
-}
-
-auto Type::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
-    Value v = args[0];
-    switch (v.tag()) {
-        case Value::Nil: break;
-        case Value::Int: return "int";
-        case Value::Str: return "str";
-        case Value::Obj: return v.obj().type().name;
-    }
-    return {};
-}
-
-auto Class::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num >= 2 && args[0].isObj() && args[1].isStr());
-    return new Class (args);
-}
-
-auto Super::create (ArgVec const& args, Type const*) -> Value {
-    return new Super (args);
-}
-
-auto Inst::create (ArgVec const& args, Type const* t) -> Value {
-    Value v = t;
-    return new Inst (args, v.asType<Class>());
-}

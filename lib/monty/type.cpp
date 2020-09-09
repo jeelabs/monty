@@ -405,6 +405,13 @@ auto Bool::unop (UnOp op) const -> Value {
     return Object::unop(op);
 }
 
+auto Bool::create (ArgVec const& args, Type const*) -> Value {
+    if (args.num == 1)
+        return args[0].unOp(UnOp::Boln);
+    assert(args.num == 0);
+    return False;
+}
+
 auto Int::make (int64_t i) -> Value {
     Value v = (int) i;
     if ((int) v != i)
@@ -473,6 +480,18 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
     return {}; // TODO
 }
 
+auto Int::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    auto v = args[0];
+    switch (v.tag()) {
+        case Value::Nil: // fall through
+        case Value::Int: return v;
+        case Value::Str: return Int::conv(v);
+        case Value::Obj: return v.unOp(UnOp::Int);
+    }
+    return {};
+}
+
 auto Iterator::next() -> Value {
     if (ipos < 0)
         return iobj.next();
@@ -524,6 +543,34 @@ auto Bytes::copy (Range const& r) const -> Value {
     for (uint32_t i = 0; i < n; ++i)
         (*v)[i] = (*this)[r.getAt(i)];
     return v;
+}
+
+auto Bytes::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    Value v = args[0];
+    if (v.isInt()) {
+        auto o = new Bytes ();
+        o->insert(0, v);
+        return o;
+    }
+    const void* p = 0;
+    uint32_t n = 0;
+    if (v.isStr()) {
+        p = (char const*) v;
+        n = strlen((char const*) p);
+    } else {
+        auto ps = v.ifType<Str>();
+        auto pb = v.ifType<Bytes>();
+        if (ps != 0) {
+            p = (char const*) *ps;
+            n = strlen((char const*) p); // TODO
+        } else if (pb != 0) {
+            p = pb->begin();
+            n = pb->size();
+        } else
+            assert(false); // TODO iterables
+    }
+    return new Bytes (p, n);
 }
 
 Str::Str (char const* s, int n) {
@@ -584,6 +631,11 @@ auto Str::getAt (Value k) const -> Value {
     return new Str ((char const*) begin() + idx, 1); // TODO utf-8
 }
 
+auto Str::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1 && args[0].isStr());
+    return new Str (args[0]);
+}
+
 auto Range::len () const -> uint32_t {
     assert(by != 0);
     auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
@@ -592,6 +644,38 @@ auto Range::len () const -> uint32_t {
 
 auto Range::getAt (Value k) const -> Value {
     return from + k * by;
+}
+
+auto Range::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    int a = args.num > 1 ? (int) args[0] : 0;
+    int b = args.num == 1 ? args[0] : args[1];
+    int c = args.num > 2 ? (int) args[2] : 1;
+    return new Range (a, b, c);
+}
+
+auto Slice::asRange (int sz) const -> Range {
+    int from = off.isInt() ? (int) off : 0;
+    int to = num.isInt() ? (int) num : sz;
+    int by = step.isInt() ? (int) step : 1;
+    if (from < 0)
+        from += sz;
+    if (to < 0)
+        to += sz;
+    if (by < 0) {
+        auto t = from - 1;
+        from = to - 1;
+        to = t;
+    }
+    return {from, to, by};
+}
+
+auto Slice::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    Value a = args.num > 1 ? args[0] : Null;
+    Value b = args.num == 1 ? args[0] : args[1];
+    Value c = args.num > 2 ? args[2] : Null;
+    return new Slice (a, b, c);
 }
 
 auto Lookup::operator[] (char const* key) const -> Value {
@@ -635,4 +719,10 @@ auto Tuple::copy (Range const& r) const -> Value {
 void Tuple::marker () const {
     for (uint32_t i = 0; i < fill; ++i)
         data()[i].marker();
+}
+
+auto Tuple::create (ArgVec const& args, Type const*) -> Value {
+    if (args.num == 0)
+        return Empty; // there's one unique empty tuple
+    return new (args.num * sizeof (Value)) Tuple (args);
 }
