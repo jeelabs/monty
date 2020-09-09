@@ -25,11 +25,11 @@ namespace Monty {
         "\xCA\x06\xD1\x06\xD7\x06\xDD\x06\xE8\x06\xF5\x06\xFA\x06\xFF\x06"
         "\x03\x07\x09\x07\x0D\x07\x13\x07\x19\x07\x22\x07\x28\x07\x2D\x07"
         "\x34\x07\x3A\x07\x40\x07\x46\x07\x4D\x07\x53\x07\x57\x07\x61\x07"
-        "\x73\x07\x79\x07\x81\x07\x89\x07\x92\x07\x99\x07\xA2\x07\xB1\x07"
-        "\xB7\x07\xBF\x07\xCC\x07\xD8\x07\xE1\x07\xEC\x07\xF7\x07\xFE\x07"
-        "\x08\x08\x12\x08\x1D\x08\x29\x08\x34\x08\x3F\x08\x48\x08\x51\x08"
-        "\x58\x08\x5E\x08\x64\x08\x6A\x08\x73\x08\x7E\x08\x82\x08\x8A\x08"
-        "\x92\x08\x99\x08"
+        "\x6E\x07\x7A\x07\x83\x07\x8E\x07\x99\x07\xA0\x07\xAA\x07\xB4\x07"
+        "\xBF\x07\xCB\x07\xD6\x07\xE1\x07\xEA\x07\xF3\x07\xFA\x07\x00\x08"
+        "\x06\x08\x0C\x08\x15\x08\x20\x08\x24\x08\x2C\x08\x34\x08\x3B\x08"
+        "\x4D\x08\x53\x08\x5B\x08\x63\x08\x6C\x08\x73\x08\x7C\x08\x8B\x08"
+        "\x91\x08\x99\x08"
         // index [0..403], hashes [404..603], 200 strings [604..2200]
         "\x05\x7A\xB0\x85\x8F\x8A\xBD\xFA\xA7\x2B\xFD\x6D\x45\x40\x26\xF7"
         "\x5F\x16\xCF\xE2\x8E\xFF\xE2\x79\x02\x6B\x10\x32\xD0\x2D\x97\x21"
@@ -41,9 +41,9 @@ namespace Monty {
         "\xCE\xB9\x0B\x42\x90\xD1\x1C\x2A\xBF\x2D\x54\x1A\xB7\x4B\xF9\x63"
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
-        "\xB7\x4E\x7D\x98\xE6\x03\x93\x5B\xEC\x6F\x8D\x08\xFF\x17\x64\xBF"
-        "\x22\xC1\xA7\x40\x8F\xE1\x56\x98\xB0\xB0\x25\x05\x45\xF8\x4D\x7C"
-        "\xAB\xB5\xB2\x2E\xBC\x60\x5B\xC6"
+        "\xB7\x4E\x7D\x98\xE6\x03\x22\xC1\xA7\x40\x8F\xE1\x56\x98\xB0\xB0"
+        "\x25\x05\x45\xF8\x4D\x7C\xAB\xB5\xB2\x2E\xBC\x60\x5B\xC6\xFB\x5B"
+        "\xEC\x6F\x8D\x08\xFF\x17\x64\xBF"
         // found 142 distinct hashes
         ""                     "\0" // 1
         "__dir__"              "\0" // 2
@@ -211,40 +211,40 @@ namespace Monty {
         "write"                "\0" // 164
         "zip"                  "\0" // 165
         "__bases__"            "\0" // 166
-        "v0.94-79-g2ee58fc"    "\0" // 167
-        "tasks"                "\0" // 168
-        "modules"              "\0" // 169
-        "suspend"              "\0" // 170
-        "gc_avail"             "\0" // 171
-        "gc_now"               "\0" // 172
-        "gc_stats"             "\0" // 173
-        "implementation"       "\0" // 174
-        "monty"                "\0" // 175
-        "version"              "\0" // 176
-        "UnicodeError"         "\0" // 177
-        "<boundmeth>"          "\0" // 178
-        "<buffer>"             "\0" // 179
-        "<bytecode>"           "\0" // 180
-        "<callable>"           "\0" // 181
-        "<cell>"               "\0" // 182
-        "<closure>"            "\0" // 183
-        "<context>"            "\0" // 184
-        "<dictview>"           "\0" // 185
-        "<exception>"          "\0" // 186
-        "<function>"           "\0" // 187
-        "<iterator>"           "\0" // 188
-        "<lookup>"             "\0" // 189
-        "<method>"             "\0" // 190
-        "<none>"               "\0" // 191
-        "array"                "\0" // 192
-        "class"                "\0" // 193
-        "slice"                "\0" // 194
-        "<object>"             "\0" // 195
-        "<instance>"           "\0" // 196
-        "sys"                  "\0" // 197
-        "machine"              "\0" // 198
-        "network"              "\0" // 199
-        "sdcard"               "\0" // 200
+        "UnicodeError"         "\0" // 167
+        "<boundmeth>"          "\0" // 168
+        "<buffer>"             "\0" // 169
+        "<bytecode>"           "\0" // 170
+        "<callable>"           "\0" // 171
+        "<cell>"               "\0" // 172
+        "<closure>"            "\0" // 173
+        "<context>"            "\0" // 174
+        "<dictview>"           "\0" // 175
+        "<exception>"          "\0" // 176
+        "<function>"           "\0" // 177
+        "<iterator>"           "\0" // 178
+        "<lookup>"             "\0" // 179
+        "<method>"             "\0" // 180
+        "<none>"               "\0" // 181
+        "array"                "\0" // 182
+        "class"                "\0" // 183
+        "slice"                "\0" // 184
+        "<object>"             "\0" // 185
+        "<instance>"           "\0" // 186
+        "sys"                  "\0" // 187
+        "machine"              "\0" // 188
+        "network"              "\0" // 189
+        "sdcard"               "\0" // 190
+        "v0.94-81-g0952865"    "\0" // 191
+        "tasks"                "\0" // 192
+        "modules"              "\0" // 193
+        "suspend"              "\0" // 194
+        "gc_avail"             "\0" // 195
+        "gc_now"               "\0" // 196
+        "gc_stats"             "\0" // 197
+        "implementation"       "\0" // 198
+        "monty"                "\0" // 199
+        "version"              "\0" // 200
         //CG>
     ;
 
