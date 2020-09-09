@@ -29,7 +29,7 @@ static Lookup::Item const lo_machine [] = {
 };
 
 static Lookup const ma_machine (lo_machine, sizeof lo_machine);
-extern Module const m_machine (&ma_machine);
+extern Module const m_machine (ma_machine);
 
 extern "C" uint32_t __atomic_fetch_or_4 (void volatile* p, uint32_t v, int o) {
     // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

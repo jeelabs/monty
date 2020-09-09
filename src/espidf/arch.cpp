@@ -32,4 +32,4 @@ static Lookup::Item const lo_machine [] = {
 };
 
 static Lookup const ma_machine (lo_machine, sizeof lo_machine);
-extern Module const m_machine (&ma_machine);
+extern Module const m_machine (ma_machine);
