@@ -1,5 +1,5 @@
 B = native
-T = gc
+T = json
 V = verify
 
 help:

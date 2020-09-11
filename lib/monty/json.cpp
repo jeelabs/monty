@@ -1,0 +1,107 @@
+// json.cpp - json and ihex message parser, for use in input streams
+
+#include "monty.h"
+#include <cassert>
+
+#include <cstdio>
+
+using namespace Monty;
+
+enum State1 {
+    START,
+    IHEX,
+    LIST,
+    MAP,
+    STR,
+    NUMBER,
+    WORD,
+};
+
+void InputParser::feed (uint8_t b) {
+    switch (state1) {
+        case START:
+            fill = 0;
+            switch (b) {
+                case ':': fill = 0;
+                          state1 = IHEX;
+                          break;
+                case '[': state1 = LIST;
+                          break;
+                case '{': state1 = MAP;
+                          break;
+                case '"': state1 = STR;
+                          break;
+                case '-': fill = 1;
+                          b = '0';
+                default:  u64 = b - '0';
+                          if ('0' <= b && b <= '9')
+                              state1 = NUMBER;
+                          else if ('a' <= b && b <= 'z')
+                              state1 = WORD, buf[fill++] = b;
+                          else
+                              assert(false);
+            }
+            break;
+
+        case IHEX:
+            if (b == '\n') {
+                if (fill > 2 && fill == 2 * (buf[0] + 5)) {
+                    uint8_t sum = 0;
+                    for (int i = 0; i < fill/2; ++i)
+                        sum += buf[i];
+                    if (sum == 0)
+                        onBuf(buf[3], 256*buf[1] + buf[2], buf + 4, buf[0]);
+                }
+                state1 = START;
+            } else if (fill < 2 * sizeof buf) {
+                // don't care about malformed data, but avoid buffer overruns
+                auto i = b - '0';
+                if (b > '9')
+                    i -= 7;
+                buf[fill/2] = (buf[fill/2] << 4) + (i & 0x0F);
+                ++fill;
+            }
+            break;
+
+        case LIST:
+            assert(false);
+            break;
+
+        case MAP:
+            assert(false);
+            break;
+
+        case STR:
+            assert(false);
+            break;
+
+        case NUMBER:
+            if ('0' <= b && b <= '9')
+                u64 = 10 * u64 + (b - '0');
+            else if (b == '\n')
+                onMsg(Int::make(fill ? -u64 : u64));
+            else
+                assert(false);
+            break;
+
+        case WORD:
+            if ('a' <= b && b <= 'z' && fill < sizeof buf - 2)
+                buf[fill++] = b;
+            else if (b == '\n') {
+                buf[fill] = 0;
+                if (strcmp((char*) buf, "null") == 0)
+                    onMsg(Null);
+                else if (strcmp((char*) buf, "false") == 0)
+                    onMsg(False);
+                else if (strcmp((char*) buf, "true") == 0)
+                    onMsg(True);
+                else
+                    assert(false);
+                state1 = START;
+            }
+            break;
+
+        default:
+            assert(false);
+    }
+}

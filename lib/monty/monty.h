@@ -1066,4 +1066,25 @@ namespace Monty {
     auto loader (Value name, uint8_t const* addr) -> Callable*;
     auto converter (uint8_t const* addr) -> VaryVec*;
 
+// see json.cpp - json and ihex message parser, for use in input streams
+
+    struct InputParser {
+        InputParser () {}
+        virtual ~InputParser () {}
+
+        void feed (uint8_t);
+
+        virtual void onMsg (Value) =0;
+        virtual void onBuf (uint8_t, uint16_t, uint8_t const*, uint8_t) =0;
+
+    private:
+        Value val;
+        List stack;
+        uint64_t u64 {0};
+        uint8_t buf [37]; // len:1, addr:2, type:1, data:0..32, sum:1
+        uint8_t state1 {0};
+        uint8_t state2 {0};
+        uint8_t fill {0};
+    };
+
 } // namespace Monty
