@@ -7,61 +7,55 @@
 
 using namespace Monty;
 
-enum State1 {
-    START,
-    IHEX,
-    LIST,
-    MAP,
-    STR,
-    NUMBER,
-    WORD,
+enum State {
+    START, SKIP, IHEX, LIST, MAP, STR, NUMBER, WORD,
 };
 
 void InputParser::feed (uint8_t b) {
-    switch (state1) {
+    switch (state) {
+        case SKIP:
+            if (b != '\n') break;
+            // else fall through
         case START:
             fill = 0;
             switch (b) {
-                case ':': fill = 0;
-                          state1 = IHEX;
-                          break;
-                case '[': state1 = LIST;
-                          break;
-                case '{': state1 = MAP;
-                          break;
-                case '"': state1 = STR;
-                          break;
-                case '-': fill = 1;
-                          b = '0';
+                case ':': fill = 0; state = IHEX; break;
+                case '[': state = LIST; break;
+                case '{': state = MAP; break;
+                case '"': state = STR; break;
+                case '-': fill = 1; b = '0'; // fall through
                 default:  u64 = b - '0';
                           if ('0' <= b && b <= '9')
-                              state1 = NUMBER;
+                              state = NUMBER;
                           else if ('a' <= b && b <= 'z')
-                              state1 = WORD, buf[fill++] = b;
+                              state = WORD, buf[fill++] = b;
                           else
-                              assert(false);
+                              state = SKIP; // ignore until next newline
             }
             break;
 
-        case IHEX:
+        case IHEX: {
+            int n = fill / 2;
             if (b == '\n') {
-                if (fill > 2 && fill == 2 * (buf[0] + 5)) {
+                if (n > 0 && n == buf[0] + 5) {
                     uint8_t sum = 0;
-                    for (int i = 0; i < fill/2; ++i)
+                    for (int i = 0; i < n; ++i)
                         sum += buf[i];
-                    if (sum == 0)
+                    if (sum == 0) // call with args: type, addr, data, size
                         onBuf(buf[3], 256*buf[1] + buf[2], buf + 4, buf[0]);
+                    // else ignore errors
                 }
-                state1 = START;
-            } else if (fill < 2 * sizeof buf) {
+                state = START;
+            } else if (n < (int) sizeof buf) {
                 // don't care about malformed data, but avoid buffer overruns
                 auto i = b - '0';
                 if (b > '9')
                     i -= 7;
-                buf[fill/2] = (buf[fill/2] << 4) + (i & 0x0F);
+                buf[n] = (buf[n] << 4) + (i & 0x0F);
                 ++fill;
             }
             break;
+        }
 
         case LIST:
             assert(false);
@@ -97,7 +91,7 @@ void InputParser::feed (uint8_t b) {
                     onMsg(True);
                 else
                     assert(false);
-                state1 = START;
+                state = START;
             }
             break;
 

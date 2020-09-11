@@ -1080,11 +1080,10 @@ namespace Monty {
     private:
         Value val;
         List stack;
-        uint64_t u64 {0};
+        uint64_t u64;
+        uint8_t fill;
+        uint8_t state {0};
         uint8_t buf [37]; // len:1, addr:2, type:1, data:0..32, sum:1
-        uint8_t state1 {0};
-        uint8_t state2 {0};
-        uint8_t fill {0};
     };
 
 } // namespace Monty
