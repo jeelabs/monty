@@ -47,7 +47,7 @@ void smokeTest () {
 }
 
 void jsonTypeSizes () {
-    TEST_ASSERT_EQUAL(12 * sizeof (void*), sizeof (InputParser));
+    TEST_ASSERT_EQUAL(6 * sizeof (void*) + 48, sizeof (InputParser));
 }
 
 static void ihexData () {
