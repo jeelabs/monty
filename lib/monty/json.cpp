@@ -8,29 +8,43 @@
 using namespace Monty;
 
 enum State {
-    START, SKIP, IHEX, LIST, MAP, STR, NUMBER, WORD,
+    START, SKIP, IHEX, SEQEND, STR, NUMBER, WORD,
 };
 
 void InputParser::feed (uint8_t b) {
     switch (state) {
         case SKIP:
-            if (b != '\n') break;
-            // else fall through
+            if (b != '\n') return;
+            state = START; // fall through
         case START:
-            fill = 0;
+            tag = b;
             switch (b) {
-                case ':': fill = 0; state = IHEX; break;
-                case '[': state = LIST; break;
-                case '{': state = MAP; break;
-                case '"': state = STR; break;
-                case '-': fill = 1; b = '0'; // fall through
-                default:  u64 = b - '0';
-                          if ('0' <= b && b <= '9')
-                              state = NUMBER;
-                          else if ('a' <= b && b <= 'z')
-                              state = WORD, buf[fill++] = b;
-                          else
-                              state = SKIP; // ignore until next newline
+                case '\n': return;
+                case ':':  fill = 0;
+                           state = IHEX;
+                           return;
+                case '(':  // fall through
+                case '[':  // fall through
+                case '{':  stack.append(new List);
+                           return;
+                case ')':  // fall through
+                case ']':  // fall through
+                case '}':  break;
+                case '\'': // fall through
+                case '"':  val = new Bytes;
+                           state = STR;
+                           return;
+                case '-':  b = '0'; // fall through
+                default:   if ('0' <= b && b <= '9') {
+                               u64 = b - '0';
+                               state = NUMBER;
+                           } else if ('a' <= b && b <= 'z') {
+                               fill = 0;
+                               buf[fill++] = b;
+                               state = WORD;
+                           } else
+                               state = SKIP; // ignore until next newline
+                           return;
             }
             break;
 
@@ -51,48 +65,77 @@ void InputParser::feed (uint8_t b) {
                 buf[n] = (buf[n] << 4) + ((b & 0x40 ? b + 9 : b) & 0x0F);
                 ++fill;
             }
-            break;
+            return;
         }
-
-        case LIST:
-            assert(false);
-            break;
-
-        case MAP:
-            assert(false);
-            break;
 
         case STR:
             assert(false);
-            break;
+            return;
 
         case NUMBER:
-            if ('0' <= b && b <= '9')
+            if ('0' <= b && b <= '9') {
                 u64 = 10 * u64 + (b - '0');
-            else if (b == '\n')
-                onMsg(Int::make(fill ? -u64 : u64));
-            else
-                assert(false);
+                return;
+            }
+
+            val = Int::make(tag == '-' ? -u64 : u64);
             break;
 
         case WORD:
-            if ('a' <= b && b <= 'z' && fill < sizeof buf - 2)
+            if ('a' <= b && b <= 'z' && fill < sizeof buf - 2) {
                 buf[fill++] = b;
-            else if (b == '\n') {
-                buf[fill] = 0;
-                if (strcmp((char*) buf, "null") == 0)
-                    onMsg(Null);
-                else if (strcmp((char*) buf, "false") == 0)
-                    onMsg(False);
-                else if (strcmp((char*) buf, "true") == 0)
-                    onMsg(True);
-                else
-                    assert(false);
-                state = START;
+                return;
             }
+
+            buf[fill] = 0;
+            if (strcmp((char*) buf, "null") == 0)
+                val = Null;
+            else if (strcmp((char*) buf, "false") == 0)
+                val = False;
+            else if (strcmp((char*) buf, "true") == 0)
+                val = True;
+            else
+                val = {};
+            break;
+
+        case SEQEND:
             break;
 
         default:
             assert(false);
     }
+
+    if (b == '\n') {
+        onMsg(val);
+        val = {};
+        stack.remove(0, stack.fill);
+        state = START;
+        return;
+    }
+
+    auto& v = stack.pop(-1).asType<List>();
+    if (!val.isNil()) {
+        v.append(val);
+        val = {};
+    }
+    switch (b) {
+        case ':':
+        case ',':
+            stack.append(v);
+            break;
+        case ')': // fall through
+        case ']': // fall through
+        case '}':
+            if (stack.fill == 0)
+                onMsg(v);
+            else {
+                val = v;
+                state = SEQEND;
+                return;
+            }
+            break;
+        default:
+            assert(false);
+    }
+    state = START;
 }

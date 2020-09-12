@@ -124,6 +124,41 @@ static void jsonScalar () {
     TEST_ASSERT_EQUAL(-1234567890123456789, json.asInt());
 }
 
+static void jsonList () {
+    TestParser t1 {"[11,22,33]\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<List>());
+    TEST_ASSERT_EQUAL(3, json.obj().len());
+    TEST_ASSERT_EQUAL(11, json.obj().getAt(0));
+    TEST_ASSERT_EQUAL(22, json.obj().getAt(1));
+    TEST_ASSERT_EQUAL(33, json.obj().getAt(2));
+
+    TestParser t2 {"[11,[22,33],44]\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<List>());
+    TEST_ASSERT_EQUAL(3, json.obj().len());
+    TEST_ASSERT_EQUAL(11, json.obj().getAt(0));
+    TEST_ASSERT_NOT_NULL(json.obj().getAt(1).ifType<List>());
+    TEST_ASSERT_EQUAL(2, json.obj().getAt(1).obj().len());
+    TEST_ASSERT_EQUAL(22, json.obj().getAt(1).obj().getAt(0));
+    TEST_ASSERT_EQUAL(33, json.obj().getAt(1).obj().getAt(1));
+    TEST_ASSERT_EQUAL(44, json.obj().getAt(2));
+
+    TestParser t3 {"[]\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<List>());
+    TEST_ASSERT_EQUAL(0, json.obj().len());
+
+    TestParser t4 {"[[]]\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<List>());
+    TEST_ASSERT_EQUAL(1, json.obj().len());
+    TEST_ASSERT_NOT_NULL(json.obj().getAt(0).ifType<List>());
+    TEST_ASSERT_EQUAL(0, json.obj().getAt(0).obj().len());
+
+    TestParser t5 {"[[42]]\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<List>());
+    TEST_ASSERT_EQUAL(1, json.obj().len());
+    TEST_ASSERT_EQUAL(1, json.obj().getAt(0).obj().len());
+    TEST_ASSERT_EQUAL(42, json.obj().getAt(0).obj().getAt(0));
+}
+
 int main () {
     UNITY_BEGIN();
 
@@ -131,6 +166,7 @@ int main () {
     RUN_TEST(jsonTypeSizes);
     RUN_TEST(ihexTests);
     RUN_TEST(jsonScalar);
+    RUN_TEST(jsonList);
 
     UNITY_END();
 }
