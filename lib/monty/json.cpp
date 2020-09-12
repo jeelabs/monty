@@ -25,7 +25,8 @@ void InputParser::feed (uint8_t b) {
                            return;
                 case '(':  // fall through
                 case '[':  // fall through
-                case '{':  stack.append(new List);
+                case '{':  stack.append(b);
+                           stack.append(new List);
                            return;
                 case ')':  // fall through
                 case ']':  // fall through
@@ -120,20 +121,29 @@ void InputParser::feed (uint8_t b) {
     }
     switch (b) {
         case ':':
+            stack.setAt(-1, b); // mark as dict, not a set
         case ',':
             stack.append(v);
             break;
         case ')': // fall through
         case ']': // fall through
-        case '}':
+        case '}': {
+            val = v;
+            tag = stack.pop(-1);
+printf("tag %c\n", tag);
+            switch (tag) {
+                case '(':
+                    val = Tuple::create({v, (int) v.size(), 0});
+                    break;
+            }
             if (stack.fill == 0)
-                onMsg(v);
+                onMsg(val);
             else {
-                val = v;
                 state = SEQEND;
                 return;
             }
             break;
+        }
         default:
             assert(false);
     }
