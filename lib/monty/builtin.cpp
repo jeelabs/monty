@@ -270,13 +270,12 @@ static auto bi_print (ArgVec const& args) -> Value {
             if (p != nullptr)
                 s = *p;
         }
+        if (i > 0)
+            buf.putc(' ');
         // if it's a plain string, print as is, else print via repr()
-        if (s != nullptr) {
-            if (buf.sep)
-                buf.putc(' ');
+        if (s != nullptr)
             buf.puts(s);
-            buf.sep = true;
-        } else
+        else
             buf << v;
     }
     buf.putc('\n');

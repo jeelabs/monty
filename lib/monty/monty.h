@@ -549,9 +549,11 @@ namespace Monty {
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (char const* fmt, ...);
 
-        auto operator<< (Value v) -> Buffer&; // TODO get rid of this C++'ism
+        auto operator<< (Value v) -> Buffer&;
+        auto operator<< (char c) -> Buffer& { putc(c); return *this; }
+        auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
+        auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
 
-        bool sep {false};
     protected:
         virtual void write (uint8_t const* ptr, uint32_t num) const;
     private:

@@ -7,9 +7,7 @@
 
 using namespace Monty;
 
-enum State {
-    START, SKIP, IHEX, SEQEND, STR, STRESC, STRX, STRU, NUMBER, WORD,
-};
+enum State { START, SKIP, IHEX, END, STR, ESC, STRX, STRU, NUM, WORD, };
 
 void InputParser::feed (uint8_t b) {
     switch (state) {
@@ -41,7 +39,7 @@ void InputParser::feed (uint8_t b) {
                 case '-':  b = '0'; // fall through
                 default:   if ('0' <= b && b <= '9') {
                                u64 = b - '0';
-                               state = NUMBER;
+                               state = NUM;
                            } else if ('a' <= b && b <= 'z') {
                                fill = 0;
                                buf[fill++] = b;
@@ -76,14 +74,14 @@ void InputParser::feed (uint8_t b) {
             if (b == tag) {
                 if (tag == '"')
                     addByte(0, false);
-                state = SEQEND;
+                state = END;
             } else if (b == '\\')
-                state = STRESC;
+                state = ESC;
             else
                 addByte(b);
             return;
 
-        case STRESC:
+        case ESC:
             switch (b) {
                 case 'b': b = '\b'; break;
                 case 'f': b = '\f'; break;
@@ -121,7 +119,7 @@ void InputParser::feed (uint8_t b) {
             return;
         }
 
-        case NUMBER:
+        case NUM:
             if ('0' <= b && b <= '9') {
                 u64 = 10 * u64 + (b - '0');
                 return;
@@ -140,7 +138,7 @@ void InputParser::feed (uint8_t b) {
                   strcmp((char*) buf, "true") == 0 ? True : Value ();
             break;
 
-        case SEQEND:
+        case END:
             break;
 
         default:
@@ -148,9 +146,9 @@ void InputParser::feed (uint8_t b) {
     }
 
     if (b == '\n') {
-        onMsg(val);
         stack.remove(0, stack.fill);
         state = START;
+        onMsg(val);
         return;
     }
 
@@ -201,12 +199,8 @@ void InputParser::feed (uint8_t b) {
                 default:
                     assert(false);
             }
-            if (stack.fill > 0) {
-                state = SEQEND;
-                return;
-            }
-            onMsg(val);
-            break;
+            state = END;
+            return;
         }
         default:
             assert(false);

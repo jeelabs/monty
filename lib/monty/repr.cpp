@@ -51,9 +51,6 @@ void Buffer::write (uint8_t const* ptr, uint32_t len) const {
 }
 
 auto Buffer::operator<< (Value v) -> Buffer& {
-    if (sep)
-        putc(' ');
-    sep = true;
     switch (v.tag()) {
         case Value::Nil: print("_"); break;
         case Value::Int: print("%d", (int) v); break;
@@ -182,22 +179,22 @@ Value Array::repr (Buffer& buf) const {
 }
 
 Value Bool::repr (Buffer& buf) const {
-    buf.puts(this == &falseObj ? "false" : "true");
+    buf << (this == &falseObj ? "false" : "true");
     return {};
 }
 
 Value Bytes::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    buf.putc('\'');
+    buf << '\'';
     for (auto b : *this) {
         if (b == '\\' || b == '\'')
-            buf.putc('\\');
+            buf << '\\';
         if (b >= ' ')
             buf.putc(b);
         else
             putcEsc(buf, "x%02x", b);
     }
-    buf.putc('\'');
+    buf << '\'';
     return {};
 }
 
@@ -216,17 +213,13 @@ auto Context::repr (Buffer& buf) const -> Value {
 
 Value Dict::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    buf.putc('{');
+    buf << '{';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
-            buf.putc(',');
-        buf.sep = false;
-        buf << (*this)[i];
-        buf.putc(':');
-        buf.sep = false;
-        buf << (*this)[fill+i];
+            buf << ',';
+        buf << (*this)[i] << ':' << (*this)[fill+i];
     }
-    buf.putc('}');
+    buf << '}';
     return {};
 }
 
@@ -263,14 +256,13 @@ Value Int::repr (Buffer& buf) const {
 
 Value List::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    buf.putc('[');
+    buf << '[';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
-            buf.putc(',');
-        buf.sep = false;
+            buf << ',';
         buf << (*this)[i];
     }
-    buf.putc(']');
+    buf << ']';
     return {};
 }
 
@@ -282,7 +274,7 @@ Value Module::repr (Buffer& buf) const {
 }
 
 Value None::repr (Buffer& buf) const {
-    buf.puts("null");
+    buf << "null";
     return {};
 }
 
@@ -298,28 +290,18 @@ Value Range::repr (Buffer& buf) const {
 
 Value Set::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    buf.putc('{');
+    buf << '{';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
-            buf.putc(',');
-        buf.sep = false;
+            buf << ',';
         buf << (*this)[i];
     }
-    buf.putc('}');
+    buf << '}';
     return {};
 }
 
 Value Slice::repr (Buffer& buf) const {
-    buf.puts("slice(");
-    buf.sep = false;
-    buf << off;
-    buf.putc(',');
-    buf.sep = false;
-    buf << num;
-    buf.putc(',');
-    buf.sep = false;
-    buf << step;
-    buf.putc(')');
+    buf << "slice(" << off << ',' << num << ',' << step << ')';
     return {};
 }
 
@@ -330,20 +312,19 @@ Value Str::repr (Buffer& buf) const {
 }
 
 Value Super::repr (Buffer& buf) const {
-    buf.puts("<super: ...>");
+    buf << "<super: ...>";
     return {};
 }
 
 Value Tuple::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
-    buf.putc('(');
+    buf << '(';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
-            buf.putc(',');
-        buf.sep = false;
+            buf << ',';
         buf << (*this)[i];
     }
-    buf.putc(')');
+    buf << ')';
     return {};
 }
 

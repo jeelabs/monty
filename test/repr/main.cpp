@@ -35,7 +35,7 @@ void smokeTest () {
 }
 
 void reprTypeSizes () {
-    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Buffer));
+    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Buffer));
 }
 
 static void reprBasics () {
@@ -45,10 +45,10 @@ static void reprBasics () {
     { TestBuffer tb; tb.print("<%d>", 42); }
     TEST_ASSERT_EQUAL_STRING("<42>", buf);
 
-    TestBuffer {} << Value () << 123 << "abc";
-    TEST_ASSERT_EQUAL_STRING("_ 123 \"abc\"", buf);
+    TestBuffer {} << Value () << ' ' << 123 << " abc " << (Value) "def";
+    TEST_ASSERT_EQUAL_STRING("_ 123 abc \"def\"", buf);
 
-    TestBuffer {} << Null << True << False;
+    TestBuffer {} << Null << ' ' << True << ' ' << False;
     TEST_ASSERT_EQUAL_STRING("null true false", buf);
 
     TestBuffer {} << Object {};
