@@ -204,6 +204,11 @@ static void jsonSet () {
     TEST_ASSERT_TRUE(p->has(22));
     TEST_ASSERT_TRUE(p->has(33));
     TEST_ASSERT_FALSE(p->has(34));
+
+    TestParser t2 {"{_}\n"};
+    auto q = json.ifType<Set>();
+    TEST_ASSERT_NOT_NULL(q);
+    TEST_ASSERT_EQUAL(0, q->size());
 }
 
 static void jsonDict () {

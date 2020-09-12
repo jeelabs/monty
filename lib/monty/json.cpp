@@ -23,6 +23,7 @@ void InputParser::feed (uint8_t b) {
                 case ':':  fill = 0;
                            state = IHEX;
                            return;
+                case '_':  // fall through
                 case '(':  // fall through
                 case '[':  // fall through
                 case '{':  stack.append(b);
@@ -123,6 +124,12 @@ void InputParser::feed (uint8_t b) {
         case ',':
             stack.append(v);
             break;
+        case '_':
+            tag = stack.getAt(-1);
+            if (v.size() == 0 && tag == '{')
+                stack.setAt(-1, b); // mark as empty set
+            stack.append(v);
+            break;
         case ')': // fall through
         case ']': // fall through
         case '}': {
@@ -133,8 +140,9 @@ void InputParser::feed (uint8_t b) {
                     val = Tuple::create({v, (int) v.size(), 0});
                 case '[':
                     break;
+                case '_':
                 case '{':
-                    if (v.size() > 0) {
+                    if (tag == '_' || v.size() > 0) {
                         val = Set::create({v, (int) v.size(), 0});
                         break;
                     }
