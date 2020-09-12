@@ -35,7 +35,7 @@ void InputParser::feed (uint8_t b) {
             break;
 
         case IHEX: {
-            int n = fill / 2;
+            int n = fill >> 1;
             if (b == '\n') {
                 if (n > 0 && n == buf[0] + 5) {
                     uint8_t sum = 0;
@@ -48,10 +48,7 @@ void InputParser::feed (uint8_t b) {
                 state = START;
             } else if (n < (int) sizeof buf) {
                 // don't care about malformed data, but avoid buffer overruns
-                auto i = b - '0';
-                if (b > '9')
-                    i -= 7;
-                buf[n] = (buf[n] << 4) + (i & 0x0F);
+                buf[n] = (buf[n] << 4) + ((b & 0x40 ? b + 9 : b) & 0x0F);
                 ++fill;
             }
             break;
