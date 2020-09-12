@@ -194,6 +194,30 @@ static void jsonTuple () {
     TEST_ASSERT_EQUAL(42, json.obj().getAt(0).obj().getAt(0));
 }
 
+static void jsonSet () {
+    TestParser t1 {"{11,22,33}\n"};
+    auto p = json.ifType<Set>();
+    TEST_ASSERT_NOT_NULL(p);
+    TEST_ASSERT_EQUAL(3, p->size());
+    TEST_ASSERT_FALSE(p->has(10));
+    TEST_ASSERT_TRUE(p->has(11));
+    TEST_ASSERT_TRUE(p->has(22));
+    TEST_ASSERT_TRUE(p->has(33));
+    TEST_ASSERT_FALSE(p->has(34));
+}
+
+static void jsonDict () {
+    TestParser t1 {"{11:22,33:44}\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<Dict>());
+    TEST_ASSERT_EQUAL(2, json.obj().len());
+    TEST_ASSERT_EQUAL(22, json.obj().getAt(11));
+    TEST_ASSERT_EQUAL(44, json.obj().getAt(33));
+
+    TestParser t2 {"{}\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<Dict>());
+    TEST_ASSERT_EQUAL(0, json.obj().len());
+}
+
 int main () {
     UNITY_BEGIN();
 
@@ -203,6 +227,8 @@ int main () {
     RUN_TEST(jsonScalar);
     RUN_TEST(jsonList);
     RUN_TEST(jsonTuple);
+    RUN_TEST(jsonSet);
+    RUN_TEST(jsonDict);
 
     UNITY_END();
 }

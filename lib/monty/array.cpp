@@ -350,7 +350,11 @@ auto Set::setAt (Value k, Value v) -> Value {
 }
 
 auto Set::create (ArgVec const& args, Type const*) -> Value {
-    return new Set (args);
+    auto p = new Set (args);
+    p->adj(args.num);
+    for (int i = 0; i < args.num; ++i)
+        p->has(args[i]) = true; // TODO append, no need to lookup
+    return p;
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()

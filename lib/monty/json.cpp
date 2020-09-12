@@ -108,17 +108,15 @@ void InputParser::feed (uint8_t b) {
 
     if (b == '\n') {
         onMsg(val);
-        val = {};
         stack.remove(0, stack.fill);
         state = START;
         return;
     }
 
     auto& v = stack.pop(-1).asType<List>();
-    if (!val.isNil()) {
+    if (!val.isNil())
         v.append(val);
-        val = {};
-    }
+
     switch (b) {
         case ':':
             stack.setAt(-1, b); // mark as dict, not a set
@@ -130,22 +128,41 @@ void InputParser::feed (uint8_t b) {
         case '}': {
             val = v;
             tag = stack.pop(-1);
-printf("tag %c\n", tag);
             switch (tag) {
                 case '(':
                     val = Tuple::create({v, (int) v.size(), 0});
+                case '[':
                     break;
+                case '{':
+                    if (v.size() > 0) {
+                        val = Set::create({v, (int) v.size(), 0});
+                        break;
+                    }
+                    // fall through, empty set is turned into empty dict
+                case ':':
+                    if (v.size() & 1)
+                        val = {}; // ignore malformed dict
+                    else {
+                        auto p = new Dict;
+                        p->adj(v.size());
+                        for (uint32_t i = 0; i < v.size(); i += 2)
+                            p->at(v[i]) = v[i+1]; // TODO avoid lookups
+                        val = p;
+                    }
+                    break;
+                default:
+                    assert(false);
             }
-            if (stack.fill == 0)
-                onMsg(val);
-            else {
+            if (stack.fill > 0) {
                 state = SEQEND;
                 return;
             }
+            onMsg(val);
             break;
         }
         default:
             assert(false);
     }
+
     state = START;
 }

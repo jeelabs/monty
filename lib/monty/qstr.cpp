@@ -42,7 +42,7 @@ namespace Monty {
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
         "\xB7\x4E\x7D\x98\xE6\x03\x22\xC1\xA7\x40\x8F\xE1\x56\x98\xB0\xB0"
-        "\x25\x05\x45\xF8\x4D\x7C\xAB\xB5\xB2\x2E\xBC\x60\x5B\xC6\x9B\x5B"
+        "\x25\x05\x45\xF8\x4D\x7C\xAB\xB5\xB2\x2E\xBC\x60\x5B\xC6\xD8\x5B"
         "\xEC\x6F\x8D\x08\xFF\x17\x64\xBF"
         // found 141 distinct hashes
         ""                     "\0" // 1
@@ -235,7 +235,7 @@ namespace Monty {
         "machine"              "\0" // 188
         "network"              "\0" // 189
         "sdcard"               "\0" // 190
-        "v0.94-94-gaff56f5"    "\0" // 191
+        "v0.94-95-g4a16b30"    "\0" // 191
         "tasks"                "\0" // 192
         "modules"              "\0" // 193
         "suspend"              "\0" // 194
