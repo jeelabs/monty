@@ -8,7 +8,7 @@
 using namespace Monty;
 
 enum State {
-    START, SKIP, IHEX, SEQEND, STR, NUMBER, WORD,
+    START, SKIP, IHEX, SEQEND, STR, STRESC, STRX, STRU, NUMBER, WORD,
 };
 
 void InputParser::feed (uint8_t b) {
@@ -32,8 +32,10 @@ void InputParser::feed (uint8_t b) {
                 case ')':  // fall through
                 case ']':  // fall through
                 case '}':  break;
-                case '\'': // fall through
-                case '"':  val = new Bytes;
+                case '\'': val = new Bytes;
+                           state = STR;
+                           return;
+                case '"':  val = new Str ("");
                            state = STR;
                            return;
                 case '-':  b = '0'; // fall through
@@ -71,7 +73,24 @@ void InputParser::feed (uint8_t b) {
         }
 
         case STR:
-            assert(false);
+            if (b == tag) {
+                if (tag == '"')
+                    addByte(0, false);
+                state = SEQEND;
+            } else if (b == '\\')
+                state = STRESC;
+            else
+                addByte(b);
+            return;
+
+        case STRESC:
+            switch (b) {
+                case 't': b = '\t'; break;
+                case 'r': b = '\r'; break;
+                case 'n': b = '\n'; break;
+            }
+            addByte(b);
+            state = STR;
             return;
 
         case NUMBER:
@@ -173,4 +192,14 @@ void InputParser::feed (uint8_t b) {
     }
 
     state = START;
+}
+
+void InputParser::addByte (uint8_t b, bool extend) {
+    auto& v = (Bytes&) val.obj(); // also deals with derived Str type
+    auto n = v.size();
+    if (extend)
+        v.insert(n);
+    else
+        v.adj(n+1);
+    v[n] = b;
 }

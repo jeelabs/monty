@@ -1078,6 +1078,8 @@ namespace Monty {
         virtual void onBuf (uint8_t, uint16_t, uint8_t const*, uint8_t) =0;
 
     private:
+        void addByte (uint8_t, bool =true);
+
         Value val;
         List stack;
         uint64_t u64;

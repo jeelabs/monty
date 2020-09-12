@@ -223,6 +223,14 @@ static void jsonDict () {
     TEST_ASSERT_EQUAL(0, json.obj().len());
 }
 
+static void jsonStr () {
+    TestParser t1 {"\"abc\"\n"};
+    TEST_ASSERT_EQUAL_STRING("abc", json);
+
+    TestParser t2 {"\"a\\tb\\rc\\nd\\?e\\\\f\\\"g\"\n"};
+    TEST_ASSERT_EQUAL_STRING("a\tb\rc\nd?e\\f\"g", json);
+}
+
 int main () {
     UNITY_BEGIN();
 
@@ -234,6 +242,7 @@ int main () {
     RUN_TEST(jsonTuple);
     RUN_TEST(jsonSet);
     RUN_TEST(jsonDict);
+    RUN_TEST(jsonStr);
 
     UNITY_END();
 }
