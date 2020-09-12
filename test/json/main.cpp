@@ -229,6 +229,12 @@ static void jsonStr () {
 
     TestParser t2 {"\"a\\tb\\rc\\nd\\?e\\\\f\\\"g\"\n"};
     TEST_ASSERT_EQUAL_STRING("a\tb\rc\nd?e\\f\"g", json);
+
+    TestParser t3 {"\"a\\x01b\\x10c\\x80d\"\n"};
+    TEST_ASSERT_EQUAL_STRING("a\x01" "b\x10" "c\x80" "d", json);
+
+    TestParser t4 {"\"a\\u0012b\\u0345c\\u6789d\"\n"};
+    TEST_ASSERT_EQUAL_STRING("a\x12" "b\xCD\x85" "c\xE6\x9E\x89" "d", json);
 }
 
 int main () {

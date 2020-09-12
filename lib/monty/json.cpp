@@ -85,20 +85,47 @@ void InputParser::feed (uint8_t b) {
 
         case STRESC:
             switch (b) {
+                case 'b': b = '\b'; break;
+                case 'f': b = '\f'; break;
                 case 't': b = '\t'; break;
                 case 'r': b = '\r'; break;
                 case 'n': b = '\n'; break;
+                case 'x': fill = 2; state = STRX; return;
+                case 'u': fill = 4; state = STRU; return;
             }
             addByte(b);
             state = STR;
             return;
+
+        case STRX:
+        case STRU: { // ignore malformed hex
+            u64 = ((uint16_t) u64 << 4) + ((b & 0x40 ? b + 9 : b) & 0x0F);
+            if (--fill == 0) {
+                if (state == STRX)
+                    addByte(u64);
+                else {
+                    uint16_t u = u64;
+                    if (u <= 0x7F)
+                        addByte(u);
+                    else if (u <= 0x7FF) {
+                        addByte(0xC0 | (u>>6));
+                        addByte(0x80 | (u & 0x3F));
+                    } else {
+                        addByte(0xE0 | (u>>12));
+                        addByte(0x80 | ((u>>6) & 0x3F));
+                        addByte(0x80 | (u & 0x3F));
+                    }
+                }
+                state = STR;
+            }
+            return;
+        }
 
         case NUMBER:
             if ('0' <= b && b <= '9') {
                 u64 = 10 * u64 + (b - '0');
                 return;
             }
-
             val = Int::make(tag == '-' ? -u64 : u64);
             break;
 
@@ -107,16 +134,10 @@ void InputParser::feed (uint8_t b) {
                 buf[fill++] = b;
                 return;
             }
-
             buf[fill] = 0;
-            if (strcmp((char*) buf, "null") == 0)
-                val = Null;
-            else if (strcmp((char*) buf, "false") == 0)
-                val = False;
-            else if (strcmp((char*) buf, "true") == 0)
-                val = True;
-            else
-                val = {};
+            val = strcmp((char*) buf, "null") == 0 ? Null :
+                  strcmp((char*) buf, "false") == 0 ? False :
+                  strcmp((char*) buf, "true") == 0 ? True : Value ();
             break;
 
         case SEQEND:
