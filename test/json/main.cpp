@@ -225,16 +225,44 @@ static void jsonDict () {
 
 static void jsonStr () {
     TestParser t1 {"\"abc\"\n"};
+    TEST_ASSERT_NOT_NULL(json.ifType<Str>());
     TEST_ASSERT_EQUAL_STRING("abc", json);
 
-    TestParser t2 {"\"a\\tb\\rc\\nd\\?e\\\\f\\\"g\"\n"};
-    TEST_ASSERT_EQUAL_STRING("a\tb\rc\nd?e\\f\"g", json);
+    TestParser t2 {"\"a\\tb\\rc\\nd\\?e\\\\f\\\"g\\bh\\fi\"\n"};
+    TEST_ASSERT_EQUAL_STRING("a\tb\rc\nd?e\\f\"g\bh\fi", json);
 
     TestParser t3 {"\"a\\x01b\\x10c\\x80d\"\n"};
     TEST_ASSERT_EQUAL_STRING("a\x01" "b\x10" "c\x80" "d", json);
 
     TestParser t4 {"\"a\\u0012b\\u0345c\\u6789d\"\n"};
     TEST_ASSERT_EQUAL_STRING("a\x12" "b\xCD\x85" "c\xE6\x9E\x89" "d", json);
+}
+
+static void jsonBytes () {
+    TestParser t1 {"'abc'\n"};
+    auto p1 = json.ifType<Bytes>();
+    TEST_ASSERT_NOT_NULL(p1);
+    TEST_ASSERT_EQUAL(3, p1->len());
+    TEST_ASSERT_EQUAL_MEMORY("abc", p1->begin(), 3);
+
+    TestParser t2 {"'a\\tb\\rc\\nd\\?e\\\\f\\'g\\bh\\fi'\n"};
+    auto p2 = json.ifType<Bytes>();
+    TEST_ASSERT_NOT_NULL(p2);
+    TEST_ASSERT_EQUAL(17, p2->len());
+    TEST_ASSERT_EQUAL_MEMORY("a\tb\rc\nd?e\\f'g\bh\fi", p2->begin(), 17);
+
+    TestParser t3 {"'a\\x01b\\x10c\\x80d'\n"};
+    auto p3 = json.ifType<Bytes>();
+    TEST_ASSERT_NOT_NULL(p3);
+    TEST_ASSERT_EQUAL(7, p3->len());
+    TEST_ASSERT_EQUAL_MEMORY("a\x01" "b\x10" "c\x80" "d", p3->begin(), 7);
+
+    TestParser t4 {"'a\\u0012b\\u0345c\\u6789d'\n"};
+    auto p4 = json.ifType<Bytes>();
+    TEST_ASSERT_NOT_NULL(p4);
+    TEST_ASSERT_EQUAL(10, p4->len());
+    TEST_ASSERT_EQUAL_MEMORY("a\x12" "b\xCD\x85" "c\xE6\x9E\x89" "d",
+            p4->begin(), 10);
 }
 
 int main () {
@@ -249,6 +277,7 @@ int main () {
     RUN_TEST(jsonSet);
     RUN_TEST(jsonDict);
     RUN_TEST(jsonStr);
+    RUN_TEST(jsonBytes);
 
     UNITY_END();
 }

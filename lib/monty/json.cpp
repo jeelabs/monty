@@ -87,11 +87,11 @@ void InputParser::feed (uint8_t b) {
             switch (b) {
                 case 'b': b = '\b'; break;
                 case 'f': b = '\f'; break;
-                case 't': b = '\t'; break;
-                case 'r': b = '\r'; break;
                 case 'n': b = '\n'; break;
-                case 'x': fill = 2; state = STRX; return;
+                case 'r': b = '\r'; break;
+                case 't': b = '\t'; break;
                 case 'u': fill = 4; state = STRU; return;
+                case 'x': fill = 2; state = STRX; return;
             }
             addByte(b);
             state = STR;
@@ -105,16 +105,16 @@ void InputParser::feed (uint8_t b) {
                     addByte(u64);
                 else {
                     uint16_t u = u64;
-                    if (u <= 0x7F)
-                        addByte(u);
-                    else if (u <= 0x7FF) {
-                        addByte(0xC0 | (u>>6));
-                        addByte(0x80 | (u & 0x3F));
-                    } else {
-                        addByte(0xE0 | (u>>12));
-                        addByte(0x80 | ((u>>6) & 0x3F));
-                        addByte(0x80 | (u & 0x3F));
+                    if (u > 0x7F) {
+                        if (u <= 0x7FF)
+                            addByte(0xC0 | (u>>6));
+                        else {
+                            addByte(0xE0 | (u>>12));
+                            addByte(0x80 | ((u>>6) & 0x3F));
+                        }
+                        u = 0x80 | (u & 0x3F);
                     }
+                    addByte(u);
                 }
                 state = STR;
             }
