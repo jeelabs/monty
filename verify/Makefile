@@ -57,8 +57,11 @@ clean:
 	rm -f dog *.mpy *.mty *.out
 
 # compare output to expected (show first 10 diff lines), else show word count
+# don't show anything if the .exp file is empty, as it differs from run to run
+# (native assertion failures will always show, since they are sent to stderr)
 %.exp : %.out %.mpy
-	@ if [ -f $@ ]; then (diff $< $@ && rm $<) | head; else wc -l $<; fi
+	@ if [ -s $@ ]; then (diff $< $@ && rm $<) | head; fi
+	@ if [ ! -f $@ ]; then wc -l $<; fi
 
 # 1) store bytecode in ram, 2) reset the µC, 3) capture output to file
 %.out : %.mpy rom.mrfs
