@@ -30,7 +30,8 @@ namespace Monty {
     };
 
     struct Vec {
-        constexpr Vec (void const* ptr =nullptr, uint32_t num =0)
+        constexpr Vec () {}
+        constexpr Vec (void const* ptr, uint32_t num =0)
                     : data ((uint8_t*) ptr), capa (num) {}
         ~Vec () { (void) adj(0); }
 
@@ -47,8 +48,8 @@ namespace Monty {
         auto adj (uint32_t bytes) -> bool;
 
     private:
-        uint8_t* data; // pointer to vector when capa > 0
-        uint32_t capa; // capacity in bytes
+        uint8_t* data {}; // pointer to vector when capa > 0
+        uint32_t capa {}; // capacity in bytes
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
@@ -207,7 +208,8 @@ namespace Monty {
 
     template< typename T >
     struct VecOf : private Vec {
-        constexpr VecOf (T const* ptr =nullptr, uint32_t num =0)
+        constexpr VecOf () {}
+        constexpr VecOf (T const* ptr, uint32_t num =0)
                     : Vec (ptr, num * sizeof (T)), fill (num) {}
 
         auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
@@ -254,7 +256,7 @@ namespace Monty {
             fill -= num;
         }
 
-        uint32_t fill;
+        uint32_t fill {};
     };
 
     using ByteVec = VecOf<uint8_t>;
@@ -1027,11 +1029,11 @@ namespace Monty {
 
         void marker () const override { List::marker(); mark(callee); }
 
-        int8_t qid {0};
+        int8_t qid {};
         // previous values are saved in current stack frame
-        uint16_t base {0};
-        uint16_t spOff {0};
-        uint16_t ipOff {0};
+        uint16_t base {};
+        uint16_t spOff {};
+        uint16_t ipOff {};
         Callable const* callee {nullptr};
     };
 
@@ -1089,7 +1091,7 @@ namespace Monty {
         uint64_t u64;
         uint8_t fill;
         uint8_t tag;
-        uint8_t state {0};
+        uint8_t state {};
         uint8_t buf [37]; // len:1, addr:2, type:1, data:0..32, sum:1
     };
 
