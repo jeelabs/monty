@@ -77,7 +77,7 @@ auto Closure::call (ArgVec const& args) const -> Value {
         v[i] = begin()[i];
     for (int i = 0; i < args.num; ++i)
         v[n+i] = args[i];
-    return func.call({v, n + args.num, 0});
+    return func.call({v, n + args.num});
 }
 
 void Context::enter (Callable const& func) {
@@ -171,7 +171,7 @@ void Context::caught () {
         auto ep = excBase(0);
         ipOff = ep[0] & (FinallyTag - 1);
         spOff = ep[1];
-        begin()[++spOff] = e.isNil() ? ep[3] : e;
+        begin()[++spOff] = e.isNil() ? ep[2] : e;
     } else {
         leave();
         raise(e);

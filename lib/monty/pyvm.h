@@ -353,7 +353,7 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opBuildMap (int arg) {
-        *++sp = Dict::create({*context, arg, 0});
+        *++sp = Dict::create({*context, arg});
     }
     //CG1 op
     void opStoreMap () {

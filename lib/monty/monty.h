@@ -293,7 +293,7 @@ namespace Monty {
     struct ArgVec {
         ArgVec (Vector const& v, int n, Value const* p)
             : ArgVec (v, n, p - v.begin()) {}
-        ArgVec (Vector const& v, int n, int o) : vec (v), num (n), off (o) {}
+        ArgVec (Vector const& v, int n, int o =0) : vec (v), num (n), off (o) {}
 
         //auto size () const -> uint32_t { return num; }
         auto begin () const -> Value const* { return vec.begin() + off; }

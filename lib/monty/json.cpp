@@ -3,8 +3,6 @@
 #include "monty.h"
 #include <cassert>
 
-#include <cstdio>
-
 using namespace Monty;
 
 enum State { START, SKIP, IHEX, END, STR, ESC, STRX, STRU, NUM, WORD, };
