@@ -38,8 +38,8 @@ void smokeTest () {
 
 void vecOfTypeSizes () {
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<int>));
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (VecOf<Vec>));
+    TEST_ASSERT_EQUAL(1 * sizeof (void*) + 8, sizeof (VecOf<int>));
+    TEST_ASSERT_EQUAL(1 * sizeof (void*) + 8, sizeof (VecOf<Vec>));
 }
 
 void vecOfInited () {
@@ -84,13 +84,13 @@ void vecOfCopyMove () {
 }
 
 void arrayTypeSizes () {
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Array));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (List));
-    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Set));
-    TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Dict));
-    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Type));
-    TEST_ASSERT_EQUAL(7 * sizeof (void*), sizeof (Class));
-    TEST_ASSERT_EQUAL(5 * sizeof (void*), sizeof (Inst));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Array));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (List));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Set));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*) + 8, sizeof (Dict));
+    TEST_ASSERT_EQUAL(5 * sizeof (void*) + 8, sizeof (Type));
+    TEST_ASSERT_EQUAL(5 * sizeof (void*) + 8, sizeof (Class));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*) + 8, sizeof (Inst));
 }
 
 static void arrayInsDel () {

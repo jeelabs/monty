@@ -30,9 +30,8 @@ namespace Monty {
     };
 
     struct Vec {
-        constexpr Vec () : capa (0), data (nullptr) {}
-        constexpr Vec (void const* ptr, uint32_t num =0)
-                    : capa (num), data ((uint8_t*) ptr) {}
+        constexpr Vec (void const* ptr =nullptr, uint32_t num =0)
+                    : data ((uint8_t*) ptr), capa (num) {}
         ~Vec () { (void) adj(0); }
 
         Vec (Vec const&) = delete;
@@ -48,8 +47,8 @@ namespace Monty {
         auto adj (uint32_t bytes) -> bool;
 
     private:
-        uint32_t capa; // capacity in bytes
         uint8_t* data; // pointer to vector when capa > 0
+        uint32_t capa; // capacity in bytes
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
@@ -208,7 +207,8 @@ namespace Monty {
 
     template< typename T >
     struct VecOf : private Vec {
-        using Vec::Vec;
+        constexpr VecOf (T const* ptr =nullptr, uint32_t num =0)
+                    : Vec (ptr, num * sizeof (T)), fill (num) {}
 
         auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
         auto adj (uint32_t num) -> bool { return Vec::adj(num * sizeof (T)); }
@@ -254,7 +254,7 @@ namespace Monty {
             fill -= num;
         }
 
-        uint32_t fill {0};
+        uint32_t fill;
     };
 
     using ByteVec = VecOf<uint8_t>;
@@ -263,7 +263,9 @@ namespace Monty {
     void markVec (Vector const&);
 
     struct VaryVec : private ByteVec {
-        using ByteVec::ByteVec;
+        constexpr VaryVec (void const* ptr =nullptr, uint32_t num =0)
+                    : ByteVec ((uint8_t const*) ptr, num) {}
+
         using ByteVec::size;
 
         auto first () const -> uint8_t const* { return begin(); }
