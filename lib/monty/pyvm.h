@@ -1087,7 +1087,14 @@ class PyVM : public Interp {
 
     void outer () {
         while (context != nullptr) {
-            inner();
+            auto r = context->frame().result.ifType<Resumable>();
+            if (r == nullptr)
+                inner();
+            else {
+                auto v = r->next();
+                if (!v.isNil())
+                    r->done(v);
+            }
 
             if (gcCheck()) {
                 archMode(RunMode::GC);

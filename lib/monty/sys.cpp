@@ -6,7 +6,7 @@
 using namespace Monty;
 
 //CG1 VERSION
-constexpr auto VERSION = Q(191,"v0.94-105-g3cd05cf");
+constexpr auto VERSION = Q(192,"v0.94-107-g86510a5");
 
 static auto f_suspend (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isInt());
@@ -47,14 +47,14 @@ static Function const fo_gcnow (f_gcnow);
 static Function const fo_gcstats (f_gcstats);
 
 static Lookup::Item const lo_sys [] = {
-    { Q(192,"tasks"), Interp::tasks },
-    { Q(193,"modules"), Interp::modules },
-    { Q(194,"suspend"), fo_suspend },
-    { Q(195,"gc_avail"), fo_gcavail },
-    { Q(196,"gc_now"), fo_gcnow },
-    { Q(197,"gc_stats"), fo_gcstats },
-    { Q(198,"implementation"), Q(199,"monty") },
-    { Q(200,"version"), VERSION },
+    { Q(193,"tasks"), Interp::tasks },
+    { Q(194,"modules"), Interp::modules },
+    { Q(195,"suspend"), fo_suspend },
+    { Q(196,"gc_avail"), fo_gcavail },
+    { Q(197,"gc_now"), fo_gcnow },
+    { Q(198,"gc_stats"), fo_gcstats },
+    { Q(199,"implementation"), Q(200,"monty") },
+    { Q(201,"version"), VERSION },
 };
 
 static Lookup const ma_sys (lo_sys, sizeof lo_sys);

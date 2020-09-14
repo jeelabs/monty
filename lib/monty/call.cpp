@@ -184,6 +184,20 @@ auto Context::next () -> Value {
     return {}; // no result yet
 }
 
+Resumable::Resumable (Context& ctx) : saved (ctx.frame().result) {
+    ctx.frame().result = this;
+    Interp::interrupt(0); // exit inner loop
+}
+
+void Resumable::done (Value v) {
+    auto ctx = Interp::context;
+    assert(ctx != nullptr && &ctx->frame().result.obj() == this);
+    ctx->frame().result = saved;
+
+    auto sp = ctx->begin() + ctx->spOff;
+    *sp = v;
+}
+
 auto Interp::findTask (Context& ctx) -> int {
     for (auto& e : tasks)
         if (&e.obj() == &ctx)

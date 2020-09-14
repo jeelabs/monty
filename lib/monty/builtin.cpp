@@ -188,10 +188,10 @@ static auto e_UnicodeError (ArgVec const& args) -> Value {
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(185,"<object>"));
+Type const Object::info (Q(186,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-Type const Inst::info (Q(186,"<instance>"));
+Type const Inst::info (Q(187,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
 Type const    BoundMeth::info (Q(168,"<boundmeth>"));
@@ -209,17 +209,18 @@ Type const       Lookup::info (Q(179,"<lookup>"));
 Type const       Method::info (Q(180,"<method>"));
 Type const       Module::info (Q(  7,"<module>"));
 Type const         None::info (Q(181,"<none>"));
+Type const    Resumable::info (Q(182,"<resumable>"));
 
-Type const    Array::info (Q(182,"array") ,  Array::create, &Array::attrs);
+Type const    Array::info (Q(183,"array") ,  Array::create, &Array::attrs);
 Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type const    Class::info (Q(183,"class") ,  Class::create, &Class::attrs);
+Type const    Class::info (Q(184,"class") ,  Class::create, &Class::attrs);
 Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
 Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(184,"slice") ,  Slice::create, &Slice::attrs);
+Type const    Slice::info (Q(185,"slice") ,  Slice::create, &Slice::attrs);
 Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type const    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
@@ -240,6 +241,7 @@ auto       Lookup::type () const -> Type const& { return info; }
 auto       Method::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
+auto    Resumable::type () const -> Type const& { return info; }
 auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
@@ -348,16 +350,16 @@ static Lookup::Item const builtinsMap [] = {
     { Q(167,"UnicodeError")        , f_UnicodeError },
     //CG>
     //CG< builtin-emit 1
-    { Q(182,"array") , Array::info },
+    { Q(183,"array") , Array::info },
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(183,"class") , Class::info },
+    { Q(184,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(184,"slice") , Slice::info },
+    { Q(185,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
     { Q(154,"super") , Super::info },
     { Q(157,"tuple") , Tuple::info },
@@ -369,16 +371,16 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
-    { Q(187,"sys"),   m_sys },
+    { Q(188,"sys"),   m_sys },
 #ifndef UNIT_TEST
-    { Q(188,"machine"), m_machine },
+    { Q(189,"machine"), m_machine },
 #endif
 #if 0
 #if INCLUDE_NETWORK
-    { Q(189,"network"), m_network },
+    { Q(190,"network"), m_network },
 #endif
 #if INCLUDE_SDCARD
-    { Q(190,"sdcard"), m_sdcard },
+    { Q(191,"sdcard"), m_sdcard },
 #endif
 #endif
 };

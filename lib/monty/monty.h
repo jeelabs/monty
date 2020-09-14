@@ -48,8 +48,8 @@ namespace Monty {
         auto adj (uint32_t bytes) -> bool;
 
     private:
-        uint8_t* data {}; // pointer to vector when capa > 0
-        uint32_t capa {}; // capacity in bytes
+        uint8_t* data = nullptr; // pointer to vector when capa > 0
+        uint32_t capa = 0; // capacity in bytes
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
@@ -256,7 +256,7 @@ namespace Monty {
             fill -= num;
         }
 
-        uint32_t fill {};
+        uint32_t fill = 0;
     };
 
     using ByteVec = VecOf<uint8_t>;
@@ -1020,12 +1020,25 @@ namespace Monty {
 
         void marker () const override { List::marker(); mark(callee); }
 
-        int8_t qid {};
+        int8_t qid = 0;
         // previous values are saved in current stack frame
-        uint16_t base {};
-        uint16_t spOff {};
-        uint16_t ipOff {};
+        uint16_t base = 0;
+        uint16_t spOff = 0;
+        uint16_t ipOff = 0;
         Callable const* callee {nullptr};
+    };
+
+    //CG3 type <resumable>
+    struct Resumable : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Resumable (Context&);
+        void done (Value);
+
+        void marker () const override { saved.marker(); }
+    private:
+        Value saved;
     };
 
     struct Interp {
@@ -1082,7 +1095,7 @@ namespace Monty {
         uint64_t u64;
         uint8_t fill;
         uint8_t tag;
-        uint8_t state {};
+        uint8_t state = 0;
         uint8_t buf [37]; // len:1, addr:2, type:1, data:0..32, sum:1
     };
 
