@@ -137,6 +137,14 @@ class PyVM : public Interp {
         return v;
     }
 
+    // most common use of contextAdjuster, wraps call and saves result (or nil)
+    void wrappedCall (Value callee, ArgVec const& args) {
+        auto v = contextAdjuster([=]() -> Value {
+            return callee.obj().call(args);
+        });
+        *sp = v;
+    }
+
     void instructionTrace () {
 #if SHOW_INSTR_PTR
         static Context* prevCtx;
@@ -437,11 +445,7 @@ class PyVM : public Interp {
         opSetupExcept(arg);
         ++sp;
 
-        ArgVec avec {*context, 1, sp};
-        auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(avec);
-        });
-        *sp = v;
+        wrappedCall(*sp, {*context, 1, sp});
     }
     //CG1 op
     void opWithCleanup () {
@@ -450,11 +454,7 @@ class PyVM : public Interp {
         sp[2] = Null;
         sp -= 2;
 
-        ArgVec avec {*context, 4, sp + 1};
-        auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(avec);
-        });
-        *sp = v;
+        wrappedCall(*sp, {*context, 4, sp + 1});
     }
     //CG1 op o
     void opPopExceptJump (int arg) {
@@ -507,12 +507,8 @@ class PyVM : public Interp {
     void opCallMethod (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         sp -= npos + 2 * nkw + 1;
-        auto skipSelf = sp[1].isNil();
-        ArgVec avec {*context, arg + 1 - skipSelf, sp + 1 + skipSelf};
-        auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(avec);
-        });
-        *sp = v;
+        auto skip = sp[1].isNil();
+        wrappedCall(*sp, {*context, arg + 1 - skip, sp + 1 + skip});
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
@@ -533,11 +529,7 @@ class PyVM : public Interp {
     void opCallFunction (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         sp -= npos + 2 * nkw;
-        ArgVec avec {*context, arg, sp + 1};
-        auto v = contextAdjuster([=]() -> Value {
-            return sp->obj().call(avec);
-        });
-        *sp = v;
+        wrappedCall(*sp, {*context, arg, sp + 1});
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
@@ -665,10 +657,7 @@ class PyVM : public Interp {
             assert(init != nullptr);
             mod = init->mo;
             modules.at(arg) = mod;
-            ArgVec avec {*context, 0, sp};
-            contextAdjuster([=]() -> Value {
-                return init->call(avec);
-            });
+            wrappedCall(init, {*context, 0});
             context->frame().locals = mod;
         }
         *sp = mod;
