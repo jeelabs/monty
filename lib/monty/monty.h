@@ -794,36 +794,27 @@ namespace Monty {
     // It's probably just a neophyte's version of STL's <functional> types ...
     // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
 
-    template< typename T >
-    auto argConv (auto (T::*meth)() -> Value,
-                                Object& self, ArgVec const&) -> Value {
-        return (((T&) self).*meth)();
+    // obj.meth() -> Value
+    template< typename T, typename V >
+    auto argConv (auto (T::*m)() -> V, Object& o, ArgVec const&) -> V {
+        return (((T&) o).*m)();
     }
-    template< typename T >
-    auto argConv (auto (T::*meth)(Value) -> Value,
-                                Object& self, ArgVec const& args) -> Value {
-        return (((T&) self).*meth)(args[1]);
-    }
-    template< typename T >
-    auto argConv (void (T::*meth)(Value),
-                                Object& self, ArgVec const& args) -> Value {
-        (((T&) self).*meth)(args[1]);
+    // obj.meth(arg) -> void
+    template< typename T, typename U >
+    auto argConv (void (T::*m)(U), Object& o, ArgVec const& a) -> Value {
+        (((T&) o).*m)(a[1]);
         return {};
     }
-    template< typename T >
-    auto argConv (auto (T::*meth)(int) -> Value,
-                                Object& self, ArgVec const& args) -> Value {
-        return (((T&) self).*meth)(args[1]);
+    // obj.meth(arg) -> Value
+    template< typename T, typename U, typename V >
+    auto argConv (auto (T::*m)(U) -> V, Object& o, ArgVec const& a) -> V {
+        return (((T&) o).*m)(a[1]);
     }
-    template< typename T >
-    auto argConv (auto (T::*meth)(const char *) -> Value,
-                                Object& self, ArgVec const& args) -> Value {
-        return (((T&) self).*meth)(args[1]);
-    }
-    template< typename T >
-    auto argConv (auto (T::*meth)(ArgVec const&) -> Value,
-                                Object& self, ArgVec const& args) -> Value {
-        return (((T&) self).*meth)(args);
+    // obj.meth(argvec) -> Value
+    template< typename T, typename V >
+    auto argConv (auto (T::*m)(ArgVec const&) -> V,
+                                        Object& o, ArgVec const& a) -> V {
+        return (((T&) o).*m)(a);
     }
 
     // Method objects point to objects of this base class to make virtual calls
