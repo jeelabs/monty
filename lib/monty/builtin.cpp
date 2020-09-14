@@ -394,40 +394,6 @@ auto Exception::findId (Function const& f) -> int {
     return -1;
 }
 
-static auto str_count (ArgVec const&) -> Value {
-    return 9; // TODO, hardcoded for features.py
-}
-
-static Function const f_str_count (str_count);
-
-static auto str_format (ArgVec const&) -> Value {
-    return 4; // TODO, hardcoded for features.py
-}
-
-static Function const f_str_format (str_format);
-
-static Lookup::Item const strMap [] = {
-    { Q( 74,"count"), f_str_count },
-    { Q( 84,"format"), f_str_format },
-};
-
-Lookup const Str::attrs (strMap, sizeof strMap);
-
-#if 0
-static auto list_append (ArgVec const& args) -> Value {
-    assert(args.num == 2);
-    auto& l = args[0].asType<List>();
-    l.append(args[1]);
-    return {};
-}
-
-static Function const f_list_append (list_append);
-
-static Lookup::Item const listMap [] = {
-    { Q( 60,"append"), f_list_append },
-};
-#else
-// TODO this method wrapper adds 168 bytes on STM32, but is it a one-time cost?
 static auto d_list_append = Method::wrap(&List::append);
 static Method const m_list_append (d_list_append);
 
@@ -438,7 +404,6 @@ static Lookup::Item const listMap [] = {
     { Q( 60,"append"), m_list_append },
     { Q( 70,"clear"), m_list_clear },
 };
-#endif
 
 Lookup const List::attrs (listMap, sizeof listMap);
 
@@ -464,6 +429,7 @@ Lookup const Dict::attrs (dictMap, sizeof dictMap);
 Lookup const     Bool::attrs {nullptr, 0};
 Lookup const      Int::attrs {nullptr, 0};
 Lookup const    Bytes::attrs {nullptr, 0};
+Lookup const      Str::attrs (nullptr, 0);
 Lookup const    Range::attrs {nullptr, 0};
 Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
