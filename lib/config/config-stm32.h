@@ -15,7 +15,7 @@
 
 #if BOARD_discovery_f4 || STM32L0 || STM32L4
     #define CONSOLE_UART_PINS PinA<2>, PinA<3> // TODO rx on PA15 for L432?
-#elif STM32H743xx // nucleo-144
+#elif STM32H743xx || STM32F767xx // nucleo-144
     #define CONSOLE_UART_PINS PinD<8>, PinD<9>
 #elif CONFIG == GOLD_DRAGON
     #define CONSOLE_UART_PINS PinC<10>, PinC<11>
@@ -23,7 +23,7 @@
     #define CONSOLE_UART_PINS PinA<9>, PinA<10>
 #endif
 
-#if BOARD_discovery_f4 || STM32H743xx || CONFIG == GOLD_DRAGON
+#if BOARD_discovery_f4 || STM32H743xx || STM32F767xx || CONFIG == GOLD_DRAGON
     #define UART_BUSDIV 4
 #else
     #define UART_BUSDIV 1
