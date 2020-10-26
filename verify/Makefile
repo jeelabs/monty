@@ -27,6 +27,9 @@ ram = 0x20009000 # 40 kB
 else ifeq ($(BOARD),nucleo_l432kc)
 tty = /dev/cu.usbmodem1431203
 ram = 0x2000B000 # 48 kB
+else ifeq ($(BOARD),nucleo_f767zi)
+tty = /dev/cu.usbmodem1431203
+ram = 0x2007F000 # 512 kB
 endif
 
 src := $(wildcard [a-z][a-z]*.py)
