@@ -157,6 +157,7 @@ void InputParser::feed (uint8_t b) {
     switch (b) {
         case ':':
             stack.setAt(-1, b); // mark as dict, not a set
+            // fall through
         case ',':
             stack.append(v);
             break;
@@ -182,7 +183,7 @@ void InputParser::feed (uint8_t b) {
                         val = Set::create({v, (int) v.size(), 0});
                         break;
                     }
-                    // fall through, empty set is turned into empty dict
+                    // fall through
                 case ':':
                     if (v.size() & 1)
                         val = {}; // ignore malformed dict
