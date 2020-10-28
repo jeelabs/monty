@@ -1,6 +1,11 @@
 #include "monty.h"
 #include <unity.h>
 
+#if !UNITY_SUPPORT_64
+#undef TEST_ASSERT_EQUAL_INT64
+#define TEST_ASSERT_EQUAL_INT64(x,y) TEST_ASSERT((int64_t) (x) == (int64_t) (y))
+#endif
+
 using namespace Monty;
 
 uint8_t memory [3*1024];
