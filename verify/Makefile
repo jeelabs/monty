@@ -1,7 +1,8 @@
 #BOARD ?= bluepill_f103c8
 #BOARD ?= genericSTM32F103RC-enc28j60
 #BOARD ?= genericSTM32F103ZE-enc28j60
-BOARD ?= disco_f407vg
+#BOARD ?= disco_f407vg
+BOARD ?= nucleo_l432kc
 
 ifeq ($(BOARD),bluepill_f103c8)
 gdb = /dev/cu.usbmodemDDD8B7B81
@@ -25,7 +26,7 @@ else ifeq ($(BOARD),nucleo_l412kb)
 tty = /dev/cu.usbmodem1431203
 ram = 0x20009000 # 40 kB
 else ifeq ($(BOARD),nucleo_l432kc)
-tty = /dev/cu.usbmodem1431203
+tty = /dev/cu.usbmodem1431403
 ram = 0x2000B000 # 48 kB
 else ifeq ($(BOARD),nucleo_f767zi)
 tty = /dev/cu.usbmodem1431203
