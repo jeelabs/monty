@@ -1,5 +1,5 @@
 #include <cstdio>
 
 int main () {
-    puts("hello!");
+    puts("NATIVE hello!");
 }
