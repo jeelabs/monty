@@ -8,7 +8,7 @@ def wipe(c):
 
 @task
 def native(c):
-    """build and run the native version"""
+    """run the native build"""
     c.run("pio run -e native -s")
     c.run(".pio/build/native/program")
 
@@ -39,6 +39,7 @@ def info(c):
     """show some information about segments"""
     c.run("pio run -s")
     c.run("arm-none-eabi-size .pio/build/*/firmware.elf")
+    c.run("tail -2 .pio/build/*/syms.ld")
 
 @task
 def serial(c):
