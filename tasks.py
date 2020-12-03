@@ -39,7 +39,7 @@ def info(c):
     """show some information about segments"""
     c.run("pio run -s")
     c.run("arm-none-eabi-size .pio/build/*/firmware.elf")
-    c.run("tail -2 .pio/build/*/syms.ld")
+    c.run("tail -2 util/syms-*.ld")
 
 @task
 def serial(c):
