@@ -13,6 +13,11 @@ def run(c):
     c.run(".pio/build/native/program")
 
 @task
-def term(c):
-    """connect a terminal, for use in a separate window"""
+def test(c):
+    """run the native test suite"""
+    c.run("pio test", pty=True)
+
+@task
+def serial(c):
+    """start terminal session, for use in a separate window"""
     c.run("pio device monitor -b115200", pty=True)
