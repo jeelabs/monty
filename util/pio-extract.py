@@ -40,7 +40,7 @@ hide = [
 ]
 
 def nextMultipleOf(m, v):
-    return v + (-v & (m-1)) # mult must be a power of 2
+    return v + (-v & (m-1)) # m must be a power of 2
 
 def extract(source, target, env):
     print(f"Extracting symbols to {out}")
@@ -58,7 +58,7 @@ def extract(source, target, env):
                     else:
                         print(f"{name} = 0x{value};", file=ofd)
 
-            # calculate and save flash + ram size to skip in next segment
+            # calculate and save flash + ram limits to skip in next segment
             romLimit = nextMultipleOf(flashSegSize, syms["_sidata"])
             print(f"_rom_end_ = 0x{romLimit:08x};", file=ofd)
             ramLimit = nextMultipleOf(8, syms["_ebss"])
