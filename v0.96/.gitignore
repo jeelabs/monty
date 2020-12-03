@@ -1,0 +1,12 @@
+/.pio
+/coverage
+/demo.py
+/ext
+/monty
+/platformio.ini
+
+CMakeLists.txt
+sdkconfig
+
+*.mpy
+*.mty
