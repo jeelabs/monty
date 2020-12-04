@@ -1,13 +1,16 @@
 #include <jee.h>
+#include "segment.h"
 
-extern UartBufDev< PinA<2>, PinA<15> > console;
-
-int printf(const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
-    return 0;
-}
-
-int main () {
-    console.init();
+extern "C" void init () {
     printf("hello from %s\n", "core");
+
+    auto hdr = nextSegment();
+    if (hdr.magic == 0x12345678) {
+        printf("  core -> regFun %p\n", hdr.regFun);
+        hdr.regFun();
+        printf("  core -> deregFun %p\n", hdr.deregFun);
+        hdr.deregFun();
+    }
+
+    printf("goodbye from %s\n", "core");
 }
