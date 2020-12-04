@@ -52,14 +52,15 @@ void printMemoryRanges () {
 
 int main () {
     console.init();
+    console.baud(115200, fullSpeedClock());
 
     printf("\r<RESET>\n");
     //echoBlinkCheck();
     printDeviceInfo();
     //printMemoryRanges();
 
-    auto hdr = nextSegment();
-    if (hdr.magic == 0x12345678) {
+    auto hdr = SegmentHdr::next();
+    if (hdr.isValid()) {
         printf("  main -> regFun %p\n", hdr.regFun);
         hdr.regFun();
         printf("  main -> deregFun %p\n", hdr.deregFun);

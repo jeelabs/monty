@@ -4,8 +4,8 @@
 extern "C" void init () {
     printf("hello from %s\n", "core");
 
-    auto hdr = nextSegment();
-    if (hdr.magic == 0x12345678) {
+    auto hdr = SegmentHdr::next();
+    if (hdr.isValid()) {
         printf("  core -> regFun %p\n", hdr.regFun);
         hdr.regFun();
         printf("  core -> deregFun %p\n", hdr.deregFun);

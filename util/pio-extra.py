@@ -10,8 +10,6 @@ flashSegSize = 2048         # STM32L4-specific
 
 # some globals need to be hidden from the next segment
 hide = [
-    '_Min_Stack_Size',
-    '_Min_Heap_Size',
     '_rom_start_',
     '_rom_end_',
     '_ram_start_',
