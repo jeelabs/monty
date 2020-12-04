@@ -7,5 +7,7 @@ _Z9VTableRamv = 0x0800044d;
 _Z6putIntPFviEiiic = 0x08000475;
 _estack = 0x2000c000;
 strlen = 0x080001cd;
+_rom_start_ = 0x08001000;
 _rom_end_ = 0x08001800;
+_ram_start_ = 0x20000418;
 _ram_end_ = 0x200004a8;

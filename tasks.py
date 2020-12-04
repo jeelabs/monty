@@ -35,11 +35,22 @@ def boot(c):
 @task
 def info(c):
     """show some information about segments"""
-    c.run("pio run -s")
+    buildAll(c)
     c.run("arm-none-eabi-size .pio/build/*/firmware.elf")
-    c.run("tail -2 util/syms-*.ld")
+    c.run("tail -4 util/syms-*.ld")
 
 @task
 def serial(c):
     """serial terminal session, for use in a separate window"""
     c.run("pio device monitor -b115200", pty=True)
+
+@task
+def full(c):
+    """combine all segments into a full ./monty.bin image"""
+    buildAll(c)
+    c.run("cat .pio/build/{boot,core,devs}/firmware.bin >monty.bin")
+    c.run("ls -l monty.bin")
+
+def buildAll(c):
+    print("Updating segment builds")
+    c.run("pio run -s")
