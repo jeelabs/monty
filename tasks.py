@@ -2,7 +2,7 @@
 from invoke import task
 
 @task
-def wipe(c):
+def zero(c):
     """delete all build results"""
     c.run("rm -rf .pio")
 
@@ -26,13 +26,11 @@ def devs(c):
 def core(c):
     """build and upload the CORE and DEVS segments"""
     c.run("pio run -e core -t upload -s")
-    #c.run("rm -f .pio/build/devs/firmware.*") # force a re-link
 
 @task(post=[core])
 def boot(c):
     """build and upload the BOOT, CORE, and DEVS segments"""
     c.run("pio run -e boot -t upload -s")
-    #c.run("rm -f .pio/build/core/firmware.*") # force a re-link
 
 @task
 def info(c):
@@ -43,5 +41,5 @@ def info(c):
 
 @task
 def serial(c):
-    """start terminal session, for use in a separate window"""
+    """serial terminal session, for use in a separate window"""
     c.run("pio device monitor -b115200", pty=True)
