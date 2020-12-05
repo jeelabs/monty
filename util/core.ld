@@ -1,4 +1,4 @@
-INCLUDE util/syms-boot.ld
+INCLUDE syms-boot.ld
 
 MEMORY
 {

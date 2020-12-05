@@ -4,7 +4,7 @@ import os, subprocess
 Import("env")
 
 currEnv = env["PIOENV"]
-symFile = f"util/syms-{currEnv}.ld"
+symFile = f"syms-{currEnv}.ld"
 
 flashSegSize = 2048         # STM32L4-specific
 

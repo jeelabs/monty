@@ -1,4 +1,4 @@
-INCLUDE util/syms-core.ld
+INCLUDE syms-core.ld
 
 MEMORY
 {
