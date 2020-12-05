@@ -1,7 +1,7 @@
 #include <jee.h>
 #include "segment.h"
 
-extern UartBufDev< PinA<2>, PinA<15> > console;
+UartBufDev< PinA<2>, PinA<15> > console;
 
 int printf(const char* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
@@ -36,7 +36,7 @@ void printDeviceInfo () {
 }
 
 void printMemoryRanges () {
-    extern uint8_t g_pfnVectors[], _sidata [], _sdata [], _ebss [], _estack [];
+    extern uint8_t g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("  flash %p..%p, ram %p..%p, stack top %p\n",
             g_pfnVectors, _sidata-1, _sdata, _ebss-1, _estack);
     auto romSize = _sidata - g_pfnVectors;
@@ -52,12 +52,16 @@ void printMemoryRanges () {
 
 int main () {
     console.init();
-    console.baud(115200, fullSpeedClock());
+    enableSysTick();
+    //console.baud(115200, fullSpeedClock());
 
     printf("\r<RESET>\n");
     //echoBlinkCheck();
     printDeviceInfo();
     //printMemoryRanges();
+    
+    extern uint8_t end [];
+    printf("end %p\n", end);
 
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {

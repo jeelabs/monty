@@ -18,6 +18,11 @@ def test(c):
     c.run("pio test -e native", pty=True)
 
 @task
+def utest(c):
+    """run the uploaded (embedded) C++ test suite"""
+    c.run("pio test -e utest", pty=True)
+
+@task
 def devs(c):
     """build and upload the DEVS segment"""
     c.run("pio run -e devs -t upload -s")

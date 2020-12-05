@@ -3,6 +3,7 @@
 #define VERBOSE_GC 0 // show garbage collector activity
 
 #include "monty.h"
+#include "gc.h"
 #include <cassert>
 
 using namespace Monty;
@@ -320,8 +321,12 @@ namespace Monty {
             if (slot->isFree())
                 printf("\t\tfree %p\n", &slot->obj);
             else {
+#if XXX
                 Value x {(Object const&) slot->obj};
                 x.dump("\t obj");
+#else
+                printf("\n");
+#endif
             }
         }
     }
@@ -373,11 +378,12 @@ namespace Monty {
     }
 
     void gcNow () {
-        Interp::markAll();
+        // XXX Interp::markAll();
         sweep();
         compact();
     }
 
+#if XXX
     void gcReport (bool collect) {
         if (collect) {
             if (Interp::context != nullptr)
@@ -387,6 +393,9 @@ namespace Monty {
             sweep();
             compact();
         }
+#else
+    void gcReport () {
+#endif
         printf("gc: avail %d b, %d checks, %d sweeps, %d compacts\n",
                 gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
         printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",

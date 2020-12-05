@@ -82,6 +82,9 @@ SECTIONS
     __bss_end__ = _ebss;
   } >RAM
 
+  . = ALIGN(8);
+  end = .;
+
   /DISCARD/ :
   {
     libc.a ( * )

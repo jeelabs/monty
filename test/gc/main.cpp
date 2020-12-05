@@ -1,4 +1,5 @@
 #include "monty.h"
+#include "gc.h"
 #include <unity.h>
 
 using namespace Monty;
@@ -486,6 +487,8 @@ void gcRomOrRam () {
     TEST_ASSERT(_sbss <= bss && bss < _ebss);
 #endif
 
+    // work around the fact that Obj::Obj() is protected
+    struct Object : Obj { Object () {}; };
     Object stackObj;
     auto heapObj = new Object;
 
