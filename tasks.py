@@ -8,7 +8,8 @@ def zero(c):
 
 @task
 def gen(c):
-    """process source code with code generator (NOTYET)"""
+    """process source code with code generator"""
+    c.run("util/codegen.py qstr.h lib/monty/ qstr.cpp")
 
 @task
 def native(c):
@@ -74,7 +75,13 @@ def wipe(c):
 
 @task
 def health(c):
-    """health check to verify proper toolchain setup (NOTYET)"""
+    """check to verify proper toolchain setup"""
+    c.run("uname -sm")
+    c.run("python3 --version")
+    c.run("inv --version")
+    c.run("pio --version")
+    c.run("mpy-cross --version")
+    #c.run("which micropython || echo NOT FOUND: micropython")
 
 @task
 def info(c):
@@ -82,6 +89,11 @@ def info(c):
     buildSegments(c)
     c.run("arm-none-eabi-size .pio/build/*/firmware.elf")
     c.run("tail -4 syms-*.ld")
+
+@task
+def version(c):
+    """show git repository version"""
+    c.run("git describe --tags")
 
 @task
 def serial(c):
