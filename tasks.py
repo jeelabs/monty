@@ -7,6 +7,10 @@ def zero(c):
     c.run("rm -rf .pio monty.bin syms-*.ld")
 
 @task
+def gen(c):
+    """process source code with code generator (NOTYET)"""
+
+@task
 def native(c):
     """run a script using the native build"""
     c.run("pio run -e native -s")
@@ -18,12 +22,12 @@ def embed(c):
 
 @task
 def test(c):
-    """run the native C++ tests"""
+    """run C++ tests natively"""
     c.run("pio test -e native", pty=True)
 
 @task
 def utest(c):
-    """run the uploaded µC C++ tests"""
+    """run C++ tests, uploaded to µC"""
     c.run("pio test -e utest", pty=True)
 
 @task
@@ -54,11 +58,11 @@ def final(c):
 
 @task
 def python(c):
-    """run the native Python tests (NOTYET)"""
+    """run Python tests natively (NOTYET)"""
 
 @task
 def rpython(c):
-    """run the remote µC Python tests (NOTYET)"""
+    """run Python tests, sent to remote µC (NOTYET)"""
 
 @task(test, python, utest, rpython)
 def all(c):
