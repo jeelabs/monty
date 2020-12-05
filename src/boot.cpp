@@ -1,4 +1,8 @@
+// Boot segment, first code running after a reset. It's a standard PIO build.
+// After some initialisations, main will locate and register the code segment.
+
 #include <jee.h>
+#include <unistd.h>
 #include "segment.h"
 
 UartBufDev< PinA<2>, PinA<15> > console;
@@ -60,8 +64,15 @@ int main () {
     printDeviceInfo();
     //printMemoryRanges();
     
-    extern uint8_t end [];
-    printf("end %p\n", end);
+    constexpr auto newHeap  = 0x20001000;   // place the heap 4 KB into RAM
+    constexpr auto newStack = 0x20002000;   // place the C stack 8 KB into RAM
+
+    auto heapBase = sbrk(0);
+    sbrk(newHeap - (uintptr_t) heapBase);
+    register void* sp asm ("sp");
+    printf("heap %p => %p, stack %p => %p\n", heapBase, sbrk(0), sp, newStack);
+    sp = (void*) newStack;
+    // note: now that the stack has moved, main() may no longer do a return
 
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {
