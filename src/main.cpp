@@ -2,13 +2,12 @@
 
 #include <cstdio>
 #include "monty.h"
-#include "gc.h"
 
-static uint8_t myMem [12*1024]; // tiny mem pool to stress the garbage collector
+static uint8_t myMem [64*1024];
 
 int main () {
     puts("NATIVE hello!");
 
-    Monty::setup(myMem, sizeof myMem);
-    Monty::gcReport();
+    monty::setup(myMem, sizeof myMem);
+    monty::gcReport();
 }

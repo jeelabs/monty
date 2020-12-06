@@ -3,10 +3,9 @@
 #define VERBOSE_GC 0 // show garbage collector activity
 
 #include "monty.h"
-#include "gc.h"
 #include <cassert>
 
-using namespace Monty;
+using namespace monty;
 
 #if VERBOSE_GC
 #define D(x) { x; }
@@ -62,7 +61,7 @@ static uintptr_t* limit;    // limit of memory pool, aligned to OS_SZ-PTR_SZ
 static ObjSlot* objLow;     // low water mark of object memory pool
 static VecSlot* vecHigh;    // high water mark of vector memory pool
 
-GCStats Monty::gcStats;
+GCStats monty::gcStats;
 
 template< typename T >
 static auto roundUp (uint32_t n) -> uint32_t {
@@ -116,7 +115,7 @@ static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
 //void (*panicOutOfMemory)() = []() { assert(false); };
 static void defaultOutOfMemoryHandler () { assert(false); }
 
-namespace Monty {
+namespace monty {
     void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
     auto Obj::inPool (void const* p) -> bool {
@@ -406,4 +405,4 @@ namespace Monty {
                 gcStats.moa, gcStats.mob, gcStats.mva, gcStats.mvb);
     }
 
-} // namespace Monty
+} // namespace monty

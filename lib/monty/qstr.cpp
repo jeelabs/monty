@@ -1,6 +1,6 @@
 // qstr.cpp - set of "quick strings" from MicroPython 1.13 plus own entries
 
-namespace Monty {
+namespace monty {
 
     extern char const qstrBase [] =
         //CG< qstr-emit v
@@ -208,4 +208,4 @@ namespace Monty {
 
     extern int const qstrBaseLen = sizeof qstrBase;
 
-} // namespace Monty
+} // namespace monty
