@@ -1,8 +1,7 @@
 #include "monty.h"
-#include "gc.h"
 #include <unity.h>
 
-using namespace Monty;
+using namespace monty;
 
 uint8_t memory [3*1024];
 int created, destroyed, marked, failed;

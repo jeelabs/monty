@@ -2,7 +2,6 @@
 // After some initialisations, init will locate and register the devs segment.
 
 #include "monty.h"
-#include "gc.h"
 #include "segment.h"
 
 extern "C" void init () {
@@ -12,10 +11,12 @@ extern "C" void init () {
     if (hdr.isValid()) {
         printf("  core -> regFun %p\n", hdr.regFun);
         hdr.regFun();
+    }
 
-        Monty::setup((void*) 0x20002000, 56*1024);
-        Monty::gcReport();
+    monty::setup((void*) 0x20002000, 56*1024);
+    monty::gcReport();
 
+    if (hdr.isValid()) {
         printf("  core -> deregFun %p\n", hdr.deregFun);
         hdr.deregFun();
     }

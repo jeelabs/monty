@@ -1,7 +1,6 @@
 // qstr.h - fixed set of "quick strings" in MicroPython 1.13
 
-namespace Monty {
-
+namespace monty {
     char const qstrData [] =
         //CG< qstr 1
         ""                    "\0" // 1
@@ -171,5 +170,4 @@ namespace Monty {
         "zip"                 "\0" // 165
         //CG>
     ;
-
-} // namespace Monty
+} // namespace monty
