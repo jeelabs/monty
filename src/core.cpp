@@ -17,9 +17,9 @@ extern "C" void init () {
     if (hdr.isValid()) {
         extern uint8_t _estack [];
         constexpr auto stackBottom = _estack - 1024;
-        printf("  gc pool %p..%p\n", hdr.ramEnd + 100, stackBottom);
+        printf("  gc pool %p..%p\n", hdr.ramEnd, stackBottom);
 
-        monty::setup(hdr.ramEnd + 100, stackBottom - hdr.ramEnd - 100);
+        monty::setup(hdr.ramEnd, stackBottom - hdr.ramEnd);
         monty::gcReport();
 
         {

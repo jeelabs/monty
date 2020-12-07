@@ -14,10 +14,6 @@ hide = [
     '_rom_end_',
     '_ram_start_',
     '_ram_end_',
-    '__bss_start__',
-    '__bss_end__',
-    '__exidx_start',
-    '__exidx_end',
     '__libc_init_array',
     '__libc_fini_array',
     '_etext',
@@ -28,9 +24,6 @@ hide = [
     '_edata',
     '_sbss',
     '_ebss',
-    '_siccmram',
-    '_sccmram',
-    '_eccmram',
     'g_pfnVectors',
     'init',
     'main',
@@ -59,9 +52,10 @@ def extract(source, target, env):
 
             # calculate and save flash + ram limits to skip in next segment
             romStart = syms["g_pfnVectors"]
-            romEnd = nextMultipleOf(flashSegSize, syms["_sidata"])
+            romEnd = nextMultipleOf(flashSegSize,
+                            syms["_sidata"] + syms["_edata"] - syms["_sdata"])
             ramStart = syms["_sdata"]
-            ramEnd = nextMultipleOf(8, syms["_ebss"])
+            ramEnd = syms["_ebss"]
             print(f"_rom_start_ = {romStart:#x};\n"
                   f"_rom_end_ = {romEnd:#x};\n"
                   f"_ram_start_ = {ramStart:#x};\n"

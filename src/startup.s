@@ -48,5 +48,5 @@ g_pfnVectors:
   .word  Reset_Handler		/* reg() function */
   .word  __libc_fini_array	/* dereg() function */
   .word  _eflash                /* end of flash */
-  .word  _sbss			/* end of ram */
+  .word  _ebss			/* end of ram */
   .size  g_pfnVectors, .-g_pfnVectors
