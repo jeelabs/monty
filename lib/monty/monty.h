@@ -330,6 +330,7 @@ namespace monty {
 }
 
 namespace monty {
+    // forward decl's
     struct Module;
     struct Tuple;
     struct Dict;
@@ -440,5 +441,33 @@ namespace monty {
         uint16_t spOff = 0;
         uint16_t ipOff = 0;
         Callable const* callee {nullptr};
+    };
+
+    struct Interp {
+        static auto frame () -> Context::Frame& { return context->frame(); }
+
+        static void suspend (uint32_t id);
+        static void resume (Context& ctx);
+
+        static void exception (Value exc);  // throw exception in curr context
+        static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
+        static auto nextPending () -> int;  // next pending or -1 (irq-safe)
+        static auto pendingBit (uint32_t) -> bool; // test and clear bit
+
+        static auto findTask (Context& ctx) -> int;
+        static auto getQueueId () -> int;
+        static void dropQueueId (int);
+
+        static auto isAlive () -> bool { return tasks.len() > 0; }
+
+        static void markAll (); // for gc
+
+        static constexpr auto NUM_QUEUES = 32;
+
+        static volatile uint32_t pending;   // for irq-safe inner loop exit
+        static uint32_t queueIds;           // which queues are in use
+        static Context* context;            // current context, if any
+        static List tasks;                  // list of all tasks
+        static Dict modules;                // loaded modules
     };
 }
