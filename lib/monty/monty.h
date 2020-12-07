@@ -255,6 +255,8 @@ namespace monty {
 
     using Vector = VecOf<Value>;
 
+    void markVec (Vector const&);
+
     struct ArgVec {
         ArgVec (Vector const& v, int n, Value const* p)
             : ArgVec (v, n, p - v.begin()) {}
@@ -325,4 +327,118 @@ namespace monty {
     auto Value::isNone  () const -> bool { return &obj() == &None::nullObj; }
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
+}
+
+namespace monty {
+    struct Module;
+    struct Tuple;
+    struct Dict;
+    struct Bytecode;
+
+    //CG< type list
+    struct List : Object, Vector {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr List () {}
+
+        auto pop (int idx) -> Value;
+        void append (Value v);
+        Value clear () { remove(0, size()); return {}; }
+
+        auto len () const -> uint32_t override { return fill; }
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
+        auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
+        auto store (Range const&, Object const&) -> Value override;
+
+        void marker () const override { markVec(*this); }
+    protected:
+        List (ArgVec const& args);
+    };
+
+    //CG3 type <callable>
+    struct Callable : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Callable (Value callee, Module* mod)
+                ;//XXX : Callable (callee, nullptr, nullptr, mod) {}
+        Callable (Value callee, Value pos, Value kw)
+                ;//XXX : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
+        Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
+
+        auto call (ArgVec const&) const -> Value override;
+
+        void marker () const override;
+
+    // TODO private:
+        Module& mo;
+        Bytecode const& bc;
+        Tuple* pos;
+        Dict* kw;
+    };
+
+    //CG3 type <context>
+    struct Context : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer& buf) const -> Value override;
+
+        // first entries in a context are reserved slots for specific state
+        enum Slot { Caller, Event, NumSlots };
+        auto caller () const -> Value& { return begin()[Caller]; }
+        auto event () const -> Value& { return begin()[Event]; }
+
+        struct Frame {
+            //    <------- previous ------->  <---- actual ---->
+            Value base, spOff, ipOff, callee, ep, locals, result, stack [];
+            // result must be just below stack for proper module/class init
+        };
+
+        auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
+
+        Context (Context* from =nullptr) {
+            insert(0, NumSlots);
+            caller() = from;
+        }
+
+        void enter (Callable const&);
+        auto leave (Value v ={}) -> Value;
+
+        auto spBase () const -> Value* { return frame().stack; }
+        auto ipBase () const -> uint8_t const*; //XXX { return callee->bc.start(); }
+
+        auto fastSlot (uint32_t i) const -> Value&; /*XXX {
+            return spBase()[callee->bc.fastSlotTop() + ~i];
+        }*/
+        auto derefSlot (uint32_t i) const -> Value&; /*XXX {
+            return fastSlot(i).asType<Cell>().val;
+        }*/
+
+        static constexpr int EXC_STEP = 3; // use 3 entries per exception
+        auto excBase (int incr =0) -> Value*;
+
+        auto globals () const -> Module& { return callee->mo; }
+
+        constexpr static auto FinallyTag = 1<<20;
+        void raise (Value exc ={});
+        void caught ();
+
+        auto iter () const -> Value override { return this; }
+        auto next () -> Value override;
+
+        void marker () const override { List::marker(); mark(callee); }
+
+        int8_t qid = 0;
+        // previous values are saved in current stack frame
+        uint16_t base = 0;
+        uint16_t spOff = 0;
+        uint16_t ipOff = 0;
+        Callable const* callee {nullptr};
+    };
 }
