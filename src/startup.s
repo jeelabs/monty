@@ -44,7 +44,9 @@ LoopFillZerobss:
    .section  .isr_vector,"a",%progbits
   .type  g_pfnVectors, %object
 g_pfnVectors:
-  .word  0x12345678;
-  .word  Reset_Handler
-  .word  __libc_fini_array
+  .word  0x12345678;		/* magic number */
+  .word  Reset_Handler		/* reg() function */
+  .word  __libc_fini_array	/* dereg() function */
+  .word  _eflash                /* end of flash */
+  .word  _sbss			/* end of ram */
   .size  g_pfnVectors, .-g_pfnVectors

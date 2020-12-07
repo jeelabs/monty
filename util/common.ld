@@ -67,6 +67,7 @@ SECTIONS
     . = ALIGN(4);
     _edata = .;
   } >RAM AT> FLASH
+  _eflash = _sidata + SIZEOF(.data);
 
   . = ALIGN(4);
   .bss :
@@ -81,9 +82,6 @@ SECTIONS
     _ebss = .;
     __bss_end__ = _ebss;
   } >RAM
-
-  . = ALIGN(8);
-  end = .;
 
   /DISCARD/ :
   {

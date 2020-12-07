@@ -112,11 +112,11 @@ static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
 
 // don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
 // (hmmm, perhaps the assert macro is trying to obtain a function name ...)
-//void (*panicOutOfMemory)() = []() { assert(false); };
-static void defaultOutOfMemoryHandler () { assert(false); }
+//void* (*panicOutOfMemory)() = []() { assert(false); };
+static void* defaultOutOfMemoryHandler () { assert(false); return nullptr; }
 
 namespace monty {
-    void (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
+    void* (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
     auto Obj::inPool (void const* p) -> bool {
         return objLow < p && p < limit;
@@ -151,7 +151,7 @@ namespace monty {
             }
 
         if (objLow - needs < (void*) vecHigh)
-            return panicOutOfMemory(), malloc(sz); // give up, last resort
+            return panicOutOfMemory(); // give up
 
         objLow -= needs;
         objLow->chain = objLow + needs;
@@ -200,10 +200,8 @@ namespace monty {
                 break;                              // found existing space
             }
         if (slot == vecHigh) {
-            if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow) {
-                panicOutOfMemory();
-                return 0; // no space found, and no room to expand
-            }
+            if ((uintptr_t) (vecHigh + needs) > (uintptr_t) objLow)
+                return panicOutOfMemory(); // no space, and no room to expand
             vecHigh += needs;
         }
         slot->vec = this;

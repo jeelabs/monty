@@ -21,7 +21,7 @@ void setUp () {
     setup(memory, sizeof memory);
     memAvail = gcAvail();
     created = destroyed = marked = failed = 0;
-    panicOutOfMemory = []() { ++failed; };
+    panicOutOfMemory = []() -> void* { ++failed; return nullptr; };
 }
 
 void tearDown () {

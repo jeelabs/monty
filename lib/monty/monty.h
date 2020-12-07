@@ -5,6 +5,8 @@
 #include <cstring>
 
 extern "C" int printf (char const*, ...);
+extern "C" int puts (char const*);
+extern "C" int putchar (int);
 
 // see gc.cpp - objects and vectors with garbage collection
 namespace monty {
@@ -75,5 +77,5 @@ namespace monty {
     void sweep ();   // reclaim all unmarked objects
     void compact (); // reclaim and compact unused vector space
 
-    extern void (*panicOutOfMemory)(); // triggers an assertion by default
+    extern void* (*panicOutOfMemory)(); // triggers an assertion by default
 }

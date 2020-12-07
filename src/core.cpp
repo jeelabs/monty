@@ -7,13 +7,17 @@
 extern "C" void init () {
     printf("hello from %s\n", "core");
 
+    extern uint8_t g_pfnVectors [], _eflash [], _sdata [], _ebss [], _estack [];
+    printf("  flash %p..%p, ram %p..%p, stack top %p\n",
+            g_pfnVectors, _eflash, _sdata, _ebss, _estack);
+
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {
         printf("  core -> regFun %p\n", hdr.regFun);
         hdr.regFun();
     }
 
-    monty::setup((void*) 0x20002000, 56*1024);
+    monty::setup((void*) 0x20002000, 48*1024);
     monty::gcReport();
 
     if (hdr.isValid()) {

@@ -12,6 +12,23 @@ int printf(const char* fmt, ...) {
     return 0;
 }
 
+extern "C" int puts (char const* s) { return printf("%s\n", s); }
+extern "C" int putchar (int ch) { return printf("%c", ch); }
+
+extern "C" void __assert_func (char const* f, int l, char const* n, char const* e) {
+    printf("\nassert(%s) in %s\n\t%s:%d\n", e, n, f, l);
+    while (true) {}
+}
+
+extern "C" void __assert (char const* f, int l, char const* e) {
+    __assert_func(f, l, "-", e);
+}
+
+extern "C" void abort () {
+    printf("\nabort\n");
+    while (true) {}
+}
+
 PinB<3> led;
 
 void echoBlinkCheck () {
@@ -42,7 +59,7 @@ void printDeviceInfo () {
 void printMemoryRanges () {
     extern uint8_t g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("  flash %p..%p, ram %p..%p, stack top %p\n",
-            g_pfnVectors, _sidata-1, _sdata, _ebss-1, _estack);
+            g_pfnVectors, _sidata, _sdata, _ebss, _estack);
     auto romSize = _sidata - g_pfnVectors;
     auto romAlign = romSize + (-romSize & (flashSegSize-1));
     auto romNext = g_pfnVectors + romAlign;
@@ -56,24 +73,17 @@ void printMemoryRanges () {
 
 int main () {
     console.init();
-    enableSysTick();
-    //console.baud(115200, fullSpeedClock());
+    //enableSysTick();
+    console.baud(115200, fullSpeedClock());
 
     printf("\r<RESET>\n");
     //echoBlinkCheck();
     printDeviceInfo();
-    //printMemoryRanges();
+    printMemoryRanges();
+
+    printf("%p %p %p %p %p\n", // FIXME prevents ld dead code stripping
+            puts, putchar, __assert_func, __assert, abort);
     
-    constexpr auto newHeap  = 0x20001000;   // place the heap 4 KB into RAM
-    constexpr auto newStack = 0x20002000;   // place the C stack 8 KB into RAM
-
-    auto heapBase = sbrk(0);
-    sbrk(newHeap - (uintptr_t) heapBase);
-    register void* sp asm ("sp");
-    printf("heap %p => %p, stack %p => %p\n", heapBase, sbrk(0), sp, newStack);
-    sp = (void*) newStack;
-    // note: now that the stack has moved, main() may no longer do a return
-
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {
         printf("  main -> regFun %p\n", hdr.regFun);
