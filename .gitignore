@@ -1,4 +1,8 @@
-/.pio
+/.pio/
 /NOCOMMIT/
+
 /monty.bin
+/rom.mrfs
 /syms-*.ld
+
+*.mpy

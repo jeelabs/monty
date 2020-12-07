@@ -48,13 +48,14 @@ def boot(c):
 
 @task
 def mrfs(c):
-    """generate the Minimal Replaceable File Storage image (NOTYET)"""
+    """generate the Minimal Replaceable File Storage image"""
+    c.run("util/mrfs.py -o rom.mrfs valid/*.py")
 
 @task(mrfs)
 def final(c):
     """merge all segments + MRFS into a monty.bin image"""
     buildSegments(c)
-    c.run("cat .pio/build/{boot,core,devs}/firmware.bin >monty.bin")
+    c.run("cat .pio/build/{boot,core,devs}/firmware.bin rom.mrfs >monty.bin")
     c.run("ls -l monty.bin")
 
 @task
