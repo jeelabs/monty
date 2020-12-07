@@ -166,7 +166,7 @@ namespace monty {
         auto isStr () const -> bool { return (v&3) == Str; }
         auto isObj () const -> bool { return (v&3) == 0 && v != 0; }
 
-        inline auto isNull  () const -> bool;
+        inline auto isNone  () const -> bool;
         inline auto isFalse () const -> bool;
         inline auto isTrue  () const -> bool;
                auto isBool  () const -> bool { return isFalse() || isTrue(); }
@@ -322,7 +322,7 @@ namespace monty {
         constexpr Bool () {} // can't construct more instances
     };
 
-    auto Value::isNull  () const -> bool { return &obj() == &None::nullObj; }
+    auto Value::isNone  () const -> bool { return &obj() == &None::nullObj; }
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 }
