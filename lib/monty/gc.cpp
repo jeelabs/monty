@@ -112,7 +112,7 @@ static void splitFreeVec (VecSlot& slot, VecSlot* tail) {
 
 // don't use lambda w/ assert, since Espressif's ESP8266 compiler chokes on it
 // (hmmm, perhaps the assert macro is trying to obtain a function name ...)
-//void* (*panicOutOfMemory)() = []() { assert(false); };
+//void* (*panicOutOfMemory)() = []() { assert(false); return nullptr; };
 static void* defaultOutOfMemoryHandler () { assert(false); return nullptr; }
 
 namespace monty {

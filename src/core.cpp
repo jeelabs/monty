@@ -4,6 +4,8 @@
 #include "monty.h"
 #include "segment.h"
 
+using namespace monty;
+
 extern "C" void init () {
     printf("hello from %s\n", "core");
 
@@ -13,16 +15,30 @@ extern "C" void init () {
 
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {
-        printf("  core -> regFun %p\n", hdr.regFun);
-        hdr.regFun();
-    }
+        extern uint8_t _estack [];
+        constexpr auto stackBottom = _estack - 1024;
+        printf("  gc pool %p..%p\n", hdr.ramEnd + 100, stackBottom);
 
-    monty::setup((void*) 0x20002000, 48*1024);
-    monty::gcReport();
+        monty::setup(hdr.ramEnd + 100, stackBottom - hdr.ramEnd - 100);
+        monty::gcReport();
 
-    if (hdr.isValid()) {
+        {
+            Vec vec;
+            printf("  vec %p ok %d ptr %p\n", &vec, vec.adj(100), vec.ptr());
+
+            monty::gcReport();
+
+            printf("  core -> regFun %p\n", hdr.regFun);
+            hdr.regFun();
+
+            monty::gcReport();
+        }
+
         printf("  core -> deregFun %p\n", hdr.deregFun);
         hdr.deregFun();
+
+        monty::gcNow();
+        monty::gcReport();
     }
 
     printf("goodbye from %s\n", "core");

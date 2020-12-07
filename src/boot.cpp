@@ -2,10 +2,10 @@
 // After some initialisations, main will locate and register the code segment.
 
 #include <jee.h>
-#include <unistd.h>
+#include <cassert>
 #include "segment.h"
 
-UartBufDev< PinA<2>, PinA<15> > console;
+UartDev< PinA<2>, PinA<15> > console;
 
 int printf(const char* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
@@ -60,6 +60,7 @@ void printMemoryRanges () {
     extern uint8_t g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("  flash %p..%p, ram %p..%p, stack top %p\n",
             g_pfnVectors, _sidata, _sdata, _ebss, _estack);
+#if 0
     auto romSize = _sidata - g_pfnVectors;
     auto romAlign = romSize + (-romSize & (flashSegSize-1));
     auto romNext = g_pfnVectors + romAlign;
@@ -69,6 +70,7 @@ void printMemoryRanges () {
     printf("  flash align %db => %db, ram align %db => %db, ram free %db\n",
             romSize, romAlign, ramSize, ramAlign, _estack - ramNext);
     printf("  flash next %p, ram next %p\n", romNext, ramNext);
+#endif
 }
 
 int main () {
@@ -78,11 +80,11 @@ int main () {
 
     printf("\r<RESET>\n");
     //echoBlinkCheck();
-    printDeviceInfo();
+    //printDeviceInfo();
     printMemoryRanges();
 
-    printf("%p %p %p %p %p\n", // FIXME prevents ld dead code stripping
-            puts, putchar, __assert_func, __assert, abort);
+    // FIXME prevents ld dead code stripping
+    assert((uintptr_t) puts + (uintptr_t) putchar + (uintptr_t) __assert_func + (uintptr_t) __assert + (uintptr_t) abort);
     
     auto hdr = SegmentHdr::next();
     if (hdr.isValid()) {

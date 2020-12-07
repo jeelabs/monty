@@ -7,7 +7,7 @@ struct SegmentHdr {
     void (*regFun)();
     void (*deregFun)();
     uint8_t const* romEnd;
-    uint8_t const* ramEnd;
+    uint8_t* ramEnd;
 
     auto isValid () const -> bool {
         return magic == 0x12345678;

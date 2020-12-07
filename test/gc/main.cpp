@@ -185,6 +185,7 @@ void mergeMulti () {
 }
 
 void outOfObjs () {
+    TEST_IGNORE_MESSAGE("can't test this anymore"); // panic can't return
     constexpr auto N = 400;
     for (int i = 0; i < 12; ++i)
         new (N) MarkObj;
