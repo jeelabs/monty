@@ -8,8 +8,10 @@ extern "C" int printf (char const*, ...);
 extern "C" int puts (char const*);
 extern "C" int putchar (int);
 
-// see gc.cpp - objects and vectors with garbage collection
 namespace monty {
+
+// see gc.cpp - objects and vectors with garbage collection
+
     struct Obj {
         virtual ~Obj () {}
 
@@ -78,10 +80,9 @@ namespace monty {
     void compact (); // reclaim and compact unused vector space
 
     extern void* (*panicOutOfMemory)(); // triggers an assertion by default
-}
 
 // see data.cpp - basic object data types
-namespace monty {
+
     // forward decl's
     enum UnOp : uint8_t;
     enum BinOp : uint8_t;
@@ -327,14 +328,6 @@ namespace monty {
     auto Value::isNone  () const -> bool { return &obj() == &None::nullObj; }
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
-}
-
-namespace monty {
-    // forward decl's
-    struct Module;
-    struct Tuple;
-    struct Dict;
-    struct Bytecode;
 
     //CG< type list
     struct List : Object, Vector {
@@ -361,6 +354,14 @@ namespace monty {
     protected:
         List (ArgVec const& args);
     };
+
+// see context.cpp - run time contexts and interpreter
+
+    // forward decl's
+    struct Module;
+    struct Tuple;
+    struct Dict;
+    struct Bytecode;
 
     //CG3 type <callable>
     struct Callable : Object {
