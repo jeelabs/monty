@@ -1,9 +1,9 @@
-// Boot segment, first code running after a reset. It's a standard PIO build.
-// After some initialisations, main will locate and register the code segment.
+// Boot layer, first code running after a reset. It's a standard PIO build.
+// After some initialisations, main will locate and register the code layer.
 
 #include <jee.h>
 #include <cassert>
-#include "segment.h"
+#include "layer.h"
 
 UartDev< PinA<2>, PinA<15> > console;
 
@@ -83,10 +83,11 @@ int main () {
     //printDeviceInfo();
     printMemoryRanges();
 
-    // FIXME prevents ld dead code stripping
-    assert((uintptr_t) puts + (uintptr_t) putchar + (uintptr_t) __assert_func + (uintptr_t) __assert + (uintptr_t) abort);
+    // FIXME prevents ld dead code stripping, yuck
+    assert((uintptr_t) puts + (uintptr_t) putchar + (uintptr_t) __assert_func
+            + (uintptr_t) __assert + (uintptr_t) abort);
     
-    auto hdr = SegmentHdr::next();
+    auto hdr = LayerHdr::next();
     if (hdr.isValid()) {
         printf("  main -> regFun %p\n", hdr.regFun);
         hdr.regFun();

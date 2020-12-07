@@ -33,17 +33,17 @@ def utest(c):
 
 @task
 def devs(c):
-    """build and upload the DEVS segment"""
+    """build and upload the DEVS layer"""
     c.run("pio run -e devs -t upload -s")
 
 @task(post=[devs])
 def core(c):
-    """build and upload the CORE and DEVS segments"""
+    """build and upload the CORE and DEVS layers"""
     c.run("pio run -e core -t upload -s")
 
 @task(post=[core])
 def boot(c):
-    """build and upload the BOOT, CORE, and DEVS segments"""
+    """build and upload the BOOT, CORE, and DEVS layers"""
     c.run("pio run -e boot -t upload -s")
 
 @task
@@ -53,8 +53,8 @@ def mrfs(c):
 
 @task(mrfs)
 def final(c):
-    """merge all segments + MRFS into a monty.bin image"""
-    buildSegments(c)
+    """merge all layers + MRFS into a monty.bin image"""
+    buildLayers(c)
     c.run("cat .pio/build/{boot,core,devs}/firmware.bin rom.mrfs >monty.bin")
     c.run("ls -l monty.bin")
 
@@ -86,8 +86,8 @@ def health(c):
 
 @task
 def info(c):
-    """show some information about segments"""
-    buildSegments(c)
+    """show some information about layers"""
+    buildLayers(c)
     c.run("arm-none-eabi-size .pio/build/????/firmware.elf")
     c.run("tail -n4 syms-*.ld")
 
@@ -101,6 +101,6 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200", pty=True)
 
-def buildSegments(c):
-    print("Updating segment builds")
+def buildLayers(c):
+    print("Updating layer builds")
     c.run("pio run -e boot -e core -e devs -s")

@@ -1,5 +1,5 @@
-// Devs segment, launched from the code segment. Needs a non-std linker script.
-// The purpose of this segment is to extend core with custom functionality.
+// Devs layer, launched from the code layer. Needs a non-std linker script.
+// The purpose of this layer is to extend core with custom functionality.
 
 #include "monty.h"
 #include <jee.h>

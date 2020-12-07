@@ -8,7 +8,7 @@ symFile = f"syms-{currEnv}.ld"
 
 flashSegSize = 2048         # STM32L4-specific
 
-# some globals need to be hidden from the next segment
+# some globals need to be hidden from the next layer
 hide = [
     '_rom_start_',
     '_rom_end_',
@@ -50,7 +50,7 @@ def extract(source, target, env):
                     else:
                         print(f"{name} = 0x{value};", file=ofd)
 
-            # calculate and save flash + ram limits to skip in next segment
+            # calculate and save flash + ram limits to skip in next layer
             romStart = syms["g_pfnVectors"]
             romEnd = nextMultipleOf(flashSegSize,
                             syms["_sidata"] + syms["_edata"] - syms["_sdata"])

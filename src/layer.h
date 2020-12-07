@@ -2,7 +2,7 @@
 constexpr auto flashSegSize = 2048;
 #endif
 
-struct SegmentHdr {
+struct LayerHdr {
     uint32_t magic;
     void (*regFun)();
     void (*deregFun)();
@@ -13,11 +13,11 @@ struct SegmentHdr {
         return magic == 0x12345678;
     }
 
-    static auto next () -> SegmentHdr const& {
+    static auto next () -> LayerHdr const& {
         extern uint8_t g_pfnVectors[], _sidata [], _sdata [], _edata [];
         auto romSize = _sidata + (_edata - _sdata) - g_pfnVectors;
         auto romAlign = romSize + (-romSize & (flashSegSize-1));
         auto romNext = g_pfnVectors + romAlign;
-        return *(SegmentHdr const*) romNext;
+        return *(LayerHdr const*) romNext;
     }
 };

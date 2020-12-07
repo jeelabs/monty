@@ -1,4 +1,4 @@
-// This is for native use, see boot/core/devs for the segmented embedded builds.
+// This is for native use, see boot/core/devs for the layered embedded builds.
 
 #include <cstdio>
 #include "monty.h"

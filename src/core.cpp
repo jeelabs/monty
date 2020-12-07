@@ -1,8 +1,8 @@
-// Core segment, launched from the boot segment. Needs a non-std linker script.
-// After some initialisations, init will locate and register the devs segment.
+// Core layer, launched from the boot layer. Needs a non-std linker script.
+// After some initialisations, init will locate and register the devs layer.
 
 #include "monty.h"
-#include "segment.h"
+#include "layer.h"
 
 using namespace monty;
 
@@ -13,7 +13,7 @@ extern "C" void init () {
     printf("  flash %p..%p, ram %p..%p, stack top %p\n",
             g_pfnVectors, _eflash, _sdata, _ebss, _estack);
 
-    auto hdr = SegmentHdr::next();
+    auto hdr = LayerHdr::next();
     if (hdr.isValid()) {
         extern uint8_t _estack [];
         constexpr auto stackBottom = _estack - 1024;
