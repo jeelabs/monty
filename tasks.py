@@ -88,8 +88,8 @@ def health(c):
 def info(c):
     """show some information about segments"""
     buildSegments(c)
-    c.run("arm-none-eabi-size .pio/build/*/firmware.elf")
-    c.run("tail -4 syms-*.ld")
+    c.run("arm-none-eabi-size .pio/build/????/firmware.elf")
+    c.run("tail -n4 syms-*.ld")
 
 @task
 def version(c):
