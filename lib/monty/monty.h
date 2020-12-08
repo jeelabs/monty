@@ -369,7 +369,7 @@ namespace monty {
         auto type () const -> Type const& override;
 
         Callable (Value callee, Module* mod)
-                ;//XXX : Callable (callee, nullptr, nullptr, mod) {}
+                : Callable (callee, nullptr, nullptr, mod) {}
         Callable (Value callee, Value pos, Value kw)
                 ;//XXX : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
         Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
