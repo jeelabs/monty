@@ -91,20 +91,7 @@ namespace monty {
     struct Buffer;
     struct Type;
     struct Range;
-
-    struct Q {
-        constexpr Q (uint16_t i, char const* =nullptr) : id (i) {}
-
-        operator char const* () const { return str(id); }
-
-        static auto hash (void const*, uint32_t) -> uint32_t;
-        static auto str (uint16_t) -> char const*;
-        static auto find (char const*) -> uint16_t;
-        static auto make (char const*) -> uint16_t;
-        static auto last () -> uint16_t;
-
-        uint16_t id;
-    };
+    struct Q;
 
     // TODO keep in sync with exceptionMap in builtin.cpp, should be generated
     enum class E : uint8_t {
@@ -135,7 +122,7 @@ namespace monty {
 
         constexpr Value () : v (0) {}
         constexpr Value (int arg) : v (arg * 2 + 1) {}
-        constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
+        constexpr Value (Q const& arg); //XXX : v (arg.id * 4 + 2) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
