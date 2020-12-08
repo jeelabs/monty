@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 '''
->>> print(123)
-123
+>>> 1+2
+3
 
 >>> mkfs("wipe")
 
