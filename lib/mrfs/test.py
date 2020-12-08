@@ -4,7 +4,7 @@
 >>> 1+2
 3
 
->>> mkfs("wipe")
+>>> mrfs("wipe")
 
 >>> img = image()
 >>> len(img)
@@ -14,16 +14,16 @@ b'\xff\xff'
 >>> img[-2:]
 b'\xff\xff'
 
->>> mkfs("dump")
-mkfs entries:
+>>> mrfs("dump")
+mrfs entries:
 
 '''
 
 import doctest, os, subprocess
 
-subprocess.run(["g++", "-std=c++11", "-DTEST", "mkfs.cpp"], check=True)
+subprocess.run(["g++", "-std=c++11", "-DTEST", "mrfs.cpp"], check=True)
 
-def mkfs(*args):
+def mrfs(*args):
     e = subprocess.run(["./a.out", *map(str, args)],
                        capture_output=True, check=True, text=True)
     print(e.stdout, end="")

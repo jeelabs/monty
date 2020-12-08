@@ -1,4 +1,4 @@
-namespace mkfs {
+namespace mrfs {
     uint8_t* base;
 
     void init ();

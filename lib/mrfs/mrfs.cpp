@@ -1,5 +1,5 @@
 #include <cstdint>
-#include "mkfs.h"
+#include "mrfs.h"
 
 extern "C" int printf(char const* fmt, ...);
 
@@ -25,27 +25,27 @@ uint8_t* flashBase;
 int main (int argc, char const* argv[]) {
     assert(argc > 1);
 
-    mkfs::base = mapFlashToFile("flash.img", flashSize);
+    mrfs::base = mapFlashToFile("flash.img", flashSize);
 
-    mkfs::init();
+    mrfs::init();
 
     if (strcmp(argv[1], "wipe") == 0)
-        mkfs::wipe();
+        mrfs::wipe();
     else if (strcmp(argv[1], "dump") == 0)
-        mkfs::dump();
+        mrfs::dump();
     else
         assert(false);
 }
 #endif
 
-void mkfs::init () {
-    //printf("hello from %s\n", "mkfs");
+void mrfs::init () {
+    //printf("hello from %s\n", "mrfs");
 }
 
-void mkfs::wipe () {
+void mrfs::wipe () {
     memset(base, 0xFF, flashSize);
 }
 
-void mkfs::dump () {
-    printf("mkfs entries:\n");
+void mrfs::dump () {
+    printf("mrfs entries:\n");
 }
