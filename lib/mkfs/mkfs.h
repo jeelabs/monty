@@ -1,0 +1,3 @@
+namespace mkfs {
+    void init ();
+}
