@@ -90,10 +90,10 @@ auto mrfs::add(char const* name, uint32_t time,
                 void const* buf, uint32_t len) -> int {
     Info info {
         .magic = MAGIC,
-        .time = time,
-        .zero = 0,
         .size = len,
         .flags = 0,
+        .zero = 0,
+        .time = time,
         .crc = 0x41424344,
     };
     strncpy(info.name, name, sizeof info.name);
