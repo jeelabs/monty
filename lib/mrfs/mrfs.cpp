@@ -1,8 +1,6 @@
 #include <cstdlib>
 #include "mrfs.h"
 
-static_assert(sizeof (mrfs::Info) == 32, "incorrect header size");
-
 extern "C" int printf(char const* fmt, ...);
 
 #if TEST
@@ -53,11 +51,11 @@ int main (int argc, char const* argv[]) {
         return 0;
     }
 
-    mrfs::start = mrfs::next = mapFlashToFile("flash.img", flashSize);
-    mrfs::limit = mrfs::start + flashSize / sizeof (mrfs::Info);
+    mrfs::base = mrfs::next = mapFlashToFile("flash.img", flashSize);
+    mrfs::last = mrfs::base + flashSize / sizeof (mrfs::Info);
 
-    while (mrfs::next->isValid())
-        mrfs::next += 1 + (mrfs::next->size+31)/32;
+    while (mrfs::next->valid())
+        mrfs::next = mrfs::next->tail() + 1;
 
     mrfs::init();
 
@@ -74,18 +72,17 @@ void mrfs::init () {
 }
 
 void mrfs::wipe () {
-    memset(start, 0xFF, (uint8_t*) limit - (uint8_t*) start);
-    next = start;
+    memset(base, 0xFF, (uint8_t*) last - (uint8_t*) base);
+    next = base;
 }
 
 void mrfs::dump () {
-    auto p = start;
-    while (p->isValid()) {
-        auto tail = p + (p->size+31)/32;
+    auto p = base;
+    while (p->valid()) {
         printf("%05d:%6d  20%06u.%04u  %s\n",
-                (int) (p - start), p->size,
-                tail->time/10000, tail->time%10000, tail->name);
-        p = tail + 1;
+                (int) (p - base), p->size,
+                p->tail()->time/10000, p->tail()->time%10000, p->tail()->name);
+        p = p->tail() + 1;
     }
 }
 
@@ -94,13 +91,12 @@ auto mrfs::add(char const* name, uint32_t time,
     Info info {
         .magic = MAGIC,
         .time = time,
+        .zero = 0,
         .size = len,
         .flags = 0,
         .crc = 0x41424344,
     };
-    auto n = sizeof info.name - 1;
-    strncpy(info.name, name, n);
-    info.name[n] = 0;
+    strncpy(info.name, name, sizeof info.name);
     auto rounded = len + (-len & 31);
 
     auto p = (uint8_t*) next;
@@ -109,19 +105,18 @@ auto mrfs::add(char const* name, uint32_t time,
     memset(p+8+len, 0xFF, rounded-len);
     memcpy(p+8+rounded, info.name, 24);
 
-    int pos = next - start;
-    next += 1 + rounded / sizeof info;
+    int pos = next - base;
+    next = next->tail() + 1;
     return pos;
 }
 
 auto mrfs::find (char const* name) -> int {
     int n = -1;
-    auto p = start;
-    while (p->isValid()) {
-        auto tail = p + (p->size+31)/32;
-        if (strcmp(name, tail->name) == 0)
-            n = p->time != 0 ? p - start : -1;
-        p = tail + 1;
+    auto p = base;
+    while (p->valid()) {
+        if (strcmp(name, p->tail()->name) == 0)
+            n = p->time != 0 ? p - base : -1;
+        p = p->tail() + 1;
     }
     return n;
 }
