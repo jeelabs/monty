@@ -10,16 +10,14 @@ extern "C" int printf(char const* fmt, ...);
 #include <unistd.h>
 #include <sys/mman.h>
 
-auto mapFlashToFile (char const* name, size_t size) -> mrfs::Info* {
+auto mapFlashToFile (char const* name, size_t size) -> void* {
     auto fd = open(name, O_CREAT|O_RDWR, 0666); assert(fd > 0);
     auto e = ftruncate(fd, size); assert(e == 0);
     auto ptr = mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
     assert(ptr != MAP_FAILED);
     //printf("mmap %p\n", ptr);
-    return (mrfs::Info*) ptr;
+    return ptr;
 }
-
-constexpr auto flashSize = 64*1024;
 
 void add (int ac, char const** av) {
     assert(ac == 4);
@@ -51,13 +49,8 @@ int main (int argc, char const* argv[]) {
         return 0;
     }
 
-    mrfs::base = mrfs::next = mapFlashToFile("flash.img", flashSize);
-    mrfs::last = mrfs::base + flashSize / sizeof (mrfs::Info);
-
-    while (mrfs::next->valid())
-        mrfs::next = mrfs::next->tail() + 1;
-
-    mrfs::init();
+    constexpr auto flashSize = 64*1024;
+    mrfs::init(mapFlashToFile("flash.img", flashSize), flashSize);
 
          if (strcmp(argv[1], "wipe") == 0) mrfs::wipe();
     else if (strcmp(argv[1], "dump") == 0) mrfs::dump();
@@ -67,18 +60,24 @@ int main (int argc, char const* argv[]) {
 }
 #endif
 
-void mrfs::init () {
-    //printf("hello from %s\n", "mrfs");
+void mrfs::init (void* ptr, size_t len, size_t keep) {
+    base = (Info*) ptr;
+    skip = keep / sizeof (Info);
+    last = base + len / sizeof (Info);
+
+    next = base + skip;
+    while (next < last && next->valid())
+        next = next->tail() + 1;
 }
 
 void mrfs::wipe () {
     memset(base, 0xFF, (uint8_t*) last - (uint8_t*) base);
-    next = base;
+    next = base + skip;
 }
 
 void mrfs::dump () {
-    auto p = base;
-    while (p->valid()) {
+    auto p = base + skip;
+    while (p < last && p->valid()) {
         printf("%05d:%6d  20%06u.%04u  %s\n",
                 (int) (p - base), p->size,
                 p->tail()->time/10000, p->tail()->time%10000, p->tail()->name);
@@ -112,8 +111,8 @@ auto mrfs::add(char const* name, uint32_t time,
 
 auto mrfs::find (char const* name) -> int {
     int n = -1;
-    auto p = base;
-    while (p->valid()) {
+    auto p = base + skip;
+    while (p < last && p->valid()) {
         if (strcmp(name, p->tail()->name) == 0)
             n = p->time != 0 ? p - base : -1;
         p = p->tail() + 1;

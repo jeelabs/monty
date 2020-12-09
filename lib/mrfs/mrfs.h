@@ -17,11 +17,12 @@ namespace mrfs {
     };
     static_assert(sizeof (Info) == 32, "incorrect header size");
 
-    Info* base; // start of flash used for MRFS
+    Info* base; // start of flash
+    int skip;   // items to skip, i.e. non-MRFS content
     Info* next; // next unused position
     Info* last; // past end of flash used for MRFS
 
-    void init ();
+    void init (void* ptr, size_t len, size_t keep =0);
     void wipe ();
     void dump ();
 

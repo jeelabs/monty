@@ -1,9 +1,6 @@
 #!/usr/bin/env python3
 
 '''
->>> 1+2
-3
-
 >>> mrfs()
 usage: ./a.out cmd args...
 
