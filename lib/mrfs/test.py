@@ -9,23 +9,44 @@ usage: ./a.out cmd args...
 
 >>> mrfs("wipe")
 
->>> img = image()
->>> len(img)
+>>> ff = image()
+>>> len(ff)
 65536
->>> img[:2]
+>>> ff[:2]
 b'\xff\xff'
->>> img[-2:]
+>>> ff[-2:]
 b'\xff\xff'
 
 >>> mrfs("dump")
-mrfs entries:
 
->>> mrfs("add", "abc", 2012091234, 5, "hello")
-0x...
+>>> mrfs("add", "abc", 2012091201, 5, "hello")
+0
 
 >>> mrfs("dump")
-mrfs entries:
-0x000000:     5  202012091234  abc
+00000:     5  202012091201  abc
+
+>>> ff = image()
+>>> ff[:4]
+b'MTY0'
+>>> ff[8:14]
+b'hello\xff'
+>>> ff[60:64]
+b'DCBA'
+
+>>> mrfs("add", "def", 2012091202, 33, "DEF")
+2
+
+>>> mrfs("add", "ghi", 2012091203, 31, "GHI")
+5
+
+>>> mrfs("add", "jkl", 2012091204, 0, "")
+7
+
+>>> mrfs("dump")
+00000:     5  202012091201  abc
+00002:    33  202012091202  def
+00005:    31  202012091203  ghi
+00007:     0  202012091204  jkl
 
 '''
 

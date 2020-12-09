@@ -36,8 +36,8 @@ void add (int ac, char const** av) {
     for (uint32_t i = 0; i < size; ++i)
         buf[i] = data[i%len];
 
-    auto info = mrfs::add(name, time, buf, size);
-    printf("%p\n", info);
+    auto pos = mrfs::add(name, time, buf, size);
+    printf("%d\n", pos);
 
     free(buf);
 }
@@ -48,8 +48,11 @@ int main (int argc, char const* argv[]) {
         return 0;
     }
 
-    mrfs::start = mapFlashToFile("flash.img", flashSize);
+    mrfs::start = mrfs::next = mapFlashToFile("flash.img", flashSize);
     mrfs::limit = mrfs::start + flashSize / sizeof (mrfs::Info);
+
+    while (mrfs::next->isValid())
+        mrfs::next += 1 + (mrfs::next->size+31)/32;
 
     mrfs::init();
 
@@ -66,28 +69,40 @@ void mrfs::init () {
 
 void mrfs::wipe () {
     memset(start, 0xFF, (uint8_t*) limit - (uint8_t*) start);
+    next = start;
 }
 
 void mrfs::dump () {
-    printf("mrfs entries:\n");
-    if (start->isValid())
-        printf("0x%06x:%6d  20%10u  %s\n",
-                0, start->size, start->time, start->name);
+    auto p = start;
+    while (p->isValid()) {
+        auto tail = p + (p->size+31)/32;
+        printf("%05d:%6d  20%10u  %s\n",
+                (int) (p - start), p->size, tail->time, tail->name);
+        p = tail + 1;
+    }
 }
 
 auto mrfs::add(char const* name, uint32_t time,
-                void const* buf, uint32_t len) -> Info const* {
+                void const* buf, uint32_t len) -> int {
     Info info {
         .magic = MAGIC,
         .time = time,
         .size = len,
         .flags = 0,
+        .crc = 0x41424344,
     };
-    strncpy(info.name, name, sizeof info.name);
+    auto n = sizeof info.name - 1;
+    strncpy(info.name, name, n);
+    info.name[n] = 0;
+    auto rounded = len + (-len & 31);
 
-    auto p = (uint8_t*) start;
+    auto p = (uint8_t*) next;
     memcpy(p, &info, 8);
     memcpy(p+8, buf, len);
-    memcpy(p+len+(-len&31)-24, info.name, 24);
-    return start;
+    memset(p+8+len, 0xFF, rounded-len);
+    memcpy(p+8+rounded, info.name, 24);
+
+    int pos = next - start;
+    next += 1 + rounded / sizeof info;
+    return pos;
 }

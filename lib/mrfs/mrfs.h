@@ -1,5 +1,5 @@
 namespace mrfs {
-    constexpr auto MAGIC = 0x12345678;
+    constexpr auto MAGIC = '0YTM';
 
     struct Info {
         uint32_t magic;
@@ -14,6 +14,7 @@ namespace mrfs {
     };
 
     Info* start; // start of flash used for MRFS
+    Info* next;  // next unused position
     Info* limit; // past end of flash used for MRFS
 
     void init ();
@@ -21,5 +22,5 @@ namespace mrfs {
     void dump ();
 
     auto add(char const* name, uint32_t time,
-                void const* buf, uint32_t len) -> Info const*;
+                void const* buf, uint32_t len) -> int;
 }
