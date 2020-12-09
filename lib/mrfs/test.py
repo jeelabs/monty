@@ -4,6 +4,9 @@
 >>> 1+2
 3
 
+>>> mrfs()
+usage: ./a.out cmd args...
+
 >>> mrfs("wipe")
 
 >>> img = image()
@@ -16,6 +19,13 @@ b'\xff\xff'
 
 >>> mrfs("dump")
 mrfs entries:
+
+>>> mrfs("add", "abc", 2012091234, 5, "hello")
+0x...
+
+>>> mrfs("dump")
+mrfs entries:
+0x000000:     5  202012091234  abc
 
 '''
 
@@ -33,9 +43,7 @@ def image():
         return fd.read()
 
 if __name__ == "__main__":
-    try:
-        failed, tests = doctest.testmod()
-        if failed == 0:
-            print("OK", tests)
-    finally:
-        os.remove("a.out")
+    failed, tests = doctest.testmod(optionflags=doctest.ELLIPSIS)
+    if failed == 0:
+        print("OK", tests)
+    os.remove("a.out")
