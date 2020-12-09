@@ -1,5 +1,5 @@
 namespace mrfs {
-    constexpr auto MAGIC = '0YTM';
+    constexpr auto MAGIC = 0x3059544D; // 'MTY0'
 
     struct Info {
         // only first fields are located at the start
