@@ -42,6 +42,11 @@ void add (int ac, char const** av) {
     free(buf);
 }
 
+void find (int ac, char const** av) {
+    assert(ac == 1);
+    printf("%d\n", mrfs::find(av[0]));
+}
+
 int main (int argc, char const* argv[]) {
     if (argc < 2) {
         printf("usage: %s cmd args...\n", argv[0]);
@@ -59,6 +64,7 @@ int main (int argc, char const* argv[]) {
          if (strcmp(argv[1], "wipe") == 0) mrfs::wipe();
     else if (strcmp(argv[1], "dump") == 0) mrfs::dump();
     else if (strcmp(argv[1], "add")  == 0) add(argc-2, argv+2);
+    else if (strcmp(argv[1], "find") == 0) find(argc-2, argv+2);
     else assert(false);
 }
 #endif
@@ -76,8 +82,9 @@ void mrfs::dump () {
     auto p = start;
     while (p->isValid()) {
         auto tail = p + (p->size+31)/32;
-        printf("%05d:%6d  20%10u  %s\n",
-                (int) (p - start), p->size, tail->time, tail->name);
+        printf("%05d:%6d  20%06u.%04u  %s\n",
+                (int) (p - start), p->size,
+                tail->time/10000, tail->time%10000, tail->name);
         p = tail + 1;
     }
 }
@@ -105,4 +112,16 @@ auto mrfs::add(char const* name, uint32_t time,
     int pos = next - start;
     next += 1 + rounded / sizeof info;
     return pos;
+}
+
+auto mrfs::find (char const* name) -> int {
+    int n = -1;
+    auto p = start;
+    while (p->isValid()) {
+        auto tail = p + (p->size+31)/32;
+        if (strcmp(name, tail->name) == 0)
+            n = p->time != 0 ? p - start : -1;
+        p = tail + 1;
+    }
+    return n;
 }

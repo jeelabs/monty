@@ -21,6 +21,7 @@ namespace mrfs {
     void wipe ();
     void dump ();
 
-    auto add(char const* name, uint32_t time,
+    auto add (char const* name, uint32_t time,
                 void const* buf, uint32_t len) -> int;
+    auto find (char const* name) -> int;
 }
