@@ -34,7 +34,8 @@ def image():
 
 if __name__ == "__main__":
     try:
-        doctest.testmod()
+        failed, tests = doctest.testmod()
+        if failed == 0:
+            print("OK", tests)
     finally:
         os.remove("a.out")
-    print("OK")
