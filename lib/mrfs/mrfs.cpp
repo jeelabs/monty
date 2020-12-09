@@ -1,13 +1,12 @@
 #include <cstdint>
-#include <cstdlib>
+#include <cstring>
 #include "mrfs.h"
 
-extern "C" int printf(char const* fmt, ...);
-
 #if TEST
+
 #include <cassert>
-#include <cstring>
 #include <fcntl.h>
+#include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
 
@@ -44,6 +43,15 @@ void find (int ac, char const** av) {
     printf("%d\n", mrfs::find(av[0]));
 }
 
+static void saveToFlash (void* addr, mrfs::Info& info, void const* buf) {
+    auto rounded = info.size + (-info.size & 31);
+    auto p = (uint8_t*) addr;
+    memcpy(p, &info, 8);
+    memcpy(p+8, buf, info.size);
+    memset(p+8+info.size, 0xFF, rounded-info.size);
+    memcpy(p+8+rounded, info.name, 24);
+}
+
 int main (int argc, char const* argv[]) {
     if (argc < 2) {
         printf("usage: %s cmd args...\n", argv[0]);
@@ -59,6 +67,28 @@ int main (int argc, char const* argv[]) {
     else if (strcmp(argv[1], "find") == 0) find(argc-2, argv+2);
     else assert(false);
 }
+
+#else
+
+#include <jee.h>
+
+static void saveToFlash (uint8_t* addr, mrfs::Info& info, void const* buf) {
+    // STM32L4-specific code
+    auto start = (uint32_t*) addr;
+    auto limit = (uint32_t*) (info.tail() + 1);
+    // store first 8 bytes from info, then buf, then last 24 bytes from info
+    auto src = (uint32_t const*) &info;
+    for (auto dst = start; dst < limit; ++dst, ++src) {
+        if (dst == start + 2)
+            src = (uint32_t const*) buf;
+        if (dst == limit - 6)
+            src = (uint32_t const*) info.name;
+        if ((uint32_t) dst % 2048 == 0)
+            Flash::erasePage(dst);
+        Flash::write32(dst, *src);
+    }
+}
+
 #endif
 
 void mrfs::init (void* ptr, size_t len, size_t keep) {
@@ -88,22 +118,10 @@ void mrfs::dump () {
 
 auto mrfs::add(char const* name, uint32_t time,
                 void const* buf, uint32_t len) -> int {
-    Info info {
-        .magic = MAGIC,
-        .size = len,
-        .flags = 0,
-        .zero = 0,
-        .time = time,
-        .crc = 0x41424344,
-    };
+    Info info = { MAGIC, len, 0, {}, 0, time, 0x41424344 };
     strncpy(info.name, name, sizeof info.name);
-    auto rounded = len + (-len & 31);
 
-    auto p = (uint8_t*) next;
-    memcpy(p, &info, 8);
-    memcpy(p+8, buf, len);
-    memset(p+8+len, 0xFF, rounded-len);
-    memcpy(p+8+rounded, info.name, 24);
+    saveToFlash((uint8_t*) next, info, buf);
 
     int pos = next - base;
     next = next->tail() + 1;

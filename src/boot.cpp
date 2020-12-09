@@ -3,6 +3,8 @@
 
 #include <jee.h>
 #include <cassert>
+#include <cstdlib>
+#include <mrfs.h>
 #include "layer.h"
 
 UartDev< PinA<2>, PinA<15> > console;
