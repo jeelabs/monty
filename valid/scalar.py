@@ -1,0 +1,8 @@
+print(None)
+print(False)
+print(True)
+print(0)
+print(-123)
+print(456)
+print('abc')
+print(b'def')
