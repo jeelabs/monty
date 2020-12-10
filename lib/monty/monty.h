@@ -693,7 +693,7 @@ namespace monty {
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 
-// see call.cpp - functions, methods, and other callables
+// see call.cpp - functions, methods, contexts, and interpreter state
 
     // forward decl's
     struct Module;
@@ -802,32 +802,6 @@ namespace monty {
         Dict* kw;
     };
 
-// see builtin.cpp - exceptions and auto-generated built-in tables
-
-    //CG3 type <exception>
-    struct Exception : Tuple {
-        static Type const info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-
-        struct Extra { E code; uint16_t ipOff; Callable const* callee; };
-        auto extra () const -> Extra& { return *(Extra*) end(); }
-
-        static auto create (E, ArgVec const&) -> Value; // diff API
-        static Lookup const bases; // this maps the derivation hierarchy
-        static auto findId (Function const&) -> int; // find in builtinsMap
-
-        void marker () const override;
-    private:
-        Exception (E exc, ArgVec const& args);
-
-        auto binop (BinOp, Value) const -> Value override;
-    };
-
-    extern Lookup const builtins;
-
-// see stack.cpp - run time contexts and interpreter
-
     //CG3 type <context>
     struct Context : List {
         static Type const info;
@@ -914,4 +888,28 @@ namespace monty {
         static List tasks;                  // list of all tasks
         static Dict modules;                // loaded modules
     };
+
+// see builtin.cpp - exceptions and auto-generated built-in tables
+
+    //CG3 type <exception>
+    struct Exception : Tuple {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+
+        struct Extra { E code; uint16_t ipOff; Callable const* callee; };
+        auto extra () const -> Extra& { return *(Extra*) end(); }
+
+        static auto create (E, ArgVec const&) -> Value; // diff API
+        static Lookup const bases; // this maps the derivation hierarchy
+        static auto findId (Function const&) -> int; // find in builtinsMap
+
+        void marker () const override;
+    private:
+        Exception (E exc, ArgVec const& args);
+
+        auto binop (BinOp, Value) const -> Value override;
+    };
+
+    extern Lookup const builtins;
 }
