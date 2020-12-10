@@ -117,7 +117,7 @@ void mrfs::wipe () {
 void mrfs::dump () {
     auto p = base + skip;
     while (p < last && p->valid()) {
-        printf("%05d:%6d  20%06d.%04d  %s\n",
+        printf("%05d:%6d  %6d.%04d  %s\n",
                 (int) (p - base), p->size,
                 p->tail()->time/10000, p->tail()->time%10000, p->tail()->name);
         p = p->tail() + 1;
