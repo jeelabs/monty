@@ -12,6 +12,7 @@ namespace mrfs {
 #if TEST
 
 #include <cassert>
+#include <cstdlib>
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
