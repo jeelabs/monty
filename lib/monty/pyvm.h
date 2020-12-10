@@ -648,8 +648,9 @@ class PyVM : public Interp {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
         Value mod = modules.at(arg);
         if (mod.isNil()) {
+#if 0 //XXX
             // TODO move part of this code to Interp
-            auto base = nullptr;//XXX fsLookup(arg);
+            auto base = fsLookup(arg);
             assert(base != nullptr);
             auto init = loader(arg, base);
             assert(init != nullptr);
@@ -657,6 +658,7 @@ class PyVM : public Interp {
             modules.at(arg) = mod;
             wrappedCall(init, {*context, 0});
             context->frame().locals = mod;
+#endif
         }
         *sp = mod;
     }
@@ -1074,6 +1076,7 @@ class PyVM : public Interp {
 
     void outer () {
         while (context != nullptr) {
+#if 0 //XXX
             auto r = context->frame().result.ifType<Resumable>();
             if (r == nullptr)
                 inner();
@@ -1082,11 +1085,13 @@ class PyVM : public Interp {
                 if (!v.isNil())
                     r->done(v);
             }
+#endif
 
             if (gcCheck()) {
-                archMode(RunMode::GC);
+                //XXX archMode(RunMode::GC);
+                Interp::markAll();
                 gcNow();
-                archMode(RunMode::Run);
+                //XXX archMode(RunMode::Run);
             }
         }
 

@@ -855,7 +855,7 @@ namespace monty {
 
     // TODO private:
         Module& mo;
-        Bytecode const& bc;
+        /*XXX Bytecode */ List const& bc;
         Tuple* pos;
         Dict* kw;
     };
