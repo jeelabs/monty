@@ -84,8 +84,6 @@ namespace monty {
 // see data.cpp - basic object data types
 
     // forward decl's
-    enum UnOp : uint8_t;
-    enum BinOp : uint8_t;
     struct Object;
     struct Lookup;
     struct Buffer;
@@ -131,6 +129,52 @@ namespace monty {
         TypeError,
         ValueError,
         UnicodeError,
+    };
+
+    enum UnOp : uint8_t {
+        Pos, Neg, Inv, Not,
+        Boln, Hash, Abs, Int,
+    };
+
+    enum BinOp : uint8_t {
+        //CG< binops ../../git/micropython/py/runtime0.h 35
+        Less,
+        More,
+        Equal,
+        LessEqual,
+        MoreEqual,
+        NotEqual,
+        In,
+        Is,
+        ExceptionMatch,
+        InplaceOr,
+        InplaceXor,
+        InplaceAnd,
+        InplaceLshift,
+        InplaceRshift,
+        InplaceAdd,
+        InplaceSubtract,
+        InplaceMultiply,
+        InplaceMatMultiply,
+        InplaceFloorDivide,
+        InplaceTrueDivide,
+        InplaceModulo,
+        InplacePower,
+        Or,
+        Xor,
+        And,
+        Lshift,
+        Rshift,
+        Add,
+        Subtract,
+        Multiply,
+        MatMultiply,
+        FloorDivide,
+        TrueDivide,
+        Modulo,
+        Power,
+        //CG>
+        Contains,
     };
 
     struct Value {
@@ -391,6 +435,22 @@ namespace monty {
         int32_t from, to, by;
     };
 
+    //CG< type slice
+    struct Slice : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto asRange (int sz) const -> Range;
+
+    private:
+        Slice (Value a, Value b, Value c) : off (a), num (b), step (c) {}
+
+        Value off, num, step;
+    };
+
     //CG< type bytes
     struct Bytes : Object, ByteVec {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
@@ -633,7 +693,7 @@ namespace monty {
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 
-// see context.cpp - run time contexts and interpreter
+// see call.cpp - functions, methods, and other callables
 
     // forward decl's
     struct Module;
@@ -653,6 +713,71 @@ namespace monty {
 
     private:
         Prim func;
+    };
+
+    // Horrendous C++ ... this wraps several different argument calls into a
+    // virtual MethodBase object, which Method can then call in a generic way.
+    // It's probably just a neophyte's version of STL's <functional> types ...
+    // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
+
+    // obj.meth() -> Value
+    template< typename T, typename V >
+    auto argConv (auto (T::*m)() -> V, Object& o, ArgVec const&) -> V {
+        return (((T&) o).*m)();
+    }
+    // obj.meth(arg) -> void
+    template< typename T, typename U >
+    auto argConv (void (T::*m)(U), Object& o, ArgVec const& a) -> Value {
+        (((T&) o).*m)(a[1]);
+        return {};
+    }
+    // obj.meth(arg) -> Value
+    template< typename T, typename U, typename V >
+    auto argConv (auto (T::*m)(U) -> V, Object& o, ArgVec const& a) -> V {
+        return (((T&) o).*m)(a[1]);
+    }
+    // obj.meth(argvec) -> Value
+    template< typename T, typename V >
+    auto argConv (auto (T::*m)(ArgVec const&) -> V,
+                                        Object& o, ArgVec const& a) -> V {
+        return (((T&) o).*m)(a);
+    }
+
+    // Method objects point to objects of this base class to make virtual calls
+    struct MethodBase {
+        virtual auto call (Object&, ArgVec const&) const -> Value = 0;
+    };
+
+    template< typename M >
+    struct MethodDef : MethodBase {
+        constexpr MethodDef (M memberPtr) : methPtr (memberPtr) {}
+
+        auto call (Object& self, ArgVec const& args) const -> Value override {
+            return argConv(methPtr, self, args);
+        }
+
+    private:
+        const M methPtr;
+    };
+
+    //CG3 type <method>
+    struct Method : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        constexpr Method (MethodBase const& m) : meth (m) {}
+
+        auto call (ArgVec const& args) const -> Value override {
+            return meth.call(args[0].obj(), args);
+        }
+
+        template< typename M >
+        constexpr static auto wrap (M memberPtr) -> MethodDef<M> {
+            return memberPtr;
+        }
+
+    private:
+        const MethodBase& meth;
     };
 
     //CG3 type <callable>
@@ -677,6 +802,8 @@ namespace monty {
         Dict* kw;
     };
 
+// see builtin.cpp - exceptions and auto-generated built-in tables
+
     //CG3 type <exception>
     struct Exception : Tuple {
         static Type const info;
@@ -696,6 +823,10 @@ namespace monty {
 
         auto binop (BinOp, Value) const -> Value override;
     };
+
+    extern Lookup const builtins;
+
+// see stack.cpp - run time contexts and interpreter
 
     //CG3 type <context>
     struct Context : List {

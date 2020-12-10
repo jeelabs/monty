@@ -1,7 +1,6 @@
 // data.cpp - basic object data types
 
 #include "monty.h"
-#include "ops.h"
 #include <cassert>
 
 using namespace monty;

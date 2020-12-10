@@ -1,7 +1,6 @@
 // type.cpp - collection types and type system
 
 #include "monty.h"
-#include "ops.h"
 #include <cassert>
 
 using namespace monty;
@@ -36,6 +35,30 @@ auto Range::create (ArgVec const& args, Type const*) -> Value {
     int b = args.num == 1 ? args[0] : args[1];
     int c = args.num > 2 ? (int) args[2] : 1;
     return new Range (a, b, c);
+}
+
+auto Slice::asRange (int sz) const -> Range {
+    int from = off.isInt() ? (int) off : 0;
+    int to = num.isInt() ? (int) num : sz;
+    int by = step.isInt() ? (int) step : 1;
+    if (from < 0)
+        from += sz;
+    if (to < 0)
+        to += sz;
+    if (by < 0) {
+        auto t = from - 1;
+        from = to - 1;
+        to = t;
+    }
+    return {from, to, by};
+}
+
+auto Slice::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    Value a = args.num > 1 ? args[0] : Null;
+    Value b = args.num == 1 ? args[0] : args[1];
+    Value c = args.num > 2 ? args[2] : Null;
+    return new Slice (a, b, c);
 }
 
 Bytes::Bytes (void const* ptr, uint32_t len) {
