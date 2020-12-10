@@ -185,6 +185,7 @@ namespace monty {
     extern Value const Null;
     extern Value const False;
     extern Value const True;
+    extern Value const Empty; // Tuple
 
     auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
@@ -316,6 +317,61 @@ namespace monty {
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
+// see type.cpp - collection types and type system
+
+    //CG3 type <lookup>
+    struct Lookup : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        struct Item { Value k, v; }; // TODO plain const Value list or dict ?
+
+        constexpr Lookup (Item const* p, uint32_t sz)
+                        : items (p), count (sz / sizeof (Item)) {}
+
+        auto operator[] (char const* key) const -> Value;
+
+        auto len () const -> uint32_t override { return count; }
+        auto getAt (Value k) const -> Value override;
+
+        void marker () const override;
+    private:
+        Item const* items;
+        uint32_t count;
+
+        friend struct Exception; // to get exception's string name
+    };
+
+    //CG< type tuple
+    struct Tuple : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto size () const -> uint32_t { return fill; }
+        auto begin () const -> Value const* { return data(); }
+        auto end () const -> Value const* { return begin() + size(); }
+        auto operator[] (uint32_t idx) const -> Value { return begin()[idx]; }
+
+        auto len () const -> uint32_t override { return fill; }
+        auto getAt (Value k) const -> Value override;
+        auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
+
+        void marker () const override;
+
+        uint32_t const fill;
+
+        static Tuple const emptyObj;
+    protected:
+        constexpr Tuple () : fill (0) {}
+        Tuple (ArgVec const&);
+
+        auto data () const -> Value const* { return (Value const*) (this + 1); }
+    };
+
     //CG< type list
     struct List : Object, Vector {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
@@ -342,12 +398,111 @@ namespace monty {
         List (ArgVec const& args);
     };
 
+    //CG< type set
+    struct Set : List {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        using List::List;
+
+        auto find (Value v) const -> uint32_t;
+
+        struct Proxy { Set& s; Value v;
+            operator bool () const { return ((Set const&) s).has(v); }
+            auto operator= (bool) -> bool;
+        };
+
+        // operator[] is problematic when the value is an int
+        auto has (Value key) const -> bool { return find(key) < size(); }
+        auto has (Value key) -> Proxy { return {*this, key}; }
+
+        auto binop (BinOp, Value) const -> Value override;
+
+        auto getAt (Value k) const -> Value override;
+        auto setAt (Value k, Value v) -> Value override;
+    };
+
+    //CG< type dict
+    struct Dict : Set {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr Dict (Object const* ch =nullptr) : chain (ch) {}
+
+        struct Proxy { Dict& d; Value k;
+            operator Value () const { return ((Dict const&) d).at(k); }
+            auto operator= (Value v) -> Value;
+        };
+
+        auto at (Value key) const -> Value;
+        auto at (Value key) -> Proxy { return {*this, key}; }
+
+        auto getAt (Value k) const -> Value override { return at(k); }
+        auto setAt (Value k, Value v) -> Value override { return at(k) = v; }
+
+        auto keys () -> Value;
+        auto values () -> Value;
+        auto items () -> Value;
+
+        void marker () const override;
+
+        Object const* chain {nullptr};
+    private:
+        Dict (uint32_t n) { adj(2*n); }
+    };
+
+    //CG3 type <dictview>
+    struct DictView : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        DictView (Dict const& d, int vt) : dict (d), vtype (vt) {}
+
+        auto len () const -> uint32_t override { return dict.fill; }
+        auto getAt (Value k) const -> Value override;
+        auto iter () const -> Value override { return 0; }
+
+        void marker () const override { dict.marker(); }
+    private:
+        Dict const& dict;
+        int vtype;
+    };
+
+    //CG< type type
+    struct Type : Dict {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        using Factory = auto (*)(ArgVec const&,Type const*) -> Value;
+
+        constexpr Type (Value s, Factory f =noFactory, Lookup const* a =nullptr)
+                        : Dict (a), name (s), factory (f) {}
+
+        auto call (ArgVec const&) const -> Value override;
+        auto attr (char const* name, Value&) const -> Value override {
+            return getAt(name);
+        }
+
+        Value name;
+        Factory factory;
+
+    private:
+        static auto noFactory (ArgVec const&, Type const*) -> Value;
+    };
+
 // see context.cpp - run time contexts and interpreter
 
     // forward decl's
     struct Module;
-    struct Tuple;
-    struct Dict;
     struct Bytecode;
 
     //CG3 type <callable>
@@ -358,7 +513,7 @@ namespace monty {
         Callable (Value callee, Module* mod)
                 : Callable (callee, nullptr, nullptr, mod) {}
         Callable (Value callee, Value pos, Value kw)
-                ;//XXX : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
+                : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
         Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
 
         auto call (ArgVec const&) const -> Value override;

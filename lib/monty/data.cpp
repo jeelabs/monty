@@ -1,4 +1,4 @@
-// type.cpp - basic object types and type system
+// type.cpp - basic object data types
 
 #include "monty.h"
 //#include "ops.h"
@@ -385,68 +385,4 @@ auto Object::copy (Range const&) const -> Value {
 auto Object::store (Range const&, Object const&) -> Value {
     assert(false);
     return {};
-}
-
-List::List (ArgVec const& args) {
-    insert(0, args.num);
-    for (int i = 0; i < args.num; ++i)
-        (*this)[i] = args[i];
-}
-
-auto List::pop (int idx) -> Value {
-    auto n = relPos(idx);
-    assert(size() > n);
-    Value v = (*this)[n];
-    remove(n);
-    return v;
-}
-
-void List::append (Value v) {
-    auto n = size();
-    insert(n);
-    (*this)[n] = v;
-}
-
-auto List::getAt (Value k) const -> Value {
-    if (!k.isInt())
-        return sliceGetter(k);
-    auto n = relPos(k);
-    assert(n < size());
-    return (*this)[n];
-}
-
-auto List::setAt (Value k, Value v) -> Value {
-    if (!k.isInt())
-        return sliceSetter(k, v);
-    auto n = relPos(k);
-    assert(n < size());
-    return (*this)[n] = v;
-}
-
-#if 0
-auto List::copy (Range const& r) const -> Value {
-    auto n = r.len();
-    auto v = new List;
-    v->insert(0, n);
-    for (uint32_t i = 0; i < n; ++i)
-        (*v)[i] = (*this)[r.getAt(i)];
-    return v;
-}
-
-auto List::store (Range const& r, Object const& v) -> Value {
-    assert(r.by == 1);
-    int olen = r.len();
-    int nlen = v.len();
-    if (nlen < olen)
-        remove(r.from + nlen, olen - nlen);
-    else if (nlen > olen)
-        insert(r.from + olen, nlen - olen);
-    for (int i = 0; i < nlen; ++i)
-        (*this)[r.getAt(i)] = v.getAt(i);
-    return {};
-}
-#endif
-
-auto List::create (ArgVec const& args, Type const*) -> Value {
-    return new List (args);
 }
