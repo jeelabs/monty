@@ -1,5 +1,5 @@
 namespace mrfs {
-    constexpr auto MAGIC = 0x3059544D; // 'MTY0'
+    constexpr auto MAGIC = 0x3079746D; // 'mty0'
 
     struct Info {
         // only first fields are located at the start
@@ -17,10 +17,10 @@ namespace mrfs {
     };
     static_assert(sizeof (Info) == 32, "incorrect header size");
 
-    Info* base; // start of flash
-    int skip;   // items to skip, i.e. non-MRFS content
-    Info* next; // next unused position
-    Info* last; // past end of flash used for MRFS
+    extern Info* base; // start of flash
+    extern int skip;   // items to skip, i.e. non-MRFS content
+    extern Info* next; // next unused position
+    extern Info* last; // past end of flash used for MRFS
 
     void init (void* ptr, size_t len, size_t keep =0);
     void wipe ();

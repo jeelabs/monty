@@ -7,7 +7,7 @@
 #include <mrfs.h>
 #include "layer.h"
 
-UartDev< PinA<2>, PinA<15> > console;
+UartBufDev< PinA<2>, PinA<15> > console;
 
 int printf(const char* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
@@ -88,6 +88,14 @@ int main () {
     // FIXME prevents ld dead code stripping, yuck
     assert((uintptr_t) puts + (uintptr_t) putchar + (uintptr_t) __assert_func
             + (uintptr_t) __assert + (uintptr_t) abort);
+
+// old entries are not compatible, so just start with an empty page for now
+Flash::erasePage((void*) 0x08002800);
+
+    // STM32L432-specific
+    mrfs::init((void*) 0x08000000, 256*1024, 10*1024);
+    mrfs::add("abc", 2012091201, "hello", 6);
+    mrfs::dump();
     
     auto hdr = LayerHdr::next();
     if (hdr.isValid()) {

@@ -24,7 +24,7 @@ b'\xff\xff'
 
 >>> ff = image()
 >>> ff[:4]
-b'MTY0'
+b'mty0'
 >>> ff[8:14]
 b'hello\xff'
 >>> ff[60:64]
