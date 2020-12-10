@@ -693,11 +693,69 @@ namespace monty {
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 
+    //CG< type class
+    struct Class : Type {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+    private:
+        Class (ArgVec const& args);
+    };
+
+    //CG< type super
+    struct Super : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+
+        void marker () const override { sclass.marker(); sinst.marker(); }
+    private:
+        Super (ArgVec const& args);
+
+        Value sclass;
+        Value sinst;
+    };
+
+    // can't use CG, because type() can't be auto-generated
+    struct Inst : Dict {
+        static auto create (ArgVec const&, Type const*) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto repr (Buffer&) const -> Value override;
+
+        auto type () const -> Type const& override { return *(Type*) chain; }
+        auto attr (char const* name, Value& self) const -> Value override {
+            self = this;
+            return getAt(name);
+        }
+
+    private:
+        Inst (ArgVec const& args, Class const& cls);
+    };
+
 // see call.cpp - functions, methods, contexts, and interpreter state
 
     // forward decl's
-    struct Module;
     struct Bytecode;
+
+    //CG3 type <module>
+    struct Module : Dict {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+
+        Module (Lookup const& lu) : Dict (&lu) {}
+
+        auto attr (char const* name, Value&) const -> Value override {
+            return getAt(name);
+        }
+    };
 
     //CG3 type <function>
     struct Function : Object {
@@ -800,6 +858,48 @@ namespace monty {
         Bytecode const& bc;
         Tuple* pos;
         Dict* kw;
+    };
+
+    //CG3 type <boundmeth>
+    struct BoundMeth : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        BoundMeth (Callable const& f, Value o) : meth (f), self (o) {}
+
+        auto call (ArgVec const&) const -> Value override;
+
+        void marker () const override { meth.marker(); self.marker(); }
+    private:
+        Callable const& meth;
+        Value self;
+    };
+
+    //CG3 type <cell>
+    struct Cell : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Cell (Value v) : val (v) {}
+
+        void marker () const override { val.marker(); }
+
+        Value val;
+    };
+
+    //CG3 type <closure>
+    struct Closure : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer& buf) const -> Value override;
+
+        Closure (Callable const&, ArgVec const&);
+
+        auto call (ArgVec const&) const -> Value override;
+
+        void marker () const override { List::marker(); func.marker(); }
+    private:
+        Callable const& func;
     };
 
     //CG3 type <context>

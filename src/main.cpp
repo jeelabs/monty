@@ -1,7 +1,9 @@
 // This is for native use, see boot/core/devs for the layered embedded builds.
 
+#include <cassert>
 #include <cstdio>
 #include "monty.h"
+#include "pyvm.h"
 
 static uint8_t myMem [64*1024];
 

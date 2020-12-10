@@ -187,35 +187,44 @@ static auto e_UnicodeError (ArgVec const& args) -> Value {
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(177,"<object>"));
+Type const Object::info (Q(181,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-//XXX Type const Inst::info (Q(178,"<instance>"));
+//XXX Type const Inst::info (Q(182,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
-Type const     Callable::info (Q(167,"<callable>"));
-Type const      Context::info (Q(168,"<context>"));
-Type const     DictView::info (Q(169,"<dictview>"));
-Type const    Exception::info (Q(170,"<exception>"));
-Type const     Function::info (Q(171,"<function>"));
-Type const     Iterator::info (Q(172,"<iterator>"));
-Type const       Lookup::info (Q(173,"<lookup>"));
-Type const       Method::info (Q(174,"<method>"));
-Type const         None::info (Q(175,"<none>"));
+Type const    BoundMeth::info (Q(167,"<boundmeth>"));
+Type const     Callable::info (Q(168,"<callable>"));
+Type const         Cell::info (Q(169,"<cell>"));
+Type const      Closure::info (Q(170,"<closure>"));
+Type const      Context::info (Q(171,"<context>"));
+Type const     DictView::info (Q(172,"<dictview>"));
+Type const    Exception::info (Q(173,"<exception>"));
+Type const     Function::info (Q(174,"<function>"));
+Type const     Iterator::info (Q(175,"<iterator>"));
+Type const       Lookup::info (Q(176,"<lookup>"));
+Type const       Method::info (Q(177,"<method>"));
+Type const       Module::info (Q(  7,"<module>"));
+Type const         None::info (Q(178,"<none>"));
 
 Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
+Type const    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
 Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
 Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(176,"slice") ,  Slice::create, &Slice::attrs);
+Type const    Slice::info (Q(180,"slice") ,  Slice::create, &Slice::attrs);
 Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
+Type const    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
+auto    BoundMeth::type () const -> Type const& { return info; }
 auto     Callable::type () const -> Type const& { return info; }
+auto         Cell::type () const -> Type const& { return info; }
+auto      Closure::type () const -> Type const& { return info; }
 auto      Context::type () const -> Type const& { return info; }
 auto     DictView::type () const -> Type const& { return info; }
 auto    Exception::type () const -> Type const& { return info; }
@@ -223,9 +232,11 @@ auto     Function::type () const -> Type const& { return info; }
 auto     Iterator::type () const -> Type const& { return info; }
 auto       Lookup::type () const -> Type const& { return info; }
 auto       Method::type () const -> Type const& { return info; }
+auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
+auto        Class::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
 auto          Int::type () const -> Type const& { return info; }
 auto         List::type () const -> Type const& { return info; }
@@ -233,6 +244,7 @@ auto        Range::type () const -> Type const& { return info; }
 auto          Set::type () const -> Type const& { return info; }
 auto        Slice::type () const -> Type const& { return info; }
 auto          Str::type () const -> Type const& { return info; }
+auto        Super::type () const -> Type const& { return info; }
 auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
@@ -336,13 +348,15 @@ static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
+    { Q(179,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(176,"slice") , Slice::info },
+    { Q(180,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
+    { Q(154,"super") , Super::info },
     { Q(157,"tuple") , Tuple::info },
     { Q(158,"type")  , Type::info },
     //CG>
@@ -406,7 +420,7 @@ Lookup const    Slice::attrs {nullptr, 0};
 Lookup const    Tuple::attrs {nullptr, 0};
 Lookup const      Set::attrs {nullptr, 0};
 Lookup const     Type::attrs {nullptr, 0};
+Lookup const    Class::attrs {nullptr, 0};
+Lookup const    Super::attrs {nullptr, 0};
+Lookup const     Inst::attrs {nullptr, 0};
 //XXX Lookup const    Array::attrs {nullptr, 0};
-//XXX Lookup const    Class::attrs {nullptr, 0};
-//XXX Lookup const    Super::attrs {nullptr, 0};
-//XXX Lookup const     Inst::attrs {nullptr, 0};

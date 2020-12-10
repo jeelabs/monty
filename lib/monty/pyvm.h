@@ -7,7 +7,7 @@
 #define INNER_HOOK
 #endif
 
-namespace Monty {
+namespace monty {
 
 class PyVM : public Interp {
     enum Op : uint8_t {
@@ -414,7 +414,7 @@ class PyVM : public Interp {
     //CG1 op
     void opEndFinally () {
         context->excBase(-1);
-        if (sp->isNull())
+        if (sp->isNone())
             --sp;
         else if (!sp->isInt())
             opRaiseObj();
@@ -449,7 +449,7 @@ class PyVM : public Interp {
     }
     //CG1 op
     void opWithCleanup () {
-        assert(sp->isNull()); // TODO other cases
+        assert(sp->isNone()); // TODO other cases
         sp[1] = Null;
         sp[2] = Null;
         sp -= 2;
@@ -649,7 +649,7 @@ class PyVM : public Interp {
         Value mod = modules.at(arg);
         if (mod.isNil()) {
             // TODO move part of this code to Interp
-            auto base = fsLookup(arg);
+            auto base = nullptr;//XXX fsLookup(arg);
             assert(base != nullptr);
             auto init = loader(arg, base);
             assert(init != nullptr);
@@ -1095,7 +1095,7 @@ class PyVM : public Interp {
 
 public:
     PyVM (Callable const& init) {
-        auto ctx = new Monty::Context;
+        auto ctx = new Context;
         ctx->enter(init);
         ctx->frame().locals = &init.mo;
         tasks.append(ctx);
@@ -1131,4 +1131,4 @@ public:
     }
 };
 
-} // namespace Monty
+} // namespace monty
