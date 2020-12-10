@@ -91,7 +91,23 @@ namespace monty {
     struct Buffer;
     struct Type;
     struct Range;
-    struct Q;
+
+    extern char const qstrBase [];
+    extern int const qstrBaseLen;
+
+    struct Q {
+        constexpr Q (uint16_t i, char const* =nullptr) : id (i) {}
+
+        operator char const* () const { return str(id); }
+
+        static auto hash (void const*, uint32_t) -> uint32_t;
+        static auto str (uint16_t) -> char const*;
+        static auto find (char const*) -> uint16_t;
+        static auto make (char const*) -> uint16_t;
+        static auto last () -> uint16_t;
+
+        uint16_t id;
+    };
 
     // TODO keep in sync with exceptionMap in builtin.cpp, should be generated
     enum class E : uint8_t {
@@ -122,7 +138,7 @@ namespace monty {
 
         constexpr Value () : v (0) {}
         constexpr Value (int arg) : v (arg * 2 + 1) {}
-        constexpr Value (Q const& arg); //XXX : v (arg.id * 4 + 2) {}
+        constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
         constexpr Value (Object const& arg) : p (&arg) {}
@@ -317,7 +333,125 @@ namespace monty {
     auto Value::isFalse () const -> bool { return &obj() == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return &obj() == &Bool::trueObj; }
 
+    //CG< type int
+    struct Int : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        static auto make (int64_t i) -> Value;
+        static auto conv (char const* s) -> Value;
+
+        constexpr Int (int64_t v) : i64 (v) {}
+
+        operator int64_t () const { return i64; }
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+
+    private:
+        int64_t i64 __attribute__((packed));
+    }; // packing gives a better fit on 32b arch, and has no effect on 64b
+
 // see type.cpp - collection types and type system
+
+    using ByteVec = VecOf<uint8_t>;
+
+    //CG3 type <iterator>
+    struct Iterator : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        Iterator (Object& obj, int pos =-1) : ipos (pos), iobj (obj) {}
+
+        auto next() -> Value override;
+
+        void marker () const override { mark(iobj); }
+    private:
+        int ipos;
+        Object& iobj;
+    };
+
+    //CG< type range
+    struct Range : Object {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        auto len () const -> uint32_t override;
+        auto getAt (Value k) const -> Value override;
+        auto iter () const -> Value override { return 0; }
+
+        Range (int a, int b, int c) : from (a), to (b), by (c) {}
+
+        int32_t from, to, by;
+    };
+
+    //CG< type bytes
+    struct Bytes : Object, ByteVec {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        constexpr Bytes () {}
+        Bytes (void const*, uint32_t =0);
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+        auto len () const -> uint32_t override { return fill; }
+        auto getAt (Value k) const -> Value override;
+        auto iter () const -> Value override { return 0; }
+        auto copy (Range const&) const -> Value override;
+    };
+
+    //CG< type str
+    struct Str : Bytes {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+        Str (char const* s, int n =-1);
+
+        operator char const* () const { return (char const*) begin(); }
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+        auto getAt (Value k) const -> Value override;
+    };
+
+    struct VaryVec : private ByteVec {
+        constexpr VaryVec (void const* ptr =nullptr, uint32_t num =0)
+                    : ByteVec ((uint8_t const*) ptr, num) {}
+
+        using ByteVec::size;
+
+        auto first () const -> uint8_t const* { return begin(); }
+        auto limit () const -> uint8_t const* { return begin() + pos(fill); }
+
+        auto atGet (uint32_t i) const -> uint8_t* {
+            return begin() + pos(i);
+        }
+        auto atLen (uint32_t i) const -> uint32_t {
+            return pos(i+1) - pos(i);
+        }
+        void atAdj (uint32_t idx, uint32_t num);
+        void atSet (uint32_t i, void const* ptr, uint32_t num);
+
+        void insert (uint32_t idx, uint32_t num =1);
+        void remove (uint32_t idx, uint32_t num =1);
+    private:
+        auto pos (uint32_t i) const -> uint16_t& {
+            return ((uint16_t*) begin())[i];
+        }
+    };
 
     //CG3 type <lookup>
     struct Lookup : Object {
@@ -505,6 +639,22 @@ namespace monty {
     struct Module;
     struct Bytecode;
 
+    //CG3 type <function>
+    struct Function : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+        using Prim = auto (*)(ArgVec const&) -> Value;
+
+        constexpr Function (Prim f) : func (f) {}
+
+        auto call (ArgVec const& args) const -> Value override {
+            return func(args);
+        }
+
+    private:
+        Prim func;
+    };
+
     //CG3 type <callable>
     struct Callable : Object {
         static Type const info;
@@ -525,6 +675,26 @@ namespace monty {
         Bytecode const& bc;
         Tuple* pos;
         Dict* kw;
+    };
+
+    //CG3 type <exception>
+    struct Exception : Tuple {
+        static Type const info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+
+        struct Extra { E code; uint16_t ipOff; Callable const* callee; };
+        auto extra () const -> Extra& { return *(Extra*) end(); }
+
+        static auto create (E, ArgVec const&) -> Value; // diff API
+        static Lookup const bases; // this maps the derivation hierarchy
+        static auto findId (Function const&) -> int; // find in builtinsMap
+
+        void marker () const override;
+    private:
+        Exception (E exc, ArgVec const& args);
+
+        auto binop (BinOp, Value) const -> Value override;
     };
 
     //CG3 type <context>

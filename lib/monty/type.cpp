@@ -1,33 +1,232 @@
 // type.cpp - collection types and type system
 
 #include "monty.h"
-//#include "ops.h"
+#include "ops.h"
 #include <cassert>
 
 using namespace monty;
 
-Tuple::Tuple (ArgVec const& args) : fill (args.num) {
-    memcpy((Value*) data(), args.begin(), args.num * sizeof (Value));
+Tuple const Tuple::emptyObj;
+Value const monty::Empty {Tuple::emptyObj};
+
+auto Iterator::next() -> Value {
+    if (ipos < 0)
+        return iobj.next();
+    if (ipos >= (int) iobj.len())
+        return E::StopIteration;
+    // TODO duplicate code, see opForIter in pyvm.h
+    if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
+        return ((List&) iobj)[ipos++]; // avoid keyed access
+    return iobj.getAt(ipos++);
 }
 
-auto Tuple::getAt (Value k) const -> Value {
+auto Range::len () const -> uint32_t {
+    assert(by != 0);
+    auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
+    return n < 0 ? 0 : n;
+}
+
+auto Range::getAt (Value k) const -> Value {
+    return from + k * by;
+}
+
+auto Range::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args.num && args.num <= 3);
+    int a = args.num > 1 ? (int) args[0] : 0;
+    int b = args.num == 1 ? args[0] : args[1];
+    int c = args.num > 2 ? (int) args[2] : 1;
+    return new Range (a, b, c);
+}
+
+Bytes::Bytes (void const* ptr, uint32_t len) {
+    insert(0, len);
+    memcpy(begin(), ptr, len);
+}
+
+auto Bytes::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Boln: return Value::asBool(size());
+        case UnOp::Hash: return Q::hash(begin(), size());
+        default:         break;
+    }
+    return Object::unop(op);
+}
+
+auto Bytes::binop (BinOp op, Value rhs) const -> Value {
+    auto& val = rhs.asType<Bytes>();
+    assert(size() == val.size());
+    switch (op) {
+        case BinOp::Equal:
+            return Value::asBool(size() == val.size() &&
+                                    memcmp(begin(), val.begin(), size()) == 0);
+        default:
+            break;
+    }
+    return Object::binop(op, rhs);
+}
+
+auto Bytes::getAt (Value k) const -> Value {
     if (!k.isInt())
         return sliceGetter(k);
-    return data()[k];
+    return (*this)[k];
 }
 
-#if 0 //XXX
-auto Tuple::copy (Range const& r) const -> Value {
-    int n = r.len();
-    Vector avec; // TODO messy way to create tuple via sized vec with no data
-    avec.insert(0, n);
-    auto v = Tuple::create({avec, n, 0});
-    auto p = (Value*) (&v.asType<Tuple>() + 1);
-    for (int i = 0; i < n; ++i)
-        p[i] = getAt(r.getAt(i));
+auto Bytes::copy (Range const& r) const -> Value {
+    auto n = r.len();
+    auto v = new Bytes;
+    v->insert(0, n);
+    for (uint32_t i = 0; i < n; ++i)
+        (*v)[i] = (*this)[r.getAt(i)];
     return v;
 }
-#endif
+
+auto Bytes::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    Value v = args[0];
+    if (v.isInt()) {
+        auto o = new Bytes ();
+        o->insert(0, v);
+        return o;
+    }
+    const void* p = 0;
+    uint32_t n = 0;
+    if (v.isStr()) {
+        p = (char const*) v;
+        n = strlen((char const*) p);
+    } else {
+        auto ps = v.ifType<Str>();
+        auto pb = v.ifType<Bytes>();
+        if (ps != 0) {
+            p = (char const*) *ps;
+            n = strlen((char const*) p); // TODO
+        } else if (pb != 0) {
+            p = pb->begin();
+            n = pb->size();
+        } else
+            assert(false); // TODO iterables
+    }
+    return new Bytes (p, n);
+}
+
+Str::Str (char const* s, int n) {
+    assert(n >= 0 || s != nullptr);
+    if (n < 0)
+        n = strlen(s);
+    insert(0, n);
+    adj(n+1);
+    assert((int) cap() > n);
+    if (s != nullptr)
+        memcpy(begin(), s, n);
+    else
+        memset(begin(), 0, n);
+    begin()[n] = 0;
+}
+
+auto Str::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Int:  return Int::conv((char const*) begin());
+        default:         break;
+    }
+    return Bytes::unop(op);
+}
+
+auto Str::binop (BinOp op, Value rhs) const -> Value {
+    auto l = (char const*) begin();
+    char const* r = nullptr;
+    if (rhs.isStr())
+        r = rhs;
+    else {
+        auto o = rhs.ifType<Str>();
+        if (o != nullptr)
+            r = *o;
+    }
+    switch (op) {
+        case BinOp::Equal:
+            return Value::asBool(r != 0 && strcmp(l, r) == 0);
+        case BinOp::Add: {
+            assert(r != nullptr);
+            auto nl = strlen(l), nr = strlen(r);
+            auto o = new struct Str (nullptr, nl + nr);
+            memcpy((char*) o->begin(), l, nl);
+            memcpy((char*) o->begin() + nl, r, nr);
+            return o;
+        }
+        default:
+            break;
+    }
+    return Bytes::binop(op, rhs);
+}
+
+auto Str::getAt (Value k) const -> Value {
+    if (!k.isInt())
+        return sliceGetter(k);
+    int idx = k;
+    if (idx < 0)
+        idx += size();
+    return new Str ((char const*) begin() + idx, 1); // TODO utf-8
+}
+
+auto Str::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1 && args[0].isStr());
+    return new Str (args[0]);
+}
+
+void VaryVec::atAdj (uint32_t idx, uint32_t len) {
+    assert(idx < fill);
+    auto olen = atLen(idx);
+    if (len == olen)
+        return;
+    auto ofill = fill;
+    fill = pos(fill);
+    if (len > olen)
+        ByteVec::insert(pos(idx+1), len - olen);
+    else
+        ByteVec::remove(pos(idx) + len, olen - len);
+    fill = ofill;
+
+    for (uint32_t i = idx + 1; i <= fill; ++i)
+        pos(i) += len - olen;
+}
+
+void VaryVec::atSet (uint32_t idx, void const* ptr, uint32_t len) {
+    atAdj(idx, len);
+    memcpy(begin() + pos(idx), ptr, len);
+}
+
+void VaryVec::insert (uint32_t idx, uint32_t num) {
+    assert(idx <= fill);
+    if (cap() == 0) {
+        ByteVec::insert(0, 2);
+        pos(0) = 2;
+        fill = 0;
+    }
+
+    auto ofill = fill;
+    fill = pos(fill);
+    ByteVec::insert(2 * idx, 2 * num);
+    fill = ofill + num;
+
+    for (uint32_t i = 0; i <= fill; ++i)
+        pos(i) += 2 * num;
+    for (uint32_t i = 0; i < num; ++i)
+        pos(idx+i) = pos(idx+num);
+}
+
+void VaryVec::remove (uint32_t idx, uint32_t num) {
+    assert(idx + num <= fill);
+    auto diff = pos(idx+num) - pos(idx);
+
+    auto ofill = fill;
+    fill = pos(fill);
+    ByteVec::remove(pos(idx), diff);
+    ByteVec::remove(2 * idx, 2 * num);
+    fill = ofill - num;
+
+    for (uint32_t i = 0; i <= fill; ++i)
+        pos(i) -= 2 * num;
+    for (uint32_t i = idx; i <= fill; ++i)
+        pos(i) -= diff;
+}
 
 auto Lookup::operator[] (char const* key) const -> Value {
     for (uint32_t i = 0; i < count; ++i)
@@ -44,6 +243,27 @@ auto Lookup::getAt (Value k) const -> Value {
 void Lookup::marker () const {
     for (uint32_t i = 0; i < count; ++i)
         items[i].v.marker();
+}
+
+Tuple::Tuple (ArgVec const& args) : fill (args.num) {
+    memcpy((Value*) data(), args.begin(), args.num * sizeof (Value));
+}
+
+auto Tuple::getAt (Value k) const -> Value {
+    if (!k.isInt())
+        return sliceGetter(k);
+    return data()[k];
+}
+
+auto Tuple::copy (Range const& r) const -> Value {
+    int n = r.len();
+    Vector avec; // TODO messy way to create tuple via sized vec with no data
+    avec.insert(0, n);
+    auto v = Tuple::create({avec, n, 0});
+    auto p = (Value*) (&v.asType<Tuple>() + 1);
+    for (int i = 0; i < n; ++i)
+        p[i] = getAt(r.getAt(i));
+    return v;
 }
 
 void Tuple::marker () const {
@@ -93,7 +313,6 @@ auto List::setAt (Value k, Value v) -> Value {
     return (*this)[n] = v;
 }
 
-#if 0
 auto List::copy (Range const& r) const -> Value {
     auto n = r.len();
     auto v = new List;
@@ -115,7 +334,6 @@ auto List::store (Range const& r, Object const& v) -> Value {
         (*this)[r.getAt(i)] = v.getAt(i);
     return {};
 }
-#endif
 
 auto List::create (ArgVec const& args, Type const*) -> Value {
     return new List (args);
@@ -140,13 +358,11 @@ auto Set::Proxy::operator= (bool f) -> bool {
     return pos < n;
 }
 
-#if 0 //XXX
 auto Set::binop (BinOp op, Value rhs) const -> Value {
     if (op == BinOp::Contains)
         return Value::asBool(find(rhs) < size());
     return Object::binop(op, rhs);
 }
-#endif
 
 auto Set::getAt (Value k) const -> Value {
     assert(k.isInt());

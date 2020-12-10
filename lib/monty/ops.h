@@ -1,6 +1,6 @@
 // the opcodes and unary/binary operators, as emitted by MicroPython 1.13
 
-namespace Monty {
+namespace monty {
     enum UnOp : uint8_t {
         Pos, Neg, Inv, Not,
         Boln, Hash, Abs, Int,
@@ -47,4 +47,4 @@ namespace Monty {
         Contains,
     };
 
-} // namespace Monty
+} // namespace monty

@@ -11,7 +11,7 @@ def gen(c):
     """process source code with code generator"""
     c.run("util/codegen.py qstr.h lib/monty/ qstr.cpp")
 
-@task
+@task(gen)
 def native(c):
     """run a script using the native build"""
     c.run("pio run -e native -s")

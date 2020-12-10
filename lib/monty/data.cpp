@@ -1,7 +1,7 @@
-// type.cpp - basic object data types
+// data.cpp - basic object data types
 
 #include "monty.h"
-//#include "ops.h"
+#include "ops.h"
 #include <cassert>
 
 using namespace monty;
@@ -10,14 +10,11 @@ using namespace monty;
 None const None::nullObj;
 Bool const Bool::falseObj;
 Bool const Bool::trueObj;
-//Tuple const Tuple::emptyObj;
 
 Value const monty::Null  {None::nullObj};
 Value const monty::False {Bool::falseObj};
 Value const monty::True  {Bool::trueObj};
-//Value const monty::Empty {Tuple::emptyObj};
 
-#if 0
 constexpr int QID_RAM_BASE = 32*1024;
 constexpr int QID_RAM_LAST = 48*1024;
 
@@ -80,20 +77,18 @@ auto Q::make (char const* s) -> uint16_t {
     v.atSet(i, s, n+1);
     return i + QID_RAM_BASE;
 }
-#endif
 
 Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
     if (Vec::inPool(arg)) // don't store pointers into movable vector space
 #if 0
         *this = new struct Str (arg); // TODO should try Q::find first
 #else
-        ;//XXX v = Q::make(arg) * 4 + 2;
+        v = Q::make(arg) * 4 + 2;
 #endif
     else
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
-#if 0
 Value::Value (E exc, Value arg1, Value arg2) {
     Vector v;
     v.insert(0, 2);
@@ -103,9 +98,7 @@ Value::Value (E exc, Value arg1, Value arg2) {
     *this = Exception::create(exc, {v, nargs, 0});
     Interp::exception(*this);
 }
-#endif
 
-#if 0
 Value::operator char const* () const {
     if (!isStr())
         return asType<struct Str>();
@@ -114,13 +107,12 @@ Value::operator char const* () const {
         return Q::str(p);
     return (char const*) p;
 }
-#endif
 
 auto Value::asObj () const -> Object& {
     switch (tag()) {
         case Value::Nil: return (Object&) None::nullObj; // drop const
-        case Value::Int: break; //XXX return *new struct Int (*this);
-        case Value::Str: break; //XXX return *new struct Str (*this);
+        case Value::Int: return *new struct Int (*this);
+        case Value::Str: return *new struct Str (*this);
         case Value::Obj: break;
     }
     return obj();
@@ -129,7 +121,7 @@ auto Value::asObj () const -> Object& {
 auto Value::asInt () const -> int64_t {
     if (isInt())
         return (int) *this;
-    return 0; //XXX return asType<struct Int>();
+    return asType<struct Int>();
 }
 
 bool Value::truthy () const {
@@ -137,7 +129,7 @@ bool Value::truthy () const {
         case Value::Nil: break;
         case Value::Int: return (int) *this != 0;
         case Value::Str: return *(char const*) *this != 0;
-        case Value::Obj: break; //XXX return obj().unop(UnOp::Boln).isTrue();
+        case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
     }
     return false;
 }
@@ -150,12 +142,11 @@ auto Value::operator== (Value rhs) const -> bool {
             case Nil: // fall through
             case Int: return false;
             case Str: return strcmp(*this, rhs) == 0;
-            case Obj: break; //XXX return obj().binop(BinOp::Equal, rhs).truthy();
+            case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
     return false;
 }
 
-#if 0
 auto Value::unOp (UnOp op) const -> Value {
     switch (tag()) {
         case Int: {
@@ -257,7 +248,6 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
 
     return asObj().binop(op, rhs);
 }
-#endif
 
 auto Value::check (Type const& t) const -> bool {
     return isObj() && &obj().type() == &t;
@@ -267,70 +257,11 @@ void Value::verify (Type const& t) const {
     auto f = check(t);
     if (!f) {
         dump("verify?");
-        //XXX Value v = t;
-        //XXX v.dump(t.name);
+        Value v = t;
+        v.dump(t.name);
     }
     assert(f);
 }
-
-#if 0
-void VaryVec::atAdj (uint32_t idx, uint32_t len) {
-    assert(idx < fill);
-    auto olen = atLen(idx);
-    if (len == olen)
-        return;
-    auto ofill = fill;
-    fill = pos(fill);
-    if (len > olen)
-        ByteVec::insert(pos(idx+1), len - olen);
-    else
-        ByteVec::remove(pos(idx) + len, olen - len);
-    fill = ofill;
-
-    for (uint32_t i = idx + 1; i <= fill; ++i)
-        pos(i) += len - olen;
-}
-
-void VaryVec::atSet (uint32_t idx, void const* ptr, uint32_t len) {
-    atAdj(idx, len);
-    memcpy(begin() + pos(idx), ptr, len);
-}
-
-void VaryVec::insert (uint32_t idx, uint32_t num) {
-    assert(idx <= fill);
-    if (cap() == 0) {
-        ByteVec::insert(0, 2);
-        pos(0) = 2;
-        fill = 0;
-    }
-
-    auto ofill = fill;
-    fill = pos(fill);
-    ByteVec::insert(2 * idx, 2 * num);
-    fill = ofill + num;
-
-    for (uint32_t i = 0; i <= fill; ++i)
-        pos(i) += 2 * num;
-    for (uint32_t i = 0; i < num; ++i)
-        pos(idx+i) = pos(idx+num);
-}
-
-void VaryVec::remove (uint32_t idx, uint32_t num) {
-    assert(idx + num <= fill);
-    auto diff = pos(idx+num) - pos(idx);
-
-    auto ofill = fill;
-    fill = pos(fill);
-    ByteVec::remove(pos(idx), diff);
-    ByteVec::remove(2 * idx, 2 * num);
-    fill = ofill - num;
-
-    for (uint32_t i = 0; i <= fill; ++i)
-        pos(i) -= 2 * num;
-    for (uint32_t i = idx; i <= fill; ++i)
-        pos(i) -= diff;
-}
-#endif
 
 auto Object::call (ArgVec const&) const -> Value {
     Value v = this; v.dump("call?"); assert(false);
@@ -349,7 +280,7 @@ auto Object::binop (BinOp, Value) const -> Value {
 
 auto Object::attr (char const* name, Value& self) const -> Value {
     self = this;
-    (void) name; return {};//XXX return type().getAt(name);
+    return type().getAt(name);
 }
 
 auto Object::len () const -> uint32_t {
@@ -384,5 +315,103 @@ auto Object::copy (Range const&) const -> Value {
 
 auto Object::store (Range const&, Object const&) -> Value {
     assert(false);
+    return {};
+}
+
+auto Bool::unop (UnOp op) const -> Value {
+    switch (op) {
+        case UnOp::Not:  return Value::asBool(this != &trueObj);
+        case UnOp::Int:  // fall through
+        case UnOp::Hash: return this == &trueObj;
+        case UnOp::Boln: return *this;
+        default:         break;
+    }
+    return Object::unop(op);
+}
+
+auto Bool::create (ArgVec const& args, Type const*) -> Value {
+    if (args.num == 1)
+        return args[0].unOp(UnOp::Boln);
+    assert(args.num == 0);
+    return False;
+}
+
+auto Int::make (int64_t i) -> Value {
+    Value v = (int) i;
+    if ((int) v != i)
+        return new Int (i);
+    return v;
+}
+
+auto Int::conv (char const* s) -> Value {
+    return make(strtoll(s, nullptr, 10));
+}
+
+auto Int::unop (UnOp op) const -> Value {
+    // TODO use templates to share code with Value::unOp ?
+    switch (op) {
+        case UnOp::Int:  // fall through
+        case UnOp::Pos:  return *this;
+        case UnOp::Hash: return Q::hash(&i64, sizeof i64);
+        case UnOp::Abs:  if (i64 > 0) return *this; // else fall through
+        case UnOp::Neg:  return make(-i64);
+        case UnOp::Inv:  return make(~i64);
+        case UnOp::Not:  return Value::asBool(i64 == 0);
+        case UnOp::Boln: return Value::asBool(i64 != 0);
+    }
+    assert(false);
+    return {};
+}
+
+auto Int::binop (BinOp op, Value rhs) const -> Value {
+    // TODO use templates to share code with Value::binOp ?
+    auto r64 = rhs.asInt();
+    switch (op) {
+        case BinOp::Less:
+            return Value::asBool(i64 < r64);
+        case BinOp::Equal:
+            return Value::asBool(i64 == r64);
+        case BinOp::Or: case BinOp::InplaceOr:
+            return make(i64 | r64);
+        case BinOp::Xor: case BinOp::InplaceXor:
+            return make(i64 ^ r64);
+        case BinOp::And: case BinOp::InplaceAnd:
+            return make(i64 & r64);
+        case BinOp::Lshift: case BinOp::InplaceLshift:
+            return make(i64 << r64);
+        case BinOp::Rshift: case BinOp::InplaceRshift:
+            return make(i64 >> r64);
+        case BinOp::Add: case BinOp::InplaceAdd:
+            return make(i64 + r64);
+        case BinOp::Subtract: case BinOp::InplaceSubtract:
+            return make(i64 - r64);
+        case BinOp::Multiply: case BinOp::InplaceMultiply:
+            return make(i64 * r64);
+        case BinOp::TrueDivide: case BinOp::InplaceTrueDivide:
+            // TODO needs floats, fall through
+        case BinOp::InplaceFloorDivide: case BinOp::FloorDivide:
+            if (r64 == 0)
+                return E::ZeroDivisionError;
+            return i64 / r64;
+        case BinOp::InplaceModulo: case BinOp::Modulo:
+            if (r64 == 0)
+                return E::ZeroDivisionError;
+            return i64 % r64;
+        default:
+            break;
+    }
+    (void) rhs; assert(false);
+    return {}; // TODO
+}
+
+auto Int::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 1);
+    auto v = args[0];
+    switch (v.tag()) {
+        case Value::Nil: // fall through
+        case Value::Int: return v;
+        case Value::Str: return Int::conv(v);
+        case Value::Obj: return v.unOp(UnOp::Int);
+    }
     return {};
 }
