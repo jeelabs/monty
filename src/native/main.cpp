@@ -84,7 +84,7 @@ int main (int argc, const char* argv []) {
         //CG1 VERSION
         constexpr auto VERSION = Q(192,"v0.96");
 
-        printf("%s\n", (char const*) VERSION);
+        printf("Monty %s\n", (char const*) VERSION);
         return 0;
     }
 
