@@ -19,14 +19,14 @@ static void runInterp (monty::Callable& init) {
 }
 
 int main () {
+    setbuf(stdout, nullptr);
     puts("NATIVE hello!");
 
     monty::setup(myMem, sizeof myMem);
 
-    //extern auto loadModule (char const*) -> monty::Bytecode const&;
-    //monty::Callable dummy (loadModule("hello"));
     monty::Bytecode* bc = nullptr;
-    monty::Callable dummy (*bc);
+    auto mod = new monty::Module (monty::builtins);
+    monty::Callable dummy (*bc, mod);
     runInterp(dummy);
 
     monty::gcReport();

@@ -40,7 +40,8 @@ extern "C" void init () {
         //monty::gcReport();
 
         monty::Bytecode* bc = nullptr;
-        monty::Callable dummy (*bc);
+        auto mod = new monty::Module (monty::builtins);
+        monty::Callable dummy (*bc, mod);
         runInterp(dummy);
 
         printf("  core -> deregFun %p\n", hdr.deregFun);
