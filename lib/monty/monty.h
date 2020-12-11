@@ -843,19 +843,22 @@ namespace monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Callable (Value callee, Module* mod)
+        Callable (Bytecode const& callee, Module* mod)
                 : Callable (callee, nullptr, nullptr, mod) {}
-        Callable (Value callee, Value pos, Value kw)
+        Callable (Bytecode const& callee, Value pos, Value kw)
                 : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
-        Callable (Value, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
+        Callable (Bytecode const&, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
 
         auto call (ArgVec const&) const -> Value override;
+        auto getAt (Value) const -> Value override;
 
         void marker () const override;
 
+        auto funcAt (Value) const -> Bytecode const&; // variant of getAt
+
     // TODO private:
         Module& mo;
-        /*XXX Bytecode */ List const& bc;
+        Bytecode const& bc;
         Tuple* pos;
         Dict* kw;
     };
@@ -987,6 +990,30 @@ namespace monty {
         static Context* context;            // current context, if any
         static List tasks;                  // list of all tasks
         static Dict modules;                // loaded modules
+    };
+
+// see repr.cpp - repr, printing, and buffering
+
+    //CG3 type <buffer>
+    struct Buffer : Object {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        void putc (char v) { write((uint8_t const*) &v, 1); }
+        void puts (char const* s) { while (*s != 0) putc(*s++); }
+        void print (char const* fmt, ...);
+
+        auto operator<< (Value v) -> Buffer&;
+        auto operator<< (char c) -> Buffer& { putc(c); return *this; }
+        auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
+        auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
+
+    protected:
+        virtual void write (uint8_t const* ptr, uint32_t num) const;
+    private:
+        int splitInt (uint32_t val, int base, uint8_t* buf);
+        void putFiller (int n, char fill);
+        void putInt (int val, int base, int width, char fill);
     };
 
 // see builtin.cpp - exceptions and auto-generated built-in tables

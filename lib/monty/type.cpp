@@ -8,6 +8,11 @@ using namespace monty;
 Tuple const Tuple::emptyObj;
 Value const monty::Empty {Tuple::emptyObj};
 
+void monty::markVec (Vector const& vec) {
+    for (auto e : vec)
+        e.marker();
+}
+
 auto Iterator::next() -> Value {
     if (ipos < 0)
         return iobj.next();
@@ -506,7 +511,7 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
         chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(183,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(184,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 

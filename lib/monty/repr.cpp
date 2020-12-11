@@ -4,7 +4,7 @@
 #include <cassert>
 #include <cstdarg>
 
-using namespace Monty;
+using namespace monty;
 
 // non-recursive version for debugging, does not affect the VM state
 void Value::dump (char const* msg) const {
@@ -157,6 +157,7 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
+#if 0 //XXX
 Value Array::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable
     auto m = mode();
@@ -177,6 +178,7 @@ Value Array::repr (Buffer& buf) const {
         buf.print("%02x", p[i]);
     return {};
 }
+#endif
 
 Value Bool::repr (Buffer& buf) const {
     buf << (this == &falseObj ? "false" : "true");

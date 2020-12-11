@@ -59,6 +59,31 @@ void Callable::marker () const {
     mark(kw);
 }
 
+auto BoundMeth::call (ArgVec const& args) const -> Value {
+    assert(args.num > 0 && this == &args[-1].obj());
+    args[-1] = self; // overwrites the entry before first arg
+    return meth.call({args.vec, (int) args.num + 1, (int) args.off - 1});
+}
+
+Closure::Closure (Callable const& f, ArgVec const& args)
+        : func (f) {
+    insert(0, args.num);
+    for (int i = 0; i < args.num; ++i)
+        begin()[i] = args[i];
+}
+
+auto Closure::call (ArgVec const& args) const -> Value {
+    int n = size();
+    assert(n > 0);
+    Vector v;
+    v.insert(0, n + args.num);
+    for (int i = 0; i < n; ++i)
+        v[i] = begin()[i];
+    for (int i = 0; i < args.num; ++i)
+        v[n+i] = args[i];
+    return func.call({v, n + args.num});
+}
+
 void Context::enter (Callable const& func) {
     auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
 assert(false);
@@ -111,15 +136,13 @@ Value Context::leave (Value v) {
     return r;
 }
 
-#if 0 //XXX
 auto Context::excBase (int incr) -> Value* {
     uint32_t ep = frame().ep;
     frame().ep = ep + incr;
     if (incr <= 0)
         --ep;
-    return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
+    return nullptr;//XXX frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
 }
-#endif
 
 void Context::raise (Value exc) {
     if (Interp::context == nullptr) {

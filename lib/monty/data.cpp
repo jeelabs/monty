@@ -317,6 +317,23 @@ auto Object::store (Range const&, Object const&) -> Value {
     return {};
 }
 
+auto Object::sliceGetter (Value k) const -> Value {
+    auto ks = k.ifType<Slice>();
+    if (ks == nullptr)
+        return {E::TypeError, "index not int or slice", k};
+    return copy(ks->asRange(len()));
+}
+
+auto Object::sliceSetter (Value k, Value v) -> Value {
+    auto ks = k.ifType<Slice>();
+    if (ks == nullptr)
+        return {E::TypeError, "index not int or slice", k};
+    auto r = ks->asRange(len());
+    if (r.by != 1)
+        return {E::NotImplementedError, "assign to extended slice", k};
+    return store(r, v.asObj());
+}
+
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Not:  return Value::asBool(this != &trueObj);
