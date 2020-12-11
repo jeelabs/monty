@@ -1,10 +1,23 @@
 // Core layer, launched from the boot layer. Needs a non-std linker script.
 // After some initialisations, init will locate and register the devs layer.
 
+#include <cassert>
 #include "monty.h"
+#include "pyvm.h"
 #include "layer.h"
 
 using namespace monty;
+
+static void runInterp (monty::Callable& init) {
+    monty::PyVM vm (init);
+
+    printf("Running ...\n");
+    while (vm.isAlive()) {
+        vm.scheduler();
+        //XXX archIdle();
+    }
+    printf("Stopped.\n");
+}
 
 extern "C" void init () {
     printf("hello from %s\n", "core");
@@ -20,19 +33,15 @@ extern "C" void init () {
         printf("  gc pool %p..%p\n", hdr.ramEnd, stackBottom);
 
         monty::setup(hdr.ramEnd, stackBottom - hdr.ramEnd);
-        monty::gcReport();
+        //monty::gcReport();
 
-        {
-            Vec vec;
-            printf("  vec %p ok %d ptr %p\n", &vec, vec.adj(100), vec.ptr());
+        printf("  core -> regFun %p\n", hdr.regFun);
+        hdr.regFun();
+        //monty::gcReport();
 
-            monty::gcReport();
-
-            printf("  core -> regFun %p\n", hdr.regFun);
-            hdr.regFun();
-
-            monty::gcReport();
-        }
+        monty::Bytecode* bc = nullptr;
+        monty::Callable dummy (*bc);
+        runInterp(dummy);
 
         printf("  core -> deregFun %p\n", hdr.deregFun);
         hdr.deregFun();

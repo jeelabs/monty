@@ -10,12 +10,12 @@ static uint8_t myMem [64*1024];
 static void runInterp (monty::Callable& init) {
     monty::PyVM vm (init);
 
+    printf("Running ...\n");
     while (vm.isAlive()) {
         vm.scheduler();
         //XXX archIdle();
     }
-
-    // nothing left to do or wait for, at this point
+    printf("Stopped.\n");
 }
 
 int main () {
@@ -23,8 +23,10 @@ int main () {
 
     monty::setup(myMem, sizeof myMem);
 
-    extern auto loadModule (char const*) -> monty::Bytecode const&;
-    monty::Callable dummy (loadModule("hello"));
+    //extern auto loadModule (char const*) -> monty::Bytecode const&;
+    //monty::Callable dummy (loadModule("hello"));
+    monty::Bytecode* bc = nullptr;
+    monty::Callable dummy (*bc);
     runInterp(dummy);
 
     monty::gcReport();

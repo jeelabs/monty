@@ -11,12 +11,12 @@ List              Interp::tasks;
 Dict              Interp::modules;
 Context*          Interp::context;
 
-#if 0
-Callable::Callable (Value callee, Tuple* t, Dict* d, Module* mod)
+Callable::Callable (Bytecode const& callee, Tuple* t, Dict* d, Module* mod)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
-          bc (callee.asType<Bytecode>()), pos (t), kw (d) {
+          bc (callee), pos (t), kw (d) {
 }
 
+#if 0
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = Interp::context;
     auto coro = bc.isGenerator();
@@ -48,7 +48,17 @@ auto Callable::call (ArgVec const& args) const -> Value {
 
     return coro ? ctx : Value {};
 }
+#else
+auto Callable::call (ArgVec const&) const -> Value {
+    assert(false);
+    return {};
+}
 #endif
+
+auto Callable::getAt (Value) const -> Value {
+    assert(false);
+    return {};
+}
 
 void Callable::marker () const {
 #if 0 //XXX

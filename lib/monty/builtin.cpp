@@ -190,7 +190,7 @@ static Function const f_UnicodeError (e_UnicodeError);
 Type const Object::info (Q(182,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-//XXX Type const Inst::info (Q(183,"<instance>"));
+Type const Inst::info (Q(183,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
 Type const    BoundMeth::info (Q(167,"<boundmeth>"));
@@ -251,7 +251,6 @@ auto        Tuple::type () const -> Type const& { return info; }
 auto         Type::type () const -> Type const& { return info; }
 //CG>
 
-#if 0 //XXX
 static auto bi_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
     for (int i = 0; i < args.num; ++i) {
@@ -275,12 +274,8 @@ static auto bi_print (ArgVec const& args) -> Value {
             buf << v;
     }
     buf.putc('\n');
-}
-#else
-static auto bi_print (ArgVec const&) -> Value {
     return {};
 }
-#endif
 
 static Function const f_print (bi_print);
 
@@ -425,4 +420,3 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const    Super::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
-//XXX Lookup const    Array::attrs {nullptr, 0};

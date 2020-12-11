@@ -855,6 +855,8 @@ namespace monty {
         void marker () const override;
 
         auto funcAt (Value) const -> Bytecode const&; // variant of getAt
+        auto start () const -> uint8_t const*;
+        auto fastSlotTop () const -> uint32_t;
 
     // TODO private:
         Module& mo;
@@ -933,14 +935,14 @@ namespace monty {
         auto leave (Value v ={}) -> Value;
 
         auto spBase () const -> Value* { return frame().stack; }
-        auto ipBase () const -> uint8_t const*; //XXX { return callee->bc.start(); }
+        auto ipBase () const -> uint8_t const* { return callee->start(); }
 
-        auto fastSlot (uint32_t i) const -> Value&; /*XXX {
-            return spBase()[callee->bc.fastSlotTop() + ~i];
-        }*/
-        auto derefSlot (uint32_t i) const -> Value&; /*XXX {
+        auto fastSlot (uint32_t i) const -> Value& {
+            return spBase()[callee->fastSlotTop() + ~i];
+        }
+        auto derefSlot (uint32_t i) const -> Value& {
             return fastSlot(i).asType<Cell>().val;
-        }*/
+        }
 
         static constexpr int EXC_STEP = 3; // use 3 entries per exception
         auto excBase (int incr =0) -> Value*;

@@ -51,7 +51,7 @@ def mrfs(c):
     """generate the Minimal Replaceable File Storage image"""
     c.run("util/mrfs.py -o rom.mrfs valid/*.py")
 
-@task(mrfs)
+@task(zero, mrfs)
 def final(c):
     """merge all layers + MRFS into a monty.bin image"""
     buildLayers(c)

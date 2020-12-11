@@ -157,29 +157,6 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
-#if 0 //XXX
-Value Array::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
-    auto m = mode();
-    auto n = len();
-    buf.print("%d%c", n, m);
-    switch (m) {
-        case 'q':                               n <<= 1; // fall through
-        case 'l': case 'L':                     n <<= 1; // fall through
-        case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
-        case 'b': case 'B':                     break;
-        case 'P':                               n >>= 1; // fall through
-        case 'T':                               n >>= 1; // fall through
-        case 'N':                               n >>= 1; break;
-        case 'v': case 'V': n = ((uint16_t const*) begin())[len()]; break;
-    }
-    auto p = (uint8_t const*) begin();
-    for (uint32_t i = 0; i < n; ++i)
-        buf.print("%02x", p[i]);
-    return {};
-}
-#endif
-
 Value Bool::repr (Buffer& buf) const {
     buf << (this == &falseObj ? "false" : "true");
     return {};
