@@ -78,6 +78,16 @@ static auto mpy2mty (char const* fn) -> char const* {
 }
 
 int main (int argc, const char* argv []) {
+    // display current version
+    if (argc == 2 && strcmp(argv[1], "-v") == 0) {
+        using Monty::Q;
+        //CG1 VERSION
+        constexpr auto VERSION = Q(192,"v0.96");
+
+        printf("%s\n", (char const*) VERSION);
+        return 0;
+    }
+
     archInit();
 
     // the loader uses garbage-collected memory
