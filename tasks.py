@@ -83,6 +83,7 @@ def health(c):
     c.run("pio --version")
     c.run("mpy-cross --version")
     #c.run("which micropython || echo NOT FOUND: micropython")
+    c.run("monty-conv -v")
 
 @task
 def info(c):
