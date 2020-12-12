@@ -95,7 +95,8 @@ $ .pio/build/native/program -v
 Monty v0.96-2
 ```
 
-For Monty, it needs to be found in the exec search PATH. On my setup, the following will accomplish this - modify as needed:
+For Monty, it needs to be found in the exec search PATH. Perhaps using something
+like this - modify as needed:
 
 ```text
 cd $HOME/bin
