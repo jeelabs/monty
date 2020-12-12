@@ -136,4 +136,4 @@ Monty v0.96-2
 
 For a first build on MacOS or Linux, you can now try to run `inv native`.  With an attached Nucleo-L432, try `inv utest`, which will upload and run some tests.
 
-To build a firmware image, use `inv final`. the `monty.bin` file can then be uploaded to the Nucleo-L432 by dragging it to its USD drive, or `cp monty.bin /Volumes/NODE-L432/` (Mac), or `cp monty.bin /media/...` (Linux).
+To build a firmware image, use `inv final`. the `monty.bin` file can then be uploaded to the Nucleo-L432 by dragging it to its USD drive, or `cp monty.bin /Volumes/NODE_L432KC/` (Mac), or `cp monty.bin /media/...` (Linux).
