@@ -38,7 +38,7 @@ The following structure is currently suggested for Monty development:
 
 This can probably be simplified and generalised later.
 
-## Month dev branch
+## Monty dev branch
 
 All this takes is the usual `git clone`, but be sure to switch to the `dev` branch:
 
