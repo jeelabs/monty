@@ -353,13 +353,20 @@ def processLines(lines):
             except:
                 print('unknown tag:', tag)
                 return
-            args, kwargs = parseArgs(params)
-            replacement = handler(block, *args, **kwargs)
-            if replacement is not None:
-                block = replacement
 
             n = line.find('//CG')
             prefix = line[:n]
+
+            args, kwargs = parseArgs(params)
+            try:
+                replacement = handler(block, *args, **kwargs)
+            except FileNotFoundError:
+                replacement = None
+                print('not found, keep as is:', args[0])
+            if replacement is None:
+                prefix = ''
+            else:
+                block = replacement
 
             if len(block) > 3:
                 head = '//CG<'
@@ -371,11 +378,11 @@ def processLines(lines):
             if comment:
                 out += ' # ' + comment[0].strip()
 
-            result.append(prefix + out)
+            result.append(line[:n] + out)
             for s in block:
                 result.append(prefix + s)
             if head == '//CG<':
-                result.append(prefix + '//CG>')
+                result.append(line[:n] + '//CG>')
 
     # perform in-line qstr lookup and replacement
     def qfix(m):
