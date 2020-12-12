@@ -109,13 +109,13 @@ If all is well, `cd; monty-conv` will generate a "can't compile" error message.
 
 [JeeH][JHL] is a lightweight wrapper for accessing hardware peripherals, on STM32, ESP's, and other platforms. It is used by Monty for basic SysTick, GPIO, UART, and Flash access on STM32. JeeH could be replaced with functions from STM32Cube, libopencm3, or Arduino - JeeH just happens to be efficient and concise for C++ use.
 
-The separate `pio/jeeh/` area is only necessary if you want to use a newer version of JeeH than is currently registered in the [PIO Library index][PLX]. Note that this copy will be only used by PIO if the following setting is also in your environment:
+The separate `pio/jeeh/` area is only necessary if you want to use a newer version of JeeH than is currently registered in the [PIO Library index][PLX]. Note that this copy will only be used by PIO if the following setting is also in your environment:
 
 `declare -x PLATFORMIO_LIB_EXTRA_DIRS="$HOME/path/to/pio"`
 
 Adjust as needed (the variable must point to JeeH's _parent_ directory).
 
-If JeeH is not present, PIO will automatically fetch and use the last registered version.
+If JeeH is not present, PIO will fetch and use the last registered version. This is _usually_ good enough.
 
 [JHL]: https://git.jeelabs.org/jcw/jeeh
 [PLX]: https://platformio.org/lib/show/3082/JeeH
