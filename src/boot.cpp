@@ -17,18 +17,26 @@ int printf(const char* fmt, ...) {
 extern "C" int puts (char const* s) { return printf("%s\n", s); }
 extern "C" int putchar (int ch) { return printf("%c", ch); }
 
-extern "C" void __assert_func (char const* f, int l, char const* n, char const* e) {
-    printf("\nassert(%s) in %s\n\t%s:%d\n", e, n, f, l);
+void systemReset () {
+    // ARM Cortex specific
+    MMIO32(0xE000ED0C) = (0x5FA<<16) | (1<<2); // SCB AIRCR reset
     while (true) {}
-}
-
-extern "C" void __assert (char const* f, int l, char const* e) {
-    __assert_func(f, l, "-", e);
 }
 
 extern "C" void abort () {
     printf("\nabort\n");
+    wait_ms(5000);
+    systemReset();
     while (true) {}
+}
+
+extern "C" void __assert_func (char const* f, int l, char const* n, char const* e) {
+    printf("\nassert(%s) in %s\n\t%s:%d\n", e, n, f, l);
+    abort();
+}
+
+extern "C" void __assert (char const* f, int l, char const* e) {
+    __assert_func(f, l, "-", e);
 }
 
 PinB<3> led;
