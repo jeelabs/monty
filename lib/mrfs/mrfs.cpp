@@ -18,7 +18,7 @@ namespace mrfs {
 #include <unistd.h>
 #include <sys/mman.h>
 
-auto mapFlashToFile (char const* name, size_t size) -> void* {
+static auto mapFlashToFile (char const* name, size_t size) -> void* {
     auto fd = open(name, O_CREAT|O_RDWR, 0666); assert(fd > 0);
     auto e = ftruncate(fd, size); assert(e == 0);
     auto ptr = mmap(nullptr, size, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
@@ -27,7 +27,7 @@ auto mapFlashToFile (char const* name, size_t size) -> void* {
     return ptr;
 }
 
-void add (int ac, char const** av) {
+static void add (int ac, char const** av) {
     assert(ac == 4);
     char const* name = av[0];
     uint32_t time = strtoul(av[1], 0, 10);
@@ -46,7 +46,7 @@ void add (int ac, char const** av) {
     free(buf);
 }
 
-void find (int ac, char const** av) {
+static void find (int ac, char const** av) {
     assert(ac == 1);
     printf("%d\n", mrfs::find(av[0]));
 }
