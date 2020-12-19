@@ -99,7 +99,7 @@ int main () {
 
     // STM32L432-specific
     //mrfs::init((void*) 0x08000000, 256*1024, 10*1024); // romend 0x2800
-    mrfs::init((void*) 0x08000000, 256*1024, 36*1024); // romend 0x2800
+    mrfs::init((void*) 0x08000000, 256*1024, 44*1024); // romend 0xB000
     mrfs::dump();
     auto pos = mrfs::find("hello");
     printf("hello @ %d\n", pos);
