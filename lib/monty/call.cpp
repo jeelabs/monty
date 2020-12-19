@@ -69,6 +69,22 @@ void Callable::marker () const {
     mark(kw);
 }
 
+auto Callable::funcAt (Value arg) const -> Bytecode const& {
+    assert(false); //XXX needs access to bytecode
+    Bytecode* p = nullptr;
+    return *p;
+}
+
+auto Callable::start () const -> uint8_t const* {
+    assert(false); //XXX needs access to bytecode
+    return nullptr;
+}
+
+auto Callable::fastSlotTop () const -> uint32_t {
+    assert(false); //XXX needs access to bytecode
+    return 0;
+}
+
 auto BoundMeth::call (ArgVec const& args) const -> Value {
     assert(args.num > 0 && this == &args[-1].obj());
     args[-1] = self; // overwrites the entry before first arg

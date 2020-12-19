@@ -1085,6 +1085,8 @@ class PyVM : public Interp {
                 if (!v.isNil())
                     r->done(v);
             }
+#else
+            inner();
 #endif
 
             if (gcCheck()) {
