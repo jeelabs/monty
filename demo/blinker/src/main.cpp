@@ -27,8 +27,8 @@ void onOff (int n, bool f) {
 // at the end of the ready queue until the time limit has been reached
 
 void delay_ms (uint16_t ms) {
-    auto limit = ticks + ms;
-    while (ticks < limit) {
+    auto now = ticks;
+    while (ticks - now < ms) {
         ready.append(Stacklet::current);
         Stacklet::suspend();
     }
