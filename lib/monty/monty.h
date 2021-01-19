@@ -251,6 +251,8 @@ namespace monty {
 
     template< typename T >
     struct VecOf : private Vec {
+        uint32_t fill = 0;
+
         constexpr VecOf () {}
         constexpr VecOf (T const* ptr, uint32_t num =0)
                     : Vec (ptr, num * sizeof (T)), fill (num) {}
@@ -299,7 +301,27 @@ namespace monty {
             fill -= num;
         }
 
-        uint32_t fill = 0;
+        auto find (T v) -> uint32_t {
+            for (auto& e : *this)
+                if (e == v)
+                    return &e - begin();
+            return fill;
+        }
+
+        auto append (T v) -> uint32_t {
+            auto n = fill;
+            insert(n);
+            begin()[n] = v;
+            return n;
+        }
+
+        auto pull (uint32_t idx) -> T {
+            if (idx >= fill)
+                return {};
+            T v = begin()[idx];
+            remove(idx);
+            return v;
+        }
     };
 
     using Vector = VecOf<Value>;
@@ -737,6 +759,49 @@ namespace monty {
 
     private:
         Inst (ArgVec const& args, Class const& cls);
+    };
+
+// see stack.cpp - events and stacklets
+
+    extern Vector stacklets;
+    extern Vector ready;
+
+    //CG3 type <event>
+    struct Event : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        operator bool () const { return value; }
+        void set ();
+        void clear () { value = false; }
+        void wait ();
+    private:
+        bool value = false;
+    };
+
+    //CG3 type <stacklet>
+    struct Stacklet : List {
+        static Type const info;
+        auto type () const -> Type const& override;
+
+        uint16_t ms = 0;
+        int8_t sema = -1;
+
+        Stacklet ();
+        ~Stacklet () override;
+
+        auto id () -> uint16_t { return stacklets.find(this); }
+
+        static void suspend ();
+        void resume ();
+
+        virtual auto run () -> bool =0;
+
+        static void dump ();
+
+        static Stacklet* current;
+        static void* resumer;
+        static volatile uint32_t pending;
     };
 
 // see call.cpp - functions, methods, contexts, and interpreter state
