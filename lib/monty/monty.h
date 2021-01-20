@@ -792,8 +792,8 @@ namespace monty {
 
         auto id () -> uint16_t { return stacklets.find(this); }
 
-        static void suspend ();
-        void resume ();
+        static void suspend (Vector&);
+        static void resume ();
 
         virtual auto run () -> bool =0;
 

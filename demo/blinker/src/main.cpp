@@ -23,17 +23,15 @@ void onOff (int n, bool f) {
     }
 }
 
-// Silly delay mechanism: keep putting ourselves (the current stacklet)
-// at the end of the ready queue until the time limit has been reached.
-// This also works outside stacklets, by falling back to a busy wait.
+// Simple delay via polling: add the current stacklet (i.e. ourselves)
+// to the end of the ready queue until requested time delay has passed.
+// This also works outside stacklets (by falling back to a busy wait).
 
-void delay_ms (uint16_t ms) {
+void delay_ms (uint32_t ms) {
     auto now = ticks;
     while (ticks - now < ms)
-        if (Stacklet::current != nullptr) {
-            ready.append(Stacklet::current);
-            Stacklet::suspend();
-        }
+        if (Stacklet::current != nullptr)
+            Stacklet::suspend(ready);
 }
 
 struct Toggler : Stacklet {
@@ -52,7 +50,7 @@ struct Toggler : Stacklet {
 
 char mem [10000];
 
-int main() {
+int main () {
     enableSysTick();
     led.mode(Pinmode::out);
     Port<'A'>::modeMap(0b1111011, Pinmode::out);
@@ -65,5 +63,5 @@ int main() {
 
     // minimal loop to keep stacklets going
     while (ready.size() > 0)
-        ready.pull(0).asType<Stacklet>().resume();
+        Stacklet::resume();
 }

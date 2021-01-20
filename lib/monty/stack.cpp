@@ -26,8 +26,7 @@ void Event::wait () {
     if (value)
         return;
     assert(Stacklet::current != nullptr);
-    append(Stacklet::current);
-    Stacklet::suspend();
+    Stacklet::suspend(*this);
 }
 
 Stacklet::Stacklet () {
@@ -52,8 +51,10 @@ void resumeFixer (void* p) {
     memcpy(p, (uint8_t*) Stacklet::current->end(), need);
 }
 
-void Stacklet::suspend () {
+void Stacklet::suspend (Vector& queue) {
     assert(current != nullptr);
+    queue.append(current);
+
     jmp_buf top;
     assert(resumer > &top);
 
@@ -74,18 +75,20 @@ void Stacklet::suspend () {
 }
 
 void Stacklet::resume () {
+    current = &ready.pull(0).asType<Stacklet>();
+
     jmp_buf bottom;
     if (resumer == nullptr)
         resumer = &bottom;
     assert(resumer == &bottom);
 
-    current = this;
     if (setjmp(bottom) == 0) {
-        if (cap() > fill)
-            longjmp(*(jmp_buf*) end(), 1);
-        while (run()) {}
-        adj(fill);
+        if (current->cap() > current->fill)
+            longjmp(*(jmp_buf*) current->end(), 1);
+        while (current->run()) {}
+        current->adj(current->fill);
     }
+
     current = nullptr;
 }
 
