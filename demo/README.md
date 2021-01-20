@@ -1,3 +1,3 @@
-| Name | Platform(s) | Description |
-|---|---|---|
-| blinker | stm32 | blink multiple LEDs using stacklets |
+| Name | Platform(s) | Description | Status |
+|---|:---:|---|---|
+| blinker | stm32 | blink multiple LEDs using stacklets | √ |
