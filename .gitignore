@@ -5,4 +5,5 @@
 /rom.mrfs
 /syms-*.ld
 
+.DS_Store
 *.mpy
