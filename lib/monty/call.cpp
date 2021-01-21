@@ -69,7 +69,7 @@ void Callable::marker () const {
     mark(kw);
 }
 
-auto Callable::funcAt (Value arg) const -> Bytecode const& {
+auto Callable::funcAt (Value) const -> Bytecode const& {
     assert(false); //XXX needs access to bytecode
     Bytecode* p = nullptr;
     return *p;

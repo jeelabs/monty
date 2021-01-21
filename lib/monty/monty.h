@@ -764,12 +764,20 @@ namespace monty {
 // see stack.cpp - events and stacklets
 
     extern Vector stacklets;
+    extern Vector handlers;
     extern Vector ready;
 
     //CG3 type <event>
     struct Event : List {
         static Type const info;
         auto type () const -> Type const& override;
+
+        ~Event () override { deregHandler(); }
+
+        auto id () -> uint32_t { return handlers.find(this); }
+
+        auto regHandler () -> uint32_t;
+        void deregHandler ();
 
         operator bool () const { return value; }
         void set ();
@@ -790,7 +798,7 @@ namespace monty {
         Stacklet ();
         ~Stacklet () override;
 
-        auto id () -> uint16_t { return stacklets.find(this); }
+        auto id () -> uint32_t { return stacklets.find(this); }
 
         static void suspend (Vector&);
         static auto runLoop () -> bool;

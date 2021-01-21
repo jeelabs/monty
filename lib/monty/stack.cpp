@@ -9,8 +9,24 @@ using namespace monty;
 Stacklet* Stacklet::current;
 void* Stacklet::resumer;
 uint32_t volatile Stacklet::pending;
+
 Vector monty::stacklets;
+Vector monty::handlers;
 Vector monty::ready;
+
+auto Event::regHandler () -> uint32_t {
+    auto n = handlers.find({});
+    if (n >= handlers.size())
+        handlers.insert(n);
+    handlers[n] = this;
+    return n;
+}
+
+void Event::deregHandler () {
+    auto n = id();
+    if (n >= 0)
+        handlers[n] = {};
+}
 
 void Event::set () {
     value = true;
@@ -60,6 +76,7 @@ static void duff (uint32_t* to, uint32_t const* from, size_t count) {
 }
 
 // note: don't make this static, as then it might get inlined - see below
+// TODO not sure this is still needed, it might have been an adj/cap-check bug
 void resumeFixer (void* p) {
     assert(Stacklet::resumer != nullptr);
     assert(Stacklet::current != nullptr);
@@ -104,17 +121,38 @@ auto Stacklet::runLoop () -> bool {
         resumer = &bottom;
     assert(resumer == &bottom); // make sure stack is always in same place
 
-    setjmp(bottom);
+    setjmp(bottom); // suspend will always return here
 
-    while (ready.size() > 0) {
+    while (true) {
+        auto flags = checkPending();
+        for (uint32_t i = 0; flags != 0 && i < handlers.size(); ++i) {
+            auto bit = 1<< i;
+            if (flags & bit) {
+                if (!handlers[i].isNil())
+                    ready.append(handlers[i]);
+                flags &= ~bit;
+            }
+        }
+
+        if (ready.size() == 0)
+            break;
+
         current = &ready.pull(0).asType<Stacklet>();
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
+
+        // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
         current->adj(current->fill);
     }
 
-    return true; // TODO only while there is still a registered event handler
+    // return true if there is still at least one active interrupt handler
+    for (auto e : handlers)
+        if (!e.isNil())
+            return true;
+
+    handlers.adj(0); // there are none, might as well clean up
+    return false;
 }
 
 void Stacklet::dump () {
