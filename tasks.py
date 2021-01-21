@@ -30,7 +30,7 @@ def utest(c):
 @task
 def boot(c):
     """build and upload the BOOT, CORE, and DEVS layers"""
-    c.run("pio run -e boot -t upload -s")
+    c.run("pio run -s")
 
 @task
 def mrfs(c):
