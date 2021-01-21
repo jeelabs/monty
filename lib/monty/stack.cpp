@@ -98,23 +98,23 @@ void Stacklet::suspend (Vector& queue) {
     resumeFixer(&top);
 }
 
-void Stacklet::resume () {
-    current = &ready.pull(0).asType<Stacklet>();
-
+auto Stacklet::runLoop () -> bool {
     jmp_buf bottom;
     if (resumer == nullptr)
         resumer = &bottom;
-    assert(resumer == &bottom);
+    assert(resumer == &bottom); // make sure stack is always in same place
 
-    if (setjmp(bottom) == 0) {
-        // FIXME this check will fail if cap is rounded up after an adj call
-        if (current->cap() > current->fill)
+    setjmp(bottom);
+
+    while (ready.size() > 0) {
+        current = &ready.pull(0).asType<Stacklet>();
+        if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
         while (current->run()) {}
         current->adj(current->fill);
     }
 
-    current = nullptr;
+    return true; // TODO only while there is still a registered event handler
 }
 
 void Stacklet::dump () {

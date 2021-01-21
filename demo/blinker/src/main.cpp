@@ -62,6 +62,5 @@ int main () {
         new Toggler (i);
 
     // minimal loop to keep stacklets going
-    while (ready.size() > 0)
-        Stacklet::resume();
+    while (Stacklet::runLoop()) {}
 }

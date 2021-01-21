@@ -21,6 +21,6 @@ int main () {
     setup(mem, sizeof mem); // set up GC memory pool
 
     Switcher s;
-    while (ready.size() > 0)
-        Stacklet::resume();
+
+    while (Stacklet::runLoop()) {}
 }

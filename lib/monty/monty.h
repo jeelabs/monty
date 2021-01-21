@@ -793,15 +793,24 @@ namespace monty {
         auto id () -> uint16_t { return stacklets.find(this); }
 
         static void suspend (Vector&);
-        static void resume ();
+        static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;
 
         static void dump ();
 
+        // see https://en.cppreference.com/w/c/atomic and
+        // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+        static void setPending (uint32_t n) {
+            __atomic_fetch_or(&pending, 1<<n, __ATOMIC_RELAXED);
+        }
+        static uint32_t checkPending () {
+            return __atomic_fetch_and(&pending, 0, __ATOMIC_RELAXED); // clears
+        }
+
+        static volatile uint32_t pending;
         static Stacklet* current;
         static void* resumer;
-        static volatile uint32_t pending;
     };
 
 // see call.cpp - functions, methods, contexts, and interpreter state
