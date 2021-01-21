@@ -43,12 +43,32 @@ Stacklet::~Stacklet () {
     stacklets[n] = {};
 }
 
+// see https://en.wikipedia.org/wiki/Duff%27s_device
+static void duff (uint32_t* to, uint32_t const* from, size_t count) {
+    auto n = (count + 7) / 8;
+    switch (count % 8) {
+        case 0: do { *to++ = *from++;
+        case 7:      *to++ = *from++;
+        case 6:      *to++ = *from++;
+        case 5:      *to++ = *from++;
+        case 4:      *to++ = *from++;
+        case 3:      *to++ = *from++;
+        case 2:      *to++ = *from++;
+        case 1:      *to++ = *from++;
+                } while (--n > 0);
+    }
+}
+
 // note: don't make this static, as then it might get inlined - see below
 void resumeFixer (void* p) {
     assert(Stacklet::resumer != nullptr);
     assert(Stacklet::current != nullptr);
     auto need = (uint8_t*) Stacklet::resumer - (uint8_t*) p;
+#if 0
     memcpy(p, (uint8_t*) Stacklet::current->end(), need);
+#else
+    duff((uint32_t*) p, (uint32_t*) Stacklet::current->end(), need/4);
+#endif
 }
 
 void Stacklet::suspend (Vector& queue) {
@@ -65,7 +85,11 @@ void Stacklet::suspend (Vector& queue) {
     current->adj(current->fill + need / sizeof (Value));
     if (setjmp(top) == 0) {
         // suspending: copy stack out and jump to caller
+#if 0
         memcpy((uint8_t*) current->end(), (uint8_t*) &top, need);
+#else
+        duff((uint32_t*) current->end(), (uint32_t*) &top, need/4);
+#endif
         longjmp(*(jmp_buf*) resumer, 1);
     }
 
@@ -83,6 +107,7 @@ void Stacklet::resume () {
     assert(resumer == &bottom);
 
     if (setjmp(bottom) == 0) {
+        // FIXME this check will fail if cap is rounded up after an adj call
         if (current->cap() > current->fill)
             longjmp(*(jmp_buf*) current->end(), 1);
         while (current->run()) {}
