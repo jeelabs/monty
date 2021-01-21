@@ -1,11 +1,9 @@
-// Boot layer, first code running after a reset. It's a standard PIO build.
-// After some initialisations, main will locate and register the code layer.
-
 #include <jee.h>
 #include <cassert>
 #include <cstdlib>
 #include <mrfs.h>
-#include "layer.h"
+#include "monty.h"
+#include "pyvm.h"
 
 UartDev< PinA<2>, PinA<15> > console;
 
@@ -66,36 +64,30 @@ void printDeviceInfo () {
             (int) MMIO32(0xE000E014) + 1);
 }
 
-void printMemoryRanges () {
-    extern uint8_t g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
-    printf("  flash %p..%p, ram %p..%p, stack top %p\n",
-            g_pfnVectors, _sidata, _sdata, _ebss, _estack);
-#if 0
-    auto romSize = _sidata - g_pfnVectors;
-    auto romAlign = romSize + (-romSize & (flashSegSize-1));
-    auto romNext = g_pfnVectors + romAlign;
-    auto ramSize = _ebss - _sdata;
-    auto ramAlign = ramSize + (-ramSize & 7);
-    auto ramNext = _sdata + ramAlign;
-    printf("  flash align %db => %db, ram align %db => %db, ram free %db\n",
-            romSize, romAlign, ramSize, ramAlign, _estack - ramNext);
-    printf("  flash next %p, ram next %p\n", romNext, ramNext);
-#endif
+using namespace monty;
+
+static void runInterp (monty::Callable& init) {
+    monty::PyVM vm (init);
+
+    printf("Running ...\n");
+    while (vm.isAlive()) {
+        vm.scheduler();
+        //XXX archIdle();
+    }
+    printf("Stopped.\n");
 }
+
+char mem [10000];
 
 int main () {
     console.init();
     //enableSysTick();
     console.baud(115200, fullSpeedClock());
+    wait_ms(500);
 
     printf("\r<RESET>\n");
     //echoBlinkCheck();
     //printDeviceInfo();
-    printMemoryRanges();
-
-    // FIXME prevents ld dead code stripping, yuck
-    assert((uintptr_t) puts + (uintptr_t) putchar + (uintptr_t) __assert_func
-            + (uintptr_t) __assert + (uintptr_t) abort);
 
     // STM32L432-specific
     //mrfs::init((void*) 0x08000000, 256*1024, 10*1024); // romend 0x2800
@@ -104,14 +96,23 @@ int main () {
     auto pos = mrfs::find("hello");
     printf("hello @ %d\n", pos);
     assert(pos > 0);
-    
-    auto hdr = LayerHdr::next();
-    if (hdr.isValid()) {
-        printf("  main -> regFun %p\n", hdr.regFun);
-        hdr.regFun();
-        printf("  main -> deregFun %p\n", hdr.deregFun);
-        hdr.deregFun();
-    }
+
+    printf("hello from %s\n", "core");
+
+    extern uint8_t g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
+    printf("  flash %p..%p, ram %p..%p, stack top %p\n",
+            g_pfnVectors, _sidata, _sdata, _ebss, _estack);
+
+    monty::setup(mem, sizeof mem);
+    //monty::gcReport();
+
+    monty::Bytecode* bc = nullptr;
+    auto mod = new monty::Module (monty::builtins);
+    monty::Callable dummy (*bc, mod);
+    runInterp(dummy);
+
+    monty::gcNow();
+    monty::gcReport();
 
     printf("\r<EXIT>\n");
     while (true) {}

@@ -3,7 +3,6 @@
 
 /monty.bin
 /rom.mrfs
-/syms-*.ld
 
 .DS_Store
 *.mpy

@@ -1,5 +1,3 @@
-// This is for native use, see boot/core/devs for the layered embedded builds.
-
 #include <cassert>
 #include <cstdio>
 #include "monty.h"
