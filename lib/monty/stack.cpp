@@ -24,7 +24,7 @@ auto Event::regHandler () -> uint32_t {
 
 void Event::deregHandler () {
     auto n = id();
-    if (n >= 0)
+    if (n < handlers.size())
         handlers[n] = {};
 }
 
