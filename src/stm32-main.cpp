@@ -7,7 +7,13 @@
 
 using namespace monty;
 
-UartDev< PinA<2>, PinA<15> > console;
+#if STM32F103xB
+UartBufDev< PinA<2>, PinA<3> > console;
+#elif STM32L432xx
+UartBufDev< PinA<2>, PinA<15> > console;
+#else
+UartBufDev< PinA<9>, PinA<10> > console;
+#endif
 
 int printf(const char* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
@@ -59,11 +65,7 @@ void printDeviceInfo () {
             (void*) MMIO32(0x1FFF7598));
 }
 
-static void runInterp () {
-    Bytecode* bc = nullptr;
-    auto mod = new Module (builtins);
-    Callable init (*bc, mod);
-
+static void runInterp (monty::Callable& init) {
     PyVM vm (init);
 
     printf("Running ...\n");
@@ -75,8 +77,7 @@ static void runInterp () {
 }
 
 PinB<3> led;
-
-char mem [10000];
+uint8_t memPool [10*1024];
 
 int main () {
     console.init();
@@ -94,9 +95,13 @@ int main () {
     printf("hello @ %d\n", pos);
     assert(pos > 0);
 
-    setup(mem, sizeof mem);
+    setup(memPool, sizeof memPool);
 
-    runInterp();
+    Bytecode* bc = nullptr;
+    auto mod = new Module (builtins);
+    Callable dummy (*bc, mod);
+
+    runInterp(dummy);
 
     gcNow();
     gcReport();
@@ -104,3 +109,5 @@ int main () {
     printf("\r</>\n");
     while (true) {}
 }
+
+extern "C" void SystemInit () {}
