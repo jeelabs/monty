@@ -93,7 +93,12 @@ static void saveToFlash (uint8_t* addr, mrfs::Info& info, void const* buf) {
             src = (uint32_t const*) info.name;
         if ((uint32_t) dst % 2048 == 0)
             Flash::erasePage(dst);
+#if STM32L4
         Flash::write64(dst, src[0], src[1]);
+#else
+        Flash::write32(dst, src[0]);
+        Flash::write32(dst+1, src[1]);
+#endif
     }
     Flash::finish();
 }

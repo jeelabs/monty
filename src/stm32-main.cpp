@@ -52,6 +52,7 @@ void printDeviceInfo () {
     printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
             g_pfnVectors, _sidata, _sdata, _ebss, _estack);
 
+#if STM32L4
     // the 0x1F... addresses are cpu-family specific
     printf("cpuid 0x%p, %d kB flash, package type %d\n",
             (void*) MMIO32(0xE000ED00),
@@ -63,6 +64,7 @@ void printDeviceInfo () {
             (void*) MMIO32(0x1FFF7590),
             (void*) MMIO32(0x1FFF7594),
             (void*) MMIO32(0x1FFF7598));
+#endif
 }
 
 static void runInterp (monty::Callable& init) {
@@ -81,7 +83,11 @@ uint8_t memPool [10*1024];
 
 int main () {
     console.init();
+#if STM32F103xB
+    enableSysTick(); // no HSE crystal
+#else
     console.baud(115200, fullSpeedClock());
+#endif
     led.mode(Pinmode::out);
 
     printf("\r<---------------------------------------------------------->\n");
