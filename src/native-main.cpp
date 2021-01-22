@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "monty.h"
 #include "pyvm.h"
+#include "arch.h"
 
 using namespace monty;
 
@@ -19,6 +20,8 @@ static void runInterp (monty::Callable& init) {
 uint8_t memPool [64*1024];
 
 int main () {
+    arch::init();
+
     setbuf(stdout, nullptr);
     puts("NATIVE hello!");
 

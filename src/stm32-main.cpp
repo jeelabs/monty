@@ -4,6 +4,7 @@
 #include <mrfs.h>
 #include "monty.h"
 #include "pyvm.h"
+#include "arch.h"
 
 using namespace monty;
 
@@ -92,6 +93,8 @@ int main () {
 
     printf("\r<---------------------------------------------------------->\n");
     printDeviceInfo();
+
+    arch::init();
 
     // STM32L432-specific
     //mrfs::init((void*) 0x08000000, 256*1024, 10*1024); // romend 0x2800
