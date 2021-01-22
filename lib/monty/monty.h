@@ -925,11 +925,9 @@ namespace monty {
         static Type const info;
         auto type () const -> Type const& override;
 
-        Callable (Bytecode const& callee, Module* mod)
-                : Callable (callee, nullptr, nullptr, mod) {}
         Callable (Bytecode const& callee, Value pos, Value kw)
-                : Callable (callee, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
-        Callable (Bytecode const&, Tuple* =nullptr, Dict* =nullptr, Module* =nullptr);
+                : Callable (callee, nullptr, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
+        Callable (Bytecode const&, Module* =nullptr, Tuple* =nullptr, Dict* =nullptr);
 
         auto call (ArgVec const&) const -> Value override;
         auto getAt (Value) const -> Value override;

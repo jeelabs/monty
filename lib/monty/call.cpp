@@ -11,7 +11,7 @@ List              Interp::tasks;
 Dict              Interp::modules;
 Context*          Interp::context;
 
-Callable::Callable (Bytecode const& callee, Tuple* t, Dict* d, Module* mod)
+Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
         : mo (mod != nullptr ? *mod : Interp::context->globals()),
           bc (callee), pos (t), kw (d) {
 }
