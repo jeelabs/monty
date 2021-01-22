@@ -91,6 +91,8 @@ void resumeFixer (void* p) {
 void Stacklet::yield (bool fast) {
     assert(current != nullptr);
     if (fast) {
+        if (pending == 0)
+            return; // don't yield if there are no pending handlers
         ready.insert(0);
         ready[0] = current;
         suspend(handlers); // hack: used as "do not append" marker
