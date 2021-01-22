@@ -88,9 +88,20 @@ void resumeFixer (void* p) {
 #endif
 }
 
+void Stacklet::yield (bool fast) {
+    assert(current != nullptr);
+    if (fast) {
+        ready.insert(0);
+        ready[0] = current;
+        suspend(handlers); // hack: used as "do not append" marker
+    } else
+        suspend(ready);
+}
+
 void Stacklet::suspend (Vector& queue) {
     assert(current != nullptr);
-    queue.append(current);
+    if (&queue != &handlers) // special case: see yield above
+        queue.append(current);
 
     jmp_buf top;
     assert(resumer > &top);

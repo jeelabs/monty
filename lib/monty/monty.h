@@ -800,6 +800,7 @@ namespace monty {
 
         auto id () -> uint32_t { return stacklets.find(this); }
 
+        static void yield (bool =false);
         static void suspend (Vector&);
         static auto runLoop () -> bool;
 
