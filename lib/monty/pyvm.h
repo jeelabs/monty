@@ -519,8 +519,8 @@ class PyVM : public Interp {
     }
     //CG1 op v
     void opMakeFunctionDefargs (int arg) {
-        auto& bc = context->callee->funcAt(arg);
         --sp;
+        auto& bc = context->callee->funcAt(arg);
         *sp = new Callable (bc, sp[0], sp[1]);
     }
     //CG1 op v
@@ -540,8 +540,7 @@ class PyVM : public Interp {
         sp -= num - 1;
         auto& bc = context->callee->funcAt(arg);
         auto f = new Callable (bc);
-        ArgVec avec {*context, num, sp};
-        *sp = new Closure (*f, avec);
+        *sp = new Closure (*f, {*context, num, sp});
     }
     //CG1 op v
     void opMakeClosureDefargs (int arg) {

@@ -14,7 +14,7 @@ def gen(c):
 @task(gen)
 def native(c):
     """run a script using the native build"""
-    c.run("pio run -e native -s")
+    c.run("pio run -e native -s", pty=True)
     c.run(".pio/build/native/program")
 
 @task
