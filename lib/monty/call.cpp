@@ -110,6 +110,11 @@ auto Closure::call (ArgVec const& args) const -> Value {
     return func.call({v, n + args.num});
 }
 
+auto Context::run () -> bool {
+    assert(false); //XXX new call interface?
+    return false;
+}
+
 void Context::enter (Callable const& func) {
     auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
 assert(false);

@@ -990,7 +990,7 @@ namespace monty {
     };
 
     //CG3 type <context>
-    struct Context : List {
+    struct Context : Stacklet {
         static Type const info;
         auto type () const -> Type const& override;
         auto repr (Buffer& buf) const -> Value override;
@@ -1012,6 +1012,8 @@ namespace monty {
             insert(0, NumSlots);
             caller() = from;
         }
+
+        auto run () -> bool override;
 
         void enter (Callable const&);
         auto leave (Value v ={}) -> Value;
