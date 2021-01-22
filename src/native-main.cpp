@@ -6,17 +6,6 @@
 
 using namespace monty;
 
-static void runInterp (Callable& init) {
-    PyVM vm (init);
-
-    printf("Running ...\n");
-    while (vm.isAlive()) {
-        vm.scheduler();
-        arch::idle();
-    }
-    printf("Stopped.\n");
-}
-
 uint8_t memPool [64*1024];
 
 int main () {
@@ -25,9 +14,18 @@ int main () {
 
     Bytecode* bc = nullptr;
     auto mod = new Module (builtins);
-    Callable dummy (*bc, mod);
+    Callable init (*bc, mod);
 
-    runInterp(dummy);
+    {
+        PyVM vm (init);
+
+        printf("Running ...\n");
+        while (vm.isAlive()) {
+            vm.scheduler();
+            arch::idle();
+        }
+        printf("Stopped.\n");
+    }
 
     gcReport();
     return arch::done();
