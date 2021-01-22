@@ -6,5 +6,13 @@
 using namespace monty;
 
 void arch::init () {
-    printf("ARCH NATIVE!\n");
+    setbuf(stdout, nullptr);
+}
+
+void arch::idle () {
+    // nothing ...
+}
+
+int arch::done () {
+    return 0;
 }

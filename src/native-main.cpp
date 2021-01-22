@@ -1,18 +1,18 @@
-#include <cassert>
 #include <cstdio>
+#include <cassert>
 #include "monty.h"
 #include "pyvm.h"
 #include "arch.h"
 
 using namespace monty;
 
-static void runInterp (monty::Callable& init) {
-    monty::PyVM vm (init);
+static void runInterp (Callable& init) {
+    PyVM vm (init);
 
     printf("Running ...\n");
     while (vm.isAlive()) {
         vm.scheduler();
-        //XXX archIdle();
+        arch::idle();
     }
     printf("Stopped.\n");
 }
@@ -21,17 +21,14 @@ uint8_t memPool [64*1024];
 
 int main () {
     arch::init();
+    setup(memPool, sizeof memPool);
 
-    setbuf(stdout, nullptr);
-    puts("NATIVE hello!");
-
-    monty::setup(memPool, sizeof memPool);
-
-    monty::Bytecode* bc = nullptr;
-    auto mod = new monty::Module (monty::builtins);
-    monty::Callable dummy (*bc, mod);
+    Bytecode* bc = nullptr;
+    auto mod = new Module (builtins);
+    Callable dummy (*bc, mod);
 
     runInterp(dummy);
 
-    monty::gcReport();
+    gcReport();
+    return arch::done();
 }
