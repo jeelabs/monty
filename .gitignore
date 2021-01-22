@@ -1,5 +1,6 @@
-.pio/
 /NOCOMMIT/
+.pio/
+platformio-local.ini
 
 /monty.bin
 /rom.mrfs
