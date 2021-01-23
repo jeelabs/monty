@@ -12,8 +12,8 @@
 
 using namespace monty;
 
-//CG3 type <context2>
-struct Context2 : Stacklet {
+//CG3 type <pyvm>
+struct PyVM : Stacklet {
     static Type const info;
     auto type () const -> Type const& override;
     auto repr (Buffer& buf) const -> Value override;
@@ -30,11 +30,6 @@ struct Context2 : Stacklet {
     };
 
     auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
-
-    Context2 (Context2* from =nullptr) {
-        insert(0, NumSlots);
-        caller() = from;
-    }
 
     void enter (Callable const&);
     auto leave (Value v ={}) -> Value;
@@ -69,9 +64,7 @@ struct Context2 : Stacklet {
     uint16_t spOff = 0;
     uint16_t ipOff = 0;
     Callable const* callee {nullptr};
-};
 
-struct PyVM2 : Context2 {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
         LoadConstString        = 0x10,
@@ -209,7 +202,7 @@ struct PyVM2 : Context2 {
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        static PyVM2* prevCtx;
+        static PyVM* prevCtx;
         if (prevCtx != this) {
             if (prevCtx != nullptr) {
                 printf("\tip %04d sp %2d e ? ", prevCtx->ipOff,
@@ -628,7 +621,7 @@ struct PyVM2 : Context2 {
 
     //CG1 op
     void opYieldValue () {
-        auto myCaller = caller().ifType<Context2>();
+        auto myCaller = caller().ifType<PyVM>();
         caller() = {};
         if (myCaller == nullptr) {
             //XXX assert(findTask(*this) >= 0);
@@ -1167,7 +1160,10 @@ struct PyVM2 : Context2 {
         INNER_HOOK // can be used to simulate interrupts
     }
 
-    PyVM2 (Callable const& init) {
+    PyVM (Callable const& init, Stacklet* from =nullptr) {
+        insert(0, NumSlots);
+        caller() = from;
+
         enter(init);
         frame().locals = &init.mo;
         //XXX tasks.append(ctx);
@@ -1182,7 +1178,7 @@ struct PyVM2 : Context2 {
     }
 };
 
-void Context2::enter (Callable const& func) {
+void PyVM::enter (Callable const& func) {
     auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
 assert(false);
     int need = (frame().stack + frameSize) - (begin() + base);
@@ -1203,7 +1199,7 @@ assert(false);
     f.ep = 0;                   // no exceptions pending
 }
 
-Value Context2::leave (Value v) {
+Value PyVM::leave (Value v) {
     auto& f = frame();
     auto r = f.result;          // stored result
     if (r.isNil())              // use return result if set
@@ -1223,7 +1219,7 @@ Value Context2::leave (Value v) {
     } else {
         //XXX last frame, drop context, restore caller
 #if 0
-        Interp2::context = caller().ifType<Context2>();
+        Interp2::context = caller().ifType<PyVM>();
         auto n = Interp2::findTask(*this);
         if (n >= 0)
             Interp2::tasks.remove(n);
@@ -1235,7 +1231,7 @@ Value Context2::leave (Value v) {
     return r;
 }
 
-auto Context2::excBase (int incr) -> Value* {
+auto PyVM::excBase (int incr) -> Value* {
     uint32_t ep = frame().ep;
     frame().ep = ep + incr;
     if (incr <= 0)
@@ -1243,7 +1239,7 @@ auto Context2::excBase (int incr) -> Value* {
     return nullptr;//XXX frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
 }
 
-void Context2::raise (Value exc) {
+void PyVM::raise (Value exc) {
 #if 0 //XXX
     if (Interp2::context == nullptr) {
         Buffer buf; // TODO wrong place: bail out and print exception details
@@ -1264,7 +1260,7 @@ void Context2::raise (Value exc) {
     //XXX Interp2::interrupt(num);     // set pending, to force inner loop exit
 }
 
-void Context2::caught () {
+void PyVM::caught () {
     auto e = event();
     if (e.isNil())
         return; // there was no exception, just an inner loop exit
@@ -1285,16 +1281,16 @@ void Context2::caught () {
     }
 }
 
-auto Context2::next () -> Value {
+auto PyVM::next () -> Value {
     assert(fill > 0); // can only resume if not ended
     //XXX Interp2::resume(*this);
     return {}; // no result yet
 }
 
-Type const Context2::info (Q(186,"<context2>"));
-auto Context2::type () const -> Type const& { return info; }
+Type const PyVM::info (Q(186,"<pyvm>"));
+auto PyVM::type () const -> Type const& { return info; }
 
-auto Context2::repr (Buffer&) const -> Value {
+auto PyVM::repr (Buffer&) const -> Value {
     assert(false);
     return {};
 }
@@ -1302,7 +1298,7 @@ auto Context2::repr (Buffer&) const -> Value {
 auto vmTest () -> Stacklet* {
     Bytecode* bc = nullptr;
     Callable dummy (*bc);
-    auto vm = new PyVM2 (dummy);
+    auto vm = new PyVM (dummy);
     vm->run();
     return vm;
 }
