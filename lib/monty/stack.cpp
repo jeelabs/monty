@@ -150,7 +150,7 @@ auto Stacklet::runLoop () -> bool {
         if (ready.size() == 0)
             break;
 
-        current = &ready.pull(0).asType<Stacklet>();
+        current = (Stacklet*) &ready.pull(0).obj();
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 

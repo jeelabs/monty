@@ -1,6 +1,6 @@
 // import.h - importing and loading bytecodes
 
-#define VERBOSE_LOAD 1 // show .mpy load progress with detailed file info
+#define VERBOSE_LOAD 0 // show .mpy load progress with detailed file info
 
 #if VERBOSE_LOAD
 #define debugf printf
