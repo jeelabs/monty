@@ -38,6 +38,8 @@ struct Callable : Object {
     Dict* kw;
 };
 
+#include "import.h"
+
 #if 0
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = Interp::context;
@@ -1226,27 +1228,17 @@ struct PyVM : Stacklet {
 
     void outer () {
         //XXX always true
-        //while (this != nullptr) {
-        while (true) {
-#if 0 //XXX
-            auto r = frame().result.ifType<Resumable>();
-            if (r == nullptr)
-                inner();
-            else {
-                auto v = r->next();
-                if (!v.isNil())
-                    r->done(v);
-            }
-#else
-            inner();
-#endif
-
+        while (current != nullptr) {
             if (gcCheck()) {
-                //XXX archMode(RunMode::GC);
-                //XXX Interp2::markAll();
-                gcNow();
-                //XXX archMode(RunMode::Run);
+                //arch::mode(RunMode::GC);
+                current->marker();
+                markVec(stacklets);
+                sweep();
+                compact();
+                //arch::mode(RunMode::Run);
             }
+
+            inner();
         }
 
         INNER_HOOK // can be used to simulate interrupts
@@ -1258,7 +1250,6 @@ struct PyVM : Stacklet {
 
         enter(init);
         frame().locals = &init.mo;
-        //XXX tasks.append(ctx);
     }
 
     auto run () -> bool override {

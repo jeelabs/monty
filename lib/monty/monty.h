@@ -61,7 +61,6 @@ namespace monty {
 
     auto gcAvail () -> uint32_t; // return free space between objects & vectors
     auto gcCheck () -> bool;     // true when it's time to collect the garbage
-    void gcNow ();               // first call Interp::markAll, then gcNow
     void gcObjDump ();           // like sweep, but only to print all obj+free
     void gcReport ();            // print a brief gc summary with statistics
 

@@ -374,12 +374,6 @@ namespace monty {
         vecHigh = newHigh;
     }
 
-    void gcNow () {
-        // XXX Interp::markAll();
-        sweep();
-        compact();
-    }
-
 #if XXX
     void gcReport (bool collect) {
         if (collect) {
