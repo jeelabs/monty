@@ -73,34 +73,6 @@ struct Context2 : Stacklet {
     Callable const* callee {nullptr};
 };
 
-struct Interp2 {
-    static auto frame () -> Context2::Frame& { return context->frame(); }
-
-    static void suspend (uint32_t id);
-    static void resume (Context2& ctx);
-
-    static void exception (Value exc);  // throw exception in curr context
-    static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
-    static auto nextPending () -> int;  // next pending or -1 (irq-safe)
-    static auto pendingBit (uint32_t) -> bool; // test and clear bit
-
-    static auto findTask (Context2& ctx) -> int;
-    static auto getQueueId () -> int;
-    static void dropQueueId (int);
-
-    static auto isAlive () -> bool { return tasks.len() > 0; }
-
-    static void markAll (); // for gc
-
-    static constexpr auto NUM_QUEUES = 32;
-
-    static volatile uint32_t pending;   // for irq-safe inner loop exit
-    static uint32_t queueIds;           // which queues are in use
-    static Context2* context;            // current context, if any
-    static List tasks;                  // list of all tasks
-    static Dict modules;                // loaded modules
-};
-
 class PyVM2 : public Context2 {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
@@ -738,9 +710,10 @@ class PyVM2 : public Context2 {
     //CG1 op q
     void opImportName (Q arg) {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
+        (void) arg; //XXX
+#if 0
         Value mod = Interp2::modules.at(arg);
         if (mod.isNil()) {
-#if 0 //XXX
             // TODO move part of this code to Interp2
             auto base = fsLookup(arg);
             assert(base != nullptr);
@@ -750,9 +723,9 @@ class PyVM2 : public Context2 {
             Interp2::modules.at(arg) = mod;
             wrappedCall(init, {*this, 0});
             frame().locals = mod;
-#endif
         }
         *sp = mod;
+#endif
     }
     //CG1 op q
     void opImportFrom (Q arg) {
@@ -1187,7 +1160,7 @@ class PyVM2 : public Context2 {
 
             if (gcCheck()) {
                 //XXX archMode(RunMode::GC);
-                Interp2::markAll();
+                //XXX Interp2::markAll();
                 gcNow();
                 //XXX archMode(RunMode::Run);
             }
@@ -1212,12 +1185,6 @@ public:
         return true;
     }
 };
-
-volatile uint32_t Interp2::pending;
-uint32_t          Interp2::queueIds;
-List              Interp2::tasks;
-Dict              Interp2::modules;
-Context2*          Interp2::context;
 
 auto Context2::run () -> bool {
     assert(false); //XXX new call interface?
@@ -1263,12 +1230,13 @@ Value Context2::leave (Value v) {
         assert(prev >= 0);
         base = prev;            // new lower frame offset
     } else {
-        // last frame, drop context, restore caller
+        //XXX last frame, drop context, restore caller
+#if 0
         Interp2::context = caller().ifType<Context2>();
         auto n = Interp2::findTask(*this);
         if (n >= 0)
             Interp2::tasks.remove(n);
-
+#endif
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector
     }
@@ -1285,17 +1253,15 @@ auto Context2::excBase (int incr) -> Value* {
 }
 
 void Context2::raise (Value exc) {
-    if (Interp2::context == nullptr) {
 #if 0 //XXX
+    if (Interp2::context == nullptr) {
         Buffer buf; // TODO wrong place: bail out and print exception details
         buf.print("uncaught exception: ");
         exc.obj().repr(buf);
         buf.putc('\n');
-#else
-        assert(false);
-#endif
         return;
     }
+#endif
 
     uint32_t num = 0;
     if (exc.isInt())
@@ -1303,7 +1269,8 @@ void Context2::raise (Value exc) {
     else
         event() = exc;          // trigger exception or other outer-loop req
 
-    Interp2::interrupt(num);     // set pending, to force inner loop exit
+    assert(false); (void) num;
+    //XXX Interp2::interrupt(num);     // set pending, to force inner loop exit
 }
 
 void Context2::caught () {
@@ -1329,95 +1296,8 @@ void Context2::caught () {
 
 auto Context2::next () -> Value {
     assert(fill > 0); // can only resume if not ended
-    Interp2::resume(*this);
+    //XXX Interp2::resume(*this);
     return {}; // no result yet
-}
-
-auto Interp2::findTask (Context2& ctx) -> int {
-    for (auto& e : tasks)
-        if (&e.obj() == &ctx)
-            return &e - tasks.begin();
-    return -1;
-}
-
-auto Interp2::getQueueId () -> int {
-    static_assert (NUM_QUEUES <= 8 * sizeof pending, "NUM_QUEUES too large");
-
-    for (uint32_t id = 1; id < NUM_QUEUES; ++id) {
-        auto mask = 1U << id;
-        if ((queueIds & mask) == 0) {
-            queueIds |= mask;
-            return id;
-        }
-    }
-    return -1;
-}
-
-void Interp2::dropQueueId (int id) {
-    auto mask = 1U << id;
-    assert(queueIds & mask);
-    queueIds &= ~mask;
-
-    // deal with tasks pending on this queue
-    for (auto e : tasks) {
-        auto& ctx = e.asType<Context2>();
-        if (ctx.qid == id)
-            ctx.qid = 0; // make runnable again TODO also raise an exception?
-    }
-}
-
-void Interp2::markAll () {
-    //printf("\tgc started ...\n");
-    assert(context != nullptr);
-    mark(context); // TODO
-    assert(findTask(*context) >= 0);
-}
-
-void Interp2::suspend (uint32_t id) {
-    assert(id < NUM_QUEUES);
-
-    assert(context != nullptr);
-    assert(findTask(*context) >= 0);
-    auto ctx = context;
-    context = ctx->caller().ifType<Context2>();
-    //ctx->caller() = {};
-
-    ctx->qid = id;
-}
-
-void Interp2::resume (Context2& ctx) {
-    assert(context != &ctx);
-    assert(ctx.caller().isNil());
-    ctx.caller() = context;
-    context = &ctx;
-}
-
-void Interp2::exception (Value v) {
-    assert(!v.isInt());
-    assert(context != nullptr);
-    //XXX raise(v);
-    assert(false);
-}
-
-void Interp2::interrupt (uint32_t num) {
-    assert(num < NUM_QUEUES);
-    // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-    __atomic_fetch_or(&pending, 1U << num, __ATOMIC_RELAXED);
-}
-
-auto Interp2::nextPending () -> int {
-    if (pending != 0)
-        for (uint32_t num = 0; num < NUM_QUEUES; ++num)
-            if (pendingBit(num))
-                return num;
-    return -1;
-}
-
-auto Interp2::pendingBit (uint32_t num) -> bool {
-    assert(num < NUM_QUEUES);
-    auto mask = 1U << num;
-    // see https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-    return (__atomic_fetch_and(&pending, ~mask, __ATOMIC_RELAXED) & mask) != 0;
 }
 
 Type const Context2::info (Q(186,"<context2>"));
