@@ -17,7 +17,7 @@ int main () {
     arch::init();
     setup(memPool, sizeof memPool);
 
-    extern auto vmTest () -> void*;
+    extern auto vmTest () -> Stacklet*;
     printf("vmTest %p\n", vmTest);
 
 #if 0

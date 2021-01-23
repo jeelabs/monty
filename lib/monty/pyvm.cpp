@@ -3,7 +3,7 @@
 #include "monty.h"
 #include <cassert>
 
-#define SHOW_INSTR_PTR 0 // show instr ptr each time through inner loop
+#define SHOW_INSTR_PTR 1 // show instr ptr each time through inner loop
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
 #ifndef INNER_HOOK
@@ -35,8 +35,6 @@ struct Context2 : Stacklet {
         insert(0, NumSlots);
         caller() = from;
     }
-
-    auto run () -> bool override;
 
     void enter (Callable const&);
     auto leave (Value v ={}) -> Value;
@@ -73,7 +71,7 @@ struct Context2 : Stacklet {
     Callable const* callee {nullptr};
 };
 
-class PyVM2 : public Context2 {
+struct PyVM2 : Context2 {
     enum Op : uint8_t {
         //CG< opcodes ../../git/micropython/py/bc0.h
         LoadConstString        = 0x10,
@@ -211,8 +209,8 @@ class PyVM2 : public Context2 {
 
     void instructionTrace () {
 #if SHOW_INSTR_PTR
-        static Context2* prevCtx;
-        if (prevCtx != context) {
+        static PyVM2* prevCtx;
+        if (prevCtx != this) {
             if (prevCtx != nullptr) {
                 printf("\tip %04d sp %2d e ? ", prevCtx->ipOff,
                                                 prevCtx->spOff - 9);
@@ -221,8 +219,8 @@ class PyVM2 : public Context2 {
                     (prevCtx->spOff + prevCtx->spBase())->dump();
                 printf("\n");
             }
-            printf("### context changed from %p to %p ###\n", prevCtx, context);
-            prevCtx = context;
+            printf("### context changed from %p to %p ###\n", prevCtx, this);
+            prevCtx = this;
         }
         printf("\tip %04d sp %2d e %d ", (int) (ip - ipBase()),
                                          (int) (sp - spBase()),
@@ -473,7 +471,7 @@ class PyVM2 : public Context2 {
     }
     //CG1 op o
     void opSetupFinally (int arg) {
-        opSetupExcept(arg + Context2::FinallyTag);
+        opSetupExcept(arg + FinallyTag);
     }
     //CG1 op
     void opEndFinally () {
@@ -1169,11 +1167,9 @@ class PyVM2 : public Context2 {
         INNER_HOOK // can be used to simulate interrupts
     }
 
-public:
     PyVM2 (Callable const& init) {
-        auto ctx = new Context2;
-        ctx->enter(init);
-        ctx->frame().locals = &init.mo;
+        enter(init);
+        frame().locals = &init.mo;
         //XXX tasks.append(ctx);
     }
 
@@ -1185,11 +1181,6 @@ public:
         return true;
     }
 };
-
-auto Context2::run () -> bool {
-    assert(false); //XXX new call interface?
-    return false;
-}
 
 void Context2::enter (Callable const& func) {
     auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
@@ -1308,10 +1299,10 @@ auto Context2::repr (Buffer&) const -> Value {
     return {};
 }
 
-auto vmTest () -> void* {
+auto vmTest () -> Stacklet* {
     Bytecode* bc = nullptr;
     Callable dummy (*bc);
-    static PyVM2 vm (dummy);
-    vm.run();
-    return &vm;
+    auto vm = new PyVM2 (dummy);
+    vm->run();
+    return vm;
 }
