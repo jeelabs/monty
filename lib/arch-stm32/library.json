@@ -1,1 +1,6 @@
-{ "platforms": "ststm32" }
+{
+    "platforms": "ststm32",
+    "dependencies": {
+        "jeeh": "*"
+    }
+}
