@@ -30,8 +30,8 @@ struct Bytecode : List {
 private:
     Bytecode () {}
 
-    int32_t spare1; // future bc format
-    int16_t spare2; // ...
+    //int32_t spare1; // future bc format
+    //int16_t spare2; // ...
 
     int16_t code;
     int16_t stackSz;

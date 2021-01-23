@@ -28,7 +28,7 @@ struct Callable : Object {
 
     void marker () const override;
 
-    auto funcAt (Value) const -> Bytecode const&; // variant of getAt
+    auto funcAt (int) const -> Bytecode const&; // variant of getAt
     auto start () const -> uint8_t const*;
     auto fastSlotTop () const -> uint32_t;
 
@@ -40,79 +40,9 @@ struct Callable : Object {
 
 #include "import.h"
 
-#if 0
-auto Callable::call (ArgVec const& args) const -> Value {
-    auto ctx = Interp::context;
-    auto coro = bc.isGenerator();
-    if (coro)
-        ctx = new Context;
-
-    ctx->enter(*this);
-
-    int nPos = bc.numArgs(0);
-    int nDef = bc.numArgs(1);
-    int nKwo = bc.numArgs(2);
-    int nc = bc.numCells();
-
-    for (int i = 0; i < nPos + nc; ++i)
-        if (i < args.num)
-            ctx->fastSlot(i) = args[i];
-        else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
-            ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
-
-    if (bc.hasVarArgs())
-        ctx->fastSlot(nPos+nKwo) =
-            Tuple::create({args.vec, args.num-nPos, args.off+nPos});
-
-    uint8_t const* cellMap = bc.start() - nc;
-    for (int i = 0; i < nc; ++i) {
-        auto slot = cellMap[i];
-        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
-    }
-
-    return coro ? ctx : Value {};
-}
-#else
-auto Callable::call (ArgVec const&) const -> Value {
-    assert(false);
-    return {};
-}
-#endif
-
-auto Callable::getAt (Value) const -> Value {
-    assert(false);
-    return {};
-}
-
-void Callable::marker () const {
-#if 0 //XXX
-    mo.marker();
-    mark(bc);
-#endif
-    mark(pos);
-    mark(kw);
-}
-
-auto Callable::funcAt (Value) const -> Bytecode const& {
-    assert(false); //XXX needs access to bytecode
-    Bytecode* p = nullptr;
-    return *p;
-}
-
-auto Callable::start () const -> uint8_t const* {
-    assert(false); //XXX needs access to bytecode
-    return nullptr;
-}
-
-auto Callable::fastSlotTop () const -> uint32_t {
-    assert(false); //XXX needs access to bytecode
-    return 0;
-}
-
 struct PyVM : Stacklet {
     static Type const info;
     auto type () const -> Type const& override;
-    auto repr (Buffer& buf) const -> Value override;
 
     // first entries in a context are reserved slots for specific state
     enum Slot { Caller, Event, NumSlots };
@@ -1270,9 +1200,64 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
           bc (callee), pos (t), kw (d) {
 }
 
+auto Callable::call (ArgVec const& args) const -> Value {
+    auto ctx = &currentVM();
+    auto coro = bc.isGenerator();
+    if (coro)
+        ;//XXX ctx = new Context;
+
+    ctx->enter(*this);
+
+    int nPos = bc.numArgs(0);
+    int nDef = bc.numArgs(1);
+    int nKwo = bc.numArgs(2);
+    int nc = bc.numCells();
+
+    for (int i = 0; i < nPos + nc; ++i)
+        if (i < args.num)
+            ctx->fastSlot(i) = args[i];
+        else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
+            ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
+
+    if (bc.hasVarArgs())
+        ctx->fastSlot(nPos+nKwo) =
+            Tuple::create({args.vec, args.num-nPos, args.off+nPos});
+
+    uint8_t const* cellMap = bc.start() - nc;
+    for (int i = 0; i < nc; ++i) {
+        auto slot = cellMap[i];
+        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
+    }
+
+    return coro ? ctx : Value {};
+}
+
+auto Callable::getAt (Value) const -> Value {
+    assert(false);
+    return {};
+}
+
+void Callable::marker () const {
+    mo.marker();
+    mark(bc);
+    mark(pos);
+    mark(kw);
+}
+
+auto Callable::funcAt (int num) const -> Bytecode const& {
+    return bc[num].asType<Bytecode>();
+}
+
+auto Callable::start () const -> uint8_t const* {
+    return bc.start();
+}
+
+auto Callable::fastSlotTop () const -> uint32_t {
+    return bc.fastSlotTop();
+}
+
 void PyVM::enter (Callable const& func) {
-    auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
-assert(false);
+    auto frameSize = func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
     int need = (frame().stack + frameSize) - (begin() + base);
 
     auto curr = base;           // current frame offset
@@ -1328,7 +1313,7 @@ auto PyVM::excBase (int incr) -> Value* {
     frame().ep = ep + incr;
     if (incr <= 0)
         --ep;
-    return nullptr;//XXX frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
+    return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
 }
 
 void PyVM::raise (Value exc) {
@@ -1379,21 +1364,18 @@ auto PyVM::next () -> Value {
     return {}; // no result yet
 }
 
-Type const Callable::info (Q(184,"<callable>"));
+Type const Bytecode::info (Q(184,"<bytecode>"));
+auto Bytecode::type () const -> Type const& { return info; }
+
+Type const Callable::info (Q(185,"<callable>"));
 auto Callable::type () const -> Type const& { return info; }
 
-Type const PyVM::info (Q(185,"<pyvm>"));
+Type const PyVM::info (Q(186,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
-auto PyVM::repr (Buffer&) const -> Value {
-    assert(false);
-    return {};
-}
-
-auto vmTest () -> Stacklet* {
-    Bytecode* bc = nullptr;
-    Callable dummy (*bc);
-    auto vm = new PyVM (dummy);
-    vm->run();
-    return vm;
+auto vmTest (uint8_t const* data) -> Stacklet* {
+    Loader loader;
+    Callable* init = loader.load(data);
+    assert(init != nullptr);
+    return new PyVM (*init);
 }
