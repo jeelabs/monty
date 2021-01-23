@@ -17,6 +17,9 @@ int main () {
     arch::init();
     setup(memPool, sizeof memPool);
 
+    extern auto vmTest () -> void*;
+    printf("vmTest %p\n", vmTest);
+
 #if 0
     // STM32L432-specific
     //mrfs::init((void*) 0x08000000, 256*1024, 10*1024); // romend 0x2800
