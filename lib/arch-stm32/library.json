@@ -1,6 +1,6 @@
 {
     "platforms": "ststm32",
     "dependencies": {
-        "jeeh": "*"
+        "JeeH": "*"
     }
 }
