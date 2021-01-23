@@ -516,7 +516,7 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 
     auto ctx = Stacklet::current;
-    assert(ctx != nullptr);
+    assert(ctx != nullptr); (void) ctx;
     //XXX ctx->frame().locals = this;
 }
 
