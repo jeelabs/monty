@@ -186,9 +186,11 @@ auto Closure::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
+#if 0 //XXX
 auto Context::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
+#endif
 
 Value Dict::repr (Buffer& buf) const {
     // TODO this is a synchronous version, needs to be converted to a resumable

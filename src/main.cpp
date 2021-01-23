@@ -1,6 +1,6 @@
 #include <cassert>
 #include "monty.h"
-#include "pyvm.h"
+//#include "pyvm.h"
 #include "arch.h"
 
 #if 0
@@ -30,6 +30,7 @@ int main () {
     assert(pos > 0);
 #endif
 
+#if 0
     Bytecode* bc = nullptr;
     auto mod = new Module (builtins);
     Callable init (*bc, mod);
@@ -44,6 +45,7 @@ int main () {
         }
         printf("Stopped.\n");
     }
+#endif
 
     gcReport();
     return arch::done();

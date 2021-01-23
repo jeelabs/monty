@@ -12,7 +12,101 @@
 
 using namespace monty;
 
-//CG3 type <pyvm>
+// forward decl's
+struct Bytecode;
+
+struct Callable : Object {
+    static Type const info;
+    auto type () const -> Type const& override;
+
+    Callable (Bytecode const& callee, Value pos, Value kw)
+            : Callable (callee, nullptr, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
+    Callable (Bytecode const&, Module* =nullptr, Tuple* =nullptr, Dict* =nullptr);
+
+    auto call (ArgVec const&) const -> Value override;
+    auto getAt (Value) const -> Value override;
+
+    void marker () const override;
+
+    auto funcAt (Value) const -> Bytecode const&; // variant of getAt
+    auto start () const -> uint8_t const*;
+    auto fastSlotTop () const -> uint32_t;
+
+    Module& mo;
+    Bytecode const& bc;
+    Tuple* pos;
+    Dict* kw;
+};
+
+#if 0
+auto Callable::call (ArgVec const& args) const -> Value {
+    auto ctx = Interp::context;
+    auto coro = bc.isGenerator();
+    if (coro)
+        ctx = new Context;
+
+    ctx->enter(*this);
+
+    int nPos = bc.numArgs(0);
+    int nDef = bc.numArgs(1);
+    int nKwo = bc.numArgs(2);
+    int nc = bc.numCells();
+
+    for (int i = 0; i < nPos + nc; ++i)
+        if (i < args.num)
+            ctx->fastSlot(i) = args[i];
+        else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
+            ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
+
+    if (bc.hasVarArgs())
+        ctx->fastSlot(nPos+nKwo) =
+            Tuple::create({args.vec, args.num-nPos, args.off+nPos});
+
+    uint8_t const* cellMap = bc.start() - nc;
+    for (int i = 0; i < nc; ++i) {
+        auto slot = cellMap[i];
+        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
+    }
+
+    return coro ? ctx : Value {};
+}
+#else
+auto Callable::call (ArgVec const&) const -> Value {
+    assert(false);
+    return {};
+}
+#endif
+
+auto Callable::getAt (Value) const -> Value {
+    assert(false);
+    return {};
+}
+
+void Callable::marker () const {
+#if 0 //XXX
+    mo.marker();
+    mark(bc);
+#endif
+    mark(pos);
+    mark(kw);
+}
+
+auto Callable::funcAt (Value) const -> Bytecode const& {
+    assert(false); //XXX needs access to bytecode
+    Bytecode* p = nullptr;
+    return *p;
+}
+
+auto Callable::start () const -> uint8_t const* {
+    assert(false); //XXX needs access to bytecode
+    return nullptr;
+}
+
+auto Callable::fastSlotTop () const -> uint32_t {
+    assert(false); //XXX needs access to bytecode
+    return 0;
+}
+
 struct PyVM : Stacklet {
     static Type const info;
     auto type () const -> Type const& override;
@@ -58,7 +152,6 @@ struct PyVM : Stacklet {
 
     void marker () const override { List::marker(); mark(callee); }
 
-    int8_t qid = 0;
     // previous values are saved in current stack frame
     uint16_t base = 0;
     uint16_t spOff = 0;
@@ -625,7 +718,6 @@ struct PyVM : Stacklet {
         caller() = {};
         if (myCaller == nullptr) {
             //XXX assert(findTask(*this) >= 0);
-            assert(qid == 0); // must stay runnable
         }
         auto v = contextAdjuster([=]() -> Value {
             //XXX! context = myCaller;
@@ -1178,6 +1270,15 @@ struct PyVM : Stacklet {
     }
 };
 
+static auto currentVM () -> PyVM& {
+    return Value (Stacklet::current).asType<PyVM>(); // TODO yuck
+}
+
+Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
+        : mo (mod != nullptr ? *mod : currentVM().globals()),
+          bc (callee), pos (t), kw (d) {
+}
+
 void PyVM::enter (Callable const& func) {
     auto frameSize = 0;//XXX func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
 assert(false);
@@ -1287,7 +1388,10 @@ auto PyVM::next () -> Value {
     return {}; // no result yet
 }
 
-Type const PyVM::info (Q(186,"<pyvm>"));
+Type const Callable::info (Q(184,"<callable>"));
+auto Callable::type () const -> Type const& { return info; }
+
+Type const PyVM::info (Q(185,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
 auto PyVM::repr (Buffer&) const -> Value {

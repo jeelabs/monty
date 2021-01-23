@@ -511,13 +511,13 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
         chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(187,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(186,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 
-    auto ctx = Interp::context;
+    auto ctx = Stacklet::current;
     assert(ctx != nullptr);
-    ctx->frame().locals = this;
+    //XXX ctx->frame().locals = this;
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
@@ -536,7 +536,7 @@ auto Super::create (ArgVec const& args, Type const*) -> Value {
 }
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
-    auto ctx = Interp::context;
+    auto ctx = Stacklet::current;
     assert(ctx != nullptr); (void) ctx;
 
     Value self;

@@ -824,9 +824,6 @@ namespace monty {
 
 // see call.cpp - functions, methods, contexts, and interpreter state
 
-    // forward decl's
-    struct Bytecode;
-
     //CG3 type <module>
     struct Module : Dict {
         static Type const info;
@@ -921,43 +918,18 @@ namespace monty {
         const MethodBase& meth;
     };
 
-    //CG3 type <callable>
-    struct Callable : Object {
-        static Type const info;
-        auto type () const -> Type const& override;
-
-        Callable (Bytecode const& callee, Value pos, Value kw)
-                : Callable (callee, nullptr, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
-        Callable (Bytecode const&, Module* =nullptr, Tuple* =nullptr, Dict* =nullptr);
-
-        auto call (ArgVec const&) const -> Value override;
-        auto getAt (Value) const -> Value override;
-
-        void marker () const override;
-
-        auto funcAt (Value) const -> Bytecode const&; // variant of getAt
-        auto start () const -> uint8_t const*;
-        auto fastSlotTop () const -> uint32_t;
-
-    // TODO private:
-        Module& mo;
-        Bytecode const& bc;
-        Tuple* pos;
-        Dict* kw;
-    };
-
     //CG3 type <boundmeth>
     struct BoundMeth : Object {
         static Type const info;
         auto type () const -> Type const& override;
 
-        BoundMeth (Callable const& f, Value o) : meth (f), self (o) {}
+        BoundMeth (Object const& f, Value o) : meth (f), self (o) {}
 
         auto call (ArgVec const&) const -> Value override;
 
-        void marker () const override { meth.marker(); self.marker(); }
+        void marker () const override { mark(meth); self.marker(); }
     private:
-        Callable const& meth;
+        Object const& meth;
         Value self;
     };
 
@@ -979,102 +951,13 @@ namespace monty {
         auto type () const -> Type const& override;
         auto repr (Buffer& buf) const -> Value override;
 
-        Closure (Callable const&, ArgVec const&);
+        Closure (Object const&, ArgVec const&);
 
         auto call (ArgVec const&) const -> Value override;
 
-        void marker () const override { List::marker(); func.marker(); }
+        void marker () const override { List::marker(); mark(func); }
     private:
-        Callable const& func;
-    };
-
-    //CG3 type <context>
-    struct Context : Stacklet {
-        static Type const info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer& buf) const -> Value override;
-
-        // first entries in a context are reserved slots for specific state
-        enum Slot { Caller, Event, NumSlots };
-        auto caller () const -> Value& { return begin()[Caller]; }
-        auto event () const -> Value& { return begin()[Event]; }
-
-        struct Frame {
-            //    <------- previous ------->  <---- actual ---->
-            Value base, spOff, ipOff, callee, ep, locals, result, stack [];
-            // result must be just below stack for proper module/class init
-        };
-
-        auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
-
-        Context (Context* from =nullptr) {
-            insert(0, NumSlots);
-            caller() = from;
-        }
-
-        auto run () -> bool override;
-
-        void enter (Callable const&);
-        auto leave (Value v ={}) -> Value;
-
-        auto spBase () const -> Value* { return frame().stack; }
-        auto ipBase () const -> uint8_t const* { return callee->start(); }
-
-        auto fastSlot (uint32_t i) const -> Value& {
-            return spBase()[callee->fastSlotTop() + ~i];
-        }
-        auto derefSlot (uint32_t i) const -> Value& {
-            return fastSlot(i).asType<Cell>().val;
-        }
-
-        static constexpr int EXC_STEP = 3; // use 3 entries per exception
-        auto excBase (int incr =0) -> Value*;
-
-        auto globals () const -> Module& { return callee->mo; }
-
-        constexpr static auto FinallyTag = 1<<20;
-        void raise (Value exc ={});
-        void caught ();
-
-        auto iter () const -> Value override { return this; }
-        auto next () -> Value override;
-
-        void marker () const override { List::marker(); mark(callee); }
-
-        int8_t qid = 0;
-        // previous values are saved in current stack frame
-        uint16_t base = 0;
-        uint16_t spOff = 0;
-        uint16_t ipOff = 0;
-        Callable const* callee {nullptr};
-    };
-
-    struct Interp {
-        static auto frame () -> Context::Frame& { return context->frame(); }
-
-        static void suspend (uint32_t id);
-        static void resume (Context& ctx);
-
-        static void exception (Value exc);  // throw exception in curr context
-        static void interrupt (uint32_t n); // trigger a soft-irq (irq-safe)
-        static auto nextPending () -> int;  // next pending or -1 (irq-safe)
-        static auto pendingBit (uint32_t) -> bool; // test and clear bit
-
-        static auto findTask (Context& ctx) -> int;
-        static auto getQueueId () -> int;
-        static void dropQueueId (int);
-
-        static auto isAlive () -> bool { return tasks.len() > 0; }
-
-        static void markAll (); // for gc
-
-        static constexpr auto NUM_QUEUES = 32;
-
-        static volatile uint32_t pending;   // for irq-safe inner loop exit
-        static uint32_t queueIds;           // which queues are in use
-        static Context* context;            // current context, if any
-        static List tasks;                  // list of all tasks
-        static Dict modules;                // loaded modules
+        Object const& func;
     };
 
 // see repr.cpp - repr, printing, and buffering
@@ -1109,7 +992,7 @@ namespace monty {
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
-        struct Extra { E code; uint16_t ipOff; Callable const* callee; };
+        struct Extra { E code; uint16_t ipOff; Object const* callee; };
         auto extra () const -> Extra& { return *(Extra*) end(); }
 
         static auto create (E, ArgVec const&) -> Value; // diff API
