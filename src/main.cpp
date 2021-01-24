@@ -15,8 +15,7 @@ int main () {
     setup(memPool, sizeof memPool);
 
     extern auto vmTest (uint8_t const*) -> Stacklet*;
-    Value vm = vmTest(boot);
-    vm.dump("vmTest");
+    vmTest(boot);
 
     Stacklet::runLoop();
 

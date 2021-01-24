@@ -3,7 +3,7 @@
 #include "monty.h"
 #include <cassert>
 
-#define SHOW_INSTR_PTR 1 // show instr ptr each time through inner loop
+#define SHOW_INSTR_PTR 0 // show instr ptr each time through inner loop
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
 #ifndef INNER_HOOK
@@ -607,7 +607,11 @@ struct PyVM : Stacklet {
     void opCallFunction (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         sp -= npos + 2 * nkw;
+        auto& fun = sp->obj();
         wrappedCall(*sp, {*this, arg, sp + 1});
+        // TODO yuck, special cased because Class doesn't have access to PyVM
+        if (&fun == &Class::info)
+            frame().locals = *sp;
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
