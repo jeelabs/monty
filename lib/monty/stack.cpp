@@ -137,7 +137,7 @@ auto Stacklet::runLoop () -> bool {
     setjmp(bottom); // suspend will always return here
 
     while (true) {
-        auto flags = checkPending();
+        auto flags = allPending();
         for (uint32_t i = 0; flags != 0 && i < handlers.size(); ++i) {
             auto bit = 1<< i;
             if (flags & bit) {

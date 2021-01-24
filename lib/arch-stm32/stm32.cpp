@@ -48,25 +48,41 @@ extern "C" void SystemInit () {}
 using namespace monty;
 
 void printDeviceInfo () {
-    printf("build " __DATE__ ", " __TIME__ "\n");
+    printf("\b \n"); // FIXME hides invalid char sent after a reset (?)
+#ifndef NDEBUG
+    printf("\r<-------------------------------------------------------------->"
+           "\nbuild " __DATE__ ", " __TIME__ "\n");
 
     extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
             g_pfnVectors, _sidata, _sdata, _ebss, _estack);
 
-#if STM32L4
+#if STM32F1
     // the 0x1F... addresses are cpu-family specific
-    printf("cpuid 0x%p, %d kB flash, package type %d\n",
-            (void*) MMIO32(0xE000ED00),
-            MMIO16(0x1FFF75E0),
-            (int) MMIO32(0x1FFF7500) & 0x1F);
-
+    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
+            MMIO32(0xE000ED00),
+            MMIO16(0x1FFFF7E0),
+            (_estack - _sdata) >> 8,
+            MMIO32(0x1FFFF700) & 0x1F); // FIXME wrong!
     printf("clock %d kHz, devid %p-%p-%p\n",
-            (int) MMIO32(0xE000E014) + 1,
-            (void*) MMIO32(0x1FFF7590),
-            (void*) MMIO32(0x1FFF7594),
-            (void*) MMIO32(0x1FFF7598));
+            MMIO32(0xE000E014) + 1,
+            MMIO32(0x1FFFF7E8),
+            MMIO32(0x1FFFF7EC),
+            MMIO32(0x1FFFF7F0));
+#elif STM32L4
+    // the 0x1F... addresses are cpu-family specific
+    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
+            MMIO32(0xE000ED00),
+            MMIO16(0x1FFF75E0),
+            (_estack - _sdata) >> 8,
+            MMIO32(0x1FFF7500) & 0x1F);
+    printf("clock %d kHz, devid %p-%p-%p\n",
+            MMIO32(0xE000E014) + 1,
+            MMIO32(0x1FFF7590),
+            MMIO32(0x1FFF7594),
+            MMIO32(0x1FFF7598));
 #endif
+#endif // NDEBUG
 }
 
 void arch::init () {
@@ -78,7 +94,6 @@ void arch::init () {
 #endif
     led.mode(Pinmode::out);
 
-    printf("\r<---------------------------------------------------------->\n");
     printDeviceInfo();
 }
 

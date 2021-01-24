@@ -1163,9 +1163,10 @@ struct PyVM : Stacklet {
     void outer () {
         //XXX always true
         while (current != nullptr) {
+            assert(current == this);
             if (gcCheck()) {
                 //arch::mode(RunMode::GC);
-                current->marker();
+                marker();
                 markVec(stacklets);
                 sweep();
                 compact();
@@ -1175,7 +1176,7 @@ struct PyVM : Stacklet {
             inner();
         }
 
-        INNER_HOOK // can be used to simulate interrupts
+        INNER_HOOK // can be used to simulate interrupts TODO obsolete?
     }
 
     PyVM (Callable const& init, Stacklet* from =nullptr) {
