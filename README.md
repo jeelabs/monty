@@ -9,6 +9,5 @@ which proves that a modern dynamic language can run well on embedded µCs.
 The reason for creating this project, is to explore some stackless design ideas.
 
 The source code & docs are in the public domain and under active development.  
-Notes and documentation can be found at <https://git.jeelabs.org/jcw/monty/wiki>.
 
 [MPY]: https://micropython.org/
