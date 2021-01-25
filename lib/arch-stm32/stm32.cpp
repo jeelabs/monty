@@ -43,8 +43,6 @@ extern "C" void __assert (char const* f, int l, char const* e) {
     __assert_func(f, l, "-", e);
 }
 
-extern "C" void SystemInit () {}
-
 using namespace monty;
 
 void printDeviceInfo () {
