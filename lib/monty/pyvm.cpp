@@ -1149,8 +1149,8 @@ struct PyVM : Stacklet {
         } while (pending == 0);
 
         //XXX can't happen
-        //if (this == nullptr)
-            //return; // last frame popped, there's no context left
+        if (current == nullptr)
+            return; // last frame popped, there's no context left
 
         spOff = sp - begin();
         ipOff = ip - ipBase();
@@ -1191,6 +1191,8 @@ struct PyVM : Stacklet {
         do
             outer();
         while (pending == 0);
+        if (current == nullptr)
+            return false;
         yield(true);
         return true;
     }
@@ -1300,6 +1302,7 @@ Value PyVM::leave (Value v) {
         base = prev;            // new lower frame offset
     } else {
         //XXX last frame, drop context, restore caller
+        current = nullptr;
 #if 0
         Interp2::context = caller().ifType<PyVM>();
         auto n = Interp2::findTask(*this);
@@ -1334,12 +1337,11 @@ void PyVM::raise (Value exc) {
 
     uint32_t num = 0;
     if (exc.isInt())
-        num = exc;              // trigger soft-irq 1..31 (interrupt-safe)
+        num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
     else
-        event() = exc;          // trigger exception or other outer-loop req
+        event() = exc;  // trigger exception or other outer-loop req
 
-    assert(false); (void) num;
-    //XXX Interp2::interrupt(num);     // set pending, to force inner loop exit
+    setPending(num);    // force inner loop exit
 }
 
 void PyVM::caught () {
@@ -1367,6 +1369,14 @@ auto PyVM::next () -> Value {
     assert(fill > 0); // can only resume if not ended
     //XXX Interp2::resume(*this);
     return {}; // no result yet
+}
+
+void monty::exception (Value v) {
+    assert(!v.isInt());
+    assert(Stacklet::current != nullptr);
+    // this is a hack, the Value raises an exception, which assumes that
+    // the current stacklet is a VM, without checking that it really is
+    ((PyVM*) Stacklet::current)->raise(v);
 }
 
 Type const Bytecode::info (Q(184,"<bytecode>"));

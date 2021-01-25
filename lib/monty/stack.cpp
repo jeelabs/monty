@@ -156,6 +156,8 @@ auto Stacklet::runLoop () -> bool {
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
+        if (current == nullptr)
+            return false; // TODO s there no other way to cleany end the app?
         current->adj(current->fill);
     }
 

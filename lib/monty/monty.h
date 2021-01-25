@@ -1010,5 +1010,7 @@ namespace monty {
         auto binop (BinOp, Value) const -> Value override;
     };
 
+    void exception (Value v); // TODO hack, defined in pyvm.cpp
+
     extern Lookup const builtins;
 }
