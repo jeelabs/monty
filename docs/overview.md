@@ -81,19 +81,20 @@ markers with _automatically_ generated results. These makers start with the text
 * `//CG: tag ...` - the same, but now the code generator has seen it (and
   presumably saved the request for other parts of its processing)
 * `//CG1 tag ...` to `//CG3 tag ...` - this line and the next 1..3 lines go
-  together, the code generator "owns" those next lines, and changes then as
+  together, the code generator "owns" those next lines, and changes them as
   needed
 * `//CG< tag ...` - this marks a range owned by the code generator, which runs
   until a line with `//CG>` is seen
 
 Note that "owned by" means that the text will be **replaced** by the code
 generator as it sees fit. The text inside these ranges should not be edited
-manually.
+manually. At best, it breaks code generation - at worst, your changes will be
+lost.
 
-Code generation is used for a wide range of tasks, from repetitive expansions
-that would be cumbersome to write by hand in many places, to parsing external
-headers and transforming them to information needed in Monty. Another very
-common use is to collect information about the code in various places, and then
+Code generation is used for a wide range of tasks, from shorthand for repetitive
+expansions that would be cumbersome to write by hand, to parsing external
+headers and transforming them to the format needed in Monty. Another very common
+use is to collect information about the code in various places, and then
 _generate_ associated code elsewhere, such as dispatch tables for several
 classes used all over Monty.
 
@@ -102,7 +103,8 @@ occurrence of the form `Q(<NNN>,"...")` and replace `<NNN>` with a unique id.
 Then, in `qstr.cpp`, all these ids and strings are dumped in `VaryVec` format.
 
 See Invoke's `tasks.py` for details about how and when code generation is
-triggered.
+triggered. Do not run `codegen.py` manually, as it wants its arguments in a
+specific order - use `inv gen` for this instead.
 
 [PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/
