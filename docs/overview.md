@@ -33,14 +33,14 @@ Dependencies: [PlatformIO][PIO], [PyInvoke][INV], and [MicroPython][MPY].
 
 For other commands, see `inv -l` (some don't work) and `pio -h`.
 
-> **Warning:** for embedded builds, you must add a line in the `[stm32]`
+> **Warning:** for embedded builds, add a line in the `[stm32]`
 section of `platformio.ini` file, containing `lib_deps = JeeH`. See
 [pio#3810](https://github.com/platformio/platformio-core/issues/3810).  It's not
 needed when using a local copy of JeeH.
 
 By default, the embedded builds are for a Nucleo-32 board with STM32L432KC µC.
-To use another board, create PIO definitions in `platformio-local.ini`, for
-example:
+To use another STM32 board, create PIO definitions in `platformio-local.ini`,
+for example:
 
 ```
 [platformio]
@@ -52,6 +52,8 @@ board = bluepill_f103c8
 build_flags = ${stm32.build_flags} -DSTM32F1
 upload_protocol = blackmagic
 ```
+
+Other types of embedded boards will require additional code in `lib/arch-*/`.
 
 [PIO]: https://docs.platformio.org/en/latest/
 [MPY]: https://github.com/micropython/micropython
