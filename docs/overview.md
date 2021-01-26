@@ -21,17 +21,30 @@ There's almost no documentation ... just what's on on this page.
 └── ...
 ```
 
-## Development
+## Requirements
 
-Dependencies: [PlatformIO][PIO], [PyInvoke][INV], and [MicroPython][MPY].
+Dependencies: [Python 3.x][PY3], [PyInvoke][INV], [PlatformIO][PIO], and
+[MicroPython][MPY].<br/>
+Use `inv health` to verify that everything is found and working:
+
+```
+$ inv health
+Darwin x86_64
+Python 3.8.7
+Invoke 1.5.0
+PlatformIO Core, version 5.1.0rc1
+MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
+```
+
+## Development
 
 * native run: `inv native` (builds and runs on Linux or MacOS hosts)
 * native test `inv test` (builds and runs C++ tests on host)
 * embedded console: `inv serial` (keep open in a separate shell)
 * embedded upload: `pio run` (will build, upload, and reset)
 * embedded test: `pio test` (note: don't keep a separate console open)
-
-For other commands, see `inv -l` (some don't work) and `pio -h`.
+* for options, use invoke's built-in help, e.g. `inv native -h`.
+* for other commands, see `inv -l` (work in progress) and `pio -h`.
 
 > **Warning:** for embedded builds, add a line in the `[stm32]`
 section of `platformio.ini` file, containing `lib_deps = JeeH`. See
@@ -55,6 +68,7 @@ upload_protocol = blackmagic
 
 Other types of embedded boards will require additional code in `lib/arch-*/`.
 
+[PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/
-[MPY]: https://github.com/micropython/micropython
-[INV]: https://www.pyinvoke.org
+[MPY]: https://github.com/micropython/micropython/
+[INV]: https://www.pyinvoke.org/

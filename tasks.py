@@ -11,11 +11,17 @@ def gen(c):
     """process source code with code generator"""
     c.run("src/codegen.py qstr.h lib/monty/ qstr.cpp")
 
-@task(gen)
-def native(c):
+@task(gen, help={"file": "name of the .py or .mpy file to run"})
+def native(c, file=""):
     """run a script using the native build"""
     c.run("pio run -e native -s", pty=True)
-    c.run(".pio/build/native/program", pty=True)
+    cmd = ".pio/build/native/program"
+    if file:
+        if file[-3:] == ".py":
+            c.run("mpy-cross %s" % file)
+            file = file[:-3] + ".mpy"
+        cmd += " " + file
+    c.run(cmd, pty=True)
 
 @task
 def test(c):
