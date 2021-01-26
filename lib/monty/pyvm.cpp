@@ -255,7 +255,7 @@ struct PyVM : Stacklet {
     // check and trigger gc on backwards jumps, i.e. inside all loops
     static void loopCheck (int arg) {
         if (arg < 0 && gcCheck())
-            ;//XXX interrupt(0);
+            exception(0);
     }
 
     //CG: op-init
@@ -1210,8 +1210,8 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = &currentVM();
     auto coro = bc.isGenerator();
-    if (coro)
-        ;//XXX ctx = new Context;
+    //if (coro)
+        //return {};// FIXME ctx = new Context;
 
     ctx->enter(*this);
 
@@ -1239,9 +1239,10 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-auto Callable::getAt (Value) const -> Value {
-    assert(false);
-    return {};
+auto Callable::getAt (Value n) const -> Value {
+    // TODO where is this called?
+    assert(n.isInt());
+    return bc[n];
 }
 
 void Callable::marker () const {
@@ -1252,6 +1253,7 @@ void Callable::marker () const {
 }
 
 auto Callable::funcAt (int num) const -> Bytecode const& {
+    // TODO could this re-use getAt?
     return bc[num].asType<Bytecode>();
 }
 
