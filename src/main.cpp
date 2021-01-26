@@ -19,6 +19,7 @@ int main (int argc, char const** argv) {
 #endif
 
     setup(memPool, sizeof memPool);
+    libInstall();
 
     auto data = boot;
 #if NATIVE
