@@ -1,3 +1,0 @@
-# Ping
-
-Hello Ping.

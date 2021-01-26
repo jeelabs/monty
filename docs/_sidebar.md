@@ -1,10 +1,9 @@
 - One
   - [foo](foo.md)
   - [bar](bar.md)
-  - [ping](ping.md)
-  - [pong](pong.md)
 - Two
-  - [Topic 1](advanced/adv-topic-1.md)
-  - [Topic 2](advanced/adv-topic-2.md)
+  - [Topic 1](sometopic/foo.md)
+  - [Topic 2](sometopic/bar.md)
 - **Links**
-  - [Docsify OPSK](https://github.com/hibbitts-design/docsify-open-publishing-starter-kit/blob/master/README.md)
+  - [Code @ GitHub](https://github.com/jeelabs/monty)
+  - [Gitea Backup](https://git.jeelabs.org/jcw/monty)
