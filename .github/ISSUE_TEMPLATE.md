@@ -1,4 +1,4 @@
-[Note: all queries and suggestions will be moved to the [Discussions](/jeelabs/sandbox/discussions) area]
+[Note: all queries and suggestions will be moved to the [Discussions](/jeelabs/monty/discussions) area]
 
 **Describe the bug**  
 ...
