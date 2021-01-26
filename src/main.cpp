@@ -12,6 +12,12 @@ uint8_t const boot [] = {
 
 int main (int argc, char const** argv) {
     arch::init();
+#ifndef NDEBUG
+    printf("build " __DATE__ ", " __TIME__ "\n"
+           "using " __VERSION__ "\n"
+           "<------------------------------------------------------------->\n");
+#endif
+
     setup(memPool, sizeof memPool);
 
     auto data = boot;
@@ -28,5 +34,9 @@ int main (int argc, char const** argv) {
 
     Stacklet::runLoop();
 
+#ifndef NDEBUG
+    printf("</>\n");
+    gcReport();
+#endif
     return arch::done();
 }

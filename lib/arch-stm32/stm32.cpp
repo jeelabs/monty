@@ -46,11 +46,8 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 using namespace monty;
 
 void printDeviceInfo () {
-    printf("\b \n"); // FIXME hides invalid char sent after a reset (?)
+    printf("\b \n"); // FIXME hides invalid char sent after a reset (why?)
 #ifndef NDEBUG
-    printf("\r<-------------------------------------------------------------->"
-           "\nbuild " __DATE__ ", " __TIME__ "\n");
-
     extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
             g_pfnVectors, _sidata, _sdata, _ebss, _estack);
@@ -100,6 +97,5 @@ void arch::idle () {
 }
 
 int arch::done () {
-    printf("\r</>\n");
     while (true) {}
 }
