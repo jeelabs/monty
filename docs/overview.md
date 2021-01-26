@@ -68,6 +68,42 @@ upload_protocol = blackmagic
 
 Other types of embedded boards will require additional code in `lib/arch-*/`.
 
+## Code generation
+
+Some parts of the source code in Monty are generated using the `src/codegen.py`
+script, which is exclusively tailored for Monty.  Code generation is done by
+scanning all source code at the start of each build and _replacing_ certain
+markers with _automatically_ generated results. These makers start with the text
+`//CG`. There are a few variants:
+
+* `//CG tag ...` - this is a newly-entered source line which has never been
+  processed
+* `//CG: tag ...` - the same, but now the code generator has seen it (and
+  presumably saved the request for other parts of its processing)
+* `//CG1 tag ...` to `//CG3 tag ...` - this line and the next 1..3 lines go
+  together, the code generator "owns" those next lines, and changes then as
+  needed
+* `//CG< tag ...` - this marks a range owned by the code generator, which runs
+  until a line with `//CG>` is seen
+
+Note that "owned by" means that the text will be **replaced** by the code
+generator as it sees fit. The text inside these ranges should not be edited
+manually.
+
+Code generation is used for a wide range of tasks, from repetitive expansions
+that would be cumbersome to write by hand in many places, to parsing external
+headers and transforming them to information needed in Monty. Another very
+common use is to collect information about the code in various places, and then
+_generate_ associated code elsewhere, such as dispatch tables for several
+classes used all over Monty.
+
+Qstr IDs are also assigned here: the code generator will identify **every**
+occurrence of the form `Q(<NNN>,"...")` and replace `<NNN>` with a unique id.
+Then, in `qstr.cpp`, all these ids and strings are dumped in `VaryVec` format.
+
+See Invoke's `tasks.py` for details about how and when code generation is
+triggered.
+
 [PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/
 [MPY]: https://github.com/micropython/micropython/
