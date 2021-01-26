@@ -332,7 +332,7 @@ namespace monty {
             : ArgVec (v, n, p - v.begin()) {}
         ArgVec (Vector const& v, int n, int o =0) : vec (v), num (n), off (o) {}
 
-        //auto size () const -> uint32_t { return num; }
+        auto size () const -> uint32_t { return num; }
         auto begin () const -> Value const* { return vec.begin() + off; }
         auto end () const -> Value const* { return begin() + num; }
         auto operator[] (uint32_t idx) const -> Value& { return vec[off+idx]; }
@@ -368,7 +368,7 @@ namespace monty {
 
     //CG3 type <none>
     struct None : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         auto repr (Buffer&) const -> Value override;
@@ -382,7 +382,7 @@ namespace monty {
     struct Bool : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -402,7 +402,7 @@ namespace monty {
     struct Int : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -426,7 +426,7 @@ namespace monty {
 
     //CG3 type <iterator>
     struct Iterator : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         Iterator (Object& obj, int pos =-1) : ipos (pos), iobj (obj) {}
@@ -443,7 +443,7 @@ namespace monty {
     struct Range : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -460,7 +460,7 @@ namespace monty {
     struct Slice : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -476,7 +476,7 @@ namespace monty {
     struct Bytes : Object, ByteVec {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -495,7 +495,7 @@ namespace monty {
     struct Str : Bytes {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -536,7 +536,7 @@ namespace monty {
 
     //CG3 type <lookup>
     struct Lookup : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         struct Item { Value k, v; }; // TODO plain const Value list or dict ?
@@ -561,7 +561,7 @@ namespace monty {
     struct Tuple : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -591,7 +591,7 @@ namespace monty {
     struct List : Object, Vector {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -617,7 +617,7 @@ namespace monty {
     struct Set : List {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -644,7 +644,7 @@ namespace monty {
     struct Dict : Set {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -674,7 +674,7 @@ namespace monty {
 
     //CG3 type <dictview>
     struct DictView : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         DictView (Dict const& d, int vt) : dict (d), vtype (vt) {}
@@ -693,7 +693,7 @@ namespace monty {
     struct Type : Dict {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -718,7 +718,7 @@ namespace monty {
     struct Class : Type {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -730,7 +730,7 @@ namespace monty {
     struct Super : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
     //CG>
@@ -768,7 +768,7 @@ namespace monty {
 
     //CG3 type <event>
     struct Event : List {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         ~Event () override { deregHandler(); }
@@ -788,7 +788,7 @@ namespace monty {
 
     //CG3 type <stacklet>
     struct Stacklet : List {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         uint16_t ms = 0;
@@ -830,7 +830,7 @@ namespace monty {
 
     //CG3 type <module>
     struct Module : Dict {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
@@ -843,7 +843,7 @@ namespace monty {
 
     //CG3 type <function>
     struct Function : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         using Prim = auto (*)(ArgVec const&) -> Value;
 
@@ -904,7 +904,7 @@ namespace monty {
 
     //CG3 type <method>
     struct Method : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         constexpr Method (MethodBase const& m) : meth (m) {}
@@ -924,7 +924,7 @@ namespace monty {
 
     //CG3 type <boundmeth>
     struct BoundMeth : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         BoundMeth (Object const& f, Value o) : meth (f), self (o) {}
@@ -939,7 +939,7 @@ namespace monty {
 
     //CG3 type <cell>
     struct Cell : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         Cell (Value v) : val (v) {}
@@ -951,7 +951,7 @@ namespace monty {
 
     //CG3 type <closure>
     struct Closure : List {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer& buf) const -> Value override;
 
@@ -968,7 +968,7 @@ namespace monty {
 
     //CG3 type <buffer>
     struct Buffer : Object {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
 
         void putc (char v) { write((uint8_t const*) &v, 1); }
@@ -992,7 +992,7 @@ namespace monty {
 
     //CG3 type <exception>
     struct Exception : Tuple {
-        static Type const info;
+        static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
 
@@ -1013,4 +1013,8 @@ namespace monty {
     void exception (Value v); // TODO hack, defined in pyvm.cpp
 
     extern Lookup const builtins;
+
+// see library.cpp - runtime library functions for several datatypes
+
+    void libInstall ();
 }

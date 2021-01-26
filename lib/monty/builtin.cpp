@@ -193,34 +193,34 @@ auto Object::type () const -> Type const& { return info; }
 Type const Inst::info (Q(183,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
-Type const    BoundMeth::info (Q(167,"<boundmeth>"));
-Type const       Buffer::info (Q(168,"<buffer>"));
-Type const         Cell::info (Q(169,"<cell>"));
-Type const      Closure::info (Q(170,"<closure>"));
-Type const     DictView::info (Q(171,"<dictview>"));
-Type const        Event::info (Q(172,"<event>"));
-Type const    Exception::info (Q(173,"<exception>"));
-Type const     Function::info (Q(174,"<function>"));
-Type const     Iterator::info (Q(175,"<iterator>"));
-Type const       Lookup::info (Q(176,"<lookup>"));
-Type const       Method::info (Q(177,"<method>"));
-Type const       Module::info (Q(  7,"<module>"));
-Type const         None::info (Q(178,"<none>"));
-Type const     Stacklet::info (Q(179,"<stacklet>"));
+Type    BoundMeth::info (Q(167,"<boundmeth>"));
+Type       Buffer::info (Q(168,"<buffer>"));
+Type         Cell::info (Q(169,"<cell>"));
+Type      Closure::info (Q(170,"<closure>"));
+Type     DictView::info (Q(171,"<dictview>"));
+Type        Event::info (Q(172,"<event>"));
+Type    Exception::info (Q(173,"<exception>"));
+Type     Function::info (Q(174,"<function>"));
+Type     Iterator::info (Q(175,"<iterator>"));
+Type       Lookup::info (Q(176,"<lookup>"));
+Type       Method::info (Q(177,"<method>"));
+Type       Module::info (Q(  7,"<module>"));
+Type         None::info (Q(178,"<none>"));
+Type     Stacklet::info (Q(179,"<stacklet>"));
 
-Type const     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
-Type const    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type const    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
-Type const     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type const      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
-Type const     List::info (Q(108,"list")  ,   List::create, &List::attrs);
-Type const    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
-Type const      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type const    Slice::info (Q(181,"slice") ,  Slice::create, &Slice::attrs);
-Type const      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
-Type const    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
-Type const    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
-Type const     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
+Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
+Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
+Type    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
+Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
+Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
+Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
+Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
+Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
+Type    Slice::info (Q(181,"slice") ,  Slice::create, &Slice::attrs);
+Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
+Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
+Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
+Type     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
 auto    BoundMeth::type () const -> Type const& { return info; }
 auto       Buffer::type () const -> Type const& { return info; }

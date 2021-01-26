@@ -133,7 +133,7 @@ def TYPE(block, tag, *_):
         'struct %s : %s {' % (name, base),
         '    static auto create (ArgVec const&,Type const* =nullptr) -> Value;',
         '    static Lookup const attrs;',
-        '    static Type const info;',
+        '    static Type info;',
         '    auto type () const -> Type const& override;',
         '    auto repr (Buffer&) const -> Value override;',
     ]
@@ -172,8 +172,8 @@ def BUILTIN_TYPES(block, fname):
                     info.append([f1[2], f2[1], f2[3]])
     info.sort()
     out = []
-    fmt1a = 'Type const %12s::info (%s);'
-    fmt1b = 'Type const %8s::info (%-15s, %6s::create, &%s::attrs);'
+    fmt1a = 'Type %12s::info (%s);'
+    fmt1b = 'Type %8s::info (%-15s, %6s::create, &%s::attrs);'
     fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
     sep = True
     for tag, name, base in info:

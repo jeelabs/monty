@@ -16,7 +16,7 @@ using namespace monty;
 struct Bytecode;
 
 struct Callable : Object {
-    static Type const info;
+    static Type info;
     auto type () const -> Type const& override;
 
     Callable (Bytecode const& callee, Value pos, Value kw)
@@ -41,7 +41,7 @@ struct Callable : Object {
 #include "import.h"
 
 struct PyVM : Stacklet {
-    static Type const info;
+    static Type info;
     auto type () const -> Type const& override;
 
     // first entries in a context are reserved slots for specific state
@@ -1381,13 +1381,13 @@ void monty::exception (Value v) {
     ((PyVM*) Stacklet::current)->raise(v);
 }
 
-Type const Bytecode::info (Q(184,"<bytecode>"));
+Type Bytecode::info (Q(184,"<bytecode>"));
 auto Bytecode::type () const -> Type const& { return info; }
 
-Type const Callable::info (Q(185,"<callable>"));
+Type Callable::info (Q(185,"<callable>"));
 auto Callable::type () const -> Type const& { return info; }
 
-Type const PyVM::info (Q(186,"<pyvm>"));
+Type PyVM::info (Q(186,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
 auto vmTest (uint8_t const* data) -> Stacklet* {

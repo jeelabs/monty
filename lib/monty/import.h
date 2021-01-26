@@ -10,7 +10,7 @@
 
 //CG3 type <bytecode>
 struct Bytecode : List {
-    static Type const info;
+    static Type info;
     auto type () const -> Type const& override;
 
     auto fastSlotTop () const -> uint32_t { return stackSz; }
