@@ -28,6 +28,5 @@ int main (int argc, char const** argv) {
 
     Stacklet::runLoop();
 
-    gcReport();
     return arch::done();
 }
