@@ -101,6 +101,26 @@ See Invoke's `tasks.py` for details about how and when code generation is
 triggered. Do not run `codegen.py` manually, as it wants its arguments in a
 specific order - use `inv gen` for this instead.
 
+## Code formatting conventions
+
+* no braces around single statements
+* opening brace at end of previous line
+* space after if, while, etc keywords
+* empty body in for/while is written as {}, not ; and placed on same line
+* space after comma, not after ( or before )
+* space after name in **declarations** of functions and arrays
+* no space after name in their **actual use**, i.e. in calls and indexing
+* `template` is placed on a separate line, before the class/function
+* only "auto" or "void" in front of function decl, return type placed after `->`
+* `const` comes after the type, aka the "east const" convention
+* pointer declarations are written as `int* v` iso `int *v`
+* short methods are defined inline, without adding "inline" keyword
+* local functions defined as static, this helps the compiler optimise
+* a `struct` is a class with public visibility, no need for "class ... public:"
+* hard tabs set to 8, indents set to 4
+* line lengths limited to 80 where possible
+* comments use `// ...`, preferred over /\*...\*/
+
 [PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/
 [MPY]: https://github.com/micropython/micropython/
