@@ -88,7 +88,6 @@ struct Serial : Stacklet {
 
     Serial (void (*fun)(char const*)) : reader (fun) {
         irqId = incoming.regHandler();
-        printf("irqId %d\n", irqId);
         prevIsr = console.handler();
 
         console.handler() = []() {
