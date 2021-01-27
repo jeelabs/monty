@@ -1,7 +1,9 @@
 extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
+    void cliTask (void(*)(char const*));
+
     void init ();
     void idle ();
-    int done ();
+    auto done () -> int;
 }

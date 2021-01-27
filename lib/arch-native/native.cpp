@@ -20,6 +20,10 @@ auto arch::loadFile (char const* name) -> uint8_t const* {
     return data;
 }
 
+void arch::cliTask (void(*)(char const*)) {
+    // TODO not that useful on native, but could perhaps process cli-args
+}
+
 void arch::init () {
     setbuf(stdout, nullptr);
 }
@@ -28,6 +32,6 @@ void arch::idle () {
     // nothing ...
 }
 
-int arch::done () {
+auto arch::done () -> int {
     return 0;
 }

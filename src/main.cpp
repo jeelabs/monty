@@ -10,6 +10,10 @@ uint8_t const boot [] = {
 #include "boot.h"
 };
 
+void shell (char const* cmd) {
+    printf("cmd <%s>\n", cmd);
+}
+
 int main (int argc, char const** argv) {
     arch::init();
 #ifndef NDEBUG
@@ -32,8 +36,12 @@ int main (int argc, char const** argv) {
 
     extern auto vmTest (uint8_t const*) -> Stacklet*;
     vmTest(data);
+    handlers.append(None::nullObj); // TODO avoid event id 0, it's used by VM
 
-    Stacklet::runLoop();
+    arch::cliTask(shell);
+
+    while (Stacklet::runLoop())
+        arch::idle();
 
 #ifndef NDEBUG
     printf("</>\n");

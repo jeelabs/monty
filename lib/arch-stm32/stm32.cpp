@@ -80,6 +80,57 @@ void printDeviceInfo () {
 #endif // NDEBUG
 }
 
+struct Serial : Stacklet {
+    Event incoming;
+    void (*reader)(char const*);
+    char buf [100]; // TODO avoid hard limit for input line length
+    uint32_t fill = 0;
+
+    Serial (void (*fun)(char const*)) : reader (fun) {
+        irqId = incoming.regHandler();
+        printf("irqId %d\n", irqId);
+        prevIsr = console.handler();
+
+        console.handler() = []() {
+            prevIsr();
+            if (console.readable())
+                Stacklet::setPending(irqId);
+        };
+    }
+
+    ~Serial () {
+        console.handler() = prevIsr;
+        incoming.deregHandler();
+    }
+
+    auto run () -> bool override {
+        incoming.wait();
+        incoming.clear();
+        while (console.readable()) {
+            auto c = console.getc();
+            if (c == '\n') {
+                buf[fill] = 0;
+                fill = 0;
+                reader(buf);
+            } else if (c != '\r' && fill < sizeof buf - 1)
+                buf[fill++] = c;
+        }
+        return true;
+    }
+
+    // these are static because the replacement (static) console ISR uses them
+    static void (*prevIsr)();
+    static uint32_t irqId;
+};
+
+void (*Serial::prevIsr)();
+uint32_t Serial::irqId;
+
+void arch::cliTask(void(*fun)(char const*)) {
+    printf("cliTask?\n");
+    new Serial (fun);
+}
+
 void arch::init () {
     console.init();
 #if STM32F103xB
@@ -96,6 +147,6 @@ void arch::idle () {
     asm ("wfi");
 }
 
-int arch::done () {
+auto arch::done () -> int {
     while (true) {}
 }

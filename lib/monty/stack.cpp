@@ -138,11 +138,11 @@ auto Stacklet::runLoop () -> bool {
 
     while (true) {
         auto flags = allPending();
-        for (uint32_t i = 0; flags != 0 && i < handlers.size(); ++i) {
+        for (uint32_t i = 1; flags != 0 && i < handlers.size(); ++i) {
             auto bit = 1<< i;
             if (flags & bit) {
                 if (!handlers[i].isNil())
-                    ready.append(handlers[i]);
+                    handlers[i].asType<Event>().set();
                 flags &= ~bit;
             }
         }
@@ -156,14 +156,13 @@ auto Stacklet::runLoop () -> bool {
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
-        if (current == nullptr)
-            return false; // TODO s there no other way to cleany end the app?
-        current->adj(current->fill);
+        if (current != nullptr)
+            current->adj(current->fill);
     }
 
     // return true if there is still at least one active interrupt handler
-    for (auto e : handlers)
-        if (!e.isNil())
+    for (uint32_t i = 1; i < handlers.size(); ++i)
+        if (!handlers[i].isNil())
             return true;
 
     handlers.adj(0); // there are none, might as well clean up
