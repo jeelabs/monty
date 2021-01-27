@@ -126,9 +126,8 @@ struct Serial : Stacklet {
 void (*Serial::prevIsr)();
 uint32_t Serial::irqId;
 
-void arch::cliTask(void(*fun)(char const*)) {
-    printf("cliTask?\n");
-    new Serial (fun);
+auto arch::cliTask(void(*fun)(char const*)) -> Stacklet* {
+    return new Serial (fun);
 }
 
 void arch::init () {

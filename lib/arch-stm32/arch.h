@@ -1,7 +1,7 @@
 extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
-    void cliTask (void(*)(char const*));
+    auto cliTask (void(*)(char const*)) -> monty::Stacklet*;
 
     void init ();
     void idle ();

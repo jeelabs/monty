@@ -36,7 +36,6 @@ int main (int argc, char const** argv) {
 
     extern auto vmTest (uint8_t const*) -> Stacklet*;
     vmTest(data);
-    handlers.append(None::nullObj); // TODO avoid event id 0, it's used by VM
 
     arch::cliTask(shell);
 
