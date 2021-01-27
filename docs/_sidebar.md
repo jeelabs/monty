@@ -7,4 +7,3 @@
 - **Links**
   - [Source code](https://github.com/jeelabs/monty)
   - [Discussions](https://github.com/jeelabs/monty/discussions)
-  - [Gitea Backup](https://git.jeelabs.org/jcw/monty)
