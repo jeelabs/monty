@@ -5,5 +5,6 @@
   - [Topic 1](sometopic/foo.md)
   - [Topic 2](sometopic/bar.md)
 - **Links**
-  - [Code @ GitHub](https://github.com/jeelabs/monty)
+  - [Source code](https://github.com/jeelabs/monty)
+  - [Discussions](https://github.com/jeelabs/monty/discussions)
   - [Gitea Backup](https://git.jeelabs.org/jcw/monty)
