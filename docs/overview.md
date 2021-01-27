@@ -46,11 +46,6 @@ MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
 * for options, use invoke's built-in help, e.g. `inv native -h`.
 * for other commands, see `inv -l` (work in progress) and `pio -h`.
 
-> **Warning:** for embedded builds, add a line in the `[stm32]`
-section of `platformio.ini` file, containing `lib_deps = JeeH`. See
-[pio#3810](https://github.com/platformio/platformio-core/issues/3810).  It's not
-needed when using a local copy of JeeH.
-
 By default, the embedded builds are for a Nucleo-32 board with STM32L432KC µC.
 To use another STM32 board, create PIO definitions in `platformio-local.ini`,
 for example:
