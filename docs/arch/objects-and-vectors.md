@@ -14,7 +14,7 @@ short: **objects are tidy**.
 **Vectors** are used for data which can change in size, such as strings and
 lists. They are instances of the C++ class `Vec`, and contain a pointer into
 _vector space_, located at the low end of the global memory pool. Note:
-vector instances themselves are jteust a few bytes, including that pointer to
+vector instances themselves are just a few bytes, including that pointer to
 actual vector _contents_.
 
 ?> The main property of a vector, is that its contents can be resized as needed.
