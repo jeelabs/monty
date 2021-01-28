@@ -1396,8 +1396,8 @@ auto vmTest (uint8_t const* data) -> Stacklet* {
     if (init == nullptr)
         return nullptr;
 
-    assert(handlers.size() == 0); // no events may have been registered yet
-    handlers.append(None::nullObj); // reserve 1st entry for VM TODO yuck
+    if (handlers.size() == 0) // no events may have been registered yet
+        handlers.append(None::nullObj); // reserve 1st entry for VM TODO yuck
 
     return new PyVM (*init);
 }

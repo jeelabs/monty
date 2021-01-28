@@ -9,8 +9,12 @@ uint8_t const boot [] = {
 #include "boot.h"
 };
 
+extern auto vmTest (uint8_t const*) -> Stacklet*;
+
 auto shell (char const* cmd) -> bool {
     printf("cmd <%s>\n", cmd);
+    if (cmd[0] == 'M' && cmd[1] == 0x05)
+        vmTest((uint8_t const*) cmd);
     return true; //XXX *cmd != 0;
 }
 
@@ -31,7 +35,6 @@ int main (int argc, char const** argv) {
         data = arch::loadFile(argv[1]);
 #endif
 
-    extern auto vmTest (uint8_t const*) -> Stacklet*;
     if (vmTest(data) == nullptr)
         printf("no VM\n");
 
