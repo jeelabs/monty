@@ -82,11 +82,11 @@ void printDeviceInfo () {
 
 struct Serial : Stacklet {
     Event incoming;
-    void (*reader)(char const*);
+    auto (*reader)(char const*)->bool;
     char buf [100]; // TODO avoid hard limit for input line length
     uint32_t fill = 0;
 
-    Serial (void (*fun)(char const*)) : reader (fun) {
+    Serial (auto (*fun)(char const*)->bool) : reader (fun) {
         irqId = incoming.regHandler();
         prevIsr = console.handler();
 
@@ -110,7 +110,10 @@ struct Serial : Stacklet {
             if (c == '\n') {
                 buf[fill] = 0;
                 fill = 0;
-                reader(buf);
+                if (!reader(buf)) {
+                    incoming.deregHandler(); // TODO also called in destructor
+                    return false;
+                }
             } else if (c != '\r' && fill < sizeof buf - 1)
                 buf[fill++] = c;
         }
@@ -125,7 +128,7 @@ struct Serial : Stacklet {
 void (*Serial::prevIsr)();
 uint32_t Serial::irqId;
 
-auto arch::cliTask(void(*fun)(char const*)) -> Stacklet* {
+auto arch::cliTask(auto(*fun)(char const*)->bool) -> Stacklet* {
     return new Serial (fun);
 }
 

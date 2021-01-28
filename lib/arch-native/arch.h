@@ -2,7 +2,7 @@ extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
     auto loadFile (char const*) -> uint8_t const*;
-    auto cliTask (void(*)(char const*)) -> monty::Stacklet*;
+    auto cliTask (auto(*)(char const*)->bool) -> monty::Stacklet*;
 
     void init ();
     void idle ();

@@ -1,4 +1,3 @@
-#include <cassert>
 #include "monty.h"
 #include "arch.h"
 
@@ -10,8 +9,9 @@ uint8_t const boot [] = {
 #include "boot.h"
 };
 
-void shell (char const* cmd) {
+auto shell (char const* cmd) -> bool {
     printf("cmd <%s>\n", cmd);
+    return *cmd != 0;
 }
 
 int main (int argc, char const** argv) {
