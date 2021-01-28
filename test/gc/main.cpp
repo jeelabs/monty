@@ -18,7 +18,7 @@ private:
 };
 
 void setUp () {
-    setup(memory, sizeof memory);
+    gcSetup(memory, sizeof memory);
     memAvail = gcAvail();
     created = destroyed = marked = failed = 0;
     panicOutOfMemory = []() -> void* { ++failed; return nullptr; };

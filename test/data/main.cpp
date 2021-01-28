@@ -12,7 +12,7 @@ uint8_t memory [3*1024];
 uint32_t memAvail;
 
 void setUp () {
-    setup(memory, sizeof memory);
+    gcSetup(memory, sizeof memory);
     memAvail = gcAvail();
 }
 

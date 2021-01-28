@@ -271,7 +271,7 @@ namespace monty {
         return true;
     }
 
-    void setup (void* base, uint32_t size) {
+    void gcSetup (void* base, uint32_t size) {
         assert(size > 2 * VS_SZ);
 
         // to get alignment right, simply increase base and decrease size a bit

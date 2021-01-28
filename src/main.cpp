@@ -26,7 +26,7 @@ int main (int argc, char const** argv) {
            "<------------------------------------------------------------->\n");
 #endif
 
-    setup(memPool, sizeof memPool);
+    gcSetup(memPool, sizeof memPool);
     libInstall();
 
     auto data = boot;

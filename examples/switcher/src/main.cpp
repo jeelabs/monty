@@ -18,7 +18,7 @@ char mem [10000];
 int main () {
     led.mode(Pinmode::out);
 
-    setup(mem, sizeof mem); // set up GC memory pool
+    gcSetup(mem, sizeof mem); // set up GC memory pool
 
     Switcher s;
 

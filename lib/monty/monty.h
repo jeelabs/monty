@@ -57,8 +57,7 @@ namespace monty {
         friend void compact ();
     };
 
-    void setup (void* base, uint32_t size); // configure the memory pool
-
+    void gcSetup (void* base, uint32_t size); // configure the memory pool
     auto gcAvail () -> uint32_t; // return free space between objects & vectors
     auto gcCheck () -> bool;     // true when it's time to collect the garbage
     void gcObjDump ();           // like sweep, but only to print all obj+free

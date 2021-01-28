@@ -55,7 +55,7 @@ int main () {
     led.mode(Pinmode::out);
     Port<'A'>::modeMap(0b1111011, Pinmode::out);
 
-    setup(mem, sizeof mem); // set up the GC memory pool
+    gcSetup(mem, sizeof mem); // set up the GC memory pool
 
     // create 7 stacklets, with different delays
     for (int i = 0; i < 7; ++i)
