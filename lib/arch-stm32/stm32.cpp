@@ -155,14 +155,8 @@ auto arch::done () -> int {
 #ifdef UNIT_TEST
 
 extern "C" void unittest_uart_begin () {
-    // TODO remove duplication w.r.t. arch::init()
-    console.init();
-#if STM32F103xB
-    enableSysTick(); // no HSE crystal
-#else
-    console.baud(115200, fullSpeedClock());
-#endif
-    wait_ms(200);
+    arch::init();
+    wait_ms(100);
 }
 
 extern "C" void unittest_uart_putchar (char c) {
@@ -173,6 +167,8 @@ extern "C" void unittest_uart_flush () {
     while (!console.xmit.empty()) {}
 }
 
-extern "C" void unittest_uart_end () {}
+extern "C" void unittest_uart_end () {
+    arch::done();
+}
 
 #endif
