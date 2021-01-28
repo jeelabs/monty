@@ -21,7 +21,7 @@ actual vector _contents_.
 Vectors can be moved by the GC to reclaim contiguous memory space. In short:
 **vectors are flexible**.
 
-There is a third ingredient, which brings everything together and makes things
+There is a third ingredient, which brings everything together and makes it all
 really convenient in C++: a **Value** is an instance of the C++ class `Value`
 which represent a _typed reference_. A value can hold either an integer, a
 string, a _qstr_ ("quick string"), a pointer to an object, or nil (`nullptr` in
@@ -32,7 +32,7 @@ _member functions_. In Python, "things" are called _objects_, and they have
 _attributes_ and _methods_. It's hard to always get this right!
 
 All objects, vectors, and values are instances in C++, but they tend to be
-allocated and used very differently, due to their very specific properties:
+allocated and used differently, due to their very specific properties:
 
 * a value is just a 32-bit word, with some fancy tagging tricks to be able to
   distinguish its current type (on 64-bit CPUs, a value is 64 bits) - passing a
@@ -42,8 +42,8 @@ allocated and used very differently, due to their very specific properties:
   ... _Pythonic?_
 * values have no C++ destructor, nothing special happens when they go out of
   scope
-* objects and vector instances are **not** allowed to move around in memory, as
-  this would break any pointers referring to them
+* objects and vector instances may **not** move around in memory, as this would
+  break any pointers referring to them
 * since (by design) the _contents_ of vectors will move, this means that vectors
   cannot _contain_ object or vector instances - only simple (scalar) values and
   _pointers_ (to objects or other vectors, for example)
