@@ -7,6 +7,7 @@
   - [Data structures](arch/data-structures.md)
   - [The Python VM](arch/the-python-vm.md)
 - **[Source code](src/README.md)**
+  - [Conventions](src/conventions.md)
   - [monty/gc.cpp](src/monty-gc.md)
   - [monty/pyvm.cpp](src/monty-pyvm.md)
   - [arch-stm32/](src/arch-stm32.md)
