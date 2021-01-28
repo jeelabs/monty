@@ -1,6 +1,6 @@
 # Monty - a stackless VM
 
-> **January 2021** - This project is in its **very** early stages.  
+?> **January 2021** - This project is in its **very** early stages.  
 There's almost no documentation ... just what's on on this page.
 
 ## Directories

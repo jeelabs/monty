@@ -1,9 +1,15 @@
-- One
-  - [foo](foo.md)
-  - [bar](bar.md)
-- Two
-  - [Topic 1](sometopic/foo.md)
-  - [Topic 2](sometopic/bar.md)
+- **[Development](dev/README.md)**
+  - [Getting started](dev/getting-started.md)
+  - [Platform support](dev/platform-support.md)
+  - [Troubleshooting](dev/troubleshooting.md)
+- **[Architecture](arch/README.md)**
+  - [Objects and vectors](arch/objects-and-vectors.md)
+  - [Data structures](arch/data-structures.md)
+  - [The Python VM](arch/the-python-vm.md)
+- **[Source code](src/README.md)**
+  - [monty/gc.cpp](src/monty-gc.md)
+  - [monty/pyvm.cpp](src/monty-pyvm.md)
+  - [arch-stm32/](src/arch-stm32.md)
 - **Links**
-  - [Source code](https://github.com/jeelabs/monty)
+  - [Git repository](https://github.com/jeelabs/monty)
   - [Discussions](https://github.com/jeelabs/monty/discussions)
