@@ -11,7 +11,7 @@ uint8_t const boot [] = {
 
 auto shell (char const* cmd) -> bool {
     printf("cmd <%s>\n", cmd);
-    return *cmd != 0;
+    return true; //XXX *cmd != 0;
 }
 
 int main (int argc, char const** argv) {
@@ -27,15 +27,13 @@ int main (int argc, char const** argv) {
 
     auto data = boot;
 #if NATIVE
-    if (argc > 1) {
+    if (argc > 1)
         data = arch::loadFile(argv[1]);
-        if (data == nullptr)
-            return 1; // exit with error code
-    }
 #endif
 
     extern auto vmTest (uint8_t const*) -> Stacklet*;
-    vmTest(data);
+    if (vmTest(data) == nullptr)
+        printf("no VM\n");
 
     arch::cliTask(shell);
 

@@ -1393,7 +1393,8 @@ auto PyVM::type () const -> Type const& { return info; }
 auto vmTest (uint8_t const* data) -> Stacklet* {
     Loader loader;
     Callable* init = loader.load(data);
-    assert(init != nullptr);
+    if (init == nullptr)
+        return nullptr;
 
     assert(handlers.size() == 0); // no events may have been registered yet
     handlers.append(None::nullObj); // reserve 1st entry for VM TODO yuck
