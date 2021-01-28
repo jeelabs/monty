@@ -1,5 +1,6 @@
 - **[Development](dev/README.md)**
   - [Getting started](dev/getting-started.md)
+  - [Running & testing](dev/running-testing.md)
   - [Platform support](dev/platform-support.md)
   - [Troubleshooting](dev/troubleshooting.md)
 - **[Architecture](arch/README.md)**
