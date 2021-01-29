@@ -15,10 +15,11 @@ short: **objects are tidy**.
 lists. They are instances of the C++ class `Vec`, and contain a pointer into
 _vector space_, located at the low end of the global memory pool. Note:
 vector instances themselves are just a few bytes, including that pointer to
-actual vector _contents_.
+actual vector _contents_. Instances of `Vec` are _not_ Objects (i.e. not a
+subclass of `Obj`), they may be allocated on the stack or as field of an `Obj`.
 
-?> The main property of a vector, is that its contents can be resized as needed.
-Vectors can be moved by the GC to reclaim contiguous memory space. In short:
+?> The main property of a vector is that its _contents_ can be resized as needed
+and moved by the GC to reclaim contiguous memory space. In short:
 **vectors are flexible**.
 
 There is a third ingredient, which brings everything together and makes it all
@@ -42,10 +43,10 @@ allocated and used differently, due to their very specific properties:
   ... _Pythonic?_
 * values have no C++ destructor, nothing special happens when they go out of
   scope
-* objects and vector instances may **not** move around in memory, as this would
+* `Obj` and `Vec` instances may **not** move around in memory, as this would
   break any pointers referring to them
-* since (by design) the _contents_ of vectors will move, this means that vectors
-  cannot _contain_ object or vector instances - only simple (scalar) values and
+* since, by design, the _contents_ of vectors will move, vectors
+  cannot _contain_ object or other vector instances - only simple (scalar) values and
   _pointers_ (to objects or other vectors, for example)
 * this is where values come in really handy: a _vector of values_ is the C++
   equivalent of a Python list
