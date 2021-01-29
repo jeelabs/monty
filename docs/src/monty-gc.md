@@ -12,8 +12,8 @@ While it's not strictly part of "GC", this code also contains logic to move
 vectors around, in order to reclaim unused space. It does this by iterating over
 all vectors, moving them down to remove any gaps.
 
-?> Note that the GC doesn't manage values, as these are not involved in memory
-allocation.
+?> The GC doesn't know about `Value` instances, as these are not involved in
+memory allocation.
 
 The code in `gc.cpp` is highly modular: it can be tested in isolation (see
 `test/gc/main.cpp`), and could in fact be used without any of the other parts of
@@ -62,8 +62,8 @@ There are three distinct function groups in this file:
 
 The way to perform a GC cycle, is as follows:
 
-1. mark all the _root objects_ in the application, at this point, objects are in a
-   funny state
+1. mark all the _root objects_ in the application, at this point, objects are in
+   a funny state
 2. call `sweep()` to perform the sweep step and restore all objects to normal
 3. if free space between top-of-vectors and bottom-of-objects is low, call
    `compact()`
@@ -73,33 +73,33 @@ The way to perform a GC cycle, is as follows:
 Marking all objects requires assistance from the objects themselves: the GC has
 no way of knowing what references are _inside_ an object, so for each object it
 calls the virtual `Obj::marker()` function, to mark all internal references.
-Failure to mark everything referenced leads to bugs which can be very hard to
-dbug, because the problems appear much later, and at unrelated times (when a GC
-cycle is triggered).
+_Failure to mark everything referenced leads to bugs which can be very hard to
+debug,_ because the problems will appear much later, and at unrelated times (when
+a GC cycle is triggered).
 
-?> Example: in the case of a objects which contains a _vector of values_, it is
-the object's duty to iterate over the entire vector, and mark each individual
+?> Example: in the case of an object which contains a _vector of values_, it is
+the object's duty to iterate over the entire vector and mark each individual
 value, since values _may_ contain object references.
 
-The moment when GC runs must be carefully managed. In the Python VM, a GC
+The moment when GC runs has to be carefully managed. In the Python VM, a GC
 request causes it to exit its inner loop and return, so that there is no
 _dangling_ reference on the C stack which the GC could miss.  In other
-stacklets, GC may run as long as _all_ references on the C stack are known to be
-redundant, i.e. also present in some (reachable) data structure.
+stacklets, the GC may run as long as _all_ references on the C stack are known
+to be redundant, i.e. also present in some (reachable) data structure.
 
 #### Sweep side effects
 
 Since sweeping will delete all objects which are no longer reachable, there are
 some considerations here as well. The most important concern is calling virtual
 methods in other objects, but note that since the current destructor belongs to
-an _unmarked_ object, which means that its vtable is valid, and so are all the
-vtables of the objects it references (otherwise they'd have been marked, and not
+an _unmarked_ object, this means that its vtable is valid and so are all vtables
+of any objects it references (otherwise they'd have been marked i.s.o.
 deleted).
 
-?> Another observation is that neither vectors nor values are derived from `Obj` and
-therefore neither has vtables which might get marked (i.e. messed-up during GC). Only
-_objects_ needs special care while the GC is going through its mark-and-sweep
-phases.
+?> Another observation is that neither vectors nor values are derived from `Obj`
+and therefore neither has vtables which might get marked (i.e. messed-up during
+GC). Only _objects_ needs special care while the GC is going through its
+mark-and-sweep phases.
 
 ## Statistics and heuristics
 
