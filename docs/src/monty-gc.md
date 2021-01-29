@@ -68,6 +68,51 @@ The way to perform a GC cycle, is as follows:
 3. if free space between top-of-vectors and bottom-of-objects is low, call
    `compact()`
 
+## Memory pool layout
+
+The memory pool must be initialised before any `Obj` instances are allocated on
+the heap, and before any `Vec` instances are expanded to contain data. This pool
+is one contiguous area of memory, with vectors placed at the bottom and objects
+placed at the top. This allows growing the highest vector without moving it, a
+fairly common case.
+
+A few bytes may be treated as padding in the memory range handed to `gcSetup()`,
+so that the vector _data_ and object _content_ is always aligned on 8-byte
+boundaries (or 16 for 64-bit CPUs).
+
+This is the layout of the memory pool (`start`,
+`vecHigh`, `objLow`, and `limit` are defined in `gc.cpp`):
+
+![](gcpool.png)
+
+The low end on the left is **vector space**, the ight end on the right is
+**object space**.
+
+#### Objects
+
+> ##### [NOTYET]
+
+#### Vectors
+
+A C++ vector instance is a small object with a `data` pointer and a `cap` field
+to hold the allocated size, i.e. capacity. These instances can be anywhere in
+memory, _except_ in (movable) vector space. The `data` field is either null,
+when the vector has zero capacity, or points into vector space:
+
+![](vec-alloc.png)
+
+?> Note the `vec` pointer, just before the vector data. This points _back_ to
+the vector instance, and is used to find the position of the next higher vector
+during compaction.
+
+When the above vector is released (i.e. its capacity adjusted to zero), the
+situation becomes as follows:
+
+![](vec-free.png)
+
+The null pointer now marks the area as being free, and the next field, where
+the vector data used to start, contains a pointer to the next vector.
+
 ## The `marker()` method
 
 Marking all objects requires assistance from the objects themselves: the GC has
