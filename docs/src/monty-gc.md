@@ -26,13 +26,8 @@ There are three distinct function groups in this file:
 * **Mark** is the traditional first step of mark-and-sweep GC: starting from a
   given set of root objects, mark all the objects which are still referenced.
   This needs a place to store the "mark bit", and for this, the low bit of the
-  _first_ word in the object is used. This is always a pointer to the `vtable`,
-  used for fetching virtual methods.
-
-  !> Since vtable pointers will be _invalid_ while marked, this means that
-  **interrupt code** which runs during GC _may not call any virtual methods_ in
-  objects. It's a very severe restriction, but it applies only to hardware
-  interrupt handlers, since stacklets use cooperative scheduling.
+  word _before_ the object is used. This is always a pointer to the next object
+  or free slot in object space, which is at least 4-byte aligned.
 
   Once marking is complete, all (and only) the reachable objects will have their
   mark bit set.
@@ -45,8 +40,7 @@ There are three distinct function groups in this file:
   freeing will also trigger the object's C++ _destructor_, and also all the
   destructors of embedded fields and super classes.
 
-  Once the sweep is over, all the remaining objects will be unmarked again,
-  ready for normal use.
+  Once the sweep is over, all the remaining objects will be unmarked again.
 
 * **Compact** is an _optional_ third step in Monty's GC design, which runs after
   mark-and-sweep have cleaned out unused objects, and any vector instances
@@ -131,20 +125,6 @@ request causes it to exit its inner loop and return, so that there is no
 _dangling_ reference on the C stack which the GC could miss.  In other
 stacklets, the GC may run as long as _all_ references on the C stack are known
 to be redundant, i.e. also present in some (reachable) data structure.
-
-#### Sweep side effects
-
-Since sweeping will delete all objects which are no longer reachable, there are
-some considerations here as well. The most important concern is calling virtual
-methods in other objects, but note that since the current destructor belongs to
-an _unmarked_ object, this means that its vtable is valid and so are all vtables
-of any objects it references (otherwise they'd have been marked i.s.o.
-deleted).
-
-?> Another observation is that neither vectors nor values are derived from `Obj`
-and therefore neither has vtables which might get marked (i.e. messed-up during
-GC). Only _objects_ needs special care while the GC is going through its
-mark-and-sweep phases.
 
 ## Statistics and heuristics
 
