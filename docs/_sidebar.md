@@ -6,6 +6,7 @@
 - **[Architecture](arch/README.md)**
   - [Objects and vectors](arch/objects-and-vectors.md)
   - [Data structures](arch/data-structures.md)
+  - [Stacklets & coros](arch/stacklets-coros.md)
   - [The Python VM](arch/the-python-vm.md)
 - **[Source code](src/README.md)**
   - [Conventions](src/conventions.md)
