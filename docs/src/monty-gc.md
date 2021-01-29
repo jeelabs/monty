@@ -85,7 +85,7 @@ This is the layout of the memory pool (`start`,
 
 ![](gcpool.png)
 
-The low end on the left is **vector space**, the ight end on the right is
+The low end on the left is **vector space**, the high end on the right is
 **object space**.
 
 #### Objects
@@ -94,7 +94,7 @@ The low end on the left is **vector space**, the ight end on the right is
 
 #### Vectors
 
-A C++ vector instance is a small object with a `data` pointer and a `cap` field
+A C++ `Vec` instance is a small object with a `data` pointer and a `cap` field
 to hold the allocated size, i.e. capacity. These instances can be anywhere in
 memory, _except_ in (movable) vector space. The `data` field is either null,
 when the vector has zero capacity, or points into vector space:
@@ -102,8 +102,8 @@ when the vector has zero capacity, or points into vector space:
 ![](vec-alloc.png)
 
 ?> Note the `vec` pointer, just before the vector data. This points _back_ to
-the vector instance, and is used to find the position of the next higher vector
-during compaction.
+the `Vec` instance, and is used to find the position of the next higher vector
+during compaction. It also adjusts `data` after a move.
 
 When the above vector is released (i.e. its capacity adjusted to zero), the
 situation becomes as follows:
