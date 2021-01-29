@@ -77,7 +77,7 @@ boundaries (or 16 for 64-bit CPUs).
 This is the layout of the memory pool (`start`,
 `vecHigh`, `objLow`, and `limit` are defined in `gc.cpp`):
 
-![](gcpool.png)
+![](gcpool.png ':size=468x')
 
 The low end on the left is **vector space**, the high end on the right is
 **object space**.
@@ -93,7 +93,7 @@ to hold the allocated size, i.e. capacity. These instances can be anywhere in
 memory, _except_ in (movable) vector space. The `data` field is either null,
 when the vector has zero capacity, or points into vector space:
 
-![](vec-alloc.png)
+![](vec-alloc.png ':size=428x')
 
 ?> Note the `vec` pointer, just before the vector data. This points _back_ to
 the `Vec` instance, and is used to find the position of the next higher vector
@@ -102,7 +102,7 @@ during compaction. It also adjusts `data` after a move.
 When the above vector is released (i.e. its capacity adjusted to zero), the
 situation becomes as follows:
 
-![](vec-free.png)
+![](vec-free.png ':size=430x')
 
 The null pointer now marks the area as being free, and the next field, where
 the vector data used to start, contains a pointer to the next vector.
