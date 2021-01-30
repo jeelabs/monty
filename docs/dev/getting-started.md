@@ -37,7 +37,9 @@ MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
 ?> The C++ and Python tests need access to the console, it should not be kept
 open during those tasks.
 
-**Other**
+**Other tasks**
+
+There are several other tasks (and the `x-*` tasks are mostly special-purpose):
 
 | Type | Command | Notes |
 |------|---------|-------|

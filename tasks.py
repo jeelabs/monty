@@ -1,17 +1,40 @@
 # see https://www.pyinvoke.org
 from invoke import task
 
-@task
-def clean(c):
-    """delete all build results"""
-    c.run("rm -rf .pio monty.bin")
+import os
 
 @task
-def gen(c):
-    """process source code with code generator"""
+def x_codegen(c):
+    """process sources with code generator"""
     c.run("src/codegen.py qstr.h lib/monty/ qstr.cpp")
 
-@task(gen, help={"file": "name of the .py or .mpy file to run"})
+@task
+def x_examples(c):
+    """build each of the example projects"""
+    examples = os.listdir("examples")
+    examples.sort()
+    for ex in examples:
+        if os.path.isdir("examples/" + ex):
+            print(ex)
+            c.run("pio run -d examples/%s -t size -s" % ex)
+
+@task
+def x_sizes(c):
+    """show µC build sizes, w/ and w/o assertions"""
+    c.run("pio run -t size | tail -8 | head -2")
+    c.run("pio run -e noassert | tail -8 | head -2")
+
+@task
+def x_tags(c):
+    """update the (c)tags file"""
+    c.run("ctags -R lib src test")
+
+@task
+def x_version(c):
+    """show git repository version"""
+    c.run("git describe --tags")
+
+@task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file=""):
     """run a script using the native build"""
     c.run("pio run -e native -s", pty=True)
@@ -34,7 +57,7 @@ def python(c):
     c.run("pio run -e native -s", pty=True)
     c.run("for i in valid/*.mpy; do .pio/build/native/program $i; done")
 
-@task(gen)
+@task(x_codegen)
 def embed(c):
     """embedded build and upload to µC"""
     c.run("pio run -s", pty=True)
@@ -55,23 +78,23 @@ def all(c):
 
 @task
 def mrfs(c):
-    """generate the Minimal Replaceable File Storage image"""
+    """generate Minimal Replaceable File Storage image"""
     c.run("src/mrfs.py -o rom.mrfs valid/*.py")
 
 @task
+def clean(c):
+    """delete all build results"""
+    c.run("rm -rf .pio monty.bin")
+
+@task
 def health(c):
-    """check to verify proper toolchain setup"""
+    """verify proper toolchain setup"""
     c.run("uname -sm")
     c.run("python3 --version")
     c.run("inv --version")
     c.run("pio --version")
     c.run("mpy-cross --version")
     #c.run("which micropython || echo NOT FOUND: micropython")
-
-@task
-def version(c):
-    """show git repository version"""
-    c.run("git describe --tags")
 
 @task
 def serial(c):
