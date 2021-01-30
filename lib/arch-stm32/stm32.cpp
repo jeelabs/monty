@@ -203,8 +203,9 @@ void wd_cmd (char* cmd) {
     int count = 4095;
     if (strlen(cmd) > 3)
         count = atoi(cmd+3);
-    Iwdg::init();
-    Iwdg::reload(count);
+
+    static Iwdg dog;
+    dog.reload(count);
 }
 
 void help_cmd (char*);
