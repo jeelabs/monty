@@ -8,11 +8,11 @@
 #include <unistd.h>
 
 #if STM32F103xB
-UartBufDev< PinA<2>, PinA<3> > console;
+UartBufDev< PinA<2>, PinA<3>, 100 > console;
 #elif STM32L432xx
-UartBufDev< PinA<2>, PinA<15> > console;
+UartBufDev< PinA<2>, PinA<15>, 100 > console;
 #else
-UartBufDev< PinA<9>, PinA<10> > console;
+UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
 
 PinB<3> led;
