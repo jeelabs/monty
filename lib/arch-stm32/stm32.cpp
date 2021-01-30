@@ -49,8 +49,7 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 
 using namespace monty;
 
-void printDeviceInfo () {
-    printf("\b \n"); // FIXME hides invalid char sent after a reset (why?)
+void printDevInfo () {
 #ifndef NDEBUG
     extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
@@ -147,9 +146,11 @@ struct HexSerial : LineSerial {
         if (persist == nullptr)
             persist = (char*) sbrk(4+PERSIST_SIZE); // never freed
 
-        if (*(uint32_t*) persist == MagicValid)
+        if (magic() == MagicValid)
             exec(persist+4);
     }
+
+    static auto magic () -> uint32_t& { return *(uint32_t*) persist; }
 
     auto exec (char const* cmd) -> bool override {
         if (cmd[0] != ':')
@@ -161,11 +162,11 @@ struct HexSerial : LineSerial {
                                 ihex.addr + ihex.len <= PERSIST_SIZE) {
             if (ihex.type == 0) {
                 if (ihex.addr == 0)
-                    *(uint32_t*) persist = MagicStart;
+                    magic() = MagicStart;
                 memcpy(persist + 4 + ihex.addr, ihex.data, ihex.len);
             } else {
-                if (*(uint32_t*) persist == MagicStart)
-                    *(uint32_t*) persist = MagicValid;
+                if (magic() == MagicStart)
+                    magic() = MagicValid;
                 systemReset();
             }
         } else {
@@ -181,8 +182,63 @@ struct HexSerial : LineSerial {
 
 char* HexSerial::persist;
 
+struct Command {
+    char const* desc;
+    void (*proc)(char*);
+};
+
+void bc_cmd (char* cmd) {
+    if (strlen(cmd) > 3) {
+        HexSerial::magic() = HexSerial::MagicValid;
+        strcpy(HexSerial::persist + 4, cmd + 3);
+    } else
+        HexSerial::magic() = 0;
+}
+
+void wd_cmd (char* cmd) {
+    int count = 4095;
+    if (strlen(cmd) > 3)
+        count = atoi(cmd+3);
+    Iwdg::init();
+    Iwdg::reload(count);
+}
+
+void help_cmd (char*);
+
+Command const commands [] = {
+    { "bc *  set boot command (cmd ...)"  , bc_cmd },
+    { "di    show device info"            , [](char*) { printDevInfo(); }},
+//  { "gc    trigger garbage collection"  , [](char*) { ... }},
+    { "gr    generate a GC report"        , [](char*) { gcReport(); }},
+    { "ps    print stacklet list"         , [](char*) { Stacklet::dump(); }},
+    { "sr    system reset"                , [](char*) { systemReset(); }},
+    { "wd N  set watchdog count (0..4095)", wd_cmd },
+    { "?     this help"                   , help_cmd },
+};
+
+void help_cmd (char*) {
+    for (auto& cmd : commands)
+        printf("  %s\n", cmd.desc);
+}
+
+static auto (*shFun)(char const*) -> bool;
+
+auto execCmd (char const* buf) -> bool {
+    if (buf[0] == '?') {
+        help_cmd(nullptr);
+        return true;
+    }
+    for (auto& cmd : commands)
+        if (memcmp(buf, cmd.desc, 2) == 0) {
+            cmd.proc((char*) buf); // TODO get rid of const in caller
+            return true;
+        }
+    return shFun(buf);
+}
+
 auto arch::cliTask(auto(*fun)(char const*)->bool) -> Stacklet* {
-    return new HexSerial (fun);
+    shFun = fun; // TODO yuck
+    return new HexSerial (execCmd);
 }
 
 void arch::init () {
@@ -194,7 +250,8 @@ void arch::init () {
 #endif
     led.mode(Pinmode::out);
 
-    printDeviceInfo();
+    // TODO yuck, hide junk char from uart rx after reset
+    printf("\r \b");
 }
 
 void arch::idle () {

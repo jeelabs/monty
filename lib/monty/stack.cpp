@@ -177,7 +177,7 @@ auto Stacklet::runLoop () -> bool {
 void Stacklet::dump () {
     for (auto e : stacklets)
         if (!e.isNil()) {
-            auto& p = e.asType<Stacklet>();
+            auto& p = (Stacklet&) e.obj();
             printf("st: %3d [%p] size %d cap %d ms %d sema %d\n",
                     p.id(), &p, p.size(), p.cap(), p.ms, p.sema);
         }
