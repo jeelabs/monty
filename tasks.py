@@ -1,7 +1,15 @@
 # see https://www.pyinvoke.org
-from invoke import task
+from invoke import exceptions, task
 
 import os
+
+def compileIfOutdated(c, py):
+    assert py[-3:] == '.py'
+    mpy = py[:-3] + ".mpy"
+    mtime = os.stat(py).st_mtime
+    if not os.path.isfile(mpy) or (mtime < os.stat(py).st_mtime):
+        c.run("mpy-cross -s '' %s" % py)
+    return mpy
 
 @task
 def x_codegen(c):
@@ -16,7 +24,7 @@ def x_examples(c):
     for ex in examples:
         if os.path.isdir("examples/" + ex):
             print(ex)
-            c.run("pio run -d examples/%s -t size -s" % ex)
+            c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
 
 @task
 def x_sizes(c):
@@ -41,8 +49,7 @@ def native(c, file=""):
     cmd = ".pio/build/native/program"
     if file:
         if file[-3:] == ".py":
-            c.run("mpy-cross %s" % file)
-            file = file[:-3] + ".mpy"
+            file = compileIfOutdated(c, file)
         cmd += " " + file
     c.run(cmd, pty=True)
 
@@ -55,7 +62,20 @@ def test(c):
 def python(c):
     """run Python tests natively"""
     c.run("pio run -e native -s", pty=True)
-    c.run("for i in valid/*.mpy; do .pio/build/native/program $i; done")
+    num, fail = 0, 0
+
+    tests = os.listdir("valid")
+    tests.sort()
+    for file in tests:
+        if file[-3:] == ".py":
+            mpy = compileIfOutdated(c, "valid/" + file)
+            try:
+                num += 1
+                c.run(".pio/build/native/program %s" % mpy)
+            except exceptions.UnexpectedExit:
+                fail += 1
+
+    print(f"\n{num} tests, {fail} failures")
 
 @task(x_codegen)
 def embed(c):
