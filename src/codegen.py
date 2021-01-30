@@ -32,7 +32,7 @@ def EXCEPTION_EMIT(block, sel='h'):
 
 def VERSION(block):
     v = subprocess.getoutput('git describe --tags')
-    return ['constexpr auto VERSION = Q(0,"%s");' % v]
+    return ['constexpr auto VERSION = "%s";' % v]
 
 # generate qstr definition
 qstrIndex = []
