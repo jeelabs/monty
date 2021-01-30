@@ -39,7 +39,7 @@ open during those tasks.
 
 **Other tasks**
 
-There are several other tasks (and the `x-*` tasks are mostly special-purpose):
+There are several other tasks (the `x-*` tasks are mostly special-purpose):
 
 | Type | Command | Notes |
 |------|---------|-------|
