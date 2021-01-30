@@ -29,23 +29,34 @@ def test(c):
     c.run("pio test -e native", pty=True)
 
 @task
-def utest(c):
-    """run C++ tests, uploaded to µC"""
-    c.run("pio test -e utest", pty=True)
+def python(c):
+    """run Python tests natively"""
+    c.run("pio run -e native -s", pty=True)
+    c.run("for i in valid/*.mpy; do .pio/build/native/program $i; done")
+
+@task(gen)
+def embed(c):
+    """embedded build and upload to µC"""
+    c.run("pio run -s", pty=True)
 
 @task
-def boot(c):
-    """build and upload the BOOT, CORE, and DEVS layers"""
-    c.run("pio run -s")
+def upload(c):
+    """run C++ tests, uploaded to µC"""
+    c.run("pio test", pty=True)
+
+@task(embed)
+def runner(c):
+    """run Python tests, uploaded to µC"""
+    c.run("for i in valid/*.mpy; do src/runner.py $i; done")
+
+@task(test, python, upload, runner)
+def all(c):
+    """shorthand for running test, python, upload, and runner"""
 
 @task
 def mrfs(c):
     """generate the Minimal Replaceable File Storage image"""
     c.run("src/mrfs.py -o rom.mrfs valid/*.py")
-
-@task
-def all(c):
-    """shorthand for running: test python utest rpython (NOTYET)"""
 
 @task
 def health(c):

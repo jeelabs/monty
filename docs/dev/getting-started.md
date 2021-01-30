@@ -17,13 +17,33 @@ MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
 
 ## Development
 
-* native run: `inv native` (builds and runs on Linux or MacOS hosts)
-* native test `inv test` (builds and runs C++ tests on host)
-* embedded console: `inv serial` (keep open in a separate shell)
-* embedded upload: `pio run` (will build, upload, and reset)
-* embedded test: `pio test` (note: don't keep a separate console open)
-* for options, use invoke's built-in help, e.g. `inv native -h`.
-* for other commands, see `inv -l` (work in progress) and `pio -h`.
+**MacOS & Linux**
+
+| Type | Command | Notes |
+|------|---------|-------|
+| single | `inv native` | use `-f` flag to specify which file |
+| C++ test | `inv test` | based on Unity, see `test/*/main.cpp` |
+| Python test | `inv python` | runs all the tests from `valid/` |
+
+**Embedded µC**
+
+| Type | Command | Notes |
+|------|---------|-------|
+| console | `inv serial` | keep this open in a separate window |
+| embed | `inv embed` | build & upload, same as `pio run -s` |
+| C++ test | `inv upload` | uploads and runs each Unity test |
+| Python test | `inv runner` | uploads and runs each test remotely |
+
+?> The C++ and Python tests need access to the console, it should not be kept
+open during those tasks.
+
+**Other**
+
+| Type | Command | Notes |
+|------|---------|-------|
+| list | `inv -l` | lists all available tasks, see `tasks.py` |
+| help | `inv -h` | help about the `invoke` command |
+| info | `inv console -h` | information about a specific task |
 
 By default, the embedded builds are for a Nucleo-32 board with STM32L432KC
 µC.<br/>
