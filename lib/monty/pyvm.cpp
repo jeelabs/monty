@@ -1196,6 +1196,11 @@ struct PyVM : Stacklet {
         yield(true);
         return true;
     }
+
+    void fail (Value v) override {
+        assert(!v.isInt());
+        raise(v); // TODO there's no reason for this extra call level, rename!
+    }
 };
 
 static auto currentVM () -> PyVM& {
@@ -1371,14 +1376,6 @@ auto PyVM::next () -> Value {
     assert(fill > 0); // can only resume if not ended
     //XXX Interp2::resume(*this);
     return {}; // no result yet
-}
-
-void monty::exception (Value v) {
-    assert(!v.isInt());
-    assert(Stacklet::current != nullptr);
-    // this is a hack, the Value raises an exception, which assumes that
-    // the current stacklet is a VM, without checking that it really is
-    ((PyVM*) Stacklet::current)->raise(v);
 }
 
 Type Bytecode::info (Q(184,"<bytecode>"));

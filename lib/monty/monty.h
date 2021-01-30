@@ -803,6 +803,7 @@ namespace monty {
         static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;
+        virtual void fail (Value);
 
         static void dump ();
 
@@ -824,6 +825,8 @@ namespace monty {
         static Stacklet* current;
         static void* resumer;
     };
+
+    void exception (Value v);
 
 // see call.cpp - functions, methods, contexts, and interpreter state
 
@@ -1008,8 +1011,6 @@ namespace monty {
 
         auto binop (BinOp, Value) const -> Value override;
     };
-
-    void exception (Value v); // TODO hack, defined in pyvm.cpp
 
     extern Lookup const builtins;
 

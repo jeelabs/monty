@@ -88,6 +88,11 @@ void resumeFixer (void* p) {
 #endif
 }
 
+void Stacklet::fail (Value v) {
+    v.dump();
+    assert(false); // TODO unhandled exception, can't continue
+}
+
 void Stacklet::yield (bool fast) {
     assert(current != nullptr);
     if (fast) {
@@ -176,4 +181,9 @@ void Stacklet::dump () {
             printf("st: %3d [%p] size %d cap %d ms %d sema %d\n",
                     p.id(), &p, p.size(), p.cap(), p.ms, p.sema);
         }
+}
+
+void monty::exception (Value v) {
+    assert(Stacklet::current != nullptr);
+    Stacklet::current->fail(v);
 }
