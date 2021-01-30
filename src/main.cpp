@@ -20,11 +20,6 @@ auto shell (char const* cmd) -> bool {
 
 int main (int argc, char const** argv) {
     arch::init();
-#ifndef NDEBUG
-    printf("build " __DATE__ ", " __TIME__ "\n"
-           "using " __VERSION__ "\n"
-           "<------------------------------------------------------------->\n");
-#endif
 
     gcSetup(memPool, sizeof memPool);
     libInstall();

@@ -49,6 +49,10 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 
 using namespace monty;
 
+void printBuildVer () {
+    printf("Monty %s @ " __DATE__ ", " __TIME__ "\n", (char const*) VERSION);
+}
+
 void printDevInfo () {
 #ifndef NDEBUG
     extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
@@ -207,6 +211,7 @@ void help_cmd (char*);
 
 Command const commands [] = {
     { "bc *  set boot command (cmd ...)"  , bc_cmd },
+    { "bv    show build version"          , [](char*) { printBuildVer(); }},
     { "di    show device info"            , [](char*) { printDevInfo(); }},
 //  { "gc    trigger garbage collection"  , [](char*) { ... }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
