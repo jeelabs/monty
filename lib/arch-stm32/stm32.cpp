@@ -138,6 +138,8 @@ uint32_t LineSerial::irqId;
 struct HexSerial : LineSerial {
     static constexpr auto PERSIST_SIZE = 2048;
 
+    enum { MagicStart = 987654321, MagicValid = 123456789 };
+
     auto (*reader)(char const*)->bool;
     IntelHex<32> ihex; // max 32 data bytes per hex input line
 
@@ -145,38 +147,36 @@ struct HexSerial : LineSerial {
         if (persist == nullptr)
             persist = (char*) sbrk(4+PERSIST_SIZE); // never freed
 
-        if (magic() == 123456789)
+        if (*(uint32_t*) persist == MagicValid)
             exec(persist+4);
-    }
-
-    auto magic () const -> uint32_t& {
-        assert(persist != nullptr);
-        return *(uint32_t*) persist;
     }
 
     auto exec (char const* cmd) -> bool override {
         if (cmd[0] != ':')
             return reader(cmd);
-        // it's Intel hex: store valid data in persist buf, sys reset when done
+        // Intel hex: store valid data in persist buf, sys reset when done
         ihex.init();
         while (!ihex.parse(*++cmd)) {}
         if (ihex.check == 0 && ihex.type <= 1 &&
                                 ihex.addr + ihex.len <= PERSIST_SIZE) {
-            if (ihex.addr == 0)
-                magic() = 123456789;
-            if (ihex.type == 0)
+            if (ihex.type == 0) {
+                if (ihex.addr == 0)
+                    *(uint32_t*) persist = MagicStart;
                 memcpy(persist + 4 + ihex.addr, ihex.data, ihex.len);
-            else
+            } else {
+                if (*(uint32_t*) persist == MagicStart)
+                    *(uint32_t*) persist = MagicValid;
                 systemReset();
+            }
         } else {
             printf("ihex? %d t%d @%04x #%d\n",
                     ihex.check, ihex.type, ihex.addr, ihex.len);
-            magic() = 0; // mark persistent buffer as invalid
+            *persist = 0; // mark persistent buffer as invalid
         }
         return true;
     }
 
-    static char* persist; // pointer to buffer which persists across resets
+    static char* persist; // pointer to a buffer which persists across resets
 };
 
 char* HexSerial::persist;

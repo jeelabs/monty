@@ -4,11 +4,11 @@
 #
 # Usage: runner.py file...
 #
-#   file with a .py extension are first compiled to .mpy using mpy-cross
-#   this is only done if the .mpy file is absent or older
+#   files with a .py extension are first compiled to .mpy using mpy-cross,
+#   but only if the .mpy does not exist or is older than the .py source
 
+import os, subprocess, sys, time
 import serial, serial.tools.list_ports
-import time
 
 def findSerialPorts():
     """map[serial#] = (prod, dev)"""
@@ -26,7 +26,7 @@ def openSerialPort():
     serials = findSerialPorts()
     for prod, dev, serid in serials:
         print(f"{prod}: {dev} ser# {serid}")
-        port = serial.Serial(dev, 115200)
+        port = serial.Serial(dev, 115200, timeout=0.1)
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
@@ -42,9 +42,18 @@ def genHex(data):
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
+print(sys.argv)
 ser = openSerialPort()
 
-with open("hello.mpy", "rb") as f:
+with open("src/boot.mpy", "rb") as f:
     for line in genHex(f.read()):
         time.sleep(0.01)
         ser.write(line.encode())
+
+for line in ser.readlines():
+    try:
+        line = line.decode().rstrip("\n")
+    except UnicodeDecodeError:
+        pass # keep as bytes if there is raw data in the line
+    finally:
+        print(line)
