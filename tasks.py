@@ -42,7 +42,7 @@ def x_tags(c):
 @task
 def x_version(c):
     """show git repository version"""
-    c.run("git describe --tags")
+    print(os.environ["VERSION"])
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file=""):
