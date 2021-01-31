@@ -30,7 +30,7 @@ def x_examples(c):
 def x_sizes(c):
     """show µC build sizes, w/ and w/o assertions"""
     c.run("pio run -t size | tail -8 | head -2")
-    c.run("pio run -e noassert | tail -8 | head -2")
+    c.run("pio run -e noassert | tail -7 | head -1")
 
 @task
 def x_tags(c):
