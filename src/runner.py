@@ -42,18 +42,35 @@ def genHex(data):
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
-print(sys.argv)
 ser = openSerialPort()
 
-with open("src/boot.mpy", "rb") as f:
-    for line in genHex(f.read()):
-        time.sleep(0.01)
-        ser.write(line.encode())
+args = sys.argv[1:]
+fail = 0
 
-for line in ser.readlines():
+for fn in args:
+    print(fn + ":")
+    ser.reset_output_buffer()
+    time.sleep(0.1)
+    ser.reset_input_buffer()
+
+    ser.write(b'bc\nwd 250\n')
+
     try:
-        line = line.decode().rstrip("\n")
-    except UnicodeDecodeError:
-        pass # keep as bytes if there is raw data in the line
-    finally:
+        with open(fn, "rb") as f:
+            for line in genHex(f.read()):
+                time.sleep(0.1)
+                ser.write(line.encode())
+    except FileNotFoundError:
+        print("file?", fn)
+        fail += 1
+
+    for line in ser.readlines():
+        try:
+            line = line.decode().rstrip("\n")
+        except UnicodeDecodeError:
+            pass # keep as bytes if there is raw data in the line
         print(line)
+        if line == "abort":
+            time.sleep(2);
+
+print(f"{len(args)} tests, {fail} failures")

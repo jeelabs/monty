@@ -90,7 +90,7 @@ def upload(c):
 @task(embed)
 def runner(c):
     """run Python tests, uploaded to µC"""
-    c.run("for i in valid/*.mpy; do src/runner.py $i; done")
+    c.run("src/runner.py valid/*.mpy", pty=True)
 
 @task(test, python, upload, runner)
 def all(c):
