@@ -1148,8 +1148,7 @@ struct PyVM : Stacklet {
 
         } while (pending == 0);
 
-        //XXX can't happen
-        if (current == nullptr)
+        if (current != this)
             return; // last frame popped, there's no context left
 
         spOff = sp - begin();
@@ -1162,6 +1161,7 @@ struct PyVM : Stacklet {
 
     void outer () {
         //XXX always true
+        assert(current == this);
         while (current != nullptr) {
             assert(current == this);
             if (gcCheck()) {
@@ -1308,19 +1308,13 @@ Value PyVM::leave (Value v) {
         assert(prev >= 0);
         base = prev;            // new lower frame offset
     } else {
-        //XXX last frame, drop context, restore caller
-#if 1
+        // last frame, drop context, restore caller
         assert(current == this);
         stacklets.remove(stacklets.find(this));
-        current = caller().ifType<PyVM>(); // TODO equivalent to logic below?
-#else
-        Interp2::context = caller().ifType<PyVM>();
-        auto n = Interp2::findTask(*this);
-        if (n >= 0)
-            Interp2::tasks.remove(n);
-#endif
+        current = caller().ifType<PyVM>();
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector
+        raise(0); // exit inner loop to deal with stacklet change
     }
 
     return r;

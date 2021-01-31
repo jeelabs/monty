@@ -20,9 +20,12 @@ auto shell (char const* cmd) -> bool {
 
 int main (int argc, char const** argv) {
     arch::init();
+#ifndef NDEBUG
+    printf("main\n");
+#endif
 
     gcSetup(memPool, sizeof memPool);
-    libInstall();
+//  libInstall();
 
     auto data = boot;
 #if NATIVE
@@ -38,5 +41,8 @@ int main (int argc, char const** argv) {
     while (Stacklet::runLoop())
         arch::idle();
 
+#ifndef NDEBUG
+    printf("done\n");
+#endif
     return arch::done();
 }
