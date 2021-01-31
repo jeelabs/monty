@@ -49,8 +49,6 @@ fail = 0
 
 for fn in args:
     print(fn + ":")
-    ser.reset_output_buffer()
-    time.sleep(0.1)
     ser.reset_input_buffer()
 
     ser.write(b'\nbc\nwd 250\n')
