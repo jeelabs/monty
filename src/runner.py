@@ -26,7 +26,7 @@ def openSerialPort():
     serials = findSerialPorts()
     for prod, dev, serid in serials:
         print(f"{prod}: {dev} ser# {serid}")
-        port = serial.Serial(dev, 115200, timeout=0.1)
+        port = serial.Serial(dev, 115200, timeout=0.01)
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
@@ -50,10 +50,11 @@ fail = 0
 for fn in args:
     print(fn + ":")
     ser.reset_output_buffer()
-    time.sleep(0.1)
+    time.sleep(0.01)
     ser.reset_input_buffer()
 
     ser.write(b'bc\nwd 250\n')
+    failed = False
 
     try:
         with open(fn, "rb") as f:
@@ -62,7 +63,7 @@ for fn in args:
                 ser.write(line.encode())
     except FileNotFoundError:
         print("file?", fn)
-        fail += 1
+        failed = True
 
     for line in ser.readlines():
         try:
@@ -72,5 +73,9 @@ for fn in args:
         print(line)
         if line == "abort":
             time.sleep(2);
+            failed = True
+
+    if failed:
+        fail += 1
 
 print(f"{len(args)} tests, {fail} failures")
