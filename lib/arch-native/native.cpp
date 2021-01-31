@@ -20,11 +20,6 @@ auto arch::loadFile (char const* name) -> uint8_t const* {
     return data;
 }
 
-auto arch::cliTask(auto(*)(char const*)->bool) -> Stacklet* {
-    // TODO not that useful on native, but could perhaps process cli-args
-    return nullptr;
-}
-
 void arch::init () {
     setbuf(stdout, nullptr);
 }

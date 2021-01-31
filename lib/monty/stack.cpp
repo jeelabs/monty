@@ -55,11 +55,9 @@ void Event::wait () {
 Stacklet::Stacklet () {
     stacklets.append(this);
     ready.append(this);
-printf("Stacklet @%d %d %p\n", stacklets.size()-1, active(), this);
 }
 
 Stacklet::~Stacklet () {
-printf("~Stacklet @%d %d %p\n", stacklets.size(), active(), this);
     stacklets.remove(stacklets.find(this));
 }
 
@@ -190,7 +188,6 @@ auto Stacklet::runLoop () -> bool {
 
         // stacklet has returned, make it inactive
         current->adj(current->fill);
-printf("remove %p\n", current);
         stacklets.remove(stacklets.find(current));
     }
 

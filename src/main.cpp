@@ -27,16 +27,18 @@ int main (int argc, char const** argv) {
     gcSetup(memPool, sizeof memPool);
 //  libInstall();
 
-    auto data = boot;
+    if (handlers.size() == 0) // no events may have been registered yet
+        handlers.append(None::nullObj); // reserve 1st entry for VM TODO yuck
+
 #if NATIVE
+    auto data = boot;
     if (argc > 1)
         data = arch::loadFile(argv[1]);
-#endif
-
     if (vmTest(data) == nullptr)
-        printf("no VM\n");
-
+        printf("can't load bytecode\n");
+#else
     arch::cliTask(shell);
+#endif
 
     while (Stacklet::runLoop())
         arch::idle();
