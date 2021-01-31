@@ -23,9 +23,16 @@ auto Event::regHandler () -> uint32_t {
 }
 
 void Event::deregHandler () {
+#if 0
     auto n = id();
     if (n < handlers.size())
         handlers[n] = {};
+#else
+    // TODO why can't find() be used? why does Value::operator== return false?
+    for (auto& e : handlers)
+        if (&e.obj() == this)
+            e = {};
+#endif
 }
 
 void Event::set () {
@@ -48,10 +55,27 @@ void Event::wait () {
 Stacklet::Stacklet () {
     stacklets.append(this);
     ready.append(this);
+printf("Stacklet @%d %d %p\n", stacklets.size()-1, active(), this);
 }
 
 Stacklet::~Stacklet () {
+printf("~Stacklet @%d %d %p\n", stacklets.size(), active(), this);
     stacklets.remove(stacklets.find(this));
+}
+
+auto Stacklet::active () const -> bool {
+    // TODO why can't find() be used? why does Value::operator== return false?
+    for (auto e : stacklets)
+        if (&e.obj() == this)
+            return true;
+    return false;
+}
+
+void Stacklet::deactivate () {
+    // TODO why can't find() be used? why does Value::operator== return false?
+    for (auto& e : stacklets)
+        if (&e.obj() == this)
+            return stacklets.remove(&e - begin());
 }
 
 // see https://en.wikipedia.org/wiki/Duff%27s_device
@@ -161,11 +185,12 @@ auto Stacklet::runLoop () -> bool {
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
         if (current == nullptr)
-            return false;
+            break;
         current->adj(current->fill);
 
         // stacklet has returned, make it inactive
         current->adj(current->fill);
+printf("remove %p\n", current);
         stacklets.remove(stacklets.find(current));
     }
 

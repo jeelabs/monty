@@ -11,7 +11,7 @@ extern "C" int putchar (int);
 namespace monty {
 
     //CG1 version
-    constexpr auto VERSION = "v0.98-73-g0a9ea9e";
+    constexpr auto VERSION = "v0.98-75-gead079c";
 
 // see gc.cpp - objects and vectors with garbage collection
 
@@ -799,7 +799,9 @@ namespace monty {
         Stacklet ();
         ~Stacklet () override;
 
-        auto active () const -> bool { return stacklets.find(this) < size(); }
+        auto index () const -> uint32_t;
+        auto active () const -> bool;
+        void deactivate ();
 
         static void yield (bool =false);
         static void suspend (Vector&);

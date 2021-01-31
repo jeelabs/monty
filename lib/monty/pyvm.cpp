@@ -1311,6 +1311,7 @@ Value PyVM::leave (Value v) {
         // last frame, drop context, restore caller
         assert(current == this);
         stacklets.remove(stacklets.find(this));
+        //deactivate();
         current = caller().ifType<PyVM>();
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector

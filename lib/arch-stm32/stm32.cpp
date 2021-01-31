@@ -125,6 +125,7 @@ struct LineSerial : Stacklet {
             } else if (fill < sizeof buf - 1)
                 buf[fill++] = c;
         }
+        yield();
         return true;
     }
 
