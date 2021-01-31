@@ -3,7 +3,7 @@ from invoke import exceptions, task
 
 import os, subprocess
 
-os.environ["VERSION"] = subprocess.getoutput("git describe --tags")
+os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
 
 def compileIfOutdated(c, py):
     assert py[-3:] == '.py'
@@ -42,7 +42,7 @@ def x_tags(c):
 @task
 def x_version(c):
     """show git repository version"""
-    print(os.environ["VERSION"])
+    print(os.environ["MONTY_VERSION"])
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file=""):
