@@ -1,0 +1,45 @@
+main
+BaseException("abc",1,2,3)
+Exception("abc",1,2,3)
+StopIteration("abc",1,2,3)
+ArithmeticError("abc",1,2,3)
+ZeroDivisionError("abc",1,2,3)
+AssertionError("abc",1,2,3)
+AttributeError("abc",1,2,3)
+EOFError("abc",1,2,3)
+ImportError("abc",1,2,3)
+LookupError("abc",1,2,3)
+IndexError("abc",1,2,3)
+KeyError("abc",1,2,3)
+MemoryError("abc",1,2,3)
+NameError("abc",1,2,3)
+OSError("abc",1,2,3)
+RuntimeError("abc",1,2,3)
+NotImplementedError("abc",1,2,3)
+TypeError("abc",1,2,3)
+ValueError("abc",1,2,3)
+UnicodeError("abc",1,2,3)
+start 1
+bingo 1
+start 2
+final 2
+bingo 2
+ZeroDivisionError()
+NameError("xx")
+AttributeError("yy","A")
+KeyError("zz")
+98
+TypeError("index not int or slice","a")
+e
+TypeError("index not int or slice","a")
+2
+TypeError("index not int or slice","a")
+4
+TypeError("index not int or slice","a")
+arithmetic error: ZeroDivisionError()
+runtime error: NotImplementedError()
+exception: EOFError()
+base exception: BaseException()
+exception: UnicodeError()
+AttributeError("blah","str")
+done

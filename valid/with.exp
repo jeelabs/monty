@@ -1,0 +1,8 @@
+main
+before
+A init
+enter ()
+123
+exit (null,null,null)
+after
+done

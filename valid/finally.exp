@@ -1,0 +1,14 @@
+main
+enter false
+try1
+try2
+else
+finally
+leave
+
+enter true
+try1
+except
+finally
+leave
+done
