@@ -152,7 +152,9 @@ auto Stacklet::runLoop () -> bool {
 
         current = (Stacklet*) &ready.pull(0).obj();
         assert(current != nullptr);
-        assert(current->active());
+        if (!current->active())
+            continue; // TODO ???
+
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 

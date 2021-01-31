@@ -38,9 +38,5 @@ int main (int argc, char const** argv) {
     while (Stacklet::runLoop())
         arch::idle();
 
-#ifndef NDEBUG
-    printf("</>\n");
-    gcReport();
-#endif
     return arch::done();
 }

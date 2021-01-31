@@ -11,7 +11,7 @@ extern "C" int putchar (int);
 namespace monty {
 
     //CG1 version
-    constexpr auto VERSION = "v0.98-67-gb443b6d";
+    constexpr auto VERSION = "v0.98-68-ge3166fd";
 
 // see gc.cpp - objects and vectors with garbage collection
 

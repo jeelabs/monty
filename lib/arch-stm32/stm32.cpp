@@ -216,6 +216,7 @@ Command const commands [] = {
     { "di    show device info"            , [](char*) { printDevInfo(); }},
 //  { "gc    trigger garbage collection"  , [](char*) { ... }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
+    { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "ps    print stacklet list"         , [](char*) { Stacklet::dump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
     { "wd N  set watchdog count (0..4095)", wd_cmd },
@@ -257,7 +258,7 @@ void arch::init () {
     led.mode(Pinmode::out);
 
     // TODO yuck, hide junk char from uart rx after reset
-    printf("\r \b");
+    printf("\r<----------------------------------------------------------->\n");
 }
 
 void arch::idle () {
@@ -265,6 +266,7 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
+    printf("</>\n");
     while (true) {}
 }
 
