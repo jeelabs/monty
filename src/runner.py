@@ -8,10 +8,11 @@
 #   but only if the .mpy does not exist or is older than the .py source
 
 import os, subprocess, sys, time
-import serial, serial.tools.list_ports
+# moved: import serial, serial.tools.list_ports
 
 def findSerialPorts():
     """map[serial#] = (prod, dev)"""
+    import serial.tools.list_ports
     found = []
     for p in serial.tools.list_ports.comports():
         if p.product:
@@ -22,6 +23,7 @@ def findSerialPorts():
     return found
 
 def openSerialPort():
+    import serial
     port = None
     serials = findSerialPorts()
     for prod, dev, serid in serials:
@@ -42,38 +44,49 @@ def genHex(data):
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
-ser = openSerialPort()
+def compileIfOutdated(py):
+    if py[-3:] != '.py':
+        return py
+    mpy = py[:-3] + ".mpy"
+    mtime = os.stat(py).st_mtime
+    if not os.path.isfile(mpy) or (mtime < os.stat(py).st_mtime):
+        subprocess.run(["mpy-cross", "-s", "", py])
+    return mpy
 
-args = sys.argv[1:]
-fail = 0
+if __name__ == "__main__":
+    ser = openSerialPort()
 
-for fn in args:
-    print(fn + ":")
-    ser.reset_input_buffer()
+    args = sys.argv[1:]
+    fail = 0
 
-    ser.write(b'\nbc\nwd 250\n')
-    failed = False
+    for fn in args:
+        print(fn + ":")
+        ser.reset_input_buffer()
 
-    try:
-        with open(fn, "rb") as f:
-            for line in genHex(f.read()):
-                ser.write(line.encode())
-                ser.flush()
-    except FileNotFoundError:
-        print("file?", fn)
-        failed = True
+        ser.write(b'\nbc\nwd 250\n')
+        failed = False
 
-    for line in ser.readlines():
         try:
-            line = line.decode().rstrip("\n")
-        except UnicodeDecodeError:
-            pass # keep as bytes if there is raw data in the line
-        print(line)
-        if line == "abort":
-            time.sleep(1.1);
+            fn = compileIfOutdated(fn)
+            with open(fn, "rb") as f:
+                for line in genHex(f.read()):
+                    ser.write(line.encode())
+                    ser.flush()
+        except FileNotFoundError:
+            print("file?", fn)
             failed = True
 
-    if failed:
-        fail += 1
+        for line in ser.readlines():
+            try:
+                line = line.decode().rstrip("\n")
+            except UnicodeDecodeError:
+                pass # keep as bytes if there is raw data in the line
+            print(line)
+            if line == "abort":
+                time.sleep(1.1);
+                failed = True
 
-print(f"{len(args)} tests, {fail} failures")
+        if failed:
+            fail += 1
+
+    print(f"{len(args)} tests, {fail} failures")

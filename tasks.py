@@ -2,16 +2,9 @@
 from invoke import exceptions, task
 
 import os, subprocess
+from src.runner import compileIfOutdated
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
-
-def compileIfOutdated(c, py):
-    assert py[-3:] == '.py'
-    mpy = py[:-3] + ".mpy"
-    mtime = os.stat(py).st_mtime
-    if not os.path.isfile(mpy) or (mtime < os.stat(py).st_mtime):
-        c.run("mpy-cross -s '' %s" % py)
-    return mpy
 
 @task
 def x_codegen(c):
@@ -50,9 +43,7 @@ def native(c, file=""):
     c.run("pio run -e native -s", pty=True)
     cmd = ".pio/build/native/program"
     if file:
-        if file[-3:] == ".py":
-            file = compileIfOutdated(c, file)
-        cmd += " " + file
+        cmd += " " + compileIfOutdated(file)
     c.run(cmd, pty=True)
 
 @task
@@ -70,9 +61,9 @@ def python(c):
     tests.sort()
     for file in tests:
         if file[-3:] == ".py":
-            mpy = compileIfOutdated(c, "valid/" + file)
+            num += 1
             try:
-                num += 1
+                mpy = compileIfOutdated("valid/" + file)
                 c.run(".pio/build/native/program %s" % mpy)
             except exceptions.UnexpectedExit:
                 fail += 1
@@ -92,7 +83,7 @@ def upload(c):
 @task(embed)
 def runner(c):
     """run Python tests, uploaded to µC"""
-    c.run("src/runner.py valid/*.mpy", pty=True)
+    c.run("src/runner.py valid/*.py", pty=True)
 
 @task(test, python, upload, runner)
 def all(c):
