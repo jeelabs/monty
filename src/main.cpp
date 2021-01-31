@@ -15,7 +15,7 @@ auto shell (char const* cmd) -> bool {
     printf("cmd <%s>\n", cmd);
     if (cmd[0] == 'M' && cmd[1] == 0x05)
         vmTest((uint8_t const*) cmd);
-    return true; //XXX *cmd != 0;
+    return *cmd != '!';
 }
 
 int main (int argc, char const** argv) {

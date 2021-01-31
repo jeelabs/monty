@@ -33,8 +33,8 @@ void systemReset () {
 
 extern "C" void abort () {
     printf("\nabort\n");
-    wait_ms(5000);
-    systemReset();
+    wait_ms(1000);
+    arch::done();
     while (true) {} // comply with abort's "noreturn" attribute
 }
 
@@ -258,8 +258,7 @@ void arch::init () {
 #endif
     led.mode(Pinmode::out);
 
-    // TODO yuck, hide junk char from uart rx after reset
-    printf("\r<----------------------------------------------------------->\n");
+    printf("\n"); // TODO yuck, usually 1..2 junk chars from uart rx after reset
 }
 
 void arch::idle () {
@@ -267,8 +266,9 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
-    printf("</>\n");
-    while (true) {}
+    HexSerial::magic() = 0; // clear boot command buffer
+    systemReset(); // will resume the cli task with a clean slate
+    return 0;
 }
 
 #ifdef UNIT_TEST
@@ -287,7 +287,7 @@ extern "C" void unittest_uart_flush () {
 }
 
 extern "C" void unittest_uart_end () {
-    arch::done();
+    while (true) {}
 }
 
 #endif
