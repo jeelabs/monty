@@ -26,7 +26,7 @@ def openSerialPort():
     serials = findSerialPorts()
     for prod, dev, serid in serials:
         print(f"{prod}: {dev} ser# {serid}")
-        port = serial.Serial(dev, 115200, timeout=0.01)
+        port = serial.Serial(dev, 115200, timeout=0.1)
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
@@ -50,17 +50,17 @@ fail = 0
 for fn in args:
     print(fn + ":")
     ser.reset_output_buffer()
-    time.sleep(0.01)
+    time.sleep(0.1)
     ser.reset_input_buffer()
 
-    ser.write(b'bc\nwd 250\n')
+    ser.write(b'\nbc\nwd 250\n')
     failed = False
 
     try:
         with open(fn, "rb") as f:
             for line in genHex(f.read()):
-                time.sleep(0.1)
                 ser.write(line.encode())
+                ser.flush()
     except FileNotFoundError:
         print("file?", fn)
         failed = True
@@ -72,7 +72,7 @@ for fn in args:
             pass # keep as bytes if there is raw data in the line
         print(line)
         if line == "abort":
-            time.sleep(2);
+            time.sleep(1.1);
             failed = True
 
     if failed:
