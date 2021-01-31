@@ -72,7 +72,7 @@ def python(c):
             except exceptions.UnexpectedExit:
                 fail += 1
 
-    print(f"\n{num} tests, {fail} failures, {match} matches")
+    print(f"\n{num} tests, {match} matches, {fail} failures")
 
 @task(x_codegen)
 def embed(c):

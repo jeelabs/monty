@@ -81,7 +81,7 @@ if __name__ == "__main__":
     ser = openSerialPort()
 
     args = sys.argv[1:]
-    fail = 0
+    fail, match = 0, 0
 
     for fn in args:
         ser.reset_input_buffer()
@@ -125,6 +125,7 @@ if __name__ == "__main__":
         if failed:
             fail += 1
 
-        compareWithExpected(fn, ''.join(results))
+        if compareWithExpected(fn, ''.join(results)):
+            match += 1
 
-    print(f"{len(args)} tests, {fail} failures")
+    print(f"{len(args)} tests, {match} matches, {fail} failures")
