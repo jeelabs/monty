@@ -5,10 +5,6 @@ using namespace monty;
 
 uint8_t memPool [10*1024];
 
-uint8_t const boot [] = {
-#include "boot.h"
-};
-
 extern auto vmTest (uint8_t const*) -> Stacklet*;
 
 auto shell (char const* cmd) -> bool {
@@ -32,11 +28,9 @@ int main (int argc, char const** argv) {
         handlers.append(None::nullObj); // reserve 1st entry for VM TODO yuck
 
 #if NATIVE
-    auto data = boot;
-    if (argc > 1)
-        data = arch::loadFile(argv[1]);
-    if (vmTest(data) == nullptr)
-        printf("can't load bytecode\n");
+    uint8_t const* data = argc > 1 ? arch::loadFile(argv[1]) : nullptr;
+    if (data == nullptr || vmTest(data) == nullptr)
+        printf("no bytecode\n");
 #else
     arch::cliTask(shell);
 #endif
