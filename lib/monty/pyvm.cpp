@@ -1198,13 +1198,13 @@ struct PyVM : Stacklet {
     }
 
     void fail (Value v) override {
-        assert(!v.isInt());
         raise(v); // TODO there's no reason for this extra call level, rename!
     }
 };
 
 static auto currentVM () -> PyVM& {
-    return Value (Stacklet::current).asType<PyVM>(); // TODO yuck
+    Value v = Stacklet::current;
+    return v.asType<PyVM>(); // TODO yuck
 }
 
 Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
@@ -1309,8 +1309,11 @@ Value PyVM::leave (Value v) {
         base = prev;            // new lower frame offset
     } else {
         //XXX last frame, drop context, restore caller
-        current = nullptr;
-#if 0
+#if 1
+        assert(current == this);
+        stacklets.remove(stacklets.find(this));
+        current = caller().ifType<PyVM>(); // TODO equivalent to logic below?
+#else
         Interp2::context = caller().ifType<PyVM>();
         auto n = Interp2::findTask(*this);
         if (n >= 0)

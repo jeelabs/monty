@@ -46,17 +46,12 @@ void Event::wait () {
 }
 
 Stacklet::Stacklet () {
-    auto n = stacklets.find({});
-    if (n >= stacklets.size())
-        stacklets.insert(n);
-    stacklets[n] = this;
+    stacklets.append(this);
     ready.append(this);
 }
 
 Stacklet::~Stacklet () {
-    auto n = id();
-    assert(n < stacklets.size());
-    stacklets[n] = {};
+    stacklets.remove(stacklets.find(this));
 }
 
 // see https://en.wikipedia.org/wiki/Duff%27s_device
@@ -156,30 +151,32 @@ auto Stacklet::runLoop () -> bool {
             break;
 
         current = (Stacklet*) &ready.pull(0).obj();
+        assert(current != nullptr);
+        assert(current->active());
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
-        if (current != nullptr)
-            current->adj(current->fill);
+        if (current == nullptr)
+            return false;
+        current->adj(current->fill);
+
+        // stacklet has returned, make it inactive
+        current->adj(current->fill);
+        stacklets.remove(stacklets.find(current));
     }
 
-    // return true if there is still at least one active interrupt handler
-    for (uint32_t i = 1; i < handlers.size(); ++i)
-        if (!handlers[i].isNil())
-            return true;
-
-    handlers.adj(0); // there are none, might as well clean up
-    return false;
+    // return true if there is still at least one active stacklet
+    return stacklets.size() > 0;
 }
 
 void Stacklet::dump () {
-    for (auto e : stacklets)
+    for (auto& e : stacklets)
         if (!e.isNil()) {
             auto& p = (Stacklet&) e.obj();
             printf("st: %3d [%p] size %d cap %d ms %d sema %d\n",
-                    p.id(), &p, p.size(), p.cap(), p.ms, p.sema);
+                &e - stacklets.begin(), &p, p.size(), p.cap(), p.ms, p.sema);
         }
 }
 
