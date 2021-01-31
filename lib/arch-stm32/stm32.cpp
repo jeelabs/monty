@@ -50,7 +50,7 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 using namespace monty;
 
 void printBuildVer () {
-    printf("Monty %s @ " __DATE__ ", " __TIME__ "\n", VERSION);
+    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
 }
 
 void printDevInfo () {

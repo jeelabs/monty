@@ -1,7 +1,9 @@
 # see https://www.pyinvoke.org
 from invoke import exceptions, task
 
-import os
+import os, subprocess
+
+os.environ["VERSION"] = subprocess.getoutput("git describe --tags")
 
 def compileIfOutdated(c, py):
     assert py[-3:] == '.py'
