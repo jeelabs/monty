@@ -1,8 +1,8 @@
 # see https://www.pyinvoke.org
 from invoke import exceptions, task
 
-import os, subprocess
-from src.runner import compileIfOutdated
+import io, os, subprocess
+from src.runner import compileIfOutdated, compareWithExpected
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
 
@@ -55,7 +55,7 @@ def test(c):
 def python(c):
     """run Python tests natively"""
     c.run("pio run -e native -s", pty=True)
-    num, fail = 0, 0
+    num, fail, match = 0, 0, 0
 
     tests = os.listdir("valid")
     tests.sort()
@@ -63,12 +63,16 @@ def python(c):
         if file[-3:] == ".py":
             num += 1
             try:
-                mpy = compileIfOutdated("valid/" + file)
-                c.run(".pio/build/native/program %s" % mpy)
+                py = "valid/" + file
+                mpy = compileIfOutdated(py)
+                out = io.StringIO()
+                c.run(".pio/build/native/program %s" % mpy, out_stream=out)
+                if compareWithExpected(py, out.getvalue()):
+                    match += 1
             except exceptions.UnexpectedExit:
                 fail += 1
 
-    print(f"\n{num} tests, {fail} failures")
+    print(f"\n{num} tests, {fail} failures, {match} matches")
 
 @task(x_codegen)
 def embed(c):

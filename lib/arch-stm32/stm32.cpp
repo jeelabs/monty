@@ -258,7 +258,7 @@ void arch::init () {
 #endif
     led.mode(Pinmode::out);
 
-    printf("\n"); // TODO yuck, usually 1..2 junk chars from uart rx after reset
+    printf("\n"); // TODO yuck, the uart TX sends a 0xFF junk char after reset
 }
 
 void arch::idle () {

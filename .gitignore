@@ -7,3 +7,5 @@ platformio-local.ini
 
 .DS_Store
 *.mpy
+
+/valid/*.out

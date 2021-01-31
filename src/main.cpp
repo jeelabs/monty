@@ -12,9 +12,10 @@ uint8_t const boot [] = {
 extern auto vmTest (uint8_t const*) -> Stacklet*;
 
 auto shell (char const* cmd) -> bool {
-    printf("cmd <%s>\n", cmd);
     if (cmd[0] == 'M' && cmd[1] == 0x05)
         vmTest((uint8_t const*) cmd);
+    else
+        printf("cmd <%s>\n", cmd);
     return *cmd != '!';
 }
 

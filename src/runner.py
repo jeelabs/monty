@@ -44,14 +44,38 @@ def genHex(data):
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
-def compileIfOutdated(py):
-    if py[-3:] != '.py':
-        return py
-    mpy = py[:-3] + ".mpy"
-    mtime = os.stat(py).st_mtime
-    if not os.path.isfile(mpy) or (mtime < os.stat(py).st_mtime):
-        subprocess.run(["mpy-cross", "-s", "", py])
+def compileIfOutdated(fn):
+    root, ext = os.path.splitext(fn)
+    if ext != '.py':
+        return fn
+    mpy = root + ".mpy"
+    mtime = os.stat(fn).st_mtime
+    if not os.path.isfile(mpy) or (mtime >= os.stat(mpy).st_mtime):
+        subprocess.run(["mpy-cross", "-s", "", fn])
     return mpy
+
+def compareWithExpected (fn, output):
+    root = os.path.splitext(fn)[0]
+    exp = root + ".exp"
+    out = root + ".out"
+
+    if os.path.isfile(exp):
+        with open(exp) as f:
+            expected = f.read()
+        if output == expected:
+            try:
+                os.remove(out)
+            except FileNotFoundError:
+                pass
+            return True
+
+    print("--------------------", fn, "--------------------")
+    with open(out, "w") as f:
+        f.write(output)
+    if os.path.isfile(exp):
+        subprocess.run(f"diff {out} {exp} | head", shell=True)
+    else:
+        print(">", len(output), "chars")
 
 if __name__ == "__main__":
     ser = openSerialPort()
@@ -60,40 +84,47 @@ if __name__ == "__main__":
     fail = 0
 
     for fn in args:
-        print(fn + ":")
         ser.reset_input_buffer()
-
         ser.write(b'\nbc\nwd 250\n')
-        failed = False
 
         try:
-            fn = compileIfOutdated(fn)
-            with open(fn, "rb") as f:
+            with open(compileIfOutdated(fn), "rb") as f:
                 for line in genHex(f.read()):
                     ser.write(line.encode())
                     ser.flush()
-        except FileNotFoundError:
+        except:
             print("file?", fn)
-            failed = True
+            fail += 1
+            continue
 
         results = []
-        for line in ser.readlines():
-            try:
-                line = line.decode().rstrip("\n")
-            except UnicodeDecodeError:
-                pass # keep as bytes if there is raw data in the line
-            print(line)
-            if line == "main":
-                results = []
-            results.append(line)
-            if line == "done":
+        failed = True
+        while True:
+            line = ser.readline()
+            if len(line) == 0:
                 break
-            if line == "abort":
-                time.sleep(1.1);
-                failed = True
-        print(len(results), "lines of output")
+            if line == b'\xFF\n':
+                continue # yuck: ignore power-up noise from UART TX
 
+            try:
+                line = line.decode()
+            except UnicodeDecodeError:
+                line = "binary: " + line[:-1].hex() + "\n" # oops, not utf8
+            if line == "main\n":
+                results = []
+                failed = False
+            if failed:
+                print("?", line[:-1])
+            results.append(line)
+            if line == "done\n":
+                break
+            if line == "abort\n":
+                time.sleep(1.1)
+                failed = True
+                break
         if failed:
             fail += 1
+
+        compareWithExpected(fn, ''.join(results))
 
     print(f"{len(args)} tests, {fail} failures")
