@@ -76,15 +76,22 @@ if __name__ == "__main__":
             print("file?", fn)
             failed = True
 
+        results = []
         for line in ser.readlines():
             try:
                 line = line.decode().rstrip("\n")
             except UnicodeDecodeError:
                 pass # keep as bytes if there is raw data in the line
             print(line)
+            if line == "main":
+                results = []
+            results.append(line)
+            if line == "done":
+                break
             if line == "abort":
                 time.sleep(1.1);
                 failed = True
+        print(len(results), "lines of output")
 
         if failed:
             fail += 1
