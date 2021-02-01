@@ -116,7 +116,7 @@ if __name__ == "__main__":
     for fn in args:
         try:
             ser.reset_input_buffer()
-            ser.write(b'\nbc\nwd 250\n')
+            ser.write(b'\nwd 250\n')
 
             with open(compileIfOutdated(fn), "rb") as f:
                 for line in genHex(f.read()):
@@ -153,7 +153,7 @@ if __name__ == "__main__":
                 print("?", line[:-1])
             results.append(line)
             if line == "done\n":
-                timeout = 0.3
+                timeout = 0
                 break
             if line == "abort\n":
                 timeout = 0.3
