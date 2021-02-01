@@ -136,6 +136,10 @@ bool Value::truthy () const {
 auto Value::operator== (Value rhs) const -> bool {
     if (v == rhs.v)
         return true;
+#if 1
+    // FIXME (?) object equality is object identity for now
+    return tag() == rhs.tag() && tag() == Str && strcmp(*this, rhs) == 0;
+#else
     if (tag() == rhs.tag())
         switch (tag()) {
             case Nil: // fall through
@@ -143,6 +147,7 @@ auto Value::operator== (Value rhs) const -> bool {
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
+#endif
     return false;
 }
 
@@ -179,7 +184,6 @@ auto Value::unOp (UnOp op) const -> Value {
 }
 
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
-    // TODO the inverted optimisations will fail if a ResumableObj is involved
     switch (op) {
         case BinOp::In:        return rhs.binOp(BinOp::Contains, *this);
         case BinOp::More:      return rhs.binOp(BinOp::Less, *this);
@@ -273,8 +277,8 @@ auto Object::unop (UnOp op) const -> Value {
     return {};
 }
 
-auto Object::binop (BinOp op, Value) const -> Value {
-    printf("op %d ", op);
+auto Object::binop (BinOp op, Value v2) const -> Value {
+    printf("op %d ", op); v2.dump("v2");
     Value v = this; v.dump("binop?"); assert(false);
     return {};
 }

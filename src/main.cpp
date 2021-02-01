@@ -9,7 +9,9 @@ extern auto vmTest (uint8_t const*) -> Stacklet*;
 
 auto shell (char const* cmd) -> bool {
     if (cmd[0] == 'M' && cmd[1] == 0x05)
+{
         vmTest((uint8_t const*) cmd);
+return false; }
     else
         printf("cmd <%s>\n", cmd);
     return *cmd != '!';

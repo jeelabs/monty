@@ -1163,10 +1163,7 @@ struct PyVM : Stacklet {
     }
 
     void outer () {
-        //XXX always true
-        assert(current == this);
-        while (current != nullptr) {
-            assert(current == this);
+        while (current == this) {
             if (gcCheck()) {
                 //arch::mode(RunMode::GC);
                 marker();
@@ -1175,7 +1172,6 @@ struct PyVM : Stacklet {
                 compact();
                 //arch::mode(RunMode::Run);
             }
-
             inner();
         }
 

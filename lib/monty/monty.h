@@ -806,8 +806,6 @@ namespace monty {
 
         ~Event () override { deregHandler(); }
 
-        auto id () -> uint32_t { return handlers.find(this); }
-
         auto regHandler () -> uint32_t;
         void deregHandler ();
 
