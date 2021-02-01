@@ -1308,7 +1308,7 @@ Value PyVM::leave (Value v) {
     } else {
         // last frame, drop context, restore caller
         assert(current == this);
-        deactivate();
+//XXX   deactivate();
         current = caller().ifType<PyVM>(); // TODO any type of stacklet?
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector

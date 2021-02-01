@@ -17,13 +17,13 @@ Stacklet* Stacklet::current;
 void* Stacklet::resumer;
 uint32_t volatile Stacklet::pending;
 
-Vector monty::stacklets;
 Vector monty::handlers;
 List monty::tasks;
 
 void monty::gcNow () {
     mark(Stacklet::current);
-    markVec(stacklets);
+    tasks.marker();
+    markVec(handlers);
     sweep();
     compact();
 }
@@ -72,14 +72,6 @@ auto Event::binop (BinOp op, Value rhs) const -> Value {
 auto Event::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 0);
     return new Event;
-}
-
-Stacklet::Stacklet () {
-    stacklets.append(this);
-}
-
-Stacklet::~Stacklet () {
-    deactivate();
 }
 
 // see https://en.wikipedia.org/wiki/Duff%27s_device
@@ -194,34 +186,24 @@ auto Stacklet::runLoop () -> bool {
 
         current = (Stacklet*) &tasks.pull(0).obj();
         assert(current != nullptr);
-        if (!current->active())
-            continue; // TODO ???
 
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
-///printf("run end %p %d %d\n", current, tasks.size(), stacklets.size());
         if (current == nullptr)
             break;
         current->adj(current->fill);
-
-        // stacklet has returned, make it inactive
-        current->deactivate();
     }
 
-    // return true if there is still at least one active stacklet
-    return stacklets.size() > 0;
-}
-
-void Stacklet::dump () {
-    for (auto& e : stacklets)
-        if (!e.isNil()) {
-            auto& p = (Stacklet&) e.obj();
-            printf("st: %3d [%p] size %d cap %d ms %d sema %d\n",
-                &e - stacklets.begin(), &p, p.size(), p.cap(), p.ms, p.sema);
-        }
+    // return true if there is still at least one queued stacklet
+    for (auto e : handlers) {
+        auto o = e.ifType<Event>();
+        if (o != nullptr && o->size() > 0)
+            return true;
+    }
+    return false;
 }
 
 void monty::exception (Value v) {

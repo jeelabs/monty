@@ -791,7 +791,6 @@ namespace monty {
 
 // see stack.cpp - events and stacklets
 
-    extern Vector stacklets;
     extern Vector handlers;
     extern List tasks;
 
@@ -831,14 +830,7 @@ namespace monty {
         uint16_t ms = 0;
         int8_t sema = -1;
 
-        Stacklet ();
-        ~Stacklet () override;
-
         auto binop (BinOp, Value) const -> Value override;
-
-        auto index () const -> uint32_t { return stacklets.find(this); }
-        auto active () const -> bool { return index() < stacklets.size(); }
-        void deactivate () { stacklets.remove(index()); }
 
         static void yield (bool =false);
         static void suspend (Vector&);
@@ -846,8 +838,6 @@ namespace monty {
 
         virtual auto run () -> bool =0;
         virtual void fail (Value);
-
-        static void dump ();
 
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

@@ -1,11 +1,10 @@
 /NOCOMMIT/
 .pio/
-platformio-local.ini
 
-/monty.bin
+/platformio-local.ini
 /rom.mrfs
+/tags
 
 .DS_Store
 *.mpy
-
-/valid/*.out
+*.out
