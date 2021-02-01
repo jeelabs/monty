@@ -187,10 +187,10 @@ static auto e_UnicodeError (ArgVec const& args) -> Value {
 static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(182,"<object>"));
+Type const Object::info (Q(183,"<object>"));
 auto Object::type () const -> Type const& { return info; }
 
-Type const Inst::info (Q(183,"<instance>"));
+Type const Inst::info (Q(184,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
 Type    BoundMeth::info (Q(167,"<boundmeth>"));
@@ -207,16 +207,17 @@ Type       Module::info (Q(  7,"<module>"));
 Type         None::info (Q(177,"<none>"));
 Type     Stacklet::info (Q(178,"<stacklet>"));
 
+Type    Array::info (Q(179,"array") ,  Array::create, &Array::attrs);
 Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
+Type    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type    Event::info (Q(180,"event") ,  Event::create, &Event::attrs);
+Type    Event::info (Q(181,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type    Slice::info (Q(181,"slice") ,  Slice::create, &Slice::attrs);
+Type    Slice::info (Q(182,"slice") ,  Slice::create, &Slice::attrs);
 Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
@@ -235,6 +236,7 @@ auto       Method::type () const -> Type const& { return info; }
 auto       Module::type () const -> Type const& { return info; }
 auto         None::type () const -> Type const& { return info; }
 auto     Stacklet::type () const -> Type const& { return info; }
+auto        Array::type () const -> Type const& { return info; }
 auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto        Class::type () const -> Type const& { return info; }
@@ -343,16 +345,17 @@ static Lookup::Item const builtinsMap [] = {
     { Q(166,"UnicodeError")        , f_UnicodeError },
     //CG>
     //CG< builtin-emit 1
+    { Q(179,"array") , Array::info },
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(179,"class") , Class::info },
+    { Q(180,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
-    { Q(180,"event") , Event::info },
+    { Q(181,"event") , Event::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(181,"slice") , Slice::info },
+    { Q(182,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
     { Q(154,"super") , Super::info },
     { Q(157,"tuple") , Tuple::info },
@@ -364,9 +367,9 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
-    { Q(184,"sys"),   m_sys },
+    { Q(185,"sys"),   m_sys },
 #ifndef NOARCH
-    { Q(185,"machine"), m_machine },
+    { Q(186,"machine"), m_machine },
 #endif
 };
 
@@ -421,7 +424,7 @@ static auto d_event_clear = Method::wrap(&Event::clear);
 static Method const m_event_clear (d_event_clear);
 
 static Lookup::Item const eventMap [] = {
-    { Q(186,"wait"), m_event_wait },
+    { Q(187,"wait"), m_event_wait },
     { Q(140,"set"), m_event_set },
     { Q( 70,"clear"), m_event_clear },
 };
@@ -442,3 +445,4 @@ Lookup const     Type::attrs {nullptr, 0};
 Lookup const    Class::attrs {nullptr, 0};
 Lookup const    Super::attrs {nullptr, 0};
 Lookup const     Inst::attrs {nullptr, 0};
+Lookup const    Array::attrs {nullptr, 0};
