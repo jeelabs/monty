@@ -6,7 +6,10 @@
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through inner loop
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
-#ifndef INNER_HOOK
+#if NATIVE
+namespace machine { void timerHook (); }
+#define INNER_HOOK  { machine::timerHook(); }
+#else
 #define INNER_HOOK
 #endif
 
@@ -1176,7 +1179,7 @@ struct PyVM : Stacklet {
             inner();
         }
 
-        INNER_HOOK // can be used to simulate interrupts TODO obsolete?
+        INNER_HOOK // can be used to simulate interrupts
     }
 
     PyVM (Callable const& init, Stacklet* from =nullptr) {

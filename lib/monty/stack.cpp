@@ -4,6 +4,13 @@
 #include <cassert>
 #include <csetjmp>
 
+#if NATIVE
+namespace machine { void timerHook (); }
+#define INNER_HOOK  { machine::timerHook(); }
+#else
+#define INNER_HOOK
+#endif
+
 using namespace monty;
 
 Stacklet* Stacklet::current;
@@ -164,6 +171,8 @@ auto Stacklet::runLoop () -> bool {
     setjmp(bottom); // suspend will always return here
 
     while (true) {
+        INNER_HOOK
+
         auto flags = allPending();
         for (uint32_t i = 1; flags != 0 && i < handlers.size(); ++i) {
             auto bit = 1<< i;
