@@ -1,5 +1,5 @@
 # see https://www.pyinvoke.org
-from invoke import exceptions, task
+from invoke import task
 
 import io, os, subprocess
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
@@ -79,8 +79,9 @@ def python(c, tests=""):
                 fail += 1
             else:
                 try:
-                    r = c.run(".pio/build/native/program %s" % mpy, hide=True)
-                except exceptions.UnexpectedExit as e:
+                    r = c.run(".pio/build/native/program %s" % mpy,
+                              timeout=2, hide=True)
+                except Exception as e:
                     r = e.result
                     msg = "[...]\n%s\n" % r.tail('stdout', 5).strip("\n")
                     if r.stderr:

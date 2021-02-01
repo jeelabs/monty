@@ -20,7 +20,7 @@ static auto f_gcavail (ArgVec const& args) -> Value {
 
 static auto f_gcnow (ArgVec const& args) -> Value {
     assert(args.num == 0);
-    assert(false); //XXX gcNow();
+    gcNow();
     return {};
 }
 

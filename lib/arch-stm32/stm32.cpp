@@ -118,10 +118,8 @@ struct LineSerial : Stacklet {
                     continue;
                 buf[fill] = 0;
                 fill = 0;
-                if (!exec(buf)) {
-                    incoming.deregHandler(); // TODO also called in destructor
+                if (!exec(buf))
                     return false;
-                }
             } else if (fill < sizeof buf - 1)
                 buf[fill++] = c;
         }
@@ -267,6 +265,7 @@ void arch::idle () {
 
 auto arch::done () -> int {
     HexSerial::magic() = 0; // clear boot command buffer
+    wait_ms(10);
     systemReset(); // will resume the cli task with a clean slate
     return 0;
 }

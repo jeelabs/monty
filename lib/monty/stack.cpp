@@ -21,6 +21,13 @@ Vector monty::stacklets;
 Vector monty::handlers;
 List monty::tasks;
 
+void monty::gcNow () {
+    mark(Stacklet::current);
+    markVec(stacklets);
+    sweep();
+    compact();
+}
+
 auto Event::regHandler () -> uint32_t {
     auto n = handlers.find({});
     if (n >= handlers.size())
@@ -30,16 +37,9 @@ auto Event::regHandler () -> uint32_t {
 }
 
 void Event::deregHandler () {
-#if 1
-    auto n = find(this);
+    auto n = handlers.find(this);
     if (n < handlers.size())
         handlers[n] = {};
-#else
-    // TODO why can't find() be used? why does Value::operator== return false?
-    for (auto& e : handlers)
-        if (&e.obj() == this)
-            e = {};
-#endif
 }
 
 void Event::set () {
@@ -59,6 +59,11 @@ void Event::wait () {
     Stacklet::suspend(*this);
 }
 
+auto Event::binop (BinOp op, Value rhs) const -> Value {
+    assert(op == BinOp::Equal);
+    return Value::asBool(rhs.isObj() && this == &rhs.obj());
+}
+
 auto Event::create (ArgVec const& args, Type const*) -> Value {
     assert(args.num == 0);
     return new Event;
@@ -66,26 +71,10 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
 
 Stacklet::Stacklet () {
     stacklets.append(this);
-    tasks.append(this);
 }
 
 Stacklet::~Stacklet () {
     deactivate();
-}
-
-auto Stacklet::active () const -> bool {
-    // TODO why can't find() be used? why does Value::operator== return false?
-    for (auto e : stacklets)
-        if (&e.obj() == this)
-            return true;
-    return false;
-}
-
-void Stacklet::deactivate () {
-    // TODO why can't find() be used? why does Value::operator== return false?
-    for (auto& e : stacklets)
-        if (&e.obj() == this)
-            return stacklets.remove(&e - begin());
 }
 
 // see https://en.wikipedia.org/wiki/Duff%27s_device
@@ -189,6 +178,12 @@ auto Stacklet::runLoop () -> bool {
             }
         }
 
+        static int n;
+        if (++n >= 100 || gcCheck()) {
+            n = 0;
+            gcNow();
+        }
+
         if (tasks.size() == 0)
             break;
 
@@ -202,12 +197,12 @@ auto Stacklet::runLoop () -> bool {
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
+///printf("run end %p %d %d\n", current, tasks.size(), stacklets.size());
         if (current == nullptr)
             break;
         current->adj(current->fill);
 
         // stacklet has returned, make it inactive
-        current->adj(current->fill);
         current->deactivate();
     }
 

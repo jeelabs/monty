@@ -8,7 +8,7 @@ PinB<3> led;
 struct Switcher : Stacklet {
     auto run () -> bool override {
         led.toggle();
-        suspend(ready);
+        yield();
         return true;
     }
 };
@@ -20,7 +20,7 @@ int main () {
 
     gcSetup(mem, sizeof mem); // set up GC memory pool
 
-    Switcher s;
+    tasks.append(new Switcher);
 
     while (Stacklet::runLoop()) {}
 }

@@ -1157,21 +1157,14 @@ struct PyVM : Stacklet {
         spOff = sp - begin();
         ipOff = ip - ipBase();
 
-        //XXX if (pendingBit(0))
         if (pending & (1<<0))
             caught();
     }
 
     void outer () {
         while (current == this) {
-            if (gcCheck()) {
-                //arch::mode(RunMode::GC);
-                marker();
-                markVec(stacklets);
-                sweep();
-                compact();
-                //arch::mode(RunMode::Run);
-            }
+            if (gcCheck())
+                gcNow();
             inner();
         }
 
@@ -1179,6 +1172,9 @@ struct PyVM : Stacklet {
     }
 
     PyVM (Callable const& init, Stacklet* from =nullptr) {
+#if !NATIVE
+printf("pyvm %p\n", this);
+#endif
         insert(0, NumSlots);
         caller() = from;
 
@@ -1186,11 +1182,17 @@ struct PyVM : Stacklet {
         frame().locals = &init.mo;
     }
 
+#if !NATIVE
+    ~PyVM () override {
+printf("~pyvm %p\n", this);
+    }
+#endif
+
     auto run () -> bool override {
         do
             outer();
         while (pending == 0);
-        if (current == nullptr)
+        if (current != this)
             return false;
         yield(true);
         return true;
@@ -1214,10 +1216,10 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = &currentVM();
     auto coro = bc.isGenerator();
-    //if (coro)
-        //return {};// FIXME ctx = new Context;
-
-    ctx->enter(*this);
+    if (coro)
+        ctx = new PyVM (*this);
+    else
+        ctx->enter(*this);
 
     int nPos = bc.numArgs(0);
     int nDef = bc.numArgs(1);
@@ -1309,9 +1311,8 @@ Value PyVM::leave (Value v) {
     } else {
         // last frame, drop context, restore caller
         assert(current == this);
-        stacklets.remove(stacklets.find(this));
-        //deactivate();
-        current = caller().ifType<PyVM>();
+        deactivate();
+        current = caller().ifType<PyVM>(); // TODO any type of stacklet?
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector
         raise(0); // exit inner loop to deal with stacklet change

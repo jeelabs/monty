@@ -795,6 +795,8 @@ namespace monty {
     extern Vector handlers;
     extern List tasks;
 
+    void gcNow ();
+
     //CG< type event
     struct Event : List {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
@@ -805,6 +807,8 @@ namespace monty {
     //CG>
 
         ~Event () override { deregHandler(); }
+
+        auto binop (BinOp, Value) const -> Value override;
 
         auto regHandler () -> uint32_t;
         void deregHandler ();
@@ -830,9 +834,9 @@ namespace monty {
 
         auto binop (BinOp, Value) const -> Value override;
 
-        auto index () const -> uint32_t;
-        auto active () const -> bool;
-        void deactivate ();
+        auto index () const -> uint32_t { return stacklets.find(this); }
+        auto active () const -> bool { return index() < stacklets.size(); }
+        void deactivate () { stacklets.remove(index()); }
 
         static void yield (bool =false);
         static void suspend (Vector&);
