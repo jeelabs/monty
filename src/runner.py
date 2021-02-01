@@ -149,7 +149,7 @@ if __name__ == "__main__":
             if line == "done\n":
                 break
             if line == "abort\n":
-                time.sleep(1.1)
+                time.sleep(0.3)
                 failed = True
                 break
         if failed:

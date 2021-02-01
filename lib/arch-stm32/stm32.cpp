@@ -33,7 +33,7 @@ void systemReset () {
 
 extern "C" void abort () {
     printf("\nabort\n");
-    wait_ms(1000);
+    wait_ms(250);
     arch::done();
     while (true) {} // comply with abort's "noreturn" attribute
 }
