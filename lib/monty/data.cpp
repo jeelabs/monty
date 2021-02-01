@@ -267,12 +267,14 @@ auto Object::call (ArgVec const&) const -> Value {
     return {};
 }
 
-auto Object::unop (UnOp) const -> Value {
+auto Object::unop (UnOp op) const -> Value {
+    printf("op %d ", op);
     Value v = this; v.dump("unop?"); assert(false);
     return {};
 }
 
-auto Object::binop (BinOp, Value) const -> Value {
+auto Object::binop (BinOp op, Value) const -> Value {
+    printf("op %d ", op);
     Value v = this; v.dump("binop?"); assert(false);
     return {};
 }

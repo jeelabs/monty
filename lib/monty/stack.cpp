@@ -19,7 +19,7 @@ uint32_t volatile Stacklet::pending;
 
 Vector monty::stacklets;
 Vector monty::handlers;
-Vector monty::ready;
+List monty::tasks;
 
 auto Event::regHandler () -> uint32_t {
     auto n = handlers.find({});
@@ -45,9 +45,9 @@ void Event::deregHandler () {
 void Event::set () {
     value = true;
     if (size() > 0) {
-        // insert all entries at head of ready and remove them from this event
-        ready.insert(0, size());
-        memcpy(ready.begin(), begin(), size() * sizeof (Value));
+        // insert all entries at head of tasks and remove them from this event
+        tasks.insert(0, size());
+        memcpy(tasks.begin(), begin(), size() * sizeof (Value));
         remove(0, size());
     }
 }
@@ -66,7 +66,7 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
 
 Stacklet::Stacklet () {
     stacklets.append(this);
-    ready.append(this);
+    tasks.append(this);
 }
 
 Stacklet::~Stacklet () {
@@ -127,11 +127,11 @@ void Stacklet::yield (bool fast) {
     if (fast) {
         if (pending == 0)
             return; // don't yield if there are no pending handlers
-        ready.insert(0);
-        ready[0] = current;
+        tasks.insert(0);
+        tasks[0] = current;
         suspend(handlers); // hack: used as "do not append" marker
     } else
-        suspend(ready);
+        suspend(tasks);
 }
 
 void Stacklet::suspend (Vector& queue) {
@@ -183,10 +183,10 @@ auto Stacklet::runLoop () -> bool {
             }
         }
 
-        if (ready.size() == 0)
+        if (tasks.size() == 0)
             break;
 
-        current = (Stacklet*) &ready.pull(0).obj();
+        current = (Stacklet*) &tasks.pull(0).obj();
         assert(current != nullptr);
         if (!current->active())
             continue; // TODO ???

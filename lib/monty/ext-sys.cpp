@@ -44,7 +44,7 @@ static Function const fo_gcnow (f_gcnow);
 static Function const fo_gcstats (f_gcstats);
 
 static Lookup::Item const lo_sys [] = {
-    //XXX { Q(187,"tasks"), stacklets },
+    { Q(187,"tasks"), tasks },
     //XXX { Q(188,"modules"), Interp::modules },
 //  { Q(189,"suspend"), fo_suspend },
     { Q(190,"gc_avail"), fo_gcavail },

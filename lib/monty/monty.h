@@ -763,7 +763,7 @@ namespace monty {
 
     extern Vector stacklets;
     extern Vector handlers;
-    extern Vector ready;
+    extern List tasks;
 
     //CG< type event
     struct Event : List {
