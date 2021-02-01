@@ -271,23 +271,56 @@ auto arch::done () -> int {
     return 0;
 }
 
-Value f_ticks (ArgVec const&) {
-    uint32_t t = ticks;
-    static uint32_t begin;
-    if (begin == 0)
-        begin = t;
-    return t - begin; // make all runs start out the same way
+namespace machine {
+    static Event tickEvent;
+    static int ms, tickerId;
+    static uint32_t start, last;
+
+    Value f_ticker (ArgVec const& args) {
+        if (args.num > 0) {
+            assert(args.num == 1 && args[0].isInt());
+            ms = args[0];
+            start = ticks; // set first timeout relative to now
+            last = 0;
+            tickerId = tickEvent.regHandler();
+printf("tickerId %d\n", tickerId);
+
+            VTableRam().systick = []() {
+                uint32_t t = ++ticks;
+                if (ms > 0 && (t - start) / ms != last) {
+                    last = (t - start) / ms;
+                    exception(tickerId);
+                }
+            };
+        } else {
+            VTableRam().systick = []() {
+                ++ticks;
+            };
+
+            tickEvent.deregHandler();
+        }
+        return tickEvent;
+    }
+
+    static Function const fo_ticker (f_ticker);
+
+    Value f_ticks (ArgVec const&) {
+        uint32_t t = ticks;
+        static uint32_t begin;
+        if (begin == 0)
+            begin = t;
+        return t - begin; // make all runs start out the same way
+    }
+
+    static Function const fo_ticks (f_ticks);
+
+    static Lookup::Item const attrs [] = {
+        { "ticker", fo_ticker },
+        { "ticks", fo_ticks },
+    };
 }
 
-static Function const fo_ticks (f_ticks);
-
-static Lookup::Item const lo_machine [] = {
-    //XXX { "ticker", fo_ticker },
-    { "ticks", fo_ticks },
-    //XXX { "uart", Uart::info },
-};
-
-static Lookup const ma_machine (lo_machine, sizeof lo_machine);
+static Lookup const ma_machine (machine::attrs, sizeof machine::attrs);
 extern Module const m_machine (ma_machine);
 
 #ifdef UNIT_TEST

@@ -1,6 +1,7 @@
 #include <monty.h>
 #include "arch.h"
 
+#include <cassert>
 #include <cstdio>
 #include <ctime>
 
@@ -40,21 +41,54 @@ auto arch::done () -> int {
     return 0;
 }
 
-static auto f_ticks (ArgVec const&) -> Value {
-    uint32_t t = micros() / 1000;
-    static uint32_t begin;
-    if (begin == 0)
-        begin = t;
-    return t - begin; // make all runs start out the same way
+namespace machine {
+    static Event tickEvent;
+    static int ms, tickerId;
+    static uint32_t start, last;
+
+    // simulate in software, see INNER_HOOK in arch.h and monty/pyvm.h
+    void timerHook () {
+        auto u = micros();
+        uint32_t t = u / 1000;
+        if (ms > 0 && (t - start) / ms != last) {
+            last = (t - start) / ms;
+            if (tickerId > 0)
+                exception(tickerId);
+        }
+    }
+
+    static auto f_ticker (ArgVec const& args) -> Value {
+        if (args.num > 0) {
+            assert(args.num == 1 && args[0].isInt());
+            ms = args[0];
+            start = micros() / 1000; // set first timeout relative to now
+            last = 0;
+            tickerId = tickEvent.regHandler();
+            assert(tickerId > 0);
+        } else {
+            tickEvent.deregHandler();
+            tickerId = 0;
+        }
+        return tickEvent;
+    }
+
+    static Function const fo_ticker (f_ticker);
+
+    static auto f_ticks (ArgVec const&) -> Value {
+        uint32_t t = micros() / 1000;
+        static uint32_t begin;
+        if (begin == 0)
+            begin = t;
+        return t - begin; // make all runs start out the same way
+    }
+
+    static Function const fo_ticks (f_ticks);
+
+    static Lookup::Item const attrs [] = {
+        { "ticker", fo_ticker },
+        { "ticks", fo_ticks },
+    };
 }
 
-static Function const fo_ticks (f_ticks);
-
-static Lookup::Item const lo_machine [] = {
-    //XXX { "ticker", fo_ticker },
-    { "ticks", fo_ticks },
-    //XXX { "uart", Uart::info },
-};
-
-static Lookup const ma_machine (lo_machine, sizeof lo_machine);
+static Lookup const ma_machine (machine::attrs, sizeof machine::attrs);
 extern Module const m_machine (ma_machine);

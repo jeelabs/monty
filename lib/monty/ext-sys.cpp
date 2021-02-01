@@ -6,10 +6,8 @@
 using namespace monty;
 
 static auto f_suspend (ArgVec const& args) -> Value {
-    assert(args.num == 1 && args[0].isInt());
-    int id = args[0];
-    if (id >= 0)
-        assert(false); //XXX Interp::suspend(id);
+    assert(args.num == 1);
+    args[0].asType<Event>().wait();
     return {};
 }
 
