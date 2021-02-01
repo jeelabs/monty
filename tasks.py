@@ -21,6 +21,12 @@ def x_examples(c):
             print(ex)
             c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
 
+@task(help={"host": "hostname for rsync (required)",
+            "dest": "destination directory (default: monty-test)"})
+def x_rsync(c, host, dest="monty-test"):
+    """send sources to specified host for testing"""
+    c.run("rsync -av --exclude .pio . %s:%s/" % (host, dest))
+
 @task
 def x_sizes(c):
     """show µC build sizes, w/ and w/o assertions"""
