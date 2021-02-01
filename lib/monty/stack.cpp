@@ -70,7 +70,7 @@ Stacklet::Stacklet () {
 }
 
 Stacklet::~Stacklet () {
-    stacklets.remove(stacklets.find(this));
+    deactivate();
 }
 
 auto Stacklet::active () const -> bool {
@@ -202,7 +202,7 @@ auto Stacklet::runLoop () -> bool {
 
         // stacklet has returned, make it inactive
         current->adj(current->fill);
-        stacklets.remove(stacklets.find(current));
+        current->deactivate();
     }
 
     // return true if there is still at least one active stacklet
