@@ -175,11 +175,8 @@ auto Stacklet::runLoop () -> bool {
             }
         }
 
-        static int n;
-        if (++n >= 100 || gcCheck()) {
-            n = 0;
+        if (gcCheck())
             gcNow();
-        }
 
         if (tasks.size() == 0)
             break;

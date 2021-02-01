@@ -213,7 +213,7 @@ Command const commands [] = {
     { "bc *  set boot command (cmd ...)"  , bc_cmd },
     { "bv    show build version"          , [](char*) { printBuildVer(); }},
     { "di    show device info"            , [](char*) { printDevInfo(); }},
-//  { "gc    trigger garbage collection"  , [](char*) { ... }},
+    { "gc    trigger garbage collection"  , [](char*) { gcNow(); }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
