@@ -1172,9 +1172,6 @@ struct PyVM : Stacklet {
     }
 
     PyVM (Callable const& init, Stacklet* from =nullptr) {
-#if !NATIVE
-printf("pyvm %p\n", this);
-#endif
         insert(0, NumSlots);
         caller() = from;
 
@@ -1184,7 +1181,7 @@ printf("pyvm %p\n", this);
 
 #if !NATIVE
     ~PyVM () override {
-printf("~pyvm %p\n", this);
+printf("done\n"); // FIXME hack!
     }
 #endif
 

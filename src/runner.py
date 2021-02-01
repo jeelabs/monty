@@ -116,7 +116,7 @@ if __name__ == "__main__":
     for fn in args:
         try:
             ser.reset_input_buffer()
-            ser.write(b'\nwd 250\n')
+            ser.write(b'\nbc\nwd 250\n')
 
             with open(compileIfOutdated(fn), "rb") as f:
                 for line in genHex(f.read()):
