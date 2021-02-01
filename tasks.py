@@ -39,7 +39,7 @@ def x_version(c):
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="valid/features.py"):
-    """run script using the native build [valid/features.py]"""
+    """run script using the native build  [valid/features.py]"""
     c.run("pio run -e native -s", pty=True)
     cmd = ".pio/build/native/program"
     if file:
@@ -53,7 +53,7 @@ def test(c):
 
 @task(help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
-    """run Python tests natively"""
+    """run Python tests natively          [in valid/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
     num, fail, match = 0, 0, 0
 
@@ -99,10 +99,11 @@ def upload(c):
     """run C++ tests, uploaded to µC"""
     c.run("pio test", pty=True)
 
-@task(embed)
-def runner(c):
-    """run Python tests, uploaded to µC"""
-    c.run("src/runner.py valid/*.py", pty=True)
+@task(embed,help={"tests": "specific tests to run, comma-separated"})
+def runner(c, tests=""):
+    """run Python tests, uploaded to µC   [in valid/: {*}.py]"""
+    match = "{%s}" % tests if tests else "*"
+    c.run("src/runner.py valid/%s.py" % match, pty=True)
 
 @task(test, python, upload, runner)
 def all(c):
