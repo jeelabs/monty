@@ -129,8 +129,6 @@ if __name__ == "__main__":
 
         results = []
         failed = True
-        timeout = 2.5
-
         while True:
             try:
                 line = ser.readline()
@@ -153,16 +151,13 @@ if __name__ == "__main__":
                 print("?", line[:-1])
             results.append(line)
             if line == "done\n":
-                timeout = 0
                 break
             if line == "abort\n":
-                timeout = 0.3
+                time.sleep(0.3)
                 failed = True
                 break
         if failed:
             fail += 1
-
-        time.sleep(timeout)
 
         if compareWithExpected(fn, ''.join(results)):
             match += 1

@@ -1181,7 +1181,7 @@ struct PyVM : Stacklet {
 
 #if !NATIVE
     ~PyVM () override {
-printf("done\n"); // FIXME hack!
+printf("done\n");
     }
 #endif
 
