@@ -1,4 +1,5 @@
 evt = machine.ticker(10)
+run = True
 
 def delay(n):
     for _ in range(n):
@@ -7,7 +8,7 @@ def delay(n):
 
 async def task(rate):
     i = 0
-    while evt:
+    while run:
         delay(rate)
         print('t', machine.ticks(), 'rate', rate, 'i', i)
         i += 1
@@ -18,7 +19,6 @@ for i in [2, 3, 5]:
 async def timeout():
     global evt
     delay(35)
-    machine.ticker() # stops ticker and returns -1
-    evt = None
+    run = False
 
 sys.tasks.append(timeout())

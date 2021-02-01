@@ -163,7 +163,6 @@ Value Bool::repr (Buffer& buf) const {
 }
 
 Value Bytes::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     buf << '\'';
     for (auto b : *this) {
         if (b == '\\' || b == '\'')
@@ -186,14 +185,7 @@ auto Closure::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
-#if 0 //XXX
-auto Context::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
-}
-#endif
-
 Value Dict::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     buf << '{';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
@@ -236,7 +228,6 @@ Value Int::repr (Buffer& buf) const {
 }
 
 Value List::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     buf << '[';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
@@ -248,7 +239,6 @@ Value List::repr (Buffer& buf) const {
 }
 
 Value Array::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     auto m = mode();
     auto n = len();
     buf.print("%d%c", n, m);
@@ -291,7 +281,6 @@ Value Range::repr (Buffer& buf) const {
 }
 
 Value Set::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     buf << '{';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
@@ -308,7 +297,6 @@ Value Slice::repr (Buffer& buf) const {
 }
 
 Value Str::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     putsEsc(buf, (char const*) begin());
     return {};
 }
@@ -319,7 +307,6 @@ Value Super::repr (Buffer& buf) const {
 }
 
 Value Tuple::repr (Buffer& buf) const {
-    // TODO this is a synchronous version, needs to be converted to a resumable
     buf << '(';
     for (uint32_t i = 0; i < fill; ++i) {
         if (i > 0)
@@ -336,6 +323,9 @@ Value Type::repr (Buffer& buf) const {
 }
 
 Value Event::repr (Buffer& buf) const {
-    buf << "<event: ...>";
-    return {};
+    return Object::repr(buf); // don't print as a list
+}
+
+auto Stacklet::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
 }

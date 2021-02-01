@@ -825,6 +825,7 @@ namespace monty {
     struct Stacklet : List {
         static Type info;
         auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
 
         uint16_t ms = 0;
         int8_t sema = -1;
