@@ -299,7 +299,7 @@ namespace monty {
             fill -= num;
         }
 
-        auto find (T v) -> uint32_t {
+        auto find (T v) const -> uint32_t {
             for (auto& e : *this)
                 if (e == v)
                     return &e - begin();
@@ -827,6 +827,8 @@ namespace monty {
 
         Stacklet ();
         ~Stacklet () override;
+
+        auto binop (BinOp, Value) const -> Value override;
 
         auto index () const -> uint32_t;
         auto active () const -> bool;

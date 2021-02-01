@@ -136,7 +136,7 @@ bool Value::truthy () const {
 auto Value::operator== (Value rhs) const -> bool {
     if (v == rhs.v)
         return true;
-#if 1
+#if 0
     // FIXME (?) object equality is object identity for now
     return tag() == rhs.tag() && tag() == Str && strcmp(*this, rhs) == 0;
 #else
@@ -240,9 +240,13 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
                 assert(isObj());
                 switch (op) {
                     case BinOp::Equal:
+#if 0
+                        return asBool(id() == rhs.id()); //XXX
+#else
                         if (ifType<None>() != 0) // FIXME special-cased!
                             return asBool(id() == rhs.id());
                         // fall through
+#endif
                     default:
                         break;
                 }

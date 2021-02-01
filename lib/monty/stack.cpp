@@ -30,8 +30,8 @@ auto Event::regHandler () -> uint32_t {
 }
 
 void Event::deregHandler () {
-#if 0
-    auto n = id();
+#if 1
+    auto n = find(this);
     if (n < handlers.size())
         handlers[n] = {};
 #else
@@ -103,6 +103,12 @@ static void duff (uint32_t* to, uint32_t const* from, size_t count) {
                 } while (--n > 0);
     }
 }
+
+auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
+    assert(op == BinOp::Equal);
+    return Value::asBool(rhs.isObj() && this == &rhs.obj());
+}
+
 
 // note: don't make this static, as then it might get inlined - see below
 // TODO not sure this is still needed, it might have been an adj/cap-check bug
