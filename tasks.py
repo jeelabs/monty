@@ -25,7 +25,7 @@ def x_examples(c):
             "dest": "destination directory (default: monty-test)"})
 def x_rsync(c, host, dest="monty-test"):
     """send sources to specified host for testing"""
-    c.run("rsync -av --exclude .pio . %s:%s/" % (host, dest))
+    c.run("rsync -av --exclude .git --exclude .pio . %s:%s/" % (host, dest))
 
 @task
 def x_sizes(c):
@@ -108,7 +108,7 @@ def upload(c):
 @task(embed,help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
     """run Python tests, uploaded to µC   [in valid/: {*}.py]"""
-    match = "{%s}" % tests if tests else "*"
+    match = "{%s}" % tests if "," in tests else (tests or "*")
     c.run("src/runner.py valid/%s.py" % match, pty=True)
 
 @task(test, python, upload, runner)

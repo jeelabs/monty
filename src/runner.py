@@ -114,23 +114,27 @@ if __name__ == "__main__":
     fail, match = 0, 0
 
     for fn in args:
-        ser.reset_input_buffer()
-        ser.write(b'\nbc\nwd 250\n')
-
         try:
+            ser.reset_input_buffer()
+            ser.write(b'\nbc\nwd 250\n')
+
             with open(compileIfOutdated(fn), "rb") as f:
                 for line in genHex(f.read()):
                     ser.write(line.encode())
                     ser.flush()
-        except:
-            print("file?", fn)
+        except Exception as e:
+            printSeparator(fn, e)
             fail += 1
             continue
 
         results = []
         failed = True
         while True:
-            line = ser.readline()
+            try:
+                line = ser.readline()
+            except:
+                failed = True
+                break
             if len(line) == 0:
                 break
             if line == b'\xFF\n':
