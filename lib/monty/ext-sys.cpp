@@ -49,7 +49,9 @@ static Lookup::Item const lo_sys [] = {
     { Q(190,"gc_now"), fo_gcnow },
     { Q(191,"gc_stats"), fo_gcstats },
     { Q(192,"implementation"), Q(193,"monty") },
+#ifdef VERSION
     { Q(194,"version"), VERSION },
+#endif
 };
 
 static Lookup const ma_sys (lo_sys, sizeof lo_sys);

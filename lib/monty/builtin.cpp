@@ -364,7 +364,9 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
     { Q(184,"sys"),   m_sys },
+#ifndef NOARCH
     { Q(185,"machine"), m_machine },
+#endif
 };
 
 Lookup const monty::builtins (builtinsMap, sizeof builtinsMap);

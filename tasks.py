@@ -123,7 +123,7 @@ def mrfs(c):
 @task
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio monty.bin")
+    c.run("rm -rf .pio examples/*/.pio monty.bin")
 
 @task
 def health(c):
