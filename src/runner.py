@@ -69,13 +69,43 @@ def compareWithExpected (fn, output):
                 pass
             return True
 
-    print("--------------------", fn, "--------------------")
     with open(out, "w") as f:
         f.write(output)
-    if os.path.isfile(exp):
+    printSeparator(fn)
+    if os.path.isfile(exp) and expected:
         subprocess.run(f"diff {out} {exp} | head", shell=True)
+
+def printSeparator(fn, e=None):
+    root = os.path.splitext(fn)[0]
+    if e:
+        msg = "FAIL"
     else:
-        print(">", len(output), "chars")
+        msg = ""
+        try:
+            with open(root + ".exp") as f:
+                exp = f.readlines()
+            nexp = len(exp)
+        except:
+            nexp = None
+        try:
+            with open(root + ".out") as f:
+                out = f.readlines()
+            nout = len(out)
+            if nexp is None:
+                msg = f"out: {nout}"
+            elif nout == nexp:
+                msg = f"out & exp: {nexp}"
+            else:
+                msg = f"out/exp: {nout}/{nexp}"
+            if not nexp:
+                e = ''.join(out[:10])[:-1]
+        except:
+            if nexp:
+                msg = f"exp: {nexp}"
+    sep = (50 - len(fn) - len(msg)) * "-"
+    print("---------------------------", fn, sep, msg)
+    if e:
+        print(e)
 
 if __name__ == "__main__":
     ser = openSerialPort()

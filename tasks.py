@@ -2,7 +2,7 @@
 from invoke import exceptions, task
 
 import io, os, subprocess
-from src.runner import compileIfOutdated, compareWithExpected
+from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
 
@@ -51,26 +51,41 @@ def test(c):
     """run C++ tests natively"""
     c.run("pio test -e native", pty=True)
 
-@task
-def python(c):
+@task(help={"tests": "specific tests to run, comma-separated"})
+def python(c, tests=""):
     """run Python tests natively"""
     c.run("pio run -e native -s", pty=True)
     num, fail, match = 0, 0, 0
 
-    tests = os.listdir("valid")
-    tests.sort()
-    for file in tests:
+    if tests:
+        files = [t + ".py" for t in tests.split(",")]
+    else:
+        files = os.listdir("valid")
+        files.sort()
+    for file in files:
         if file[-3:] == ".py":
             num += 1
+            py = "valid/" + file
             try:
-                py = "valid/" + file
                 mpy = compileIfOutdated(py)
-                out = io.StringIO()
-                c.run(".pio/build/native/program %s" % mpy, out_stream=out)
-                if compareWithExpected(py, out.getvalue()):
-                    match += 1
-            except exceptions.UnexpectedExit:
+            except FileNotFoundError as e:
+                printSeparator(py, e)
                 fail += 1
+            else:
+                try:
+                    r = c.run(".pio/build/native/program %s" % mpy, hide=True)
+                except exceptions.UnexpectedExit as e:
+                    r = e.result
+                    msg = "[...]\n%s\n" % r.tail('stdout', 5).strip("\n")
+                    if r.stderr:
+                        msg += r.stderr.strip()
+                    else:
+                        msg += "Unexpected exit: %d" % r.return_code
+                    printSeparator(py, msg)
+                    fail += 1
+                else:
+                    if compareWithExpected(py, r.stdout):
+                        match += 1
 
     print(f"\n{num} tests, {match} matches, {fail} failures")
 
