@@ -808,6 +808,7 @@ namespace monty {
 
         ~Event () override { deregHandler(); }
 
+        auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
 
         auto regHandler () -> uint32_t;

@@ -59,6 +59,11 @@ void Event::wait () {
     Stacklet::suspend(*this);
 }
 
+auto Event::unop (UnOp op) const -> Value {
+    assert(op == UnOp::Boln);
+    return Value::asBool(*this);
+}
+
 auto Event::binop (BinOp op, Value rhs) const -> Value {
     assert(op == BinOp::Equal);
     return Value::asBool(rhs.isObj() && this == &rhs.obj());
