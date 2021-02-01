@@ -271,6 +271,25 @@ auto arch::done () -> int {
     return 0;
 }
 
+Value f_ticks (ArgVec const&) {
+    uint32_t t = ticks;
+    static uint32_t begin;
+    if (begin == 0)
+        begin = t;
+    return t - begin; // make all runs start out the same way
+}
+
+static Function const fo_ticks (f_ticks);
+
+static Lookup::Item const lo_machine [] = {
+    //XXX { "ticker", fo_ticker },
+    { "ticks", fo_ticks },
+    //XXX { "uart", Uart::info },
+};
+
+static Lookup const ma_machine (lo_machine, sizeof lo_machine);
+extern Module const m_machine (ma_machine);
+
 #ifdef UNIT_TEST
 
 extern "C" void unittest_uart_begin () {

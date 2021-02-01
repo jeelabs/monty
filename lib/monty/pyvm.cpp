@@ -1376,13 +1376,13 @@ auto PyVM::next () -> Value {
     return {}; // no result yet
 }
 
-Type Bytecode::info (Q(184,"<bytecode>"));
+Type Bytecode::info (Q(195,"<bytecode>"));
 auto Bytecode::type () const -> Type const& { return info; }
 
-Type Callable::info (Q(185,"<callable>"));
+Type Callable::info (Q(196,"<callable>"));
 auto Callable::type () const -> Type const& { return info; }
 
-Type PyVM::info (Q(186,"<pyvm>"));
+Type PyVM::info (Q(197,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
 auto vmTest (uint8_t const* data) -> Stacklet* {

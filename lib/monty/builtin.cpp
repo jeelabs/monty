@@ -5,8 +5,8 @@
 
 using namespace monty;
 
-//XXX extern Module const m_sys;
-//XXX extern Module const m_machine;
+extern Module const m_sys;
+extern Module const m_machine;
 
 //CG: exception BaseException
 //CG: exception Exception BaseException
@@ -363,6 +363,8 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   f_len },
     { Q( 57,"abs"),   f_abs },
     { Q( 90,"hash"),  f_hash },
+    { Q(184,"sys"),   m_sys },
+    { Q(185,"machine"), m_machine },
 };
 
 Lookup const monty::builtins (builtinsMap, sizeof builtinsMap);
