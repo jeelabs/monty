@@ -2,7 +2,8 @@ evt = machine.ticker(10)
 
 def delay(n):
     for _ in range(n):
-        sys.suspend(evt) # TODO evt.wait()
+        evt.wait()
+        evt.clear()
 
 async def task(rate):
     i = 0

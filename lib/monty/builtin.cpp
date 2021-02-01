@@ -198,20 +198,20 @@ Type       Buffer::info (Q(168,"<buffer>"));
 Type         Cell::info (Q(169,"<cell>"));
 Type      Closure::info (Q(170,"<closure>"));
 Type     DictView::info (Q(171,"<dictview>"));
-Type        Event::info (Q(172,"<event>"));
-Type    Exception::info (Q(173,"<exception>"));
-Type     Function::info (Q(174,"<function>"));
-Type     Iterator::info (Q(175,"<iterator>"));
-Type       Lookup::info (Q(176,"<lookup>"));
-Type       Method::info (Q(177,"<method>"));
+Type    Exception::info (Q(172,"<exception>"));
+Type     Function::info (Q(173,"<function>"));
+Type     Iterator::info (Q(174,"<iterator>"));
+Type       Lookup::info (Q(175,"<lookup>"));
+Type       Method::info (Q(176,"<method>"));
 Type       Module::info (Q(  7,"<module>"));
-Type         None::info (Q(178,"<none>"));
-Type     Stacklet::info (Q(179,"<stacklet>"));
+Type         None::info (Q(177,"<none>"));
+Type     Stacklet::info (Q(178,"<stacklet>"));
 
 Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
+Type    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
+Type    Event::info (Q(180,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
@@ -227,7 +227,6 @@ auto       Buffer::type () const -> Type const& { return info; }
 auto         Cell::type () const -> Type const& { return info; }
 auto      Closure::type () const -> Type const& { return info; }
 auto     DictView::type () const -> Type const& { return info; }
-auto        Event::type () const -> Type const& { return info; }
 auto    Exception::type () const -> Type const& { return info; }
 auto     Function::type () const -> Type const& { return info; }
 auto     Iterator::type () const -> Type const& { return info; }
@@ -240,6 +239,7 @@ auto         Bool::type () const -> Type const& { return info; }
 auto        Bytes::type () const -> Type const& { return info; }
 auto        Class::type () const -> Type const& { return info; }
 auto         Dict::type () const -> Type const& { return info; }
+auto        Event::type () const -> Type const& { return info; }
 auto          Int::type () const -> Type const& { return info; }
 auto         List::type () const -> Type const& { return info; }
 auto        Range::type () const -> Type const& { return info; }
@@ -345,8 +345,9 @@ static Lookup::Item const builtinsMap [] = {
     //CG< builtin-emit 1
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(180,"class") , Class::info },
+    { Q(179,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
+    { Q(180,"event") , Event::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
@@ -409,6 +410,23 @@ static Lookup::Item const dictMap [] = {
 };
 
 Lookup const Dict::attrs (dictMap, sizeof dictMap);
+
+static auto d_event_wait = Method::wrap(&Event::wait);
+static Method const m_event_wait (d_event_wait);
+
+static auto d_event_set = Method::wrap(&Event::set);
+static Method const m_event_set (d_event_set);
+
+static auto d_event_clear = Method::wrap(&Event::clear);
+static Method const m_event_clear (d_event_clear);
+
+static Lookup::Item const eventMap [] = {
+    { Q(186,"wait"), m_event_wait },
+    { Q(140,"set"), m_event_set },
+    { Q( 70,"clear"), m_event_clear },
+};
+
+Lookup const Event::attrs (eventMap, sizeof eventMap);
 
 // added to satisfy linker
 

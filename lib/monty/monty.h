@@ -765,10 +765,14 @@ namespace monty {
     extern Vector handlers;
     extern Vector ready;
 
-    //CG3 type <event>
+    //CG< type event
     struct Event : List {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
         static Type info;
         auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
 
         ~Event () override { deregHandler(); }
 
@@ -866,6 +870,12 @@ namespace monty {
     // It's probably just a neophyte's version of STL's <functional> types ...
     // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
 
+    // obj.meth() -> void
+    template< typename T >
+    auto argConv (void (T::*m)(), Object& o, ArgVec const&) -> Value {
+        (((T&) o).*m)();
+        return {};
+    }
     // obj.meth() -> Value
     template< typename T, typename V >
     auto argConv (auto (T::*m)() -> V, Object& o, ArgVec const&) -> V {

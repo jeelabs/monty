@@ -283,7 +283,6 @@ namespace machine {
             start = ticks; // set first timeout relative to now
             last = 0;
             tickerId = tickEvent.regHandler();
-printf("tickerId %d\n", tickerId);
 
             VTableRam().systick = []() {
                 uint32_t t = ++ticks;

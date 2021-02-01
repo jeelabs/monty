@@ -313,3 +313,8 @@ Value Type::repr (Buffer& buf) const {
     buf.print("<type %s>", (char const*) name);
     return {};
 }
+
+Value Event::repr (Buffer& buf) const {
+    buf << "<event: ...>";
+    return {};
+}

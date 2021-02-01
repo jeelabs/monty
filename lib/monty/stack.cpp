@@ -52,6 +52,11 @@ void Event::wait () {
     Stacklet::suspend(*this);
 }
 
+auto Event::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 0);
+    return new Event;
+}
+
 Stacklet::Stacklet () {
     stacklets.append(this);
     ready.append(this);
