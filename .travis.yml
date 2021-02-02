@@ -1,8 +1,9 @@
-language: python
-#python:
-#    - "3.7"
+# see https://docs.platformio.org/en/latest/integration/ci/travis.html
 
-# Cache PlatformIO packages using Travis CI container-based infrastructure
+language: python
+python:
+    - "3.7"
+
 sudo: false
 cache:
     directories:
