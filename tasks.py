@@ -4,7 +4,7 @@ from invoke import task
 import io, os, subprocess
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
-os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
+os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
 @task
 def x_codegen(c):
@@ -39,13 +39,13 @@ def x_tags(c):
     c.run("ctags -R lib src test")
 
 @task
-def x_version(c):
+def version(c):
     """show git repository version"""
     print(os.environ["MONTY_VERSION"])
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
-def native(c, file="valid/features.py"):
-    """run script using the native build  [valid/features.py]"""
+def native(c, file="valid/hello.py"):
+    """run script using the native build  [valid/hello.py]"""
     c.run("pio run -e native -s", pty=True)
     cmd = ".pio/build/native/program"
     if file:
@@ -94,7 +94,7 @@ def python(c, tests=""):
                     if compareWithExpected(py, r.stdout):
                         match += 1
 
-    print(f"\n{num} tests, {match} matches, {fail} failures")
+    print(f"{num} tests, {match} matches, {fail} failures")
 
 @task(x_codegen)
 def embed(c):
@@ -106,15 +106,15 @@ def upload(c):
     """run C++ tests, uploaded to µC"""
     c.run("pio test", pty=True)
 
-@task(embed,help={"tests": "specific tests to run, comma-separated"})
+@task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
     """run Python tests, uploaded to µC   [in valid/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
     c.run("src/runner.py valid/%s.py" % match, pty=True)
 
-@task(test, python, upload, runner)
+@task(test, python, upload, embed, runner)
 def all(c):
-    """shorthand for running test, python, upload, and runner"""
+    """shorthand for running test, python, upload, embed, and runner"""
 
 @task
 def mrfs(c):

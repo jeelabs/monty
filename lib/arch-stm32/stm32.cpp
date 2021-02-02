@@ -50,11 +50,10 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 using namespace monty;
 
 void printBuildVer () {
-    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
+    printf("Monty " STRINGIZE(VERSION) " (" __DATE__ ", " __TIME__ ")\n");
 }
 
 void printDevInfo () {
-#ifndef NDEBUG
     extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
     printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
             g_pfnVectors, _sidata, _sdata, _ebss, _estack);
@@ -84,7 +83,6 @@ void printDevInfo () {
             MMIO32(0x1FFF7594),
             MMIO32(0x1FFF7598));
 #endif
-#endif // NDEBUG
 }
 
 struct LineSerial : Stacklet {

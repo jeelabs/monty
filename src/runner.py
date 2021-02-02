@@ -129,6 +129,7 @@ if __name__ == "__main__":
 
         results = []
         failed = True
+        delay = 2.5
         while True:
             try:
                 line = ser.readline()
@@ -136,6 +137,7 @@ if __name__ == "__main__":
                 failed = True
                 break
             if len(line) == 0:
+                delay = 0
                 break
             if line == b'\xFF\n':
                 continue # yuck: ignore power-up noise from UART TX
@@ -151,13 +153,15 @@ if __name__ == "__main__":
                 print("?", line[:-1])
             results.append(line)
             if line == "done\n":
+                delay = 0.1
                 break
             if line == "abort\n":
-                time.sleep(0.3)
                 failed = True
+                delay = 0.3
                 break
         if failed:
             fail += 1
+        time.sleep(delay)
 
         if compareWithExpected(fn, ''.join(results)):
             match += 1

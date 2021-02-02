@@ -4,6 +4,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#define STRINGIZE(x) #x
+
 extern "C" int printf (char const*, ...);
 extern "C" int puts (char const*);
 extern "C" int putchar (int);
@@ -904,7 +906,7 @@ namespace monty {
     }
     // obj.meth() -> Value
     template< typename T, typename V >
-    auto argConv (auto (T::*m)() -> V, Object& o, ArgVec const&) -> V {
+    auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
         return (((T&) o).*m)();
     }
     // obj.meth(arg) -> void
@@ -915,13 +917,12 @@ namespace monty {
     }
     // obj.meth(arg) -> Value
     template< typename T, typename U, typename V >
-    auto argConv (auto (T::*m)(U) -> V, Object& o, ArgVec const& a) -> V {
+    auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> V {
         return (((T&) o).*m)(a[1]);
     }
     // obj.meth(argvec) -> Value
     template< typename T, typename V >
-    auto argConv (auto (T::*m)(ArgVec const&) -> V,
-                                        Object& o, ArgVec const& a) -> V {
+    auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> V {
         return (((T&) o).*m)(a);
     }
 
