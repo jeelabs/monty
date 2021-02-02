@@ -156,7 +156,7 @@ if __name__ == "__main__":
                 delay = 0.1
                 break
             if line == "abort\n":
-                delay 0.3
+                delay = 0.3
                 failed = True
                 break
         if failed:
