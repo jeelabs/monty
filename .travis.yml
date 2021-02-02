@@ -11,7 +11,7 @@ cache:
     - $HOME/mpy
 
 install:
-  - pip install -U platformio invoke
+  - pip3 install -U platformio invoke
   - pio upgrade
   - pio update
   - MPY=https://github.com/micropython/micropython.git
