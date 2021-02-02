@@ -20,14 +20,13 @@ install:
   - if [ ! -d ~/mpy/mpy-cross ]; then git clone --depth 1 -b v1.13 $MPY ~/mpy; fi
   - make -C ~/mpy/mpy-cross/
   - export PATH=$PATH:$HOME/mpy/mpy-cross
+  - inv health
 
 script:
-  - pio run -e native -s
+  - pio run -e native -v
   - mpy-cross valid/hello.py
   - .pio/build/native/program valid/hello.mpy
   - pio test -e native
-  - inv -l
-  - inv health
-  - inv clean
+  - rm -rf .pio
   - inv -e native
   - inv -e python

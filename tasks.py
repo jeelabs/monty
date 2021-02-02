@@ -44,8 +44,8 @@ def x_version(c):
     print(os.environ["MONTY_VERSION"])
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
-def native(c, file="valid/features.py"):
-    """run script using the native build  [valid/features.py]"""
+def native(c, file="valid/hello.py"):
+    """run script using the native build  [valid/hello.py]"""
     c.run("pio run -e native -v")
     cmd = ".pio/build/native/program"
     if file:
