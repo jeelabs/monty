@@ -25,7 +25,8 @@ install:
 
 script:
   - pio run -e native
-  - .pio/build/native/program
+  - mpy-cross valid/features.py
+  - .pio/build/native/program valid/features.mpy
   - pio test -e native
   - inv -l
   - inv native
