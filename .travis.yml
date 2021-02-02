@@ -16,9 +16,11 @@ install:
   - pip install -U platformio invoke
   - pio update
   - URL=https://github.com/micropython/micropython.git
-  - if [ ! -d $HOME/upy ]; then echo yes $URL; else echo no $URL; fi
-  - if [ ! -d $HOME/upy ]; then git clone --depth 1 -b v1.13 $URL $HOME/upy; fi
-  - make -C $HOME/upy/mpy-cross/
+  - if [ ! -d ~/upy/mpy-cross ]; then echo yes $URL; else echo no $URL; fi
+  - if [ ! -d ~/upy/mpy-cross ]; then git clone --depth 1 -b v1.13 $URL ~/upy; fi
+  - ls -l
+  - ls -l ~/upy
+  - make -C ~/upy/mpy-cross/
   - export PATH=$PATH:$HOME/upy/mpy-cross
 
 script:
