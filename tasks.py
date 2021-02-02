@@ -4,7 +4,7 @@ from invoke import task
 import io, os, subprocess
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
-os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags")
+os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
 @task
 def x_codegen(c):
@@ -39,7 +39,7 @@ def x_tags(c):
     c.run("ctags -R lib src test")
 
 @task
-def x_version(c):
+def version(c):
     """show git repository version"""
     print(os.environ["MONTY_VERSION"])
 
