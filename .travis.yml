@@ -7,7 +7,7 @@ python:
 sudo: false
 cache:
     directories:
-        - $HOME.platformio
+        - $HOME/.platformio
         - $HOME/.cache/pip
 
 install:
