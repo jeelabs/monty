@@ -5,12 +5,12 @@ using namespace monty;
 
 uint8_t memPool [10*1024];
 
-extern auto vmTest (uint8_t const*) -> Stacklet*;
+extern auto vmLaunch (uint8_t const*) -> Stacklet*;
 
 auto shell (char const* cmd) -> bool {
     if (cmd[0] == 'M' && cmd[1] == 0x05) {
-        auto vm = vmTest((uint8_t const*) cmd);
-        if (vm != 0)
+        auto vm = vmLaunch((uint8_t const*) cmd);
+        if (vm != nullptr)
             tasks.append(vm);
         return false;
     }
@@ -34,7 +34,7 @@ int main (int argc, char const** argv) {
     if (argc > 1) {
         auto data = arch::loadFile(argv[1]);
         if (data != nullptr)
-            task = vmTest(data);
+            task = vmLaunch(data);
     }
 #else
     auto task = arch::cliTask(shell);

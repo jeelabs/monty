@@ -195,6 +195,7 @@ auto Stacklet::runLoop () -> bool {
     }
 
     // return true if there is still at least one queued stacklet
+    // TODO track queued counts in event wait/set, instead of iterating here
     for (auto e : handlers) {
         auto o = e.ifType<Event>();
         if (o != nullptr && o->size() > 0)

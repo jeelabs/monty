@@ -212,11 +212,11 @@ struct PyVM : Stacklet {
         spOff = sp - begin();
         ipOff = ip - ipBase();
         Value v = fun();
-        //XXX if (context != nullptr) {
+        if (current != nullptr) {
             sp = begin() + spOff;
             ip = ipBase() + ipOff;
-        //} else
-            //interrupt(0); // nothing left to do, exit inner loop
+        } else
+            raise(0); // nothing left to do, exit inner loop
         return v;
     }
 
@@ -655,6 +655,7 @@ struct PyVM : Stacklet {
     void opYieldValue () {
         auto myCaller = caller().ifType<PyVM>();
         caller() = {};
+        printf("yield %p\n", myCaller);
         if (myCaller == nullptr) {
             //XXX assert(findTask(*this) >= 0);
         }
@@ -1307,11 +1308,10 @@ Value PyVM::leave (Value v) {
         base = prev;            // new lower frame offset
     } else {
         // last frame, drop context, restore caller
-        assert(current == this);
-//XXX   deactivate();
-        current = caller().ifType<PyVM>(); // TODO any type of stacklet?
         fill = NumSlots; // delete stack entries
         adj(NumSlots); // release vector
+        assert(current == this);
+        current = nullptr; //XXX!
         raise(0); // exit inner loop to deal with stacklet change
     }
 
@@ -1382,11 +1382,8 @@ auto Callable::type () const -> Type const& { return info; }
 Type PyVM::info (Q(199,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
-auto vmTest (uint8_t const* data) -> Stacklet* {
+auto vmLaunch (uint8_t const* data) -> Stacklet* {
     Loader loader;
     Callable* init = loader.load(data);
-    if (init == nullptr)
-        return nullptr;
-
-    return new PyVM (*init);
+    return init != nullptr ? new PyVM (*init) : nullptr;
 }
