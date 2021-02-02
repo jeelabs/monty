@@ -1,5 +1,6 @@
 # see https://docs.platformio.org/en/latest/integration/ci/travis.html
 
+dist: focal
 language: python
 python:
     - "3.9"
