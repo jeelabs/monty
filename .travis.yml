@@ -18,7 +18,7 @@ install:
 
   - MPY=~/mpy/mpy-cross
   - GIT=https://github.com/micropython/micropython.git
-  - if [ ! -d $MPY ]; then git clone --depth 1 -b v1.13 $GIT ~/mpy; fi
+  - if [ ! -d $MPY ]; then git clone --depth 1 -b v1.14 $GIT ~/mpy; fi
   - make -C $MPY
   - export PATH=$PATH:$MPY
 
