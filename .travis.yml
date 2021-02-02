@@ -28,5 +28,6 @@ script:
   - pio test -e native
   - inv -l
   - inv health
+  - inv clean
   - inv -e native
   - inv -e python
