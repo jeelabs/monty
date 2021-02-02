@@ -95,20 +95,6 @@ auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
     return Value::asBool(rhs.isObj() && this == &rhs.obj());
 }
 
-
-// note: don't make this static, as then it might get inlined - see below
-// TODO not sure this is still needed, it might have been an adj/cap-check bug
-void resumeFixer (void* p) {
-    assert(Stacklet::resumer != nullptr);
-    assert(Stacklet::current != nullptr);
-    auto need = (uint8_t*) Stacklet::resumer - (uint8_t*) p;
-#if 0
-    memcpy(p, (uint8_t*) Stacklet::current->end(), need);
-#else
-    duff((uint32_t*) p, (uint32_t*) Stacklet::current->end(), need/4);
-#endif
-}
-
 void Stacklet::fail (Value v) {
     v.dump();
     assert(false); // TODO unhandled exception, can't continue
@@ -134,24 +120,32 @@ void Stacklet::suspend (Vector& queue) {
     jmp_buf top;
     assert(resumer > &top);
 
-    uint32_t need = (uint8_t*) resumer - (uint8_t*) &top;
-    assert(need % sizeof (Value) == 0);
-    assert(need > sizeof (jmp_buf));
+    {
+        uint32_t need = (uint8_t*) resumer - (uint8_t*) &top;
+        assert(need % sizeof (Value) == 0);
+        assert(need > sizeof (jmp_buf));
 
-    current->adj(current->fill + need / sizeof (Value));
-    if (setjmp(top) == 0) {
-        // suspending: copy stack out and jump to caller
+        current->adj(current->fill + need / sizeof (Value));
+        if (setjmp(top) == 0) {
+            // suspending: copy stack out and jump to caller
 #if 0
-        memcpy((uint8_t*) current->end(), (uint8_t*) &top, need);
+            memcpy((uint8_t*) current->end(), (uint8_t*) &top, need);
 #else
-        duff((uint32_t*) current->end(), (uint32_t*) &top, need/4);
+            duff((uint32_t*) current->end(), (uint32_t*) &top, need/4);
 #endif
-        longjmp(*(jmp_buf*) resumer, 1);
+            longjmp(*(jmp_buf*) resumer, 1);
+        }
     }
 
     // resuming: copy stack back in
-    // note: the key is that this calls ANOTHER function, to avoid reg issues
-    resumeFixer(&top);
+    assert(Stacklet::resumer != nullptr);
+    assert(Stacklet::current != nullptr);
+    auto need = (uint8_t*) Stacklet::resumer - (uint8_t*) &top;
+#if 0
+    memcpy(&top, (uint8_t*) Stacklet::current->end(), need);
+#else
+    duff((uint32_t*) &top, (uint32_t*) Stacklet::current->end(), need/4);
+#endif
 }
 
 auto Stacklet::runLoop () -> bool {

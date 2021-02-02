@@ -805,7 +805,7 @@ namespace monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
 
-        ~Event () override { deregHandler(); }
+        ~Event () override { deregHandler(); set(); }
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;

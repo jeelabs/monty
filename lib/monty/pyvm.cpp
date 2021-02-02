@@ -1369,7 +1369,16 @@ void PyVM::caught () {
 
 auto PyVM::next () -> Value {
     assert(fill > 0); // can only resume if not ended
-    //XXX Interp2::resume(*this);
+    assert(current != this);
+    assert(caller().isNil());
+#if 0
+    // FIXME wrong, and a total mess ...
+    caller() = current;
+    current = nullptr;
+    tasks.insert(0);
+    tasks[0] = this;
+    raise(0);
+#endif
     return {}; // no result yet
 }
 
