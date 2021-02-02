@@ -46,7 +46,7 @@ def x_version(c):
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="valid/hello.py"):
     """run script using the native build  [valid/hello.py]"""
-    c.run("pio run -e native -v")
+    c.run("pio run -e native -v", pty=True)
     cmd = ".pio/build/native/program"
     if file:
         cmd += " " + compileIfOutdated(file)
