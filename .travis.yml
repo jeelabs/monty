@@ -3,20 +3,26 @@
 dist: focal
 language: python
 python:
-    - "3.8.5"
+  - "3.8.5"
 
 sudo: false
 cache:
-    directories:
-        - $HOME/.platformio
-        - $HOME/.cache/pip
+  pip: true
+  directories:
+    - $HOME/.platformio
+    - $HOME/micropython
 
 install:
-    - pip install -U platformio invoke
-    - pio update
+  - pip install -U platformio invoke
+  - pio update
+  - pwd
+  - git clone --depth 1 -b v1.13 https://github.com/micropython/micropython.git
+  - make -C micropython/mpy-cross/
 
 script:
-    - pio run -e native
-    - pio test -e native
-    - inv native
-    - inv python
+  - pio run -e native
+  - pio test -e native
+  - .pio/build/native/program
+  - inv -l
+  - inv native
+  - inv python
