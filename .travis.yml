@@ -1,4 +1,4 @@
-# see https://docs.platformio.org/en/latest/integration/ci/travis.html
+# using Ubuntu 20.04 and the generic image, which has Python w/o virtualenv
 
 dist: focal
 language: generic
@@ -11,21 +11,25 @@ cache:
     - $HOME/mpy
 
 install:
+  - pip3 --version
   - pip3 install -U platformio invoke
-  - pio upgrade
   - pio update
-  - MPY=https://github.com/micropython/micropython.git
-  - if [ ! -d ~/mpy/mpy-cross ]; then git clone --depth 1 -b v1.13 $MPY ~/mpy; fi
-  - make -C ~/mpy/mpy-cross/
-  - export PATH=$PATH:$HOME/mpy/mpy-cross
   - pio system info
-  - inv health
+
+  - MPY=~/mpy/mpy-cross
+  - GIT=https://github.com/micropython/micropython.git
+  - if [ ! -d $MPY ]; then git clone --depth 1 -b v1.13 $GIT ~/mpy; fi
+  - make -C $MPY
+  - export PATH=$PATH:$MPY
 
 script:
-  - pio run -e native -v
+  - inv health
+  - pio run -e native -s
   - mpy-cross valid/hello.py
   - .pio/build/native/program valid/hello.mpy
+
   - pio test -e native
+
   - rm -rf .pio
   - inv -e native
   - inv -e python
