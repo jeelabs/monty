@@ -42,7 +42,6 @@ def genHex(data):
     for i in range(0, len(data), 16):
         chunk = data[i:i+16]
         csum = -(len(chunk) + (i>>8) + (i&0xFF) + sum(chunk)) & 0xFF
-        print(f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n")
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
