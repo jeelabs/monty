@@ -4,8 +4,6 @@
 #include <cstdlib>
 #include <cstring>
 
-#define STRINGIZE(x) #x
-
 extern "C" int printf (char const*, ...);
 extern "C" int puts (char const*);
 extern "C" int putchar (int);

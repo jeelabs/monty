@@ -36,5 +36,4 @@ script:
   - pio test -e native
 
   # native invoke tasks
-  - inv -e native
-  - inv -e python
+  - inv native python

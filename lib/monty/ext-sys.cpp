@@ -52,7 +52,7 @@ static Lookup::Item const lo_sys [] = {
     { Q(193,"gc_stats"), fo_gcstats },
     { Q(194,"implementation"), Q(195,"monty") },
 #ifdef VERSION
-    { Q(196,"version"), STRINGIZE(VERSION) },
+    { Q(196,"version"), VERSION },
 #endif
 };
 

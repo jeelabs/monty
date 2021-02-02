@@ -1,1 +1,1 @@
-print('hello', sys.implementation)
+print('hello', sys.implementation, sys.version)
