@@ -32,15 +32,17 @@ def openSerialPort():
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
-# convert bytes to intel hex, lines are generated per 32 bytes, e.g.
-#   :200000004D05021F2054100A00071068656C6C6F2E70790011007B100A68656C6C6F100AC9
-#   :0C002000776F726C643402595163000069
-#   :00000001FF
+# convert bytes to intel hex, lines are generated per 16 bytes, e.g.
+#   :100000004D05021F2078180A000700010011007B2F
+#   :10001000100A68656C6C6F1106737973131C696D37
+#   :10002000706C656D656E746174696F6E1103130E8B
+#   :0E00300076657273696F6E3403595163000078
 
 def genHex(data):
-    for i in range(0, len(data), 32):
-        chunk = data[i:i+32]
+    for i in range(0, len(data), 16):
+        chunk = data[i:i+16]
         csum = -(len(chunk) + (i>>8) + (i&0xFF) + sum(chunk)) & 0xFF
+        print(f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n")
         yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
     yield ":00000001FF\n"
 
