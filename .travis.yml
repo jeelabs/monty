@@ -26,5 +26,5 @@ script:
   - .pio/build/native/program valid/hello.mpy
   - pio test -e native
   - inv -l
-  - inv native
-  - inv python
+  - inv -e native
+  - inv -e python
