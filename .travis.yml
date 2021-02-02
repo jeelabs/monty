@@ -14,6 +14,7 @@ cache:
 
 install:
   - pip install -U platformio invoke
+  - pio upgrade
   - pio update
   - MPY=https://github.com/micropython/micropython.git
   - if [ ! -d ~/mpy/mpy-cross ]; then git clone --depth 1 -b v1.13 $MPY ~/mpy; fi
@@ -26,5 +27,6 @@ script:
   - .pio/build/native/program valid/hello.mpy
   - pio test -e native
   - inv -l
+  - inv health
   - inv -e native
   - inv -e python
