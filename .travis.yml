@@ -20,6 +20,7 @@ install:
   - if [ ! -d ~/mpy/mpy-cross ]; then git clone --depth 1 -b v1.13 $MPY ~/mpy; fi
   - make -C ~/mpy/mpy-cross/
   - export PATH=$PATH:$HOME/mpy/mpy-cross
+  - pio system info
   - inv health
 
 script:
