@@ -1,10 +1,9 @@
-/NOCOMMIT/
 .pio/
+__pycache__/
 
 /platformio-local.ini
 /rom.mrfs
 /tags
 
-.DS_Store
 *.mpy
 *.out
