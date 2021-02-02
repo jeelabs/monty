@@ -60,6 +60,7 @@ def test(c):
 @task(help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
     """run Python tests natively          [in valid/: {*}.py]"""
+    c.run("env")
     c.run("pio run -e native -s", pty=True)
     num, fail, match = 0, 0, 0
 
