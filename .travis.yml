@@ -26,14 +26,12 @@ install:
   - make -C $MPY
   - export PATH=$PATH:$MPY
   - inv health
-  - inv version
 
 script:
   # quick native checks
   - pio run -e native -s
   - mpy-cross valid/hello.py
   - .pio/build/native/program valid/hello.mpy
-  - pio test -e native
 
   # native invoke tasks
-  - inv native python
+  - inv test python
