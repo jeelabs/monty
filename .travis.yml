@@ -10,20 +10,20 @@ cache:
   pip: true
   directories:
     - $HOME/.platformio
-    - $HOME/upy
+    - $HOME/mpy
 
 install:
   - pip install -U platformio invoke
   - pio update
-  - URL=https://github.com/micropython/micropython.git
-  - if [ ! -d ~/upy/mpy-cross ]; then git clone --depth 1 -b v1.13 $URL ~/upy; fi
-  - make -C ~/upy/mpy-cross/
-  - export PATH=$PATH:$HOME/upy/mpy-cross
+  - MPY=https://github.com/micropython/micropython.git
+  - if [ ! -d ~/mpy/mpy-cross ]; then git clone --depth 1 -b v1.13 $MPY ~/mpy; fi
+  - make -C ~/mpy/mpy-cross/
+  - export PATH=$PATH:$HOME/mpy/mpy-cross
 
 script:
   - pio run -e native -s
-  - mpy-cross valid/features.py
-  - .pio/build/native/program valid/features.mpy
+  - mpy-cross valid/hello.py
+  - .pio/build/native/program valid/hello.mpy
   - pio test -e native
   - inv -l
   - inv native
