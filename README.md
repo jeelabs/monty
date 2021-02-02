@@ -11,3 +11,5 @@ The reason for creating this project, is to explore some stackless design ideas.
 The source code & docs are in the public domain and under active development.  
 
 [MPY]: https://micropython.org/
+
+[![Build Status](https://www.travis-ci.com/jeelabs/monty.svg?branch=main)](https://www.travis-ci.com/jeelabs/monty)
