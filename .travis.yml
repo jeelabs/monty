@@ -33,6 +33,6 @@ script:
   - pio test -e native
 
   # FIXME native invoke tasks
-  #- rm -rf .pio
-  #- inv -e native
-  #- inv -e python
+  - rm -rf .pio
+  - inv -e native
+  - inv -e python
