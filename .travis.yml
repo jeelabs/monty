@@ -11,8 +11,11 @@ cache:
 
 install:
     - pip install -U platformio
+    - pip install invoke
     - pio update
 
 script:
     - pio run -e native
     - pio test -e native
+    - inv native
+    - inv python
