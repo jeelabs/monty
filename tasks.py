@@ -60,7 +60,6 @@ def test(c):
 @task(help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
     """run Python tests natively          [in valid/: {*}.py]"""
-    c.run("env")
     c.run("pio run -e native -s", pty=True)
     num, fail, match = 0, 0, 0
 
@@ -95,7 +94,7 @@ def python(c, tests=""):
                     if compareWithExpected(py, r.stdout):
                         match += 1
 
-    print(f"\n{num} tests, {match} matches, {fail} failures")
+    print(f"{num} tests, {match} matches, {fail} failures")
 
 @task(x_codegen)
 def embed(c):
@@ -107,15 +106,15 @@ def upload(c):
     """run C++ tests, uploaded to µC"""
     c.run("pio test", pty=True)
 
-@task(embed,help={"tests": "specific tests to run, comma-separated"})
+@task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
     """run Python tests, uploaded to µC   [in valid/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
     c.run("src/runner.py valid/%s.py" % match, pty=True)
 
-@task(test, python, upload, runner)
+@task(test, python, upload, embed, runner)
 def all(c):
-    """shorthand for running test, python, upload, and runner"""
+    """shorthand for running test, python, upload, embed, and runner"""
 
 @task
 def mrfs(c):

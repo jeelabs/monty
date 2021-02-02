@@ -9,6 +9,8 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.platformio
     - $HOME/mpy
+branches:
+  except: jcw
 
 install:
   # tool setup: pio & inv
