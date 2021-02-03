@@ -7,7 +7,7 @@
 #   files with a .py extension are first compiled to .mpy using mpy-cross,
 #   but only if the .mpy does not exist or is older than the .py source
 
-import os, subprocess, sys, time
+import os, re, subprocess, sys, time
 # moved: import serial, serial.tools.list_ports
 
 def findSerialPorts():
@@ -32,17 +32,18 @@ def openSerialPort():
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
-# convert bytes to intel hex, lines are generated per 16 bytes, e.g.
-#   :100000004D05021F2078180A000700010011007B2F
-#   :10001000100A68656C6C6F1106737973131C696D37
-#   :10002000706C656D656E746174696F6E1103130E8B
-#   :0E00300076657273696F6E3403595163000078
+# convert bytes to intel hex, lines are generated per 32 bytes, e.g.
+#   :200000004D05021F2054100A00071068656C6C6F2E70790011007B100A68656C6C6F100AC9
+#   :0C002000776F726C643402595163000069
+#   :00000001FF
 
 def genHex(data):
-    for i in range(0, len(data), 16):
-        chunk = data[i:i+16]
+    for i in range(0, len(data), 32):
+        chunk = data[i:i+32]
         csum = -(len(chunk) + (i>>8) + (i&0xFF) + sum(chunk)) & 0xFF
-        yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
+        line = f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
+        for i in range(0, len(line), 40):
+            yield line[i:i+40] # send in pieces < 64 chars (for MacOS ???)
     yield ":00000001FF\n"
 
 def compileIfOutdated(fn):
@@ -56,6 +57,8 @@ def compileIfOutdated(fn):
     return mpy
 
 def compareWithExpected (fn, output):
+    adjout = output
+
     root = os.path.splitext(fn)[0]
     exp = root + ".exp"
     out = root + ".out"
@@ -63,7 +66,13 @@ def compareWithExpected (fn, output):
     if os.path.isfile(exp):
         with open(exp) as f:
             expected = f.read()
-        if output == expected:
+
+        # process leading "/patt/repl/" matchers before comparing the output
+        while expected[:1] == '/':
+            head, expected = expected.split("\n", 1)
+            patt, repl = head.split("/")[1:3]
+            adjout = re.sub(re.compile(patt), repl, adjout)
+        if adjout == expected:
             try:
                 os.remove(out)
             except FileNotFoundError:
@@ -72,9 +81,14 @@ def compareWithExpected (fn, output):
 
     with open(out, "w") as f:
         f.write(output)
+
     printSeparator(fn)
-    if os.path.isfile(exp) and expected:
-        subprocess.run(f"diff {out} {exp} | head", shell=True)
+    if output and os.path.isfile(exp) and expected:
+        if len(output.split("\n")) > 5 or len(expected.split("\n")) < 5:
+            subprocess.run(f"diff - {exp} | head", shell=True,
+                           input=adjout.encode())
+        else:
+            print(output, end="")
 
 def printSeparator(fn, e=None):
     root = os.path.splitext(fn)[0]
@@ -110,61 +124,76 @@ def printSeparator(fn, e=None):
 
 if __name__ == "__main__":
     ser = openSerialPort()
+    tests, matches, failures = len(sys.argv)-1, 0, 0
 
-    args = sys.argv[1:]
-    fail, match = 0, 0
-
-    for fn in args:
+    for fn in sys.argv[1:]:
         try:
-            ser.reset_input_buffer()
-            ser.write(b'\nbc\nwd 250\n')
+            mpy = compileIfOutdated(fn)
 
-            with open(compileIfOutdated(fn), "rb") as f:
+            # set watchdog and make sure it was accepted
+            ser.reset_input_buffer()
+            ser.write(b'wd 250\n')
+            line = ser.readline().decode()
+            if line[-4:] != " ms\n":
+                printSeparator(fn, line + "NO RESPONSE")
+                failures += 1
+                break
+
+            # set the bytecode as intel hex
+            with open(mpy, "rb") as f:
                 for line in genHex(f.read()):
                     ser.write(line.encode())
                     ser.flush()
+
         except Exception as e:
             printSeparator(fn, e)
-            fail += 1
+            failures += 1
             continue
 
         results = []
-        failed = True
+        ok = False
         delay = 2.5
+
         while True:
             try:
                 line = ser.readline()
+                if line[:1] == b'\xFF':
+                    continue # yuck: ignore power-up noise from UART TX
             except:
-                failed = True
+                ok = False
                 break
             if len(line) == 0:
-                delay = 0
+                if not ok:
+                    delay = 0
                 break
-            if line == b'\xFF\n':
-                continue # yuck: ignore power-up noise from UART TX
 
             try:
                 line = line.decode()
             except UnicodeDecodeError:
-                line = "binary: " + line[:-1].hex() + "\n" # oops, not utf8
+                line = "binary: " + line[:-1].hex() + "\n" # not utf8
+
             if line == "main\n":
                 results = []
-                failed = False
-            if failed:
+                ok = True
+            if not ok:
                 print("?", line[:-1])
+
             results.append(line)
+
             if line == "done\n":
                 delay = 0.1
                 break
             if line == "abort\n":
-                failed = True
+                ok = False
                 delay = 0.3
                 break
-        if failed:
-            fail += 1
+
         time.sleep(delay)
-
+        if not ok:
+            failures += 1
         if compareWithExpected(fn, ''.join(results)):
-            match += 1
+            matches += 1
 
-    print(f"{len(args)} tests, {match} matches, {fail} failures")
+    print(f"{tests} tests, {matches} matches, {failures} failures")
+    if matches != tests:
+        sys.exit(1)

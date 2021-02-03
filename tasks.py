@@ -1,7 +1,7 @@
 # see https://www.pyinvoke.org
 from invoke import task
 
-import io, os, subprocess
+import io, os, subprocess, sys
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
@@ -98,7 +98,14 @@ def python(c, tests=""):
 @task(x_codegen)
 def embed(c):
     """embedded build and upload to µC"""
-    c.run("pio run -s", pty=True)
+    try:
+        # only show output if there is a problem, not the std openocd chatter
+        r = c.run("pio run", hide=True, pty=True)
+        print(r.stdout.split("\n", 1)[0]) # ... but do show the target info
+    except Exception as e:
+        # captured as stdout due to pty, which allows pio to colourise
+        print(e.result.stdout, end="", file=sys.stderr)
+        sys.exit(1)
 
 @task
 def upload(c):

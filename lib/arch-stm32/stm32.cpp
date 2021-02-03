@@ -147,8 +147,10 @@ struct HexSerial : LineSerial {
         if (persist == nullptr)
             persist = (char*) sbrk(4+PERSIST_SIZE); // never freed
 
-        if (magic() == MagicValid)
+        if (magic() == MagicValid) {
+            magic() = 0; // only use saved boot command once
             exec(persist+4);
+        }
     }
 
     static auto magic () -> uint32_t& { return *(uint32_t*) persist; }
@@ -203,32 +205,27 @@ void wd_cmd (char* cmd) {
 
     static Iwdg dog;
     dog.reload(count);
+    printf("%d ms\n", 8 * count);
 }
 
-void help_cmd (char*);
-
 Command const commands [] = {
-    { "bc *  set boot command (cmd ...)"  , bc_cmd },
+    { "bc *  set boot command [cmd ...]"  , bc_cmd },
     { "bv    show build version"          , [](char*) { printBuildVer(); }},
     { "di    show device info"            , [](char*) { printDevInfo(); }},
     { "gc    trigger garbage collection"  , [](char*) { gcNow(); }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
-    { "wd N  set watchdog count (0..4095)", wd_cmd },
-    { "?     this help"                   , help_cmd },
+    { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
+    { "?     this help"                   , nullptr },
 };
-
-void help_cmd (char*) {
-    for (auto& cmd : commands)
-        printf("  %s\n", cmd.desc);
-}
 
 static auto (*shFun)(char const*) -> bool;
 
 auto execCmd (char const* buf) -> bool {
     if (buf[0] == '?') {
-        help_cmd(nullptr);
+        for (auto& cmd : commands)
+            printf("  %s\n", cmd.desc);
         return true;
     }
     for (auto& cmd : commands)
@@ -268,23 +265,33 @@ auto arch::done () -> int {
 }
 
 namespace machine {
-    static Event tickEvent;
-    static int ms, tickerId;
-    static uint32_t start, last;
+    Event tickEvent;
+    int ms, tickerId;
+    uint32_t start, last;
 
-    Value f_ticker (ArgVec const& args) {
+    auto msNow () -> Value {
+        uint32_t t = ticks;
+        static uint32_t begin;
+        if (begin == 0)
+            begin = t;
+        return t - begin; // make all runs start out the same way
+    }
+
+    auto f_ticker (ArgVec const& args) -> Value {
         if (args.num > 0) {
             assert(args.num == 1 && args[0].isInt());
             ms = args[0];
-            start = ticks; // set first timeout relative to now
+            start = msNow(); // set first timeout relative to now
             last = 0;
             tickerId = tickEvent.regHandler();
+            assert(tickerId > 0);
 
             VTableRam().systick = []() {
-                uint32_t t = ++ticks;
+                ++ticks;
+                uint32_t t = msNow(); // TODO messy
                 if (ms > 0 && (t - start) / ms != last) {
                     last = (t - start) / ms;
-                    exception(tickerId);
+                    Stacklet::setPending(tickerId);
                 }
             };
         } else {
@@ -293,23 +300,20 @@ namespace machine {
             };
 
             tickEvent.deregHandler();
+            assert(tickerId > 0);
         }
         return tickEvent;
     }
 
-    static Function const fo_ticker (f_ticker);
+    Function const fo_ticker (f_ticker);
 
-    Value f_ticks (ArgVec const&) {
-        uint32_t t = ticks;
-        static uint32_t begin;
-        if (begin == 0)
-            begin = t;
-        return t - begin; // make all runs start out the same way
+    auto f_ticks (ArgVec const&) -> Value {
+        return msNow();
     }
 
-    static Function const fo_ticks (f_ticks);
+    Function const fo_ticks (f_ticks);
 
-    static Lookup::Item const attrs [] = {
+    Lookup::Item const attrs [] = {
         { "ticker", fo_ticker },
         { "ticks", fo_ticks },
     };

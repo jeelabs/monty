@@ -13,3 +13,4 @@ while i < 10:
     evt.clear()
 
 machine.ticker()
+print(i)

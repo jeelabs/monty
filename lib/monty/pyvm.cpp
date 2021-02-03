@@ -1180,12 +1180,6 @@ struct PyVM : Stacklet {
         frame().locals = &init.mo;
     }
 
-#if !NATIVE
-    ~PyVM () override {
-printf("done\n");
-    }
-#endif
-
     auto run () -> bool override {
         do
             outer();
@@ -1343,6 +1337,7 @@ void PyVM::raise (Value exc) {
     else
         event() = exc;  // trigger exception or other outer-loop req
 
+extern void systemReset ();
     setPending(num);    // force inner loop exit
 }
 

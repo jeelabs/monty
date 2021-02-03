@@ -1,3 +1,4 @@
+/ v.*/ {VERS}/
 main
-hello monty
+hello monty {VERS}
 done
