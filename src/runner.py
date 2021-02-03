@@ -28,21 +28,22 @@ def openSerialPort():
     serials = findSerialPorts()
     for prod, dev, serid in serials:
         print(f"{prod}: {dev} ser# {serid}")
-        port = serial.Serial(dev, 115200, timeout=0.1)
+        port = serial.Serial(dev, 115200, timeout=0.2)
     assert len(serials) == 1, f"{len(serials)} serial ports found"
     return port
 
-# convert bytes to intel hex, lines are generated per 16 bytes, e.g.
-#   :100000004D05021F2078180A000700010011007B2F
-#   :10001000100A68656C6C6F1106737973131C696D37
-#   :10002000706C656D656E746174696F6E1103130E8B
-#   :0E00300076657273696F6E3403595163000078
+# convert bytes to intel hex, lines are generated per 32 bytes, e.g.
+#   :200000004D05021F2054100A00071068656C6C6F2E70790011007B100A68656C6C6F100AC9
+#   :0C002000776F726C643402595163000069
+#   :00000001FF
 
 def genHex(data):
-    for i in range(0, len(data), 16):
-        chunk = data[i:i+16]
+    for i in range(0, len(data), 32):
+        chunk = data[i:i+32]
         csum = -(len(chunk) + (i>>8) + (i&0xFF) + sum(chunk)) & 0xFF
-        yield f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
+        line = f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
+        for i in range(0, len(line), 40):
+            yield line[i:i+40] # send in pieces < 64 chars (for MacOS ???)
     yield ":00000001FF\n"
 
 def compileIfOutdated(fn):
@@ -80,8 +81,9 @@ def compareWithExpected (fn, output):
 
     with open(out, "w") as f:
         f.write(output)
+
     printSeparator(fn)
-    if os.path.isfile(exp) and expected:
+    if output and os.path.isfile(exp) and expected:
         if len(output.split("\n")) > 5 or len(expected.split("\n")) < 5:
             subprocess.run(f"diff - {exp} | head", shell=True,
                            input=adjout.encode())
@@ -124,17 +126,26 @@ if __name__ == "__main__":
     ser = openSerialPort()
 
     args = sys.argv[1:]
-    fail, match = 0, 0
+    match, fail = 0, 0
 
     for fn in args:
         try:
-            ser.reset_input_buffer()
-            ser.write(b'\nbc\nwd 250\n')
+            mpy = compileIfOutdated(fn)
 
-            with open(compileIfOutdated(fn), "rb") as f:
+            # set watchdog and make sure it was accepted
+            ser.reset_input_buffer()
+            ser.write(b'wd 250\n')
+            line = ser.readline().decode()
+            if line[-4:] != " ms\n":
+                printSeparator(fn, line + "NO RESPONSE")
+                break
+
+            # set the bytecode as intel hex
+            with open(mpy, "rb") as f:
                 for line in genHex(f.read()):
                     ser.write(line.encode())
                     ser.flush()
+
         except Exception as e:
             printSeparator(fn, e)
             fail += 1
@@ -146,19 +157,20 @@ if __name__ == "__main__":
         while True:
             try:
                 line = ser.readline()
+                if line[:1] == b'\xFF':
+                    continue # yuck: ignore power-up noise from UART TX
             except:
                 failed = True
                 break
             if len(line) == 0:
-                delay = 0
+                if failed:
+                    delay = 0
                 break
-            if line == b'\xFF\n':
-                continue # yuck: ignore power-up noise from UART TX
 
             try:
                 line = line.decode()
             except UnicodeDecodeError:
-                line = "binary: " + line[:-1].hex() + "\n" # oops, not utf8
+                line = "binary: " + line[:-1].hex() + "\n" # not utf8
             if line == "main\n":
                 results = []
                 failed = False
@@ -180,3 +192,5 @@ if __name__ == "__main__":
             match += 1
 
     print(f"{len(args)} tests, {match} matches, {fail} failures")
+    if len(args) != match:
+        sys.exit(1)

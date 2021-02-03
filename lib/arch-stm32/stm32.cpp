@@ -147,8 +147,10 @@ struct HexSerial : LineSerial {
         if (persist == nullptr)
             persist = (char*) sbrk(4+PERSIST_SIZE); // never freed
 
-        if (magic() == MagicValid)
+        if (magic() == MagicValid) {
+            magic() = 0; // only use saved boot command once
             exec(persist+4);
+        }
     }
 
     static auto magic () -> uint32_t& { return *(uint32_t*) persist; }
@@ -203,32 +205,27 @@ void wd_cmd (char* cmd) {
 
     static Iwdg dog;
     dog.reload(count);
+    printf("%d ms\n", 8 * count);
 }
 
-void help_cmd (char*);
-
 Command const commands [] = {
-    { "bc *  set boot command (cmd ...)"  , bc_cmd },
+    { "bc *  set boot command [cmd ...]"  , bc_cmd },
     { "bv    show build version"          , [](char*) { printBuildVer(); }},
     { "di    show device info"            , [](char*) { printDevInfo(); }},
     { "gc    trigger garbage collection"  , [](char*) { gcNow(); }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
-    { "wd N  set watchdog count (0..4095)", wd_cmd },
-    { "?     this help"                   , help_cmd },
+    { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
+    { "?     this help"                   , nullptr },
 };
-
-void help_cmd (char*) {
-    for (auto& cmd : commands)
-        printf("  %s\n", cmd.desc);
-}
 
 static auto (*shFun)(char const*) -> bool;
 
 auto execCmd (char const* buf) -> bool {
     if (buf[0] == '?') {
-        help_cmd(nullptr);
+        for (auto& cmd : commands)
+            printf("  %s\n", cmd.desc);
         return true;
     }
     for (auto& cmd : commands)
