@@ -32,13 +32,13 @@ void dataSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Object));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
-    //TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Iterator));
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Bytes));
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Str));
-    //TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Lookup));
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Tuple));
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Exception));
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Exception::Extra));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Iterator));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Bytes));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Str));
+    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Lookup));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Tuple));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Exception));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Exception::Extra));
 
     // on 32b arch, packed = 12 bytes, which will fit in 2 GC slots i.s.o. 3
     // on 64b arch, packed is the same as unpacked as void* is also 8 bytes
@@ -50,14 +50,11 @@ void dataSizes () {
     //TEST_ASSERT_LESS_OR_EQUAL(sizeof (Normal), sizeof (Int));
 
     // TODO incorrect formulas (size rounded up), but it works on 32b & 64b ...
-    //TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Range));
-    //TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Slice));
+    TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Range));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Slice));
 }
 
 void bigIntTests () {
-#if 1
-    TEST_IGNORE();
-#else
     // check that ints over ± 30 bits properly switch to Int objects
     static int64_t tests [] = { 29, 30, 31, 32, 63 };
 
@@ -75,13 +72,9 @@ void bigIntTests () {
         TEST_ASSERT_EQUAL_INT64(neg, w.asInt());
         TEST_ASSERT(e <= 30 ? w.isInt() : !w.isInt());
     }
-#endif
 }
 
 void varyVecTests () {
-#if 1
-    TEST_IGNORE();
-#else
     VaryVec v;
     TEST_ASSERT_EQUAL(0, v.size());
 
@@ -147,7 +140,6 @@ void varyVecTests () {
     TEST_ASSERT_EQUAL(5, v.atLen(1));
     TEST_ASSERT_EQUAL_STRING("one", v.atGet(0));
     TEST_ASSERT_EQUAL_STRING("four", v.atGet(1));
-#endif
 }
 
 int main () {
