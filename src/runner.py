@@ -124,11 +124,9 @@ def printSeparator(fn, e=None):
 
 if __name__ == "__main__":
     ser = openSerialPort()
+    tests, matches, failures = len(sys.argv)-1, 0, 0
 
-    args = sys.argv[1:]
-    match, fail = 0, 0
-
-    for fn in args:
+    for fn in sys.argv[1:]:
         try:
             mpy = compileIfOutdated(fn)
 
@@ -138,6 +136,7 @@ if __name__ == "__main__":
             line = ser.readline().decode()
             if line[-4:] != " ms\n":
                 printSeparator(fn, line + "NO RESPONSE")
+                failures += 1
                 break
 
             # set the bytecode as intel hex
@@ -148,22 +147,23 @@ if __name__ == "__main__":
 
         except Exception as e:
             printSeparator(fn, e)
-            fail += 1
+            failures += 1
             continue
 
         results = []
-        failed = True
+        ok = False
         delay = 2.5
+
         while True:
             try:
                 line = ser.readline()
                 if line[:1] == b'\xFF':
                     continue # yuck: ignore power-up noise from UART TX
             except:
-                failed = True
+                ok = False
                 break
             if len(line) == 0:
-                if failed:
+                if not ok:
                     delay = 0
                 break
 
@@ -171,26 +171,29 @@ if __name__ == "__main__":
                 line = line.decode()
             except UnicodeDecodeError:
                 line = "binary: " + line[:-1].hex() + "\n" # not utf8
+
             if line == "main\n":
                 results = []
-                failed = False
-            if failed:
+                ok = True
+            if not ok:
                 print("?", line[:-1])
+
             results.append(line)
+
             if line == "done\n":
                 delay = 0.1
                 break
             if line == "abort\n":
-                failed = True
+                ok = False
                 delay = 0.3
                 break
-        if failed:
-            fail += 1
+
         time.sleep(delay)
-
+        if not ok:
+            failures += 1
         if compareWithExpected(fn, ''.join(results)):
-            match += 1
+            matches += 1
 
-    print(f"{len(args)} tests, {match} matches, {fail} failures")
-    if len(args) != match:
+    print(f"{tests} tests, {matches} matches, {failures} failures")
+    if matches != tests:
         sys.exit(1)
