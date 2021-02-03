@@ -57,3 +57,27 @@ Then, in `qstr.cpp`, all these ids and strings are dumped in `VaryVec` format.
 See Invoke's `tasks.py` for details about how and when code generation is
 triggered. Do not run `codegen.py` manually, as it wants its arguments in a
 specific order - use `inv gen` for this instead.
+
+## Git and GitHub
+
+Some quick notes about the workflow used for collaboration and new features:
+
+* all the code is in `git`, and located at <https://github.com/jeelabs/monty>
+* the most stable code is in the default branch, i.e. `main`
+* new code is developed in separate branches, with a suitably-chosen name
+* when pushed to GitHub, a CI "run" is automatically started for basic testing
+* to consider merging this into main, a pull request (PR) is created on GitHub
+* the PR's title is the default commit message body, but can be adjusted later
+* further commits to the associated branch automatically get added to the PR
+* `git rebase -i ...` should be used to rename / squash / fixup commits
+* for rebases to commits already on GitHub, `git push -f` is unavoidable
+* this PR branch must be rebased to main/HEAD if other merges have occurred
+* when ready for merging, the commits in the PR should be clean w/ good titles
+* merging into `main` is always done on GitHub, using the web interface
+* _at this point_, the comment must be adusted to describe the PR's main purpose
+
+![](github-commit.png ':size=50%x')
+
+* the last step is a button titled **"Confirm merge"** - click, and that's it!
+* since auto-delete is enabled, the associated PR branch will also be deleted
+* after this point, the PR can be found in the "Closed" section and via its #id
