@@ -7,7 +7,7 @@
 #   files with a .py extension are first compiled to .mpy using mpy-cross,
 #   but only if the .mpy does not exist or is older than the .py source
 
-import os, subprocess, sys, time
+import os, re, subprocess, sys, time
 # moved: import serial, serial.tools.list_ports
 
 def findSerialPorts():
@@ -56,6 +56,8 @@ def compileIfOutdated(fn):
     return mpy
 
 def compareWithExpected (fn, output):
+    adjout = output
+
     root = os.path.splitext(fn)[0]
     exp = root + ".exp"
     out = root + ".out"
@@ -63,7 +65,13 @@ def compareWithExpected (fn, output):
     if os.path.isfile(exp):
         with open(exp) as f:
             expected = f.read()
-        if output == expected:
+
+        # process leading "/patt/repl/" matchers before comparing the output
+        while expected[:1] == '/':
+            head, expected = expected.split("\n", 1)
+            patt, repl = head.split("/")[1:3]
+            adjout = re.sub(re.compile(patt), repl, adjout)
+        if adjout == expected:
             try:
                 os.remove(out)
             except FileNotFoundError:
@@ -74,7 +82,11 @@ def compareWithExpected (fn, output):
         f.write(output)
     printSeparator(fn)
     if os.path.isfile(exp) and expected:
-        subprocess.run(f"diff {out} {exp} | head", shell=True)
+        if len(output.split("\n")) > 5 or len(expected.split("\n")) < 5:
+            subprocess.run(f"diff - {exp} | head", shell=True,
+                           input=adjout.encode())
+        else:
+            print(output, end="")
 
 def printSeparator(fn, e=None):
     root = os.path.splitext(fn)[0]

@@ -1,0 +1,10 @@
+/ at [0-9A-Z]{8}>/ at {ADDR}>/
+main
+<class B>
+<<closure> at {ADDR}>
+<type super>
+<super: ...>
+<B object at {ADDR}>
+<<closure> at {ADDR}>
+1234567890123456789
+done
