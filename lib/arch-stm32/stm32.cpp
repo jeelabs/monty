@@ -265,23 +265,33 @@ auto arch::done () -> int {
 }
 
 namespace machine {
-    static Event tickEvent;
-    static int ms, tickerId;
-    static uint32_t start, last;
+    Event tickEvent;
+    int ms, tickerId;
+    uint32_t start, last;
 
-    Value f_ticker (ArgVec const& args) {
+    auto msNow () -> Value {
+        uint32_t t = ticks;
+        static uint32_t begin;
+        if (begin == 0)
+            begin = t;
+        return t - begin; // make all runs start out the same way
+    }
+
+    auto f_ticker (ArgVec const& args) -> Value {
         if (args.num > 0) {
             assert(args.num == 1 && args[0].isInt());
             ms = args[0];
-            start = ticks; // set first timeout relative to now
+            start = msNow(); // set first timeout relative to now
             last = 0;
             tickerId = tickEvent.regHandler();
+            assert(tickerId > 0);
 
             VTableRam().systick = []() {
-                uint32_t t = ++ticks;
+                ++ticks;
+                uint32_t t = msNow(); // TODO messy
                 if (ms > 0 && (t - start) / ms != last) {
                     last = (t - start) / ms;
-                    exception(tickerId);
+                    Stacklet::setPending(tickerId);
                 }
             };
         } else {
@@ -290,23 +300,20 @@ namespace machine {
             };
 
             tickEvent.deregHandler();
+            assert(tickerId > 0);
         }
         return tickEvent;
     }
 
-    static Function const fo_ticker (f_ticker);
+    Function const fo_ticker (f_ticker);
 
-    Value f_ticks (ArgVec const&) {
-        uint32_t t = ticks;
-        static uint32_t begin;
-        if (begin == 0)
-            begin = t;
-        return t - begin; // make all runs start out the same way
+    auto f_ticks (ArgVec const&) -> Value {
+        return msNow();
     }
 
-    static Function const fo_ticks (f_ticks);
+    Function const fo_ticks (f_ticks);
 
-    static Lookup::Item const attrs [] = {
+    Lookup::Item const attrs [] = {
         { "ticker", fo_ticker },
         { "ticks", fo_ticks },
     };

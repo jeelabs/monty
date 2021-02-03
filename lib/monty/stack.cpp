@@ -182,7 +182,10 @@ auto Stacklet::runLoop () -> bool {
             longjmp(*(jmp_buf*) current->end(), 1);
 
         // FIXME careful, this won't pick up pending events while looping
-        while (current->run()) {}
+        while (current->run()) {
+            if (pending != 0)
+                printf("pending %08x\n", pending);
+        }
         if (current == nullptr)
             break;
         current->adj(current->fill);
