@@ -799,31 +799,6 @@ namespace monty {
 
     void gcNow ();
 
-    //CG< type event
-    struct Event : List {
-        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
-        static Lookup const attrs;
-        static Type info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
-
-        ~Event () override { deregHandler(); set(); }
-
-        auto unop (UnOp) const -> Value override;
-        auto binop (BinOp, Value) const -> Value override;
-
-        auto regHandler () -> uint32_t;
-        void deregHandler ();
-
-        operator bool () const { return value; }
-        void set ();
-        void clear () { value = false; }
-        void wait ();
-    private:
-        bool value = false;
-    };
-
     //CG3 type <stacklet>
     struct Stacklet : List {
         static Type info;
@@ -862,6 +837,33 @@ namespace monty {
     };
 
     void exception (Value v);
+
+    //CG< type event
+    struct Event : List {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+
+        ~Event () override { deregHandler(); set(); }
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+
+        auto regHandler () -> uint32_t;
+        void deregHandler ();
+
+        operator bool () const { return value; }
+        void set ();
+        void clear () { value = false; }
+        void wait ();
+
+        static int queued;
+    private:
+        bool value = false;
+    };
 
 // see call.cpp - functions, methods, contexts, and interpreter state
 

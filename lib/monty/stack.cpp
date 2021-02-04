@@ -16,6 +16,7 @@ using namespace monty;
 Stacklet* Stacklet::current;
 void* Stacklet::resumer;
 uint32_t volatile Stacklet::pending;
+int Event::queued;
 
 Vector monty::handlers;
 List monty::tasks;
@@ -26,50 +27,6 @@ void monty::gcNow () {
     markVec(handlers);
     sweep();
     compact();
-}
-
-auto Event::regHandler () -> uint32_t {
-    auto n = handlers.find({});
-    if (n >= handlers.size())
-        handlers.insert(n);
-    handlers[n] = this;
-    return n;
-}
-
-void Event::deregHandler () {
-    auto n = handlers.find(this);
-    if (n < handlers.size())
-        handlers[n] = {};
-}
-
-void Event::set () {
-    value = true;
-    if (size() > 0) {
-        // insert all entries at head of tasks and remove them from this event
-        tasks.insert(0, size());
-        memcpy(tasks.begin(), begin(), size() * sizeof (Value));
-        remove(0, size());
-    }
-}
-
-void Event::wait () {
-    if (!value)
-        Stacklet::suspend(*this);
-}
-
-auto Event::unop (UnOp op) const -> Value {
-    assert(op == UnOp::Boln);
-    return Value::asBool(*this);
-}
-
-auto Event::binop (BinOp op, Value rhs) const -> Value {
-    assert(op == BinOp::Equal);
-    return Value::asBool(rhs.isObj() && this == &rhs.obj());
-}
-
-auto Event::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 0);
-    return new Event;
 }
 
 static void duff (void* dst, void const* src, size_t len) {
@@ -186,17 +143,58 @@ auto Stacklet::runLoop () -> bool {
         current->adj(current->fill);
     }
 
-    // return true if there is still at least one queued stacklet
-    // TODO track queued counts in event wait/set, instead of iterating here
-    for (auto e : handlers) {
-        auto o = e.ifType<Event>();
-        if (o != nullptr && o->size() > 0)
-            return true;
-    }
-    return false;
+    return Event::queued > 0;
 }
 
 void monty::exception (Value v) {
     assert(Stacklet::current != nullptr);
     Stacklet::current->fail(v);
+}
+
+auto Event::regHandler () -> uint32_t {
+    auto n = handlers.find({});
+    if (n >= handlers.size())
+        handlers.insert(n);
+    handlers[n] = this;
+    return n;
+}
+
+void Event::deregHandler () {
+    auto n = handlers.find(this);
+    if (n < handlers.size())
+        handlers[n] = {};
+}
+
+void Event::set () {
+    value = true;
+    if (size() > 0) {
+        // insert all entries at head of tasks and remove them from this event
+        tasks.insert(0, size());
+        memcpy(tasks.begin(), begin(), size() * sizeof (Value));
+        queued -= size();
+        assert(queued >= 0);
+        remove(0, size());
+    }
+}
+
+void Event::wait () {
+    if (!value) {
+        ++queued;
+        Stacklet::suspend(*this);
+    }
+}
+
+auto Event::unop (UnOp op) const -> Value {
+    assert(op == UnOp::Boln);
+    return Value::asBool(*this);
+}
+
+auto Event::binop (BinOp op, Value rhs) const -> Value {
+    assert(op == BinOp::Equal);
+    return Value::asBool(rhs.isObj() && this == &rhs.obj());
+}
+
+auto Event::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 0);
+    return new Event;
 }
