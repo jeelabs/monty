@@ -8,7 +8,7 @@
 #define debugf(...)
 #endif
 
-//CG3 type <bytecode>
+// was: CG3 type <bytecode>
 struct Bytecode : List {
     static Type info;
     auto type () const -> Type const& override;

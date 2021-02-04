@@ -15,8 +15,89 @@ namespace machine { void timerHook (); }
 
 using namespace monty;
 
-// forward decl's
-struct Bytecode;
+enum Op : uint8_t {
+    //CG< opcodes ../../git/micropython/py/bc0.h
+    LoadConstString        = 0x10,
+    LoadName               = 0x11,
+    LoadGlobal             = 0x12,
+    LoadAttr               = 0x13,
+    LoadMethod             = 0x14,
+    LoadSuperMethod        = 0x15,
+    StoreName              = 0x16,
+    StoreGlobal            = 0x17,
+    StoreAttr              = 0x18,
+    DeleteName             = 0x19,
+    DeleteGlobal           = 0x1A,
+    ImportName             = 0x1B,
+    ImportFrom             = 0x1C,
+    MakeClosure            = 0x20,
+    MakeClosureDefargs     = 0x21,
+    LoadConstSmallInt      = 0x22,
+    LoadConstObj           = 0x23,
+    LoadFastN              = 0x24,
+    LoadDeref              = 0x25,
+    StoreFastN             = 0x26,
+    StoreDeref             = 0x27,
+    DeleteFast             = 0x28,
+    DeleteDeref            = 0x29,
+    BuildTuple             = 0x2A,
+    BuildList              = 0x2B,
+    BuildMap               = 0x2C,
+    BuildSet               = 0x2D,
+    BuildSlice             = 0x2E,
+    StoreComp              = 0x2F,
+    UnpackSequence         = 0x30,
+    UnpackEx               = 0x31,
+    MakeFunction           = 0x32,
+    MakeFunctionDefargs    = 0x33,
+    CallFunction           = 0x34,
+    CallFunctionVarKw      = 0x35,
+    CallMethod             = 0x36,
+    CallMethodVarKw        = 0x37,
+    UnwindJump             = 0x40,
+    Jump                   = 0x42,
+    PopJumpIfTrue          = 0x43,
+    PopJumpIfFalse         = 0x44,
+    JumpIfTrueOrPop        = 0x45,
+    JumpIfFalseOrPop       = 0x46,
+    SetupWith              = 0x47,
+    SetupExcept            = 0x48,
+    SetupFinally           = 0x49,
+    PopExceptJump          = 0x4A,
+    ForIter                = 0x4B,
+    LoadConstFalse         = 0x50,
+    LoadConstNone          = 0x51,
+    LoadConstTrue          = 0x52,
+    LoadNull               = 0x53,
+    LoadBuildClass         = 0x54,
+    LoadSubscr             = 0x55,
+    StoreSubscr            = 0x56,
+    DupTop                 = 0x57,
+    DupTopTwo              = 0x58,
+    PopTop                 = 0x59,
+    RotTwo                 = 0x5A,
+    RotThree               = 0x5B,
+    WithCleanup            = 0x5C,
+    EndFinally             = 0x5D,
+    GetIter                = 0x5E,
+    GetIterStack           = 0x5F,
+    StoreMap               = 0x62,
+    ReturnValue            = 0x63,
+    RaiseLast              = 0x64,
+    RaiseObj               = 0x65,
+    RaiseFrom              = 0x66,
+    YieldValue             = 0x67,
+    YieldFrom              = 0x68,
+    ImportStar             = 0x69,
+    //CG>
+    LoadConstSmallIntMulti = 0x70,
+    LoadFastMulti          = 0xB0,
+    StoreFastMulti         = 0xC0,
+    UnaryOpMulti           = 0xD0,
+    BinaryOpMulti          = 0xD7,
+};
+
+struct Bytecode; // forward decl
 
 struct Callable : Object {
     static Type info;
@@ -27,13 +108,10 @@ struct Callable : Object {
     Callable (Bytecode const&, Module* =nullptr, Tuple* =nullptr, Dict* =nullptr);
 
     auto call (ArgVec const&) const -> Value override;
-    auto getAt (Value) const -> Value override;
 
     void marker () const override;
 
-    auto funcAt (int) const -> Bytecode const&; // variant of getAt
-    auto start () const -> uint8_t const*;
-    auto fastSlotTop () const -> uint32_t;
+    auto funcAt (int) const -> Bytecode const&;
 
     Module& mo;
     Bytecode const& bc;
@@ -42,6 +120,17 @@ struct Callable : Object {
 };
 
 #include "import.h"
+
+void Callable::marker () const {
+    mo.marker();
+    mark(bc);
+    mark(pos);
+    mark(kw);
+}
+
+auto Callable::funcAt (int n) const -> Bytecode const& {
+    return bc[n].asType<Bytecode>();
+}
 
 struct PyVM : Stacklet {
     static Type info;
@@ -60,29 +149,22 @@ struct PyVM : Stacklet {
 
     auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
 
-    void enter (Callable const&);
-    auto leave (Value v ={}) -> Value;
-
     auto spBase () const -> Value* { return frame().stack; }
-    auto ipBase () const -> uint8_t const* { return callee->start(); }
+    auto ipBase () const -> uint8_t const* { return callee->bc.start(); }
 
     auto fastSlot (uint32_t i) const -> Value& {
-        return spBase()[callee->fastSlotTop() + ~i];
+        return spBase()[callee->bc.fastSlotTop() + ~i];
     }
     auto derefSlot (uint32_t i) const -> Value& {
         return fastSlot(i).asType<Cell>().val;
     }
 
     static constexpr int EXC_STEP = 3; // use 3 entries per exception
-    auto excBase (int incr =0) -> Value*;
+    static constexpr auto FinallyTag = 1<<20;
 
     auto globals () const -> Module& { return callee->mo; }
 
-    constexpr static auto FinallyTag = 1<<20;
-    void caught ();
-
     auto iter () const -> Value override { return this; }
-    auto next () -> Value override;
 
     void marker () const override { List::marker(); mark(callee); }
 
@@ -90,92 +172,10 @@ struct PyVM : Stacklet {
     uint16_t base = 0;
     uint16_t spOff = 0;
     uint16_t ipOff = 0;
-    Callable const* callee {nullptr};
+    Callable const* callee = nullptr;
 
-    enum Op : uint8_t {
-        //CG< opcodes ../../git/micropython/py/bc0.h
-        LoadConstString        = 0x10,
-        LoadName               = 0x11,
-        LoadGlobal             = 0x12,
-        LoadAttr               = 0x13,
-        LoadMethod             = 0x14,
-        LoadSuperMethod        = 0x15,
-        StoreName              = 0x16,
-        StoreGlobal            = 0x17,
-        StoreAttr              = 0x18,
-        DeleteName             = 0x19,
-        DeleteGlobal           = 0x1A,
-        ImportName             = 0x1B,
-        ImportFrom             = 0x1C,
-        MakeClosure            = 0x20,
-        MakeClosureDefargs     = 0x21,
-        LoadConstSmallInt      = 0x22,
-        LoadConstObj           = 0x23,
-        LoadFastN              = 0x24,
-        LoadDeref              = 0x25,
-        StoreFastN             = 0x26,
-        StoreDeref             = 0x27,
-        DeleteFast             = 0x28,
-        DeleteDeref            = 0x29,
-        BuildTuple             = 0x2A,
-        BuildList              = 0x2B,
-        BuildMap               = 0x2C,
-        BuildSet               = 0x2D,
-        BuildSlice             = 0x2E,
-        StoreComp              = 0x2F,
-        UnpackSequence         = 0x30,
-        UnpackEx               = 0x31,
-        MakeFunction           = 0x32,
-        MakeFunctionDefargs    = 0x33,
-        CallFunction           = 0x34,
-        CallFunctionVarKw      = 0x35,
-        CallMethod             = 0x36,
-        CallMethodVarKw        = 0x37,
-        UnwindJump             = 0x40,
-        Jump                   = 0x42,
-        PopJumpIfTrue          = 0x43,
-        PopJumpIfFalse         = 0x44,
-        JumpIfTrueOrPop        = 0x45,
-        JumpIfFalseOrPop       = 0x46,
-        SetupWith              = 0x47,
-        SetupExcept            = 0x48,
-        SetupFinally           = 0x49,
-        PopExceptJump          = 0x4A,
-        ForIter                = 0x4B,
-        LoadConstFalse         = 0x50,
-        LoadConstNone          = 0x51,
-        LoadConstTrue          = 0x52,
-        LoadNull               = 0x53,
-        LoadBuildClass         = 0x54,
-        LoadSubscr             = 0x55,
-        StoreSubscr            = 0x56,
-        DupTop                 = 0x57,
-        DupTopTwo              = 0x58,
-        PopTop                 = 0x59,
-        RotTwo                 = 0x5A,
-        RotThree               = 0x5B,
-        WithCleanup            = 0x5C,
-        EndFinally             = 0x5D,
-        GetIter                = 0x5E,
-        GetIterStack           = 0x5F,
-        StoreMap               = 0x62,
-        ReturnValue            = 0x63,
-        RaiseLast              = 0x64,
-        RaiseObj               = 0x65,
-        RaiseFrom              = 0x66,
-        YieldValue             = 0x67,
-        YieldFrom              = 0x68,
-        ImportStar             = 0x69,
-        //CG>
-        LoadConstSmallIntMulti = 0x70,
-        LoadFastMulti          = 0xB0,
-        StoreFastMulti         = 0xC0,
-        UnaryOpMulti           = 0xD0,
-        BinaryOpMulti          = 0xD7,
-    };
-
-    Value* sp {nullptr};
-    uint8_t const* ip {nullptr};
+    Value* sp = nullptr;
+    uint8_t const* ip = nullptr;
 
     auto fetchV (uint32_t v =0) -> uint32_t {
         uint8_t b = 0x80;
@@ -287,7 +287,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opLoadConstObj (int arg) {
-        *++sp = callee->getAt(arg);
+        *++sp = callee->bc[arg];
     }
     //CG1 op v
     void opLoadFastN (int arg) {
@@ -1161,6 +1161,84 @@ printf("yield %p\n", myCaller);
             caught();
     }
 
+    void enter (Callable const& func) {
+        auto frameSize = func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
+        int need = (frame().stack + frameSize) - (begin() + base);
+
+        auto curr = base;           // current frame offset
+        base = fill;                // new frame offset
+        insert(fill, need);         // make room
+
+        auto& f = frame();          // new frame
+        f.base = curr;              // index of (now previous) frame
+        f.spOff = spOff;            // previous stack index
+        f.ipOff = ipOff;            // previous instruction index
+        f.callee = callee;          // previous callable
+
+        spOff = f.stack-begin()-1;  // stack starts out empty
+        ipOff = 0;                  // code starts at first opcode
+        callee = &func;             // new callable context
+        f.ep = 0;                   // no exceptions pending
+    }
+
+    Value leave (Value v ={}) {
+        auto& f = frame();
+        auto r = f.result;          // stored result
+        if (r.isNil())              // use return result if set
+            r = v;                  // ... else arg
+
+        if (base > NumSlots) {
+            int prev = f.base;      // previous frame offset
+            spOff = f.spOff;        // restore stack index
+            ipOff = f.ipOff;        // restore instruction index
+            callee = &f.callee.asType<Callable>(); // restore callee
+
+            assert(fill > base);
+            remove(base, fill - base); // delete current frame
+
+            assert(prev >= 0);
+            base = prev;            // new lower frame offset
+        } else {
+            // last frame, drop context, restore caller
+            fill = NumSlots; // delete stack entries
+            adj(NumSlots); // release vector
+            assert(current == this);
+            current = nullptr; //XXX!
+            setPending(0); // exit inner loop to deal with stacklet change
+        }
+
+        return r;
+    }
+
+    auto excBase (int incr) -> Value* {
+        uint32_t ep = frame().ep;
+        frame().ep = ep + incr;
+        if (incr <= 0)
+            --ep;
+        return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
+    }
+
+    void caught () {
+        auto e = event();
+        if (e.isNil())
+            return; // there was no exception, just an inner loop exit
+        event() = {};
+
+        auto& einfo = e.asType<Exception>().extra();
+        einfo.ipOff = ipOff;
+        einfo.callee = callee;
+
+        if (frame().ep > 0) { // simple exception, no stack unwind
+            auto ep = excBase(0);
+            ipOff = ep[0] & (FinallyTag - 1);
+            spOff = ep[1];
+            begin()[++spOff] = e.isNil() ? ep[2] : e;
+        } else {
+            leave();
+            raise(e);
+        }
+    }
+
     PyVM (Callable const& init, Stacklet* from =nullptr) {
         insert(0, NumSlots);
         caller() = from;
@@ -1178,16 +1256,27 @@ printf("yield %p\n", myCaller);
         return false;
     }
 
-    void raise (Value exc) override {
-#if 0 //XXX
-        if (Interp2::context == nullptr) {
-            Buffer buf; // TODO wrong place: bail out & print exception details
-            buf.print("uncaught exception: ");
-            exc.obj().repr(buf);
-            buf.putc('\n');
-            return;
-        }
+    auto next () -> Value override {
+        assert(fill > 0); // can only resume if not ended
+        assert(current != nullptr);
+        assert(current != this);
+        assert(caller().isNil());
+#if 0
+        // FIXME wrong
+        caller() = current;
+        current = this;
+        setPending(0);
 #endif
+        return {}; // no result yet
+    }
+
+    void raise (Value exc) override {
+        // TODO wrong place: bail out & print exception details
+        //buf.print("uncaught exception: ");
+        //exc.obj().repr(buf);
+        //buf.putc('\n');
+        //return;
+
         uint32_t num = 0;
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
@@ -1239,124 +1328,6 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-auto Callable::getAt (Value n) const -> Value {
-    // TODO where is this called?
-    assert(n.isInt());
-    return bc[n];
-}
-
-void Callable::marker () const {
-    mo.marker();
-    mark(bc);
-    mark(pos);
-    mark(kw);
-}
-
-auto Callable::funcAt (int num) const -> Bytecode const& {
-    // TODO could this re-use getAt?
-    return bc[num].asType<Bytecode>();
-}
-
-auto Callable::start () const -> uint8_t const* {
-    return bc.start();
-}
-
-auto Callable::fastSlotTop () const -> uint32_t {
-    return bc.fastSlotTop();
-}
-
-void PyVM::enter (Callable const& func) {
-    auto frameSize = func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
-    int need = (frame().stack + frameSize) - (begin() + base);
-
-    auto curr = base;           // current frame offset
-    base = fill;                // new frame offset
-    insert(fill, need);         // make room
-
-    auto& f = frame();          // new frame
-    f.base = curr;              // index of (now previous) frame
-    f.spOff = spOff;            // previous stack index
-    f.ipOff = ipOff;            // previous instruction index
-    f.callee = callee;          // previous callable
-
-    spOff = f.stack-begin()-1;  // stack starts out empty
-    ipOff = 0;                  // code starts at first opcode
-    callee = &func;             // new callable context
-    f.ep = 0;                   // no exceptions pending
-}
-
-Value PyVM::leave (Value v) {
-    auto& f = frame();
-    auto r = f.result;          // stored result
-    if (r.isNil())              // use return result if set
-        r = v;                  // ... else arg
-
-    if (base > NumSlots) {
-        int prev = f.base;      // previous frame offset
-        spOff = f.spOff;        // restore stack index
-        ipOff = f.ipOff;        // restore instruction index
-        callee = &f.callee.asType<Callable>(); // restore callee
-
-        assert(fill > base);
-        remove(base, fill - base); // delete current frame
-
-        assert(prev >= 0);
-        base = prev;            // new lower frame offset
-    } else {
-        // last frame, drop context, restore caller
-        fill = NumSlots; // delete stack entries
-        adj(NumSlots); // release vector
-        assert(current == this);
-        current = nullptr; //XXX!
-        setPending(0); // exit inner loop to deal with stacklet change
-    }
-
-    return r;
-}
-
-auto PyVM::excBase (int incr) -> Value* {
-    uint32_t ep = frame().ep;
-    frame().ep = ep + incr;
-    if (incr <= 0)
-        --ep;
-    return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
-}
-
-void PyVM::caught () {
-    auto e = event();
-    if (e.isNil())
-        return; // there was no exception, just an inner loop exit
-    event() = {};
-
-    auto& einfo = e.asType<Exception>().extra();
-    einfo.ipOff = ipOff;
-    einfo.callee = callee;
-
-    if (frame().ep > 0) { // simple exception, no stack unwind
-        auto ep = excBase(0);
-        ipOff = ep[0] & (FinallyTag - 1);
-        spOff = ep[1];
-        begin()[++spOff] = e.isNil() ? ep[2] : e;
-    } else {
-        leave();
-        raise(e);
-    }
-}
-
-auto PyVM::next () -> Value {
-    assert(fill > 0); // can only resume if not ended
-    assert(current != this);
-    assert(caller().isNil());
-#if 0
-    // FIXME wrong, and a total mess ...
-    caller() = current;
-    current = nullptr;
-    tasks.push(this);
-    setPending(0);
-#endif
-    return {}; // no result yet
-}
-
 Type Bytecode::info (Q(197,"<bytecode>"));
 auto Bytecode::type () const -> Type const& { return info; }
 
@@ -1368,6 +1339,6 @@ auto PyVM::type () const -> Type const& { return info; }
 
 auto vmLaunch (uint8_t const* data) -> Stacklet* {
     Loader loader;
-    Callable* init = loader.load(data);
+    auto init = loader.load(data);
     return init != nullptr ? new PyVM (*init) : nullptr;
 }
