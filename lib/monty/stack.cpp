@@ -72,8 +72,14 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
     return new Event;
 }
 
-// see https://en.wikipedia.org/wiki/Duff%27s_device
-static void duff (uint32_t* to, uint32_t const* from, size_t count) {
+static void duff (void* dst, void const* src, size_t len) {
+#if 0
+    memcpy(dst, src, len);
+#else
+    // see https://en.wikipedia.org/wiki/Duff%27s_device
+    auto to = (uint32_t*) dst;
+    auto from = (uint32_t const*) src;
+    auto count = len/4;
     auto n = (count + 7) / 8;
     switch (count % 8) {
         case 0: do { *to++ = *from++;
@@ -86,6 +92,7 @@ static void duff (uint32_t* to, uint32_t const* from, size_t count) {
         case 1:      *to++ = *from++;
                 } while (--n > 0);
     }
+#endif
 }
 
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
@@ -104,6 +111,7 @@ void Stacklet::yield (bool fast) {
         if (pending == 0)
             return; // don't yield if there are no pending handlers
         tasks.push(current);
+        current = nullptr;
         suspend();
     } else
         suspend(tasks);
@@ -117,32 +125,22 @@ void Stacklet::suspend (Vector& queue) {
     jmp_buf top;
     assert(resumer > &top);
 
-    {
-        uint32_t need = (uint8_t*) resumer - (uint8_t*) &top;
-        assert(need % sizeof (Value) == 0);
-        assert(need > sizeof (jmp_buf));
+    uint32_t need = (uint8_t*) resumer - (uint8_t*) &top;
+    assert(need % sizeof (Value) == 0);
+    assert(need > sizeof (jmp_buf));
 
-        current->adj(current->fill + need / sizeof (Value));
-        if (setjmp(top) == 0) {
-            // suspending: copy stack out and jump to caller
-#if 0
-            memcpy((uint8_t*) current->end(), (uint8_t*) &top, need);
-#else
-            duff((uint32_t*) current->end(), (uint32_t*) &top, need/4);
-#endif
-            longjmp(*(jmp_buf*) resumer, 1);
-        }
+    current->adj(current->fill + need / sizeof (Value));
+    if (setjmp(top) == 0) {
+        // suspending: copy stack out and jump to caller
+        duff(current->end(), &top, need);
+        longjmp(*(jmp_buf*) resumer, 1);
     }
 
     // resuming: copy stack back in
     assert(Stacklet::resumer != nullptr);
     assert(Stacklet::current != nullptr);
-    auto need = (uint8_t*) Stacklet::resumer - (uint8_t*) &top;
-#if 0
-    memcpy(&top, (uint8_t*) Stacklet::current->end(), need);
-#else
-    duff((uint32_t*) &top, (uint32_t*) Stacklet::current->end(), need/4);
-#endif
+    need = (uint8_t*) Stacklet::resumer - (uint8_t*) &top;
+    duff(&top, Stacklet::current->end(), need);
 }
 
 auto Stacklet::runLoop () -> bool {
