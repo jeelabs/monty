@@ -96,8 +96,8 @@ def python(c, tests=""):
     print(f"{num} tests, {match} matches, {fail} failures")
 
 @task(x_codegen)
-def embed(c):
-    """embedded build and upload to µC"""
+def flash(c):
+    """build embedded and re-flash attached µC"""
     try:
         # only show output if there is a problem, not the std openocd chatter
         r = c.run("pio run", hide=True, pty=True)
@@ -114,17 +114,17 @@ def upload(c):
 
 @task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
-    """run Python tests, uploaded to µC   [in valid/: {*}.py]"""
+    """run Python tests, sent to µC       [in valid/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
     c.run("src/runner.py valid/%s.py" % match, pty=True)
 
-@task(test, python, upload, embed, runner)
+@task(test, python, upload, flash, runner)
 def all(c):
-    """shorthand for running test, python, upload, embed, and runner"""
+    """shorthand for running test, python, upload, flash, and runner"""
 
 @task
 def mrfs(c):
-    """generate Minimal Replaceable File Storage image"""
+    """generate a Minimal Replaceable File Storage image"""
     c.run("src/mrfs.py -o rom.mrfs valid/*.py")
 
 @task
