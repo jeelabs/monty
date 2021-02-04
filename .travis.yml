@@ -9,8 +9,6 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.platformio
     - $HOME/mpy
-branches:
-  except: jcw
 
 install:
   # tool setup: pio & inv
@@ -34,4 +32,5 @@ script:
   - .pio/build/native/program valid/hello.mpy
 
   # native invoke tasks
-  - inv test python
+  - inv test
+  - inv python

@@ -24,7 +24,7 @@ def x_examples(c):
 @task(help={"host": "hostname for rsync (required)",
             "dest": "destination directory (default: monty-test)"})
 def x_rsync(c, host, dest="monty-test"):
-    """send sources to specified host for testing"""
+    """copy this entire area to the specified host"""
     c.run("rsync -av --exclude .git --exclude .pio . %s:%s/" % (host, dest))
 
 @task
@@ -39,7 +39,7 @@ def x_tags(c):
     c.run("ctags -R lib src test")
 
 @task
-def version(c):
+def x_version(c):
     """show git repository version"""
     print(os.environ["MONTY_VERSION"])
 
