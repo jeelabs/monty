@@ -112,17 +112,9 @@ auto Stacklet::runLoop () -> bool {
         INNER_HOOK
 
         auto flags = allPending();
-        for (uint32_t i = 1; flags != 0 && i < handlers.size(); ++i) {
-            auto bit = 1<< i;
-            if (flags & bit) {
-                if (!handlers[i].isNil())
-                    handlers[i].asType<Event>().set();
-                flags &= ~bit;
-            }
-        }
-
-        if (gcCheck())
-            gcNow();
+        for (uint32_t i = 1; flags != 0 && i < handlers.size(); ++i)
+            if ((flags & (1U<<i)) && !handlers[i].isNil())
+                handlers[i].asType<Event>().set();
 
         if (tasks.size() == 0)
             break;
@@ -134,12 +126,10 @@ auto Stacklet::runLoop () -> bool {
             longjmp(*(jmp_buf*) current->end(), 1);
 
         // FIXME careful, this won't pick up pending events while looping
-        while (current->run()) {
-            if (pending != 0)
-                printf("pending %08x\n", pending);
-        }
+        while (current->run()) {}
         if (current == nullptr)
             break;
+
         current->adj(current->fill);
     }
 

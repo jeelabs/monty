@@ -252,7 +252,6 @@ struct PyVM : Stacklet {
         printf("\n");
 #endif
         assert(ip >= ipBase() && sp >= spBase() - 1);
-        INNER_HOOK  // used for simulated time in native builds
     }
 
     // check and trigger gc on backwards jumps, i.e. inside all loops
@@ -796,6 +795,7 @@ struct PyVM : Stacklet {
         ip = ipBase() + ipOff;
 
         do {
+            INNER_HOOK  // used for simulated time in native builds
             instructionTrace();
             switch ((Op) *ip++) {
 
@@ -1162,16 +1162,6 @@ struct PyVM : Stacklet {
             caught();
     }
 
-    void outer () {
-        while (current == this) {
-            if (gcCheck())
-                gcNow();
-            inner();
-        }
-
-        INNER_HOOK // can be used to simulate interrupts
-    }
-
     PyVM (Callable const& init, Stacklet* from =nullptr) {
         insert(0, NumSlots);
         caller() = from;
@@ -1181,13 +1171,12 @@ struct PyVM : Stacklet {
     }
 
     auto run () -> bool override {
-        do
-            outer();
-        while (pending == 0);
-        if (current != this)
-            return false;
-        yield(true);
-        return true;
+        while (current == this) {
+            inner();
+            if ((pending & (1<<0)) && gcCheck())
+                gcNow();
+        }
+        return false;
     }
 
     void fail (Value v) override {
