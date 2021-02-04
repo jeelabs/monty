@@ -53,10 +53,8 @@ void Event::set () {
 }
 
 void Event::wait () {
-    if (value)
-        return;
-    assert(Stacklet::current != nullptr);
-    Stacklet::suspend(*this);
+    if (!value)
+        Stacklet::suspend(*this);
 }
 
 auto Event::unop (UnOp op) const -> Value {
@@ -105,16 +103,15 @@ void Stacklet::yield (bool fast) {
     if (fast) {
         if (pending == 0)
             return; // don't yield if there are no pending handlers
-        tasks.insert(0);
-        tasks[0] = current;
-        suspend(handlers); // hack: used as "do not append" marker
+        tasks.push(current);
+        suspend();
     } else
         suspend(tasks);
 }
 
 void Stacklet::suspend (Vector& queue) {
     assert(current != nullptr);
-    if (&queue != &handlers) // special case: see yield above
+    if (&queue != &handlers) // special case: used as "do not append" marker
         queue.append(current);
 
     jmp_buf top;
@@ -175,7 +172,7 @@ auto Stacklet::runLoop () -> bool {
         if (tasks.size() == 0)
             break;
 
-        current = (Stacklet*) &tasks.pull(0).obj();
+        current = (Stacklet*) &tasks.pull().obj();
         assert(current != nullptr);
 
         if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))

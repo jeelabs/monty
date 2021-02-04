@@ -306,20 +306,23 @@ namespace monty {
             return fill;
         }
 
-        auto append (T v) -> uint32_t {
-            auto n = fill;
-            insert(n);
-            begin()[n] = v;
-            return n;
+        void push (T v, uint32_t idx =0) {
+            insert(idx);
+            begin()[idx] = v;
         }
 
-        auto pull (uint32_t idx) -> T {
+        void append (T v) { push(v, fill); } // push to end
+
+        auto pull (uint32_t idx =0) -> T {
             if (idx >= fill)
                 return {};
             T v = begin()[idx];
             remove(idx);
             return v;
         }
+
+        auto pop () -> T { return pull(fill-1); } // pull from end
+
     };
 
     using Vector = VecOf<Value>;
@@ -833,7 +836,7 @@ namespace monty {
         auto binop (BinOp, Value) const -> Value override;
 
         static void yield (bool =false);
-        static void suspend (Vector&);
+        static void suspend (Vector& =handlers);
         static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;

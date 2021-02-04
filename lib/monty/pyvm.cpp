@@ -1370,8 +1370,7 @@ auto PyVM::next () -> Value {
     // FIXME wrong, and a total mess ...
     caller() = current;
     current = nullptr;
-    tasks.insert(0);
-    tasks[0] = this;
+    tasks.push(this);
     raise(0);
 #endif
     return {}; // no result yet
