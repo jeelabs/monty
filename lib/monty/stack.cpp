@@ -57,7 +57,7 @@ auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
     return Value::asBool(rhs.isObj() && this == &rhs.obj());
 }
 
-void Stacklet::fail (Value v) {
+void Stacklet::raise (Value v) {
     v.dump();
     assert(false); // TODO unhandled exception, can't continue
 }
@@ -138,7 +138,7 @@ auto Stacklet::runLoop () -> bool {
 
 void monty::exception (Value v) {
     assert(Stacklet::current != nullptr);
-    Stacklet::current->fail(v);
+    Stacklet::current->raise(v);
 }
 
 auto Event::regHandler () -> uint32_t {

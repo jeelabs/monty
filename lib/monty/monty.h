@@ -818,7 +818,7 @@ namespace monty {
         static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;
-        virtual void fail (Value);
+        virtual void raise (Value);
 
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

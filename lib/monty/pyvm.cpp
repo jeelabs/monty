@@ -79,7 +79,6 @@ struct PyVM : Stacklet {
     auto globals () const -> Module& { return callee->mo; }
 
     constexpr static auto FinallyTag = 1<<20;
-    void raise (Value exc ={});
     void caught ();
 
     auto iter () const -> Value override { return this; }
@@ -216,7 +215,7 @@ struct PyVM : Stacklet {
             sp = begin() + spOff;
             ip = ipBase() + ipOff;
         } else
-            raise(0); // nothing left to do, exit inner loop
+            setPending(0); // nothing left to do, exit inner loop
         return v;
     }
 
@@ -654,12 +653,12 @@ struct PyVM : Stacklet {
     void opYieldValue () {
         auto myCaller = caller().ifType<PyVM>();
         caller() = {};
-        printf("yield %p\n", myCaller);
+printf("yield %p\n", myCaller);
         if (myCaller == nullptr) {
-            //XXX assert(findTask(*this) >= 0);
+            assert(tasks.find(this) < tasks.size());
         }
         auto v = contextAdjuster([=]() -> Value {
-            //XXX! context = myCaller;
+            current = myCaller;
             return *sp;
         });
         *sp = v;
@@ -1179,8 +1178,22 @@ struct PyVM : Stacklet {
         return false;
     }
 
-    void fail (Value v) override {
-        raise(v); // TODO there's no reason for this extra call level, rename!
+    void raise (Value exc) override {
+#if 0 //XXX
+        if (Interp2::context == nullptr) {
+            Buffer buf; // TODO wrong place: bail out & print exception details
+            buf.print("uncaught exception: ");
+            exc.obj().repr(buf);
+            buf.putc('\n');
+            return;
+        }
+#endif
+        uint32_t num = 0;
+        if (exc.isInt())
+            num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
+        else
+            event() = exc;  // trigger exception or other outer-loop req
+        setPending(num);    // force inner loop exit
     }
 };
 
@@ -1295,7 +1308,7 @@ Value PyVM::leave (Value v) {
         adj(NumSlots); // release vector
         assert(current == this);
         current = nullptr; //XXX!
-        raise(0); // exit inner loop to deal with stacklet change
+        setPending(0); // exit inner loop to deal with stacklet change
     }
 
     return r;
@@ -1307,27 +1320,6 @@ auto PyVM::excBase (int incr) -> Value* {
     if (incr <= 0)
         --ep;
     return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
-}
-
-void PyVM::raise (Value exc) {
-#if 0 //XXX
-    if (Interp2::context == nullptr) {
-        Buffer buf; // TODO wrong place: bail out and print exception details
-        buf.print("uncaught exception: ");
-        exc.obj().repr(buf);
-        buf.putc('\n');
-        return;
-    }
-#endif
-
-    uint32_t num = 0;
-    if (exc.isInt())
-        num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
-    else
-        event() = exc;  // trigger exception or other outer-loop req
-
-extern void systemReset ();
-    setPending(num);    // force inner loop exit
 }
 
 void PyVM::caught () {
@@ -1360,7 +1352,7 @@ auto PyVM::next () -> Value {
     caller() = current;
     current = nullptr;
     tasks.push(this);
-    raise(0);
+    setPending(0);
 #endif
     return {}; // no result yet
 }
