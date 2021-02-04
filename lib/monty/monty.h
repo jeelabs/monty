@@ -63,12 +63,15 @@ namespace monty {
     void gcObjDump ();           // like sweep, but only to print all obj+free
     void gcReport ();            // print a brief gc summary with statistics
 
-    struct GCStats {
-        uint32_t
-            checks, sweeps, compacts,
-            toa, tob, tva, tvb, // totalObjAllocs/Bytes, totalVecAllocs/Bytes
-            coa, cob, cva, cvb, // currObjAllocs/Bytes,  currVecAllocs/Bytes
-            moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
+    union GCStats {
+        struct {
+            uint32_t
+                checks, sweeps, compacts,
+                toa, tob, tva, tvb, // totalObjAllocs/Bytes,totalVecAllocs/Bytes
+                coa, cob, cva, cvb, // currObjAllocs/Bytes,currVecAllocs/Bytes
+                moa, mob, mva, mvb; // maxObjAllocs/Bytes,maxVecAllocs/Bytes
+        };
+        uint32_t v [15];
     };
     extern GCStats gcStats;
 

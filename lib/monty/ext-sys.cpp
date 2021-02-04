@@ -29,12 +29,10 @@ static List gcdata; // keep this around to avoid reallocating on each call
 static auto f_gcstats (ArgVec const& args) -> Value {
     assert(args.num == 0);
     constexpr auto NSTATS = sizeof gcStats / sizeof (uint32_t);
-    if (gcdata.size() != NSTATS) {
-        gcdata.remove(0, gcdata.size());
+    if (gcdata.size() == 0)
         gcdata.insert(0, NSTATS);
-    }
     for (uint32_t i = 0; i < NSTATS; ++i)
-        gcdata.setAt(i, ((uint32_t const*) &gcStats)[i]);
+        gcdata[i] = gcStats.v[i];
     return gcdata;
 }
 
