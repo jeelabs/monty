@@ -150,11 +150,12 @@ auto Event::regHandler () -> uint32_t {
 }
 
 void Event::deregHandler () {
-    if (id < 0)
-        return;
-    assert(&handlers[id].obj() == this);
-    handlers[id] = {};
-    id = -1;
+    if (id >= 0) {
+        assert(&handlers[id].obj() == this);
+        handlers[id] = {};
+        set(); // release queued tasks
+        id = -1;
+    }
 }
 
 void Event::set () {

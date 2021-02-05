@@ -18,7 +18,6 @@ for i in [2, 3, 5]:
 async def timeout():
     global evt
     delay(20)
-    evt.set()
     machine.ticker()
 
 sys.tasks.append(timeout())
