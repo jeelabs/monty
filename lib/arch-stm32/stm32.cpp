@@ -144,13 +144,16 @@ struct HexSerial : LineSerial {
     IntelHex<32> ihex; // max 32 data bytes per hex input line
 
     HexSerial (auto (*fun)(char const*)->bool) : reader (fun) {
+        auto cmd = bootCmd();
+        magic() = 0; // only use saved boot command once
+        if (cmd != nullptr)
+            exec(persist+4);
+    }
+
+    static auto bootCmd () -> char const* {
         if (persist == nullptr)
             persist = (char*) sbrk(4+PERSIST_SIZE); // never freed
-
-        if (magic() == MagicValid) {
-            magic() = 0; // only use saved boot command once
-            exec(persist+4);
-        }
+        return magic() == MagicValid ? persist+4 : nullptr;
     }
 
     static auto magic () -> uint32_t& { return *(uint32_t*) persist; }
@@ -220,8 +223,6 @@ Command const commands [] = {
     { "?     this help"                   , nullptr },
 };
 
-static auto (*shFun)(char const*) -> bool;
-
 auto execCmd (char const* buf) -> bool {
     if (buf[0] == '?') {
         for (auto& cmd : commands)
@@ -233,11 +234,16 @@ auto execCmd (char const* buf) -> bool {
             cmd.proc((char*) buf); // TODO get rid of const in caller
             return true;
         }
-    return shFun(buf);
+    printf("cmd <%s>\n", buf);
+    return true;
 }
 
-auto arch::cliTask(auto(*fun)(char const*)->bool) -> Stacklet* {
-    shFun = fun; // TODO yuck
+auto arch::cliTask(Loader loader) -> Stacklet* {
+    auto task = loader((uint8_t const*) HexSerial::bootCmd());
+    if (task != nullptr) {
+        HexSerial::magic() = 0; // only load saved data once
+        return task;
+    }
     return new HexSerial (execCmd);
 }
 
