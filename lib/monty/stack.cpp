@@ -133,7 +133,7 @@ auto Stacklet::runLoop () -> bool {
         current->adj(current->fill);
     }
 
-    return Event::queued > 0;
+    return Event::queued > 0 || tasks.size() > 0;
 }
 
 void monty::exception (Value v) {
@@ -142,17 +142,19 @@ void monty::exception (Value v) {
 }
 
 auto Event::regHandler () -> uint32_t {
-    auto n = handlers.find({});
-    if (n >= handlers.size())
-        handlers.insert(n);
-    handlers[n] = this;
-    return n;
+    id = handlers.find({});
+    if (id >= (int) handlers.size())
+        handlers.insert(id);
+    handlers[id] = this;
+    return id;
 }
 
 void Event::deregHandler () {
-    auto n = handlers.find(this);
-    if (n < handlers.size())
-        handlers[n] = {};
+    if (id < 0)
+        return;
+    assert(&handlers[id].obj() == this);
+    handlers[id] = {};
+    id = -1;
 }
 
 void Event::set () {
@@ -161,7 +163,8 @@ void Event::set () {
         // insert all entries at head of tasks and remove them from this event
         tasks.insert(0, size());
         memcpy(tasks.begin(), begin(), size() * sizeof (Value));
-        queued -= size();
+        if (id >= 0)
+            queued -= size();
         assert(queued >= 0);
         remove(0, size());
     }
@@ -169,7 +172,8 @@ void Event::set () {
 
 void Event::wait () {
     if (!value) {
-        ++queued;
+        if (id >= 0)
+            ++queued;
         Stacklet::suspend(*this);
     }
 }

@@ -79,7 +79,7 @@ def python(c, tests=""):
             else:
                 try:
                     r = c.run(".pio/build/native/program %s" % mpy,
-                              timeout=2, hide=True)
+                              timeout=2.5, hide=True)
                 except Exception as e:
                     r = e.result
                     msg = "[...]\n%s\n" % r.tail('stdout', 5).strip("\n")

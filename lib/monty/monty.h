@@ -866,6 +866,7 @@ namespace monty {
         static int queued;
     private:
         bool value = false;
+        int8_t id = -1;
     };
 
 // see call.cpp - functions, methods, contexts, and interpreter state
