@@ -795,7 +795,7 @@ namespace monty {
         auto sel () const -> uint8_t { return fill >> LEN_BITS; }
     };
 
-// see stack.cpp - events and stacklets
+// see stack.cpp - events, stacklets, and various call mechanisms
 
     extern Vector handlers;
     extern List tasks;
