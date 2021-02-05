@@ -1,17 +1,14 @@
 # using Ubuntu 20.04 and the generic image, which has Python w/o virtualenv
 
+os: linux
 dist: focal
 language: generic
 
-sudo: false
 cache:
   directories:
     - $HOME/.cache/pip
     - $HOME/.platformio
     - $HOME/mpy
-branches:
-  only:
-    - main
 
 install:
   # tool setup: pio & inv
@@ -22,7 +19,7 @@ install:
   # build mpy-cross
   - MPY=~/mpy/mpy-cross
   - URL=https://github.com/micropython/micropython.git
-  - [ -d $MPY ] || git clone --depth 1 -b v1.14 $URL ~/mpy
+  - if [ ! -d $MPY ]; then git clone --depth 1 -b v1.14 $URL ~/mpy; fi
   - make -C $MPY
   - export PATH=$PATH:$MPY
   - inv health
