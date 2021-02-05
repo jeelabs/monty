@@ -34,3 +34,7 @@ script:
   # native invoke tasks
   - inv test
   - inv python
+
+  # embedded builds
+  - inv x-sizes
+  - inv x-examples
