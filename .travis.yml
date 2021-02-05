@@ -9,6 +9,9 @@ cache:
     - $HOME/.cache/pip
     - $HOME/.platformio
     - $HOME/mpy
+branches:
+  only:
+    - main
 
 install:
   # tool setup: pio & inv
