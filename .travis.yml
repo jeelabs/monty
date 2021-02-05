@@ -30,8 +30,8 @@ install:
 script:
   # quick native checks
   - pio run -e native -s
-  - mpy-cross valid/hello.py
-  - .pio/build/native/program valid/hello.mpy
+  - mpy-cross pytests/hello.py
+  - .pio/build/native/program pytests/hello.mpy
 
   # native invoke tasks
   - inv test
