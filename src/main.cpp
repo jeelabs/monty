@@ -7,17 +7,6 @@ uint8_t memPool [10*1024];
 
 extern auto vmLaunch (uint8_t const*) -> Stacklet*;
 
-auto shell (char const* cmd) -> bool {
-    if (cmd[0] == 'M' && cmd[1] == 0x05) {
-        auto vm = vmLaunch((uint8_t const*) cmd);
-        if (vm != nullptr)
-            tasks.append(vm);
-        return false;
-    }
-    printf("cmd <%s>\n", cmd);
-    return *cmd != '!';
-}
-
 int main (int argc, char const** argv) {
     arch::init();
 #ifndef NDEBUG
@@ -30,14 +19,9 @@ int main (int argc, char const** argv) {
     handlers.append(0); // reserve 1st entry for VM TODO yuck
 
 #if NATIVE
-    Stacklet* task = nullptr;
-    if (argc > 1) {
-        auto data = arch::loadFile(argv[1]);
-        if (data != nullptr)
-            task = vmLaunch(data);
-    }
+    auto task = argc > 1 ? vmLaunch(arch::loadFile(argv[1])) : nullptr;
 #else
-    auto task = arch::cliTask(shell);
+    auto task = arch::cliTask(vmLaunch);
 #endif
 
     if (task == nullptr)

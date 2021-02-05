@@ -1,5 +1,4 @@
 print(sys.implementation)
-#print(sys.version)
 print(machine.ticks())
 
 # use polyfill stubs to generate the "correct" output

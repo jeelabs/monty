@@ -47,11 +47,11 @@ namespace machine {
     uint32_t start, last;
 
     auto msNow () -> Value {
-        uint32_t t = micros() / 1000;
-        static uint32_t begin;
+        uint64_t us = micros();
+        static uint64_t begin;
         if (begin == 0)
-            begin = t;
-        return t - begin; // make all runs start out the same way
+            begin = us;
+        return (us - begin) / 1000; // make all runs start out the same way
     }
 
     // simulate in software, see INNER_HOOK in arch.h and monty/pyvm.h

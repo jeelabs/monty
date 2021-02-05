@@ -63,12 +63,15 @@ namespace monty {
     void gcObjDump ();           // like sweep, but only to print all obj+free
     void gcReport ();            // print a brief gc summary with statistics
 
-    struct GCStats {
-        uint32_t
-            checks, sweeps, compacts,
-            toa, tob, tva, tvb, // totalObjAllocs/Bytes, totalVecAllocs/Bytes
-            coa, cob, cva, cvb, // currObjAllocs/Bytes,  currVecAllocs/Bytes
-            moa, mob, mva, mvb; // maxObjAllocs/Bytes,   maxVecAllocs/Bytes
+    union GCStats {
+        struct {
+            uint32_t
+                checks, sweeps, compacts,
+                toa, tob, tva, tvb, // totalObjAllocs/Bytes,totalVecAllocs/Bytes
+                coa, cob, cva, cvb, // currObjAllocs/Bytes,currVecAllocs/Bytes
+                moa, mob, mva, mvb; // maxObjAllocs/Bytes,maxVecAllocs/Bytes
+        };
+        uint32_t v [15];
     };
     extern GCStats gcStats;
 
@@ -799,31 +802,6 @@ namespace monty {
 
     void gcNow ();
 
-    //CG< type event
-    struct Event : List {
-        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
-        static Lookup const attrs;
-        static Type info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-    //CG>
-
-        ~Event () override { deregHandler(); set(); }
-
-        auto unop (UnOp) const -> Value override;
-        auto binop (BinOp, Value) const -> Value override;
-
-        auto regHandler () -> uint32_t;
-        void deregHandler ();
-
-        operator bool () const { return value; }
-        void set ();
-        void clear () { value = false; }
-        void wait ();
-    private:
-        bool value = false;
-    };
-
     //CG3 type <stacklet>
     struct Stacklet : List {
         static Type info;
@@ -840,7 +818,7 @@ namespace monty {
         static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;
-        virtual void fail (Value);
+        virtual void raise (Value);
 
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
@@ -862,6 +840,34 @@ namespace monty {
     };
 
     void exception (Value v);
+
+    //CG< type event
+    struct Event : List {
+        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
+        static Lookup const attrs;
+        static Type info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+    //CG>
+
+        ~Event () override { deregHandler(); set(); }
+
+        auto unop (UnOp) const -> Value override;
+        auto binop (BinOp, Value) const -> Value override;
+
+        auto regHandler () -> uint32_t;
+        void deregHandler ();
+
+        operator bool () const { return value; }
+        void set ();
+        void clear () { value = false; }
+        void wait ();
+
+        static int queued;
+    private:
+        bool value = false;
+        int8_t id = -1;
+    };
 
 // see call.cpp - functions, methods, contexts, and interpreter state
 
