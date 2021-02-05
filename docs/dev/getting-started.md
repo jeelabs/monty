@@ -23,16 +23,16 @@ MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
 |------|---------|-------|
 | single | `inv native` | use `-f` flag to specify which file |
 | C++ test | `inv test` | based on Unity, see `test/*/main.cpp` |
-| Python test | `inv python` | runs all the tests from `valid/` |
+| Python test | `inv python` | runs all the code from `pytests/` |
 
 **Embedded µC**
 
 | Type | Command | Notes |
 |------|---------|-------|
 | console | `inv serial` | keep this open in a separate window |
-| embed | `inv embed` | build & upload, same as `pio run -s` |
+| flash | `inv flash` | build & upload, same as `pio run -s` |
 | C++ test | `inv upload` | uploads and runs each Unity test |
-| Python test | `inv runner` | uploads and runs each test remotely |
+| Python test | `inv runner` | uploads and runs each test (needs `flash`) |
 
 ?> The C++ and Python tests need access to the console, it should not be kept
 open during those tasks.
@@ -63,7 +63,7 @@ build_flags = ${stm32.build_flags} -DSTM32F1
 upload_protocol = blackmagic
 ```
 
-Other types of embedded boards will require additional code in `lib/arch-*/`.
+Other embedded platforms will require additional code in `lib/arch-*/`.
 
 [PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/

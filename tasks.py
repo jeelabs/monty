@@ -44,8 +44,8 @@ def x_version(c):
     print(os.environ["MONTY_VERSION"])
 
 @task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
-def native(c, file="valid/hello.py"):
-    """run script using the native build  [valid/hello.py]"""
+def native(c, file="pytests/hello.py"):
+    """run script using the native build  [pytests/hello.py]"""
     c.run("pio run -e native -s", pty=True)
     cmd = ".pio/build/native/program"
     if file:
@@ -59,18 +59,18 @@ def test(c):
 
 @task(native,help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
-    """run Python tests natively          [in valid/: {*}.py]"""
+    """run Python tests natively          [in pytests/: {*}.py]"""
     num, fail, match = 0, 0, 0
 
     if tests:
         files = [t + ".py" for t in tests.split(",")]
     else:
-        files = os.listdir("valid")
+        files = os.listdir("pytests")
         files.sort()
     for file in files:
         if file[-3:] == ".py":
             num += 1
-            py = "valid/" + file
+            py = "pytests/" + file
             try:
                 mpy = compileIfOutdated(py)
             except FileNotFoundError as e:
@@ -114,9 +114,9 @@ def upload(c):
 
 @task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
-    """run Python tests, sent to µC       [in valid/: {*}.py]"""
+    """run Python tests, sent to µC       [in pytests/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
-    c.run("src/runner.py valid/%s.py" % match, pty=True)
+    c.run("src/runner.py pytests/%s.py" % match, pty=True)
 
 @task(test, python, upload, flash, runner)
 def all(c):
@@ -125,7 +125,7 @@ def all(c):
 @task
 def mrfs(c):
     """generate a Minimal Replaceable File Storage image"""
-    c.run("src/mrfs.py -o rom.mrfs valid/*.py")
+    c.run("src/mrfs.py -o rom.mrfs pytests/*.py")
 
 @task
 def clean(c):
