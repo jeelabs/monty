@@ -131,6 +131,7 @@ auto Stacklet::runLoop () -> bool {
             break;
 
         current->adj(current->fill);
+        tasks.push(current);
     }
 
     return Event::queued > 0 || tasks.size() > 0;

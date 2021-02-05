@@ -651,17 +651,16 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opYieldValue () {
-        auto myCaller = caller().ifType<PyVM>();
+        auto& myCaller = caller().asType<PyVM>();
+        assert(&myCaller != this);
         caller() = {};
-printf("yield %p\n", myCaller);
-        if (myCaller == nullptr) {
-            assert(tasks.find(this) < tasks.size());
-        }
-        auto v = contextAdjuster([=]() -> Value {
-            current = myCaller;
-            return *sp;
-        });
-        *sp = v;
+        current = &myCaller;
+        // TODO messy: result needs to be stored in another stacklet
+        myCaller[myCaller.spOff] = *sp;
+        setPending(0);
+        // FIXME is this needed because contextAdjuster is not being used?
+        spOff = sp - begin();
+        ipOff = ip - ipBase();
     }
     //CG1 op
     void opYieldFrom () {
@@ -1261,12 +1260,9 @@ printf("yield %p\n", myCaller);
         assert(current != nullptr);
         assert(current != this);
         assert(caller().isNil());
-#if 0
-        // FIXME wrong
         caller() = current;
         current = this;
         setPending(0);
-#endif
         return {}; // no result yet
     }
 
