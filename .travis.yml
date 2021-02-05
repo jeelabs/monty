@@ -12,9 +12,7 @@ cache:
 
 install:
   # tool setup: pio & inv
-  - pip3 --version
-  - pip3 install -U platformio invoke
-  - pio update
+  - which pio || pip3 install platformio invoke
   - pio system info
 
   # build mpy-cross
