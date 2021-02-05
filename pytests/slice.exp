@@ -1,0 +1,31 @@
+main
+slice(1,2,3)
+slice(null,null,null)
+slice(null,4,null)
+slice(null,5,null)
+slice(null,null,6)
+'bcd'
+'BCD'
+(2,3,4)
+[7,8,9]
+[5,4,3,2,1]
+[5,3,1]
+-2
+-3
+-4
+''
+5i01000300050007000900
+3i030005000700
+NotImplementedError("assign to extended slice",slice(null,null,2))
+[1,11,22,33,44,55,5]
+7i0100FFFFFEFFFDFFFCFFFBFF0900
+1
+-1
+-2
+-3
+-4
+-5
+9
+[1,2,52,50,48,5,6]
+TypeError("index not int or slice",(1,slice(2,3,null),slice(4,5,6)))
+done

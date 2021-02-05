@@ -1,0 +1,17 @@
+main
+wow 111
+blah (1,2,3)
+3
+blah ("abc",1,2,3,4,5)
+whee 6
+call:
+0 true
+1 false
+2 true
+3 false
+attr:
+0 true false
+1 false true
+2 true false
+3 false true
+done

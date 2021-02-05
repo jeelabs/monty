@@ -1,0 +1,9 @@
+.pio/
+__pycache__/
+
+/platformio-local.ini
+/rom.mrfs
+/tags
+
+*.mpy
+*.out

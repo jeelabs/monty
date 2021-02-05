@@ -1,0 +1,6 @@
+print(1, 2, [3, 4, 5], 6, 7)
+print([1, 2, 3, 'a', 'bb', b'ccc', (4, 5, 6), 7])
+print({1, 2, 3})
+print({1:2, "3":4, 5:"6", "7":"8"})
+print("abc\ndef\n")
+print(b'a\1b\2c')

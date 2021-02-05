@@ -1,0 +1,23 @@
+main
+t 20 rate 2 i 0
+t 30 rate 3 i 0
+t 40 rate 2 i 1
+t 50 rate 5 i 0
+t 60 rate 2 i 2
+t 60 rate 3 i 1
+t 80 rate 2 i 3
+t 90 rate 3 i 2
+t 100 rate 2 i 4
+t 100 rate 5 i 1
+t 120 rate 2 i 5
+t 120 rate 3 i 3
+t 140 rate 2 i 6
+t 150 rate 3 i 4
+t 150 rate 5 i 2
+t 160 rate 2 i 7
+t 180 rate 2 i 8
+t 180 rate 3 i 5
+t 200 rate 2 i 9
+t 200 rate 5 i 3
+t 200 rate 3 i 6
+done
