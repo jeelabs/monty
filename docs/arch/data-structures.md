@@ -38,7 +38,7 @@ A few of these deserve special mention:
 * **Stacklet** is a `List`, used extensively as a "stack of call frames" in
   the VM (and very similar to a Python "generator object")
 
-#### Bytes
+## Bytes
 
 This datatype is defined as `struct Bytes : Object, ByteVec {...};`,
 using C++'s _multiple inheritance_.
@@ -54,7 +54,7 @@ Bytes are used for immutable data, but this is not enforced in C++. They simply
 represent "a bunch of `uint8_t` values", with other interpretations mapped on
 top when created as `Str` or `Array` objects.
 
-#### List
+## List
 
 The "list" is a central data structure in Monty, for both C++ and Python. It is
 used for all collections of objects, and uses the resizable `Vector` type to
@@ -90,7 +90,7 @@ to store the elements of a list, but does not always decrease immediately when
 elements are removed. This _slack_ can be used to reduce (re-)allocation
 overhead.
 
-#### Dict
+## Dict
 
 The "dict" is another important data structure, used as base class for a few
 other types. It builds on `Set` (and `List`) in that it too contains a number of

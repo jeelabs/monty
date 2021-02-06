@@ -4,8 +4,7 @@ A **stacklet** is a freshly-baked term used in Monty to describe "a concurrent
 C++ task", similar to a [green
 thread](https://en.wikipedia.org/wiki/Green_threads) or a
 [goroutine](https://golangr.com/goroutines/) in Go. Stacklets enable
-_collaborative_ multi-tasking, i.e. switching contexts
-_voluntarily_.
+_collaborative_ multi-tasking, i.e. switching contexts _voluntarily_.
 
 The underlying mechanism uses `setjmp` & `longjmp` from the standard C library
 and is - in principle - completely portable (all the hard works is done in those
@@ -21,22 +20,22 @@ to be sized for worst-case stack consumption. Instead, copying now uses the
 dynamic nature of Monty's vectors, which can grow and shrink as needed, and get
 compacted when memory runs low.
 
-?> It may be possible to reimplement stacklets to use real
-(RT)OS tasks, but this has not been tried.
+?> It may be possible to reimplement stacklets to use real (RT)OS tasks, but
+this has not been tried.
 
 What stacklets bring to Monty, is the ability to _block_ and _suspend_ in C++
 and switch to another stacklet.
 
 Note that stacklets are a C++ mechanism and can be used anywhere in the C++
-code. The Python VM's "tasks" and "coroutines" do not need stacklets
-to switch _between_ them, but by turning them into stacklets, the switching can now
+code. The Python VM's "tasks" and "coroutines" do not need stacklets to switch
+_between_ them, but by turning them into stacklets, the switching can now
 include blocking at the C++ level. In other words: without stacklets, a blocking
 I/O call will block the entire VM (and hence all of Python), whereas with
 stacklets, Monty can now block a task/coro and resume another one.
 
-!> Unlike CPython and MicroPython, Monty can suspend and switch Python
-tasks / coros _without_ the `async`/`await` mechanism. This is
-similar to Go, and was one of Monty's main design goals.
+!> Unlike CPython and MicroPython, Monty can suspend and switch Python tasks /
+coros _without_ the `async`/`await` mechanism. This is similar to Go and was one
+of Monty's main design goals.
 
 The main restriction with stacklets is that only one of them can run (i.e. it's
 single-CPU, and that all stacklet context switches occur in a single part of the
@@ -46,10 +45,10 @@ sure that `Stacklet::runLoop()` only appears _once_ in the entire C++
 application.
 
 Since stacklets are a concerrency mechanism, they need a way to synchronise in a
-robust way. This is implemented with `Event` objects (as in Python's `asyncio`).
+robust way. This is accomplished with `Event` objects (as in Python's `asyncio`).
 A stacklet can "wait" on an event, "set" it, or "clear" it. When waiting on an
-event which is not currently set, the stacklet is placed on that event's queue,
-and suspended. Then, the first stacklet on the `ready` queue is resumed.
+event which is not currently set, the stacklet is placed on the event's queue,
+and suspended. Then the first stacklet on the `ready` queue is resumed.
 
 When there are no more stacklets ready to run, the `runLoop()` call returns. The
 main application should have code which looks like this:
@@ -61,23 +60,23 @@ while (Stacklet::runLoop()) {
 ```
 
 On an embedded system, "idling" could be to enter sleep mode (e.g. `asm
-("wfi")`), on a native host and small delay could be used to avoid pegging a CPU
-at 100%.
+("wfi")`), on a native host a brief delay could be used to avoid pegging (one
+of) its CPU(s) at 100%.
 
 Once the above loop exits, this means that there are no stacklets which can run
 _and_ that there is nothing which might trigger a stacklet to resume later. The
 only thing left to do is to power-down (or exit).
 
-#### Hardware interrupts
+## Hardware interrupts
 
-Stacklets are collaborative, which means they don't really care about
-hardware interrupts, they just pass control between them as they wish.
-Still, in embedded context, hardware interrupts are a key feature.
+Stacklets are collaborative, which means they don't really care about hardware
+interrupts, they just pass control between them as they wish.  Still, in
+embedded context, hardware interrupts are a key feature.
 
-The way Monty deals with this is with a global variable,
-declared as `volatile uint32_t pending;` and used as 32 individually-settable bits.
-This is done _atomically_, i.e. setting / clearing these bits is interrupt safe.
-On architectures which support it, this is done without disabling / enabling
+The way Monty deals with this is with a global variable, declared as `volatile
+uint32_t pending;` and used as 32 individually-settable bits.  This is done
+_atomically_, i.e. setting / clearing these bits is interrupt safe.  On
+architectures which support it, this is done without disabling / enabling
 hardware interrupts.
 
 Hardware interrupts do not affect the stacklets directly. All they can do is
@@ -112,8 +111,8 @@ The relation between events and pending bits is defined at run time: events can
 "register" and "deregister" to aquire a unique id, i.e. a value in the range
 1..31 which identifies the pending bit.
 
-The one thing to keep in mind is that as long as any event is registered, the
-run loop will return true, i.e. loop in main. The only way to have the
-main program end normally, is by deregistering all events, so that no source of
+Keep in mind is that as long as any _registered_ event has stacklets queued up,
+the run loop will return true, i.e. loop in main. The way to have the main
+program end normally, is to deregister all events so that no source of
 interrupts can possibly resume a suspended stacklet: timer ticks, serial ports,
 everything!
