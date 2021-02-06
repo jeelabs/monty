@@ -10,6 +10,7 @@ There's almost no documentation ... just what's on the following pages:
 * [Development » Getting started](dev/getting-started)
 * [Architecture » Objects and vectors](arch/objects-and-vectors)
 * [Architecture » Data structures](arch/data-structures)
+* [Architecture » Stacklets & Coros](arch/stacklets-coros)
 * [Source code » Conventions](src/conventions)
 * [Source code » monty/gc.cpp](src/monty-gc)
 
