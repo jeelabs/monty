@@ -11,7 +11,7 @@ and is - in principle - completely portable (all the hard works is done in those
 two functions). There is no assembly code involved, it's all implemented in just
 150 lines of C++ code, but the internal details are suprisingly tricky.
 
-Stacklets differ from conventional multitasking in that there is only **one C++
+Stacklets differ from conventional multitasking in that there is only **one C
 stack**, which is never switched. Instead, stacklets copy their C stack context
 **out of** and **in to** the current C stack when they switch. This leads to
 some copying overhead and has some limitations, but it has the benefit that
