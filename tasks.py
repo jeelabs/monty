@@ -126,9 +126,9 @@ def all(c):
             "write": "also write to flash using st-flash"})
 def mrfs(c, addr="0x08010000", write=False):
     """create Minimal Replaceable File Storage image [rom.mrfs]"""
-    #c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
-    c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
-    c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
+    c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
+    #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
+    #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
     if write:
         try:
             r = c.run(f"st-flash write rom.mrfs {addr}", hide="both")
