@@ -1059,8 +1059,12 @@ namespace monty {
     };
 
     extern Lookup const builtins;
+    extern Dict modules;
 
 // see library.cpp - runtime library functions for several datatypes
-
     void libInstall ();
+
+// defined outside of the Monty core itself, e.g. in main.cpp cq pyvm.cpp
+    auto vmImport (char const* name) -> uint8_t const*;
+    auto vmLaunch (uint8_t const* data) -> Stacklet*;
 }

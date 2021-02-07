@@ -238,12 +238,10 @@ auto execCmd (char const* buf) -> bool {
             cmd.proc((char*) buf); // TODO get rid of const in caller
             return true;
         }
-    auto pos = mrfs::find(buf);
-    if (pos >= 0) {
-        //printf("pos %d size %d\n", pos, mrfsBase[pos].size);
-        extern auto vmLaunch (uint8_t const*) -> Stacklet*;
-        auto p = vmLaunch((uint8_t const*) mrfsBase[pos].name); // TODO yuck
-        //printf("%p\n", p);
+    auto data = arch::importer(buf);
+    if (data != nullptr) {
+        auto p = vmLaunch(data);
+        assert(p != nullptr);
         tasks.append(p);
     } else
         printf("<%s> ?\n", buf);
@@ -257,6 +255,11 @@ auto arch::cliTask(Loader loader) -> Stacklet* {
         return task;
     }
     return new HexSerial (execCmd);
+}
+
+auto arch::importer (char const* name) -> uint8_t const* {
+    auto pos = mrfs::find(name);
+    return pos >= 0 ? (uint8_t const*) mrfsBase[pos].name : nullptr;
 }
 
 void arch::init () {

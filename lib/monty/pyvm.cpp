@@ -730,22 +730,20 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opImportName (Q arg) {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
-        (void) arg; //XXX
-#if 0
-        Value mod = Interp2::modules.at(arg);
-        if (mod.isNil()) {
-            // TODO move part of this code to Interp2
-            auto base = fsLookup(arg);
-            assert(base != nullptr);
-            auto init = loader(arg, base);
+        Value mod = modules.at(arg);
+        if (mod.isNil()) { // TODO this code should be placed elsewhere
+            auto data = vmImport(arg);
+            assert(data != nullptr);
+            Loader loader;
+            auto init = loader.load(data);
             assert(init != nullptr);
             mod = init->mo;
-            Interp2::modules.at(arg) = mod;
+            init->mo.at(Q( 23,"__name__")) = arg;
+            modules.at(arg) = mod;
             wrappedCall(init, {*this, 0});
             frame().locals = mod;
         }
         *sp = mod;
-#endif
     }
     //CG1 op q
     void opImportFrom (Q arg) {
@@ -1333,8 +1331,10 @@ auto Callable::type () const -> Type const& { return info; }
 Type PyVM::info (Q(199,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
-auto vmLaunch (uint8_t const* data) -> Stacklet* {
+auto monty::vmLaunch (uint8_t const* data) -> Stacklet* {
     Loader loader;
     auto init = loader.load(data);
+    if (init == nullptr) // try doing an MRFS lookup if it's a name
+        init = loader.load(vmImport((char const*) data));
     return init != nullptr ? new PyVM (*init) : nullptr;
 }

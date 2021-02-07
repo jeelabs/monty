@@ -1,6 +1,7 @@
+/monty .+/monty {VERS}/
 main
 123
-hello monty
+hello monty {VERS}
 456
 <module>
 hello
