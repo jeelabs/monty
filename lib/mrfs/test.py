@@ -8,7 +8,7 @@ usage: ./a.out cmd args...
 
 >>> ff = image()
 >>> len(ff)
-65536
+32768
 >>> ff[:2]
 b'\xff\xff'
 >>> ff[-2:]
@@ -82,7 +82,7 @@ def mrfs(*args):
     print(e.stdout, end="")
 
 def image():
-    with open("flash.img", "rb") as fd:
+    with open("rom.mrfs", "rb") as fd:
         return fd.read()
 
 if __name__ == "__main__":
@@ -90,3 +90,4 @@ if __name__ == "__main__":
     if failed == 0:
         print("OK", tests)
     os.remove("a.out")
+    os.remove("rom.mrfs")

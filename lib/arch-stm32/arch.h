@@ -1,3 +1,5 @@
+#include "mrfs.h" // this include is needed so PIO will find lib/mrfs/
+
 extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
