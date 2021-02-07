@@ -7,6 +7,9 @@
 #include <cassert>
 #include <unistd.h>
 
+const auto mrfsBase = (mrfs::Info*) 0x08010000;
+const auto mrfsSize = 32*1024;
+
 #if STM32F103xB
 UartBufDev< PinA<2>, PinA<3>, 100 > console;
 #elif STM32L432xx
@@ -217,6 +220,7 @@ Command const commands [] = {
     { "di    show device info"            , [](char*) { printDevInfo(); }},
     { "gc    trigger garbage collection"  , [](char*) { gcNow(); }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
+    { "ls    list files in MRFS"          , [](char*) { mrfs::dump(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
     { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
@@ -234,7 +238,15 @@ auto execCmd (char const* buf) -> bool {
             cmd.proc((char*) buf); // TODO get rid of const in caller
             return true;
         }
-    printf("cmd <%s>\n", buf);
+    auto pos = mrfs::find(buf);
+    if (pos >= 0) {
+        //printf("pos %d size %d\n", pos, mrfsBase[pos].size);
+        extern auto vmLaunch (uint8_t const*) -> Stacklet*;
+        auto p = vmLaunch((uint8_t const*) mrfsBase[pos].name); // TODO yuck
+        //printf("%p\n", p);
+        tasks.append(p);
+    } else
+        printf("cmd <%s>\n", buf);
     return true;
 }
 
@@ -257,6 +269,9 @@ void arch::init () {
     led.mode(Pinmode::out);
 
     printf("\n"); // TODO yuck, the uart TX sends a 0xFF junk char after reset
+
+    mrfs::init(mrfsBase, mrfsSize);
+    //mrfs::dump();
 }
 
 void arch::idle () {
