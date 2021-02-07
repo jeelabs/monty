@@ -1,4 +1,4 @@
-# Monty - a stackless VM
+# Monty - a stackless VM for µCs
 
 **Monty** is a Virtual Machine which runs bytecode produced by [MicroPython][MPY].<br/>
 It's grossly incomplete and totally unfit for general use, but ... it _does_ work.<br/>

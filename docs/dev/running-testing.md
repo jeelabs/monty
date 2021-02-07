@@ -16,15 +16,14 @@ via Python "extra scripts", which tie into the underlying
 [SCons](https://scons.org).
 
 But with such a variety of tasks, it can be somewhat of a burden to shoehorn
-everything into PIO, its Scons Python script, and its `extra_scripts.py`
-extensibility. Instead of customising PIO "fron the inside out", i.e. adjusting
-its behaviour from deep inside its highly automated conventions, there is a much
+everything into PIO.  Instead of customising PIO "fron the inside out", i.e.
+adjusting its behaviour from deep inside its many conventions, there is a
 simpler way to accomplish the same: [PyInvoke](https://www.pyinvoke.org/).
 
-There's an article titled [Building a CLI for Firmware Projects using
+The article titled [Building a CLI for Firmware Projects using
 Invoke](https://interrupt.memfault.com/blog/building-a-cli-for-firmware-projects)
-by Tyler Hoffman, which makes a very strong case for using "inv", as the
-shorthand command is called. AMong the benefits:
+by Tyler Hoffman makes a strong case for using "inv", as the shorthand command
+is called. Among the benefits:
 
 * it's self-documenting: just type `inv -h`, or `inv -h <command>`
 * it's driven by Python, as are all the other tools in the Monty project
@@ -45,7 +44,7 @@ Here's how to build the native executable and run Python scripts:
 | `inv python -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv test` | run the C++ test suite, with results summarised at the end |
 
-The above command work on MacOS (verified on 11.1) and on Linux (verified on
+The above command work on MacOS (verified on 11.2) and on Linux (verified on
 Ubuntu 20.04), and run in a matter of seconds. Here is some sample output:
 
 ```
@@ -87,10 +86,10 @@ small low-cost board containing an STM32 Cortex M4 µC with 256 kB flash
 and 64 kB RAM, an on-board LED, and their ST-Link programmer to
 upload/debug/connect over USB.
 
-There is no "big" reason to stick to this board, but it's a convenient
+There is no "big" reason to use this board, but it's a convenient and
 self-contained default for now.  PIO supports [numerous
-boards](https://platformio.org/boards), but some work may be needed to adapt the
-machine-dependent code in Monty, see `lib/arch-*/`.
+boards](https://platformio.org/boards), although some work may be needed to
+adapt the machine-dependent code in Monty, see `lib/arch-*/`.
 
 Here's how to build and upload the µC firmware and run Python scripts:
 
@@ -100,14 +99,16 @@ Here's how to build and upload the µC firmware and run Python scripts:
 | `inv runner` | run the full Python test suite, reporting only differences and failures |
 | `inv runner -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv upload` | run the C++ test suite, with results summarised at the end |
+| `inv all` | run **all** C++ and Python tests, on native and embedded |
 
 These commands look very similar to the native versions, but the process is
 quite different as the firmware has to be uploaded before running any Python
-tests.  The C++ tests are self contained, PIO will build and upload them, read
-back their output, and report the test results, all in one step.
+tests.  The C++ tests are self contained, PIO will then build and upload them,
+read back their output, and report the test results.
 
-A common workflow is to re-build/-upload the firmware and run Python tests in
-one step, e.g. `inv flash python` or `inv flash python -t hello`.
+A convenient workflow is to re-build & re-upload the firmware and run Python
+tests, all in one step, e.g. `inv flash python` or `inv flash python -t hello`,
+or even the ultimate "do everything": `inv all`.
 
 These "remote" tests take a little more time, due to the uploading and serial
 communication involved (the console runs at 115200 baud). There is also the
@@ -136,7 +137,7 @@ under the hood, but with an extra "filter" to only run `test/gc/main.cpp`.
 
 Python tests are performed by compiling the Python script and sending the binary
 bytecode file to the remote board over serial. This assumes that the latest
-fimrware has already been uploaded (use `inv flash runner ...` when in doubt).
+firmware has already been uploaded (use `inv flash runner ...` when in doubt).
 
 The bytecode is sent in Intel HEX fornat, i.e. as plain text lines. On normal
 startup, the main app always starts a "command-line task" which listens to the
