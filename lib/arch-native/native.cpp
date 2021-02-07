@@ -28,6 +28,13 @@ auto arch::loadFile (char const* name) -> uint8_t const* {
     return data;
 }
 
+auto arch::importer (char const* name) -> uint8_t const* {
+    assert(strlen(name) < 25);
+    char buf [40];
+    sprintf(buf, "pytests/%s.mpy", name);
+    return loadFile(buf);
+}
+
 void arch::init () {
     setbuf(stdout, nullptr);
 }

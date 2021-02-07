@@ -17,6 +17,7 @@ Stacklet* Stacklet::current;
 void* Stacklet::resumer;
 uint32_t volatile Stacklet::pending;
 int Event::queued;
+Dict monty::modules;
 
 Vector monty::handlers;
 List monty::tasks;

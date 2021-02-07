@@ -5,7 +5,9 @@ using namespace monty;
 
 uint8_t memPool [10*1024];
 
-extern auto vmLaunch (uint8_t const*) -> Stacklet*;
+auto monty::vmImport (char const* name) -> uint8_t const* {
+    return arch::importer(name); // TODO yuck, monty does not know about arch-*
+}
 
 int main (int argc, char const** argv) {
     arch::init();

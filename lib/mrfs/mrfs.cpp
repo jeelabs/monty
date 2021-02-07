@@ -12,11 +12,13 @@ namespace mrfs {
 #if TEST
 
 #include <cassert>
+#include <cstdio>
 #include <cstdlib>
+#include <ctime>
 #include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 static auto mapFlashToFile (char const* name, size_t size) -> void* {
     auto fd = open(name, O_CREAT|O_RDWR, 0666); assert(fd > 0);
@@ -46,6 +48,39 @@ static void add (int ac, char const** av) {
     free(buf);
 }
 
+static void save (int ac, char const** av) {
+    for (int i = 0; i < ac; ++i) {
+        auto fd = open(av[i], O_RDONLY); assert(fd > 0);
+        struct stat fs;
+        auto e = fstat(fd, &fs); assert(e == 0);
+        int sz = fs.st_size;
+
+        auto ptr = mmap(nullptr, sz, PROT_READ, MAP_SHARED, fd, 0);
+        assert(ptr != MAP_FAILED);
+
+        auto tm = localtime(&fs.st_mtime);
+        auto d = 10000*(tm->tm_year%100) + 100*(tm->tm_mon+1) + tm->tm_mday;
+        auto t = 100*tm->tm_hour + tm->tm_min;
+
+        // remove directory prefixes and ".mpy" suffix, if present
+        char name [16];
+        auto p = strrchr(av[i], '/');
+        strncpy(name, p != nullptr ? p + 1 : av[i], sizeof name);
+        auto q = strchr(name, '.');
+        if (q != nullptr && strcmp(q, ".mpy") == 0)
+            *q = 0;
+
+        auto pos = mrfs::add(name, 10000*d+t, ptr, sz);
+        //printf("%04d:%6d  %06d.%04d  %s\n", pos, sz, d, t, name);
+        (void) pos;
+
+        munmap(ptr, sz);
+        close(fd);
+    }
+    printf("%d files added, %d bytes used\n",
+            ac, (int) ((mrfs::next - mrfs::base) * sizeof *mrfs::next));
+}
+
 static void find (int ac, char const** av) {
     assert(ac == 1);
     printf("%d\n", mrfs::find(av[0]));
@@ -66,12 +101,13 @@ int main (int argc, char const* argv[]) {
         return 0;
     }
 
-    constexpr auto flashSize = 64*1024;
-    mrfs::init(mapFlashToFile("flash.img", flashSize), flashSize);
+    constexpr auto flashSize = 32*1024;
+    mrfs::init(mapFlashToFile("rom.mrfs", flashSize), flashSize);
 
          if (strcmp(argv[1], "wipe") == 0) mrfs::wipe();
     else if (strcmp(argv[1], "dump") == 0) mrfs::dump();
     else if (strcmp(argv[1], "add")  == 0) add(argc-2, argv+2);
+    else if (strcmp(argv[1], "save") == 0) save(argc-2, argv+2);
     else if (strcmp(argv[1], "find") == 0) find(argc-2, argv+2);
     else assert(false);
 }

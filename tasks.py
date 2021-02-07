@@ -122,15 +122,16 @@ def runner(c, tests=""):
 def all(c):
     """shorthand for running test, python, upload, flash, and runner"""
 
-@task(help={"addr": "flash address (defaultL 0x08010000",
-            "out": "output file (default: rom.mrfs)",
-            "write": "write to flash using st-flash"})
-def mrfs(c, out="rom.mrfs", addr="0x08010000", write=False):
-    """generate a Minimal Replaceable File Storage image"""
-    c.run(f"src/mrfs.py -o {out} pytests/*.py")
+@task(help={"addr": "flash address (default: 0x08010000)",
+            "write": "also write to flash using st-flash"})
+def mrfs(c, addr="0x08010000", write=False):
+    """create Minimal Replaceable File Storage image [rom.mrfs]"""
+    c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
+    #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
+    #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
     if write:
         try:
-            r = c.run(f"st-flash write {out} {addr}", hide="both")
+            r = c.run(f"st-flash write rom.mrfs {addr}", hide="both")
             print(r.tail("stdout", 1).strip())
         except Exception as e:
             r = e.result
