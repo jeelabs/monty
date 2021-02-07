@@ -511,7 +511,7 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
         chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(200,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(199,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 
