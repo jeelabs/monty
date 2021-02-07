@@ -246,7 +246,7 @@ auto execCmd (char const* buf) -> bool {
         //printf("%p\n", p);
         tasks.append(p);
     } else
-        printf("cmd <%s>\n", buf);
+        printf("<%s> ?\n", buf);
     return true;
 }
 
