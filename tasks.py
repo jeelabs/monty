@@ -71,7 +71,7 @@ def python(c, tests=""):
     for fn in files:
         if fn.endswith(".py"):
             if fn[1:2] == "_" and fn[0] != 'n':
-                skip += 0
+                skip += 1
                 continue # skip non-native tests
             num += 1
             py = "pytests/" + fn
