@@ -68,6 +68,7 @@ void Stacklet::yield (bool fast) {
     if (fast) {
         if (pending == 0)
             return; // don't yield if there are no pending handlers
+        assert(tasks.find(current) >= tasks.size());
         tasks.push(current);
         current = nullptr;
         suspend();
@@ -132,7 +133,9 @@ auto Stacklet::runLoop () -> bool {
             break;
 
         current->adj(current->fill);
-        tasks.push(current);
+        // FIXME this should never happen, find the cause of this instead!
+        if (tasks.find(current) >= tasks.size())
+            tasks.push(current);
     }
 
     return Event::queued > 0 || tasks.size() > 0;

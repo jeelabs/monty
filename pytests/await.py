@@ -9,7 +9,6 @@ async def waiter(evt,num):
     print('waiting for it ...', num)
     evt.wait()
     print('... got it!', bool(evt), num) # force boolean access
-    yield # TODO this one shouldn't be needed !!!
 
 async def main():
     # Create an Event object.

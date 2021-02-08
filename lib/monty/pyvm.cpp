@@ -513,10 +513,10 @@ struct PyVM : Stacklet {
             return;
         }
 
-        auto enter = Q( 12,"__enter__");
-        sp[2] = sp[1].asObj().attr(enter, sp[3]);
+        auto entry = Q( 12,"__enter__");
+        sp[2] = sp[1].asObj().attr(entry, sp[3]);
         if (sp->isNil()) {
-            sp[2] = {E::AttributeError, enter};
+            sp[2] = {E::AttributeError, entry};
             return;
         }
 
@@ -1206,8 +1206,12 @@ struct PyVM : Stacklet {
             // last frame, drop context, restore caller
             fill = NumSlots; // delete stack entries
             adj(NumSlots); // release vector
+
+            auto parent = caller().ifType<PyVM>();
+            assert(tasks.find(parent) >= tasks.size());
+
             assert(current == this);
-            current = nullptr; //XXX!
+            current = parent;
             setPending(0); // exit inner loop to deal with stacklet change
         }
 
