@@ -53,9 +53,6 @@ main
 hello monty cdd7e0d
 done
 $ inv python
-main
-hello monty cdd7e0d
-done
 32 tests, 32 matches, 0 failures
 $ inv test
 [...]
@@ -69,10 +66,9 @@ repr    native         PASSED    00:00:00.341
 $ 
 ```
 
-Note that "inv native" includes running the Monty code generator and compiling
-any changes in the code. Output will only be shown in the case of warnings or
-errors - "inv python" will also do "inv native" to make sure the build is up to
-date.
+Note that "inv native" runs the Monty code generator and compiles any changes
+in the code - "inv python" will also do this, to make sure the build is up to
+date. Output will only be shown in the case of warnings or errors.
 
 For all Monty development which can be done natively, by far the quickest
 edit-run cycle is to edit the source as needed, and then run either `inv python`

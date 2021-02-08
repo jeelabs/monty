@@ -57,9 +57,10 @@ def test(c):
     """run C++ tests natively"""
     c.run("pio test -e native", pty=True)
 
-@task(native,help={"tests": "specific tests to run, comma-separated"})
+@task(x_codegen,help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
+    c.run("pio run -e native -s", pty=True)
     num, fail, match = 0, 0, 0
 
     if tests:
