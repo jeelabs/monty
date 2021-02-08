@@ -13,15 +13,21 @@ const auto mrfsSize = 32*1024;
 #if STM32F103xB
 UartBufDev< PinA<2>, PinA<3>, 100 > console;
 #elif STM32L432xx
-UartBufDev< PinA<2>, PinA<15>, 100 > console;
+UartBufDev< PinA<2>, PinA<15>, 10 > console;
 #else
 UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
 
 PinB<3> led;
 
+static void outch (int c) {
+    console.putc(c);
+}
+
+static void (*outFun)(int) = outch;
+
 int printf(const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
+    va_list ap; va_start(ap, fmt); veprintf(outFun, fmt, ap); va_end(ap);
     return 0;
 }
 
@@ -90,23 +96,31 @@ void printDevInfo () {
 
 struct LineSerial : Stacklet {
     Event incoming;
+    //Event outgoing;
     char buf [100]; // TODO avoid hard limit for input line length
     uint32_t fill = 0;
 
     LineSerial () {
-        irqId = incoming.regHandler();
+        rxId = incoming.regHandler();
+        txId = outQueue.regHandler();
         prevIsr = console.handler();
 
         console.handler() = []() {
             prevIsr();
             if (console.readable())
-                Stacklet::setPending(irqId);
+                Stacklet::setPending(rxId);
+            if (console.writable())
+                Stacklet::setPending(txId);
         };
+
+        //outFun = writer;
     }
 
     ~LineSerial () {
+        outFun = outch; // restore non-stacklet-aware version
         console.handler() = prevIsr;
         incoming.deregHandler();
+        outQueue.deregHandler();
     }
 
     auto run () -> bool override {
@@ -130,13 +144,23 @@ struct LineSerial : Stacklet {
 
     virtual auto exec (char const*) -> bool = 0;
 
-    // these are static because the replacement (static) console ISR uses them
+    static void writer (int c) {
+        while (!console.writable())
+            outQueue.wait();
+        console.putc(c);
+        outQueue.clear();
+    }
+
+    // TODO messy use of static scope
     static void (*prevIsr)();
-    static uint32_t irqId;
+    static uint8_t rxId, txId;
+    static Event outQueue;
 };
 
 void (*LineSerial::prevIsr)();
-uint32_t LineSerial::irqId;
+uint8_t LineSerial::rxId;
+uint8_t LineSerial::txId;
+Event LineSerial::outQueue;
 
 struct HexSerial : LineSerial {
     static constexpr auto PERSIST_SIZE = 2048;
