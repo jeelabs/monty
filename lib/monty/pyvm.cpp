@@ -164,7 +164,7 @@ struct PyVM : Stacklet {
 
     auto globals () const -> Module& { return callee->mo; }
 
-    void marker () const override { List::marker(); mark(callee); }
+    void marker () const override { Stacklet::marker(); mark(callee); }
 
     // previous values are saved in current stack frame
     uint16_t base = 0;
