@@ -164,8 +164,6 @@ struct PyVM : Stacklet {
 
     auto globals () const -> Module& { return callee->mo; }
 
-    auto iter () const -> Value override { return this; }
-
     void marker () const override { List::marker(); mark(callee); }
 
     // previous values are saved in current stack frame
@@ -515,10 +513,10 @@ struct PyVM : Stacklet {
             return;
         }
 
-        auto enter = Q( 12,"__enter__");
-        sp[2] = sp[1].asObj().attr(enter, sp[3]);
+        auto entry = Q( 12,"__enter__");
+        sp[2] = sp[1].asObj().attr(entry, sp[3]);
         if (sp->isNil()) {
-            sp[2] = {E::AttributeError, enter};
+            sp[2] = {E::AttributeError, entry};
             return;
         }
 
@@ -664,7 +662,16 @@ struct PyVM : Stacklet {
     }
     //CG1 op
     void opYieldFrom () {
-        assert(false); // TODO
+        // TODO not quite right yet ...
+        --sp;
+        auto& child = sp->asType<PyVM>();
+        assert(child.caller().isNil());
+        child.caller() = this;
+        current = &child;
+        setPending(0);
+        // FIXME same comment as above, these fixups are a hack!
+        spOff = sp - begin();
+        ipOff = ip - ipBase();
     }
     //CG1 op
     void opReturnValue () {
@@ -711,12 +718,12 @@ struct PyVM : Stacklet {
             //  the logic to check for a context switch here is also worrying
             // FIXME also, looks like this doesn't finish iteration properly
             ++sp;
-            auto ctxSave = this;
             v = contextAdjuster([=]() -> Value {
                 return pos.obj().next();
             });
-            //XXX this can't possibly have changed
-            if (this != ctxSave)
+            //XXX this can't possibly change ???
+            assert(current == this);
+            if (this != current)
                 return; // switched away, the generator will supply next result
             --sp;
         }
@@ -1199,8 +1206,12 @@ struct PyVM : Stacklet {
             // last frame, drop context, restore caller
             fill = NumSlots; // delete stack entries
             adj(NumSlots); // release vector
+
+            auto parent = caller().ifType<PyVM>();
+            assert(tasks.find(parent) >= tasks.size());
+
             assert(current == this);
-            current = nullptr; //XXX!
+            current = parent;
             setPending(0); // exit inner loop to deal with stacklet change
         }
 
@@ -1252,6 +1263,8 @@ struct PyVM : Stacklet {
         }
         return false;
     }
+
+    auto iter () const -> Value override { return this; }
 
     auto next () -> Value override {
         assert(fill > 0); // can only resume if not ended
@@ -1322,13 +1335,13 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-Type Bytecode::info (Q(197,"<bytecode>"));
+Type Bytecode::info (Q(196,"<bytecode>"));
 auto Bytecode::type () const -> Type const& { return info; }
 
-Type Callable::info (Q(198,"<callable>"));
+Type Callable::info (Q(197,"<callable>"));
 auto Callable::type () const -> Type const& { return info; }
 
-Type PyVM::info (Q(199,"<pyvm>"));
+Type PyVM::info (Q(198,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
 auto monty::vmLaunch (uint8_t const* data) -> Stacklet* {
