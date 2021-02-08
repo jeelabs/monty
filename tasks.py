@@ -61,17 +61,20 @@ def test(c):
 def python(c, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
-    num, fail, match = 0, 0, 0
+    num, match, fail, skip = 0, 0, 0, 0
 
     if tests:
         files = [t + ".py" for t in tests.split(",")]
     else:
         files = os.listdir("pytests")
         files.sort()
-    for file in files:
-        if file[-3:] == ".py":
+    for fn in files:
+        if fn.endswith(".py"):
+            if fn[1:2] == "_" and fn[0] != 'n':
+                skip += 0
+                continue # skip non-native tests
             num += 1
-            py = "pytests/" + file
+            py = "pytests/" + fn
             try:
                 mpy = compileIfOutdated(py)
             except FileNotFoundError as e:
@@ -94,7 +97,7 @@ def python(c, tests=""):
                     if compareWithExpected(py, r.stdout):
                         match += 1
 
-    print(f"{num} tests, {match} matches, {fail} failures")
+    print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
 
 @task(x_codegen)
 def flash(c):

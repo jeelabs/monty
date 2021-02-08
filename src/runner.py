@@ -124,30 +124,33 @@ def printSeparator(fn, e=None):
 
 if __name__ == "__main__":
     ser = openSerialPort()
-    tests, matches, failures = len(sys.argv)-1, 0, 0
+    tests, match, fail, skip = len(sys.argv)-1, 0, 0, 0
 
     for fn in sys.argv[1:]:
+        bn = os.path.basename(fn)
+        if bn[1:2] == "_" and bn[0] != 's':
+            tests -= 1
+            skip += 1
+            continue # skip non-stm32 tests
+
         try:
             mpy = compileIfOutdated(fn)
-
             # set watchdog and make sure it was accepted
             ser.reset_input_buffer()
             ser.write(b'wd 250\n')
             line = ser.readline().decode()
-            if line[-4:] != " ms\n":
+            if not line.endswith(" ms\n"):
                 printSeparator(fn, line + "NO RESPONSE")
-                failures += 1
+                fail += 1
                 break
-
             # set the bytecode as intel hex
             with open(mpy, "rb") as f:
                 for line in genHex(f.read()):
                     ser.write(line.encode())
                     ser.flush()
-
         except Exception as e:
             printSeparator(fn, e)
-            failures += 1
+            fail += 1
             continue
 
         results = []
@@ -190,10 +193,10 @@ if __name__ == "__main__":
 
         time.sleep(delay)
         if not ok:
-            failures += 1
+            fail += 1
         if compareWithExpected(fn, ''.join(results)):
-            matches += 1
+            match += 1
 
-    print(f"{tests} tests, {matches} matches, {failures} failures")
-    if matches != tests:
+    print(f"{tests} tests, {match} matches, {fail} failures, {skip} skipped")
+    if match != tests:
         sys.exit(1)
