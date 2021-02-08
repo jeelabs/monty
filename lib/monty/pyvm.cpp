@@ -664,15 +664,14 @@ struct PyVM : Stacklet {
     void opYieldFrom () {
         // TODO not quite right yet ...
         --sp;
-#if 0
-        sp->obj().next();
-#else
         auto& child = sp->asType<PyVM>();
         assert(child.caller().isNil());
         child.caller() = this;
         current = &child;
         setPending(0);
-#endif
+        // FIXME same comment as above, these fixups are a hack!
+        spOff = sp - begin();
+        ipOff = ip - ipBase();
     }
     //CG1 op
     void opReturnValue () {

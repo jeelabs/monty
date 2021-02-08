@@ -1,4 +1,4 @@
-tick = machine.ticker(1000)
+tick = machine.ticker(100)
 
 def delay(n):
     for _ in range(n):
@@ -8,7 +8,8 @@ def delay(n):
 async def waiter(evt,num):
     print('waiting for it ...', num)
     evt.wait()
-    print('... got it!', num)
+    print('... got it!', bool(evt), num) # force boolean access
+    yield # TODO this one shouldn't be needed !!!
 
 async def main():
     # Create an Event object.
@@ -26,15 +27,11 @@ async def main():
     # Sleep for 1 second and set the event.
     delay(1)
     evt.set()
-    print(111)
 
     # Wait until the waiter task is finished.
     await waiter_task1
-    print(222)
     await waiter_task2
-    print(333)
     await waiter_task3
-    print(444)
 
     # Done.
     machine.ticker()
