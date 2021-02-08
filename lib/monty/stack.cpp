@@ -129,13 +129,12 @@ auto Stacklet::runLoop () -> bool {
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
-        if (current == nullptr)
-            break;
 
-        current->adj(current->fill);
-        // FIXME this should never happen, find the cause of this instead!
-        if (tasks.find(current) >= tasks.size())
+        if (current != nullptr) {
+            current->adj(current->fill);
+            assert(tasks.find(current) >= tasks.size());
             tasks.push(current);
+        }
     }
 
     return Event::queued > 0 || tasks.size() > 0;

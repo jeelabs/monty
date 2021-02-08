@@ -203,17 +203,21 @@ struct PyVM : Stacklet {
         return fetchO() + 1; // TODO get rid of this off-by-one stuff
     }
 
+    void switchTo (Stacklet* ctx) {
+        assert(current == this);
+        assert(ctx != this);
+        current = ctx;
+        setPending(0);
+    }
+
     // special wrapper to deal with context changes vs cached sp/ip values
     template< typename T >
     auto contextAdjuster (T fun) -> Value {
         spOff = sp - begin();
         ipOff = ip - ipBase();
         Value v = fun();
-        if (current != nullptr) {
-            sp = begin() + spOff;
-            ip = ipBase() + ipOff;
-        } else
-            setPending(0); // nothing left to do, exit inner loop
+        sp = begin() + spOff;
+        ip = ipBase() + ipOff;
         return v;
     }
 
@@ -652,26 +656,17 @@ struct PyVM : Stacklet {
         auto& myCaller = caller().asType<PyVM>();
         assert(&myCaller != this);
         caller() = {};
-        current = &myCaller;
         // TODO messy: result needs to be stored in another stacklet
         myCaller[myCaller.spOff] = *sp;
-        setPending(0);
-        // FIXME is this needed because contextAdjuster is not being used?
-        spOff = sp - begin();
-        ipOff = ip - ipBase();
+        switchTo(&myCaller);
     }
     //CG1 op
     void opYieldFrom () {
-        // TODO not quite right yet ...
         --sp;
         auto& child = sp->asType<PyVM>();
         assert(child.caller().isNil());
         child.caller() = this;
-        current = &child;
-        setPending(0);
-        // FIXME same comment as above, these fixups are a hack!
-        spOff = sp - begin();
-        ipOff = ip - ipBase();
+        switchTo(nullptr);
     }
     //CG1 op
     void opReturnValue () {
@@ -1155,11 +1150,11 @@ struct PyVM : Stacklet {
 
         } while (pending == 0);
 
-        if (current != this)
-            return; // last frame popped, there's no context left
-
         spOff = sp - begin();
         ipOff = ip - ipBase();
+
+        if (current != this)
+            return; // last frame popped, there's no context left
 
         if (pending & (1<<0))
             caught();
@@ -1209,10 +1204,7 @@ struct PyVM : Stacklet {
 
             auto parent = caller().ifType<PyVM>();
             assert(tasks.find(parent) >= tasks.size());
-
-            assert(current == this);
-            current = parent;
-            setPending(0); // exit inner loop to deal with stacklet change
+            switchTo(parent);
         }
 
         return r;
