@@ -797,49 +797,7 @@ namespace monty {
 
 // see stack.cpp - events, stacklets, and various call mechanisms
 
-    extern Vector handlers;
-    extern List tasks;
-
     void gcNow ();
-
-    //CG3 type <stacklet>
-    struct Stacklet : List {
-        static Type info;
-        auto type () const -> Type const& override;
-        auto repr (Buffer&) const -> Value override;
-
-        uint16_t ms = 0;
-        int8_t sema = -1;
-
-        auto binop (BinOp, Value) const -> Value override;
-
-        static void yield (bool =false);
-        static void suspend (Vector& =handlers);
-        static auto runLoop () -> bool;
-
-        virtual auto run () -> bool =0;
-        virtual void raise (Value);
-
-        // see https://en.cppreference.com/w/c/atomic and
-        // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
-        static auto setPending (uint32_t n) -> bool {
-            auto prev = __atomic_fetch_or(&pending, 1<<n, __ATOMIC_RELAXED);
-            return (prev >> n) & 1;
-        }
-        static auto clearPending (uint32_t n) -> bool {
-            auto prev = __atomic_fetch_and(&pending, ~(1<<n), __ATOMIC_RELAXED);
-            return (prev >> n) & 1;
-        }
-        static auto allPending () -> uint32_t {
-            return __atomic_fetch_and(&pending, 0, __ATOMIC_RELAXED); // clears
-        }
-
-        static volatile uint32_t pending;
-        static Stacklet* current;
-        static void* resumer;
-    };
-
-    void exception (Value v);
 
     //CG< type event
     struct Event : List {
@@ -864,12 +822,49 @@ namespace monty {
         void wait ();
 
         static int queued;
+        static Vector triggers;
     private:
         bool value = false;
         int8_t id = -1;
     };
 
-// see call.cpp - functions, methods, contexts, and interpreter state
+    //CG3 type <stacklet>
+    struct Stacklet : List {
+        static Type info;
+        auto type () const -> Type const& override;
+        auto repr (Buffer&) const -> Value override;
+
+        uint16_t ms = 0;
+        int8_t sema = -1;
+
+        auto binop (BinOp, Value) const -> Value override;
+
+        static void yield (bool =false);
+        static void suspend (Vector& =Event::triggers);
+        static auto runLoop () -> bool;
+
+        virtual auto run () -> bool =0;
+        virtual void raise (Value);
+
+        // see https://en.cppreference.com/w/c/atomic and
+        // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
+        static auto setPending (uint32_t n) -> bool {
+            auto prev = __atomic_fetch_or(&pending, 1<<n, __ATOMIC_RELAXED);
+            return (prev >> n) & 1;
+        }
+        static auto clearPending (uint32_t n) -> bool {
+            auto prev = __atomic_fetch_and(&pending, ~(1<<n), __ATOMIC_RELAXED);
+            return (prev >> n) & 1;
+        }
+        static auto allPending () -> uint32_t {
+            return __atomic_fetch_and(&pending, 0, __ATOMIC_RELAXED); // clears
+        }
+
+        static List tasks;
+        static volatile uint32_t pending;
+        static Stacklet* current;
+        static void* resumer;
+    };
 
     //CG3 type <module>
     struct Module : Dict {
@@ -882,6 +877,8 @@ namespace monty {
         auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
+
+        static Dict loaded;
     };
 
     //CG3 type <function>
@@ -1059,7 +1056,6 @@ namespace monty {
     };
 
     extern Lookup const builtins;
-    extern Dict modules;
 
 // see library.cpp - runtime library functions for several datatypes
     void libInstall ();

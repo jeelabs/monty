@@ -13,19 +13,20 @@ namespace machine { void timerHook (); }
 
 using namespace monty;
 
+List Stacklet::tasks;
+uint32_t volatile Stacklet::pending;
 Stacklet* Stacklet::current;
 void* Stacklet::resumer;
-uint32_t volatile Stacklet::pending;
-int Event::queued;
-Dict monty::modules;
 
-Vector monty::handlers;
-List monty::tasks;
+int Event::queued;
+Vector Event::triggers;
+
+Dict Module::loaded;
 
 void monty::gcNow () {
     mark(Stacklet::current);
-    tasks.marker();
-    markVec(handlers);
+    Stacklet::tasks.marker();
+    markVec(Event::triggers);
     sweep();
     compact();
 }
@@ -53,6 +54,51 @@ static void duff (void* dst, void const* src, size_t len) {
 #endif
 }
 
+void Event::deregHandler () {
+    if (id >= 0) {
+        assert(&triggers[id].obj() == this);
+        triggers[id] = {};
+        set(); // release queued tasks
+        id = -1;
+    }
+}
+
+void Event::set () {
+    value = true;
+    if (size() > 0) {
+        // insert all entries at head of tasks and remove them from this event
+        Stacklet::tasks.insert(0, size());
+        memcpy(Stacklet::tasks.begin(), begin(), size() * sizeof (Value));
+        if (id >= 0)
+            queued -= size();
+        assert(queued >= 0);
+        remove(0, size());
+    }
+}
+
+void Event::wait () {
+    if (!value) {
+        if (id >= 0)
+            ++queued;
+        Stacklet::suspend(*this);
+    }
+}
+
+auto Event::unop (UnOp op) const -> Value {
+    assert(op == UnOp::Boln);
+    return Value::asBool(*this);
+}
+
+auto Event::binop (BinOp op, Value rhs) const -> Value {
+    assert(op == BinOp::Equal);
+    return Value::asBool(rhs.isObj() && this == &rhs.obj());
+}
+
+auto Event::create (ArgVec const& args, Type const*) -> Value {
+    assert(args.num == 0);
+    return new Event;
+}
+
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
     assert(op == BinOp::Equal);
     return Value::asBool(rhs.isObj() && this == &rhs.obj());
@@ -67,7 +113,7 @@ void Stacklet::yield (bool fast) {
     assert(current != nullptr);
     if (fast) {
         if (pending == 0)
-            return; // don't yield if there are no pending handlers
+            return; // don't yield if there are no pending triggers
         assert(tasks.find(current) >= tasks.size());
         tasks.push(current);
         current = nullptr;
@@ -78,7 +124,7 @@ void Stacklet::yield (bool fast) {
 
 void Stacklet::suspend (Vector& queue) {
     assert(current != nullptr);
-    if (&queue != &handlers) // special case: used as "do not append" marker
+    if (&queue != &Event::triggers) // special case: use as "do not append" mark
         queue.append(current);
 
     jmp_buf top;
@@ -114,9 +160,9 @@ auto Stacklet::runLoop () -> bool {
         INNER_HOOK
 
         auto flags = allPending();
-        for (uint32_t i = 1; flags != 0 && i < handlers.size(); ++i)
-            if ((flags & (1U<<i)) && !handlers[i].isNil())
-                handlers[i].asType<Event>().set();
+        for (uint32_t i = 1; flags != 0 && i < Event::triggers.size(); ++i)
+            if ((flags & (1U<<i)) && !Event::triggers[i].isNil())
+                Event::triggers[i].asType<Event>().set();
 
         if (tasks.size() == 0)
             break;
@@ -140,62 +186,12 @@ auto Stacklet::runLoop () -> bool {
     return Event::queued > 0 || tasks.size() > 0;
 }
 
-void monty::exception (Value v) {
-    assert(Stacklet::current != nullptr);
-    Stacklet::current->raise(v);
-}
-
 auto Event::regHandler () -> uint32_t {
-    id = handlers.find({});
-    if (id >= (int) handlers.size())
-        handlers.insert(id);
-    handlers[id] = this;
+    id = triggers.find({});
+    if (id >= (int) triggers.size())
+        triggers.insert(id);
+    triggers[id] = this;
     return id;
-}
-
-void Event::deregHandler () {
-    if (id >= 0) {
-        assert(&handlers[id].obj() == this);
-        handlers[id] = {};
-        set(); // release queued tasks
-        id = -1;
-    }
-}
-
-void Event::set () {
-    value = true;
-    if (size() > 0) {
-        // insert all entries at head of tasks and remove them from this event
-        tasks.insert(0, size());
-        memcpy(tasks.begin(), begin(), size() * sizeof (Value));
-        if (id >= 0)
-            queued -= size();
-        assert(queued >= 0);
-        remove(0, size());
-    }
-}
-
-void Event::wait () {
-    if (!value) {
-        if (id >= 0)
-            ++queued;
-        Stacklet::suspend(*this);
-    }
-}
-
-auto Event::unop (UnOp op) const -> Value {
-    assert(op == UnOp::Boln);
-    return Value::asBool(*this);
-}
-
-auto Event::binop (BinOp op, Value rhs) const -> Value {
-    assert(op == BinOp::Equal);
-    return Value::asBool(rhs.isObj() && this == &rhs.obj());
-}
-
-auto Event::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 0);
-    return new Event;
 }
 
 auto BoundMeth::call (ArgVec const& args) const -> Value {

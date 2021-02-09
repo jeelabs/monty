@@ -95,7 +95,8 @@ Value::Value (E exc, Value arg1, Value arg2) {
     v[1] = arg2;
     auto nargs = arg1.isNil() ? 0 : arg2.isNil() ? 1 : 2;
     *this = Exception::create(exc, {v, nargs, 0});
-    exception(*this);
+    assert(Stacklet::current != nullptr);
+    Stacklet::current->raise(*this);
 }
 
 Value::operator char const* () const {

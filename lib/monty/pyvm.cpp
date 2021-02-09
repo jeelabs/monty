@@ -258,7 +258,7 @@ struct PyVM : Stacklet {
     // check and trigger gc on backwards jumps, i.e. inside all loops
     static void loopCheck (int arg) {
         if (arg < 0 && gcCheck())
-            exception(0);
+            setPending(0);
     }
 
     //CG: op-init
@@ -720,7 +720,7 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opImportName (Q arg) {
         --sp; // TODO ignore fromlist for now, *sp level also ignored
-        Value mod = modules.at(arg);
+        Value mod = Module::loaded.at(arg);
         if (mod.isNil()) { // TODO this code should be placed elsewhere
             auto data = vmImport(arg);
             assert(data != nullptr);
@@ -729,7 +729,7 @@ struct PyVM : Stacklet {
             assert(init != nullptr);
             mod = init->mo;
             init->mo.at(Q( 23,"__name__")) = arg;
-            modules.at(arg) = mod;
+            Module::loaded.at(arg) = mod;
             wrappedCall(init, {*this, 0});
             frame().locals = mod;
         }
@@ -1190,9 +1190,7 @@ struct PyVM : Stacklet {
             fill = NumSlots; // delete stack entries
             adj(NumSlots); // release vector
 
-            auto parent = caller().ifType<PyVM>();
-            assert(tasks.find(parent) >= tasks.size());
-            switchTo(parent);
+            switchTo(caller().ifType<PyVM>()); // TODO also support non-PyVM
         }
 
         return r;

@@ -18,7 +18,7 @@ int main (int argc, char const** argv) {
     gcSetup(memPool, sizeof memPool);
 //  libInstall();
 
-    handlers.append(0); // reserve 1st entry for VM TODO yuck
+    Event::triggers.append(0); // reserve 1st entry for VM TODO yuck
 
 #if NATIVE
     auto task = argc > 1 ? vmLaunch(arch::loadFile(argv[1])) : nullptr;
@@ -29,7 +29,7 @@ int main (int argc, char const** argv) {
     if (task == nullptr)
         printf("no task\n");
     else
-        tasks.append(task);
+        Stacklet::tasks.append(task);
 
     while (Stacklet::runLoop())
         arch::idle();

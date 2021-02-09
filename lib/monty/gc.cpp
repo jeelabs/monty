@@ -318,12 +318,8 @@ namespace monty {
             if (slot->isFree())
                 printf("\t\tfree %p\n", &slot->obj);
             else {
-#if XXX
                 Value x {(Object const&) slot->obj};
                 x.dump("\t obj");
-#else
-                printf("\n");
-#endif
             }
         }
     }
@@ -374,19 +370,7 @@ namespace monty {
         vecHigh = newHigh;
     }
 
-#if XXX
-    void gcReport (bool collect) {
-        if (collect) {
-            if (Interp::context != nullptr)
-                Interp::markAll();
-            else
-                Interp::tasks.marker();
-            sweep();
-            compact();
-        }
-#else
     void gcReport () {
-#endif
         printf("gc: avail %d b, %d checks, %d sweeps, %d compacts\n",
                 gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
         printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
@@ -396,5 +380,4 @@ namespace monty {
         printf("gc:   max %6d objs %8d b, %6d vecs %8d b\n",
                 gcStats.moa, gcStats.mob, gcStats.mva, gcStats.mvb);
     }
-
-} // namespace monty
+}
