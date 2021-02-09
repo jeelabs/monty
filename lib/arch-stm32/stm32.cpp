@@ -223,6 +223,7 @@ Command const commands [] = {
     { "ls    list files in MRFS"          , [](char*) { mrfs::dump(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
+    { "vd    vector dump"                 , [](char*) { gcVecDump(); }},
     { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
     { "?     this help"                   , nullptr },
 };

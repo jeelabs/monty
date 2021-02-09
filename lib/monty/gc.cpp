@@ -310,17 +310,34 @@ namespace monty {
     }
 
     void gcObjDump () {
-        printf("gc objects: %p .. %p\n", objLow, limit);
+        printf("objects: %p .. %p\n", objLow, limit);
         for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
             if (slot->chain == 0)
                 break;
-            printf("#%d", (int) (slot->chain - slot));
+            int bytes = (slot->chain - slot) * sizeof *slot;
+            printf("od: %p %6d b :", slot, bytes);
             if (slot->isFree())
-                printf("\t\tfree %p\n", &slot->obj);
+                printf(" free\n");
             else {
                 Value x {(Object const&) slot->obj};
-                x.dump("\t obj");
+                x.dump("");
             }
+        }
+    }
+
+    void gcVecDump () {
+        printf("vectors: %p .. %p\n", start, vecHigh);
+        uint32_t n;
+        for (auto slot = (VecSlot*) start; slot < vecHigh; slot += n) {
+            if (slot->isFree())
+                n = slot->next - slot;
+            else
+                n = slot->vec->slots();
+            printf("vd: %p %6d b :", slot, (int) (n * sizeof *slot));
+            if (slot->isFree())
+                printf(" free\n");
+            else
+                printf(" at %p\n", slot->vec);
         }
     }
 

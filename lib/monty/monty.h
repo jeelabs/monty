@@ -55,12 +55,14 @@ namespace monty {
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
         friend void compact ();
+        friend void gcVecDump ();
     };
 
     void gcSetup (void* base, uint32_t size); // configure the memory pool
     auto gcMax () -> uint32_t; // return free space between objects & vectors
     auto gcCheck () -> bool;   // true when it's time to collect the garbage
     void gcObjDump ();         // like sweep, but only to print all obj+free
+    void gcVecDump ();         // like compact, but only to print all vec+free
     void gcReport ();          // print a brief gc summary with statistics
 
     union GCStats {
