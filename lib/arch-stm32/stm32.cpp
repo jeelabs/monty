@@ -222,6 +222,7 @@ Command const commands [] = {
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
     { "ls    list files in MRFS"          , [](char*) { mrfs::dump(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},
+    { "pd    power down"                  , [](char*) { powerDown(); }},
     { "sr    system reset"                , [](char*) { systemReset(); }},
     { "vd    vector dump"                 , [](char*) { gcVecDump(); }},
     { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
