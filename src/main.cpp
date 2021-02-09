@@ -21,7 +21,7 @@ int main (int argc, char const** argv) {
     Event::triggers.append(0); // reserve 1st entry for VM TODO yuck
 
 #if NATIVE
-    auto task = argc > 1 ? vmLaunch(arch::loadFile(argv[1])) : nullptr;
+    auto task = argc > 1 ? vmLaunch(argv[1]) : nullptr;
 #else
     auto task = arch::cliTask(vmLaunch);
 #endif

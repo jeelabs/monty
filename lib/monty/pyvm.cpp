@@ -119,7 +119,7 @@ struct Callable : Object {
     Dict* kw;
 };
 
-#include "import.h"
+#include "loader.h"
 
 void Callable::marker () const {
     mo.marker();
@@ -727,8 +727,7 @@ struct PyVM : Stacklet {
         if (mod.isNil()) { // TODO this code should be placed elsewhere
             auto data = vmImport(arg);
             assert(data != nullptr);
-            Loader loader;
-            auto init = loader.load(data);
+            auto init = Bytecode::load(data);
             assert(init != nullptr);
             mod = init->mo;
             init->mo.at(Q( 23,"__name__")) = arg;
@@ -1318,11 +1317,10 @@ auto Callable::type () const -> Type const& { return info; }
 Type PyVM::info (Q(198,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
-auto monty::vmLaunch (uint8_t const* data) -> Stacklet* {
-    Loader loader;
-    auto init = loader.load(data);
+auto monty::vmLaunch (void const* data) -> Stacklet* {
+    auto init = Bytecode::load(data);
     if (init == nullptr) // try doing an MRFS lookup if it's a name
-        init = loader.load(vmImport((char const*) data));
+        init = Bytecode::load(vmImport((char const*) data));
     if (init == nullptr)
         return nullptr;
     auto vm = new PyVM;

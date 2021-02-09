@@ -1,7 +1,6 @@
 extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
-    auto loadFile (char const*) -> uint8_t const*;
     auto importer (char const* name) -> uint8_t const*;
 
     void init ();

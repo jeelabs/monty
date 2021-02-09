@@ -1062,5 +1062,5 @@ namespace monty {
 
 // defined outside of the Monty core itself, e.g. in main.cpp cq pyvm.cpp
     auto vmImport (char const* name) -> uint8_t const*;
-    auto vmLaunch (uint8_t const* data) -> Stacklet*;
+    auto vmLaunch (void const* data) -> Stacklet*;
 }

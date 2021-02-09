@@ -27,6 +27,7 @@ struct Bytecode : List {
         return (uint8_t const*) (this + 1) + code;
     }
 
+    static Callable* load (void const*);
 private:
     Bytecode () {}
 
@@ -409,3 +410,8 @@ struct Loader {
         }
     }
 };
+
+Callable* Bytecode::load (void const* p) {
+    Loader loader;
+    return loader.load((uint8_t const*) p);
+}

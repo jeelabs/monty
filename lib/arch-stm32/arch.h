@@ -3,7 +3,7 @@
 extern "C" int printf(const char* fmt, ...);
 
 namespace arch {
-    using Loader = auto (*)(uint8_t const*)->monty::Stacklet*;
+    using Loader = auto (*)(void const*)->monty::Stacklet*;
     auto cliTask (Loader) -> monty::Stacklet*;
     auto importer (char const* name) -> uint8_t const*;
 

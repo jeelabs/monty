@@ -13,12 +13,10 @@ auto micros () -> uint64_t {
     return tv.tv_sec * 1000000LL + tv.tv_nsec / 1000; // µs resolution
 }
 
-auto arch::loadFile (char const* name) -> uint8_t const* {
+static auto loadFile (char const* name) -> uint8_t const* {
     auto fp = fopen(name, "rb");
-    if (fp == nullptr) {
-        perror(name);
+    if (fp == nullptr)
         return nullptr;
-    }
     fseek(fp, 0, SEEK_END);
     uint32_t bytes = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -29,10 +27,16 @@ auto arch::loadFile (char const* name) -> uint8_t const* {
 }
 
 auto arch::importer (char const* name) -> uint8_t const* {
+    auto data = loadFile(name);
+    if (data != nullptr)
+        return data;
     assert(strlen(name) < 25);
     char buf [40];
     sprintf(buf, "pytests/%s.mpy", name);
-    return loadFile(buf);
+    data = loadFile(buf);
+    if (data == nullptr)
+        perror(name);
+    return data;
 }
 
 void arch::init () {
