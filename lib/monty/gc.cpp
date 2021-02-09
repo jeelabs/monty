@@ -299,14 +299,14 @@ namespace monty {
         assert((uintptr_t) &objLow->obj % OS_SZ == 0);
     }
 
-    auto gcAvail () -> uint32_t {
+    auto gcMax () -> uint32_t {
         return (uintptr_t) objLow - (uintptr_t) vecHigh;
     }
 
     auto gcCheck () -> bool {
         ++gcStats.checks;
         auto total = (uintptr_t) limit - (uintptr_t) start;
-        return gcAvail() < total / 4; // TODO crude
+        return gcMax() < total / 4; // TODO crude
     }
 
     void gcObjDump () {
@@ -371,8 +371,8 @@ namespace monty {
     }
 
     void gcReport () {
-        printf("gc: avail %d b, %d checks, %d sweeps, %d compacts\n",
-                gcAvail(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
+        printf("gc: max %d b, %d checks, %d sweeps, %d compacts\n",
+                gcMax(), gcStats.checks, gcStats.sweeps, gcStats.compacts);
         printf("gc: total %6d objs %8d b, %6d vecs %8d b\n",
                 gcStats.toa, gcStats.tob, gcStats.tva, gcStats.tvb);
         printf("gc:  curr %6d objs %8d b, %6d vecs %8d b\n",

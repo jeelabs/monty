@@ -218,7 +218,7 @@ Command const commands [] = {
     { "bc *  set boot command [cmd ...]"  , bc_cmd },
     { "bv    show build version"          , [](char*) { printBuildVer(); }},
     { "di    show device info"            , [](char*) { printDevInfo(); }},
-    { "gc    trigger garbage collection"  , [](char*) { gcNow(); }},
+    { "gc    trigger garbage collection"  , [](char*) { Stacklet::gcAll(); }},
     { "gr    generate a GC report"        , [](char*) { gcReport(); }},
     { "ls    list files in MRFS"          , [](char*) { mrfs::dump(); }},
     { "od    object dump"                 , [](char*) { gcObjDump(); }},

@@ -14,7 +14,7 @@ VecOf<int> v;
 
 void setUp () {
     gcSetup(memory, sizeof memory);
-    memAvail = gcAvail();
+    memAvail = gcMax();
 
     TEST_ASSERT_EQUAL(0, v.cap());
     v.adj(25);
@@ -34,7 +34,7 @@ void tearDown () {
 
     sweep();
     compact();
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void smokeTest () {

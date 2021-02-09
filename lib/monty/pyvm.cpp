@@ -137,9 +137,9 @@ struct PyVM : Stacklet {
     auto type () const -> Type const& override;
 
     // first entries in a context are reserved slots for specific state
-    enum Slot { Caller, Event, NumSlots };
+    enum Slot { Caller, Signal, NumSlots };
     auto caller () const -> Value& { return begin()[Caller]; }
-    auto event () const -> Value& { return begin()[Event]; }
+    auto signal () const -> Value& { return begin()[Signal]; }
 
     struct Frame {
         //    <------- previous ------->  <---- actual ---->
@@ -1205,10 +1205,10 @@ struct PyVM : Stacklet {
     }
 
     void caught () {
-        auto e = event();
+        auto e = signal();
         if (e.isNil())
             return; // there was no exception, just an inner loop exit
-        event() = {};
+        signal() = {};
 
         auto& einfo = e.asType<Exception>().extra();
         einfo.ipOff = ipOff;
@@ -1232,19 +1232,15 @@ struct PyVM : Stacklet {
         }
     }
 
-    PyVM (Callable const& init, Stacklet* from =nullptr) {
+    PyVM () {
         insert(0, NumSlots);
-        caller() = from;
-
-        enter(init);
-        frame().locals = &init.mo;
     }
 
     auto run () -> bool override {
         while (current == this) {
             inner();
             if ((pending & (1<<0)) && gcCheck())
-                gcNow();
+                gcAll();
         }
         return false;
     }
@@ -1267,7 +1263,7 @@ struct PyVM : Stacklet {
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
         else
-            event() = exc;  // trigger exception or other outer-loop req
+            signal() = exc;  // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
 };
@@ -1286,9 +1282,10 @@ auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = &currentVM();
     auto coro = bc.isGenerator();
     if (coro)
-        ctx = new PyVM (*this);
-    else
-        ctx->enter(*this);
+        ctx = new PyVM;
+    ctx->enter(*this);
+    if (coro)
+        ctx->frame().locals = &mo;
 
     int nPos = bc.numArgs(0);
     int nDef = bc.numArgs(1);
@@ -1328,5 +1325,10 @@ auto monty::vmLaunch (uint8_t const* data) -> Stacklet* {
     auto init = loader.load(data);
     if (init == nullptr) // try doing an MRFS lookup if it's a name
         init = loader.load(vmImport((char const*) data));
-    return init != nullptr ? new PyVM (*init) : nullptr;
+    if (init == nullptr)
+        return nullptr;
+    auto vm = new PyVM;
+    vm->enter(*init);
+    vm->frame().locals = &init->mo;
+    return vm;
 }

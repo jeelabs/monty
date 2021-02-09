@@ -514,11 +514,6 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
     at(Q(199,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
-
-    // see PyVM::opCallFunction for the workaround ...
-    //auto ctx = Stacklet::current;
-    //assert(ctx != nullptr); (void) ctx;
-    //ctx->frame().locals = this;
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
@@ -541,7 +536,6 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     Value init = attr(Q( 17,"__init__"), self);
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
-        assert(Stacklet::current == &args.vec && args.off > 0);
         args[-1] = this;
         init.obj().call({args.vec, args.num + 1, args.off - 1});
     }

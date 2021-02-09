@@ -19,7 +19,7 @@ private:
 
 void setUp () {
     gcSetup(memory, sizeof memory);
-    memAvail = gcAvail();
+    memAvail = gcMax();
     created = destroyed = marked = failed = 0;
     panicOutOfMemory = []() -> void* { ++failed; return nullptr; };
 }
@@ -28,7 +28,7 @@ void tearDown () {
     sweep();
     TEST_ASSERT_EQUAL(created, destroyed);
     compact();
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void smokeTest () {
@@ -41,42 +41,42 @@ void gcTypeSizes () {
 }
 
 void initMem () {
-    TEST_ASSERT_LESS_THAN(sizeof memory, gcAvail());
-    TEST_ASSERT_GREATER_THAN(sizeof memory - 50, gcAvail());
+    TEST_ASSERT_LESS_THAN(sizeof memory, gcMax());
+    TEST_ASSERT_GREATER_THAN(sizeof memory - 50, gcMax());
 }
 
 void newObj () {
     MarkObj o1; // on the stack
     TEST_ASSERT(!o1.isCollectable());
     TEST_ASSERT_EQUAL(sizeof (MarkObj), sizeof o1);
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 
     auto p1 = new MarkObj; // allocated in pool
     TEST_ASSERT_NOT_NULL(p1);
     TEST_ASSERT(p1->isCollectable());
 
-    auto avail1 = gcAvail();
+    auto avail1 = gcMax();
     TEST_ASSERT_LESS_THAN(memAvail, avail1);
 
     auto p2 = new MarkObj; // second object in pool
     TEST_ASSERT(p2->isCollectable());
     TEST_ASSERT_NOT_EQUAL(p1, p2);
 
-    auto avail2 = gcAvail();
+    auto avail2 = gcMax();
     TEST_ASSERT_LESS_THAN(avail1, avail2);
     TEST_ASSERT_EQUAL(memAvail - avail1, avail1 - avail2);
 
     auto p3 = new (0) MarkObj; // same as without the extra size
     TEST_ASSERT(p3->isCollectable());
 
-    auto avail3 = gcAvail();
+    auto avail3 = gcMax();
     TEST_ASSERT_LESS_THAN(avail2, avail3);
     TEST_ASSERT_EQUAL(avail1 - avail2, avail2 - avail3);
 
     auto p4 = new (20) MarkObj; // extra space at end of object
     TEST_ASSERT(p4->isCollectable());
 
-    auto avail4 = gcAvail();
+    auto avail4 = gcMax();
     TEST_ASSERT_LESS_THAN(avail3, avail4);
     TEST_ASSERT_GREATER_THAN(avail1 - avail2, avail3 - avail4);
 }
@@ -127,19 +127,19 @@ void markThrough () {
 void reuseObjs () {
     auto p1 = new MarkObj;          // [ p1 ]
     delete p1;                      // [ ]
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 
     auto p2 = new MarkObj;          // [ p2 ]
     /* p3: */ new MarkObj;          // [ p3 p2 ]
     delete p2;                      // [ p3 gap ]
     TEST_ASSERT_EQUAL_PTR(p1, p2);
-    TEST_ASSERT_LESS_THAN(memAvail, gcAvail());
+    TEST_ASSERT_LESS_THAN(memAvail, gcMax());
 
     auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
     sweep();                   // [ ]
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void mergeNext () {
@@ -167,7 +167,7 @@ void mergePrevious () {
 
     delete p4;                      // [ p3 gap ]
     delete p3;                      // [ ]
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void mergeMulti () {
@@ -189,7 +189,7 @@ void outOfObjs () {
     constexpr auto N = 400;
     for (int i = 0; i < 12; ++i)
         new (N) MarkObj;
-    TEST_ASSERT_LESS_THAN(N, gcAvail());
+    TEST_ASSERT_LESS_THAN(N, gcMax());
     TEST_ASSERT_EQUAL(12, created);
     TEST_ASSERT_EQUAL(5, failed);
 
@@ -202,9 +202,9 @@ void newVec () {
         TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof v1);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
-        TEST_ASSERT_EQUAL(memAvail, gcAvail());
+        TEST_ASSERT_EQUAL(memAvail, gcMax());
     }
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void resizeVec () {
@@ -214,13 +214,13 @@ void resizeVec () {
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
-        TEST_ASSERT_EQUAL(memAvail, gcAvail());
+        TEST_ASSERT_EQUAL(memAvail, gcMax());
 
         f = v1.adj(1);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_NOT_EQUAL(0, v1.ptr());
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
-        TEST_ASSERT_LESS_THAN(memAvail, gcAvail());
+        TEST_ASSERT_LESS_THAN(memAvail, gcMax());
 
         f = v1.adj(sizeof (void*));
         TEST_ASSERT_TRUE(f);
@@ -236,7 +236,7 @@ void resizeVec () {
         TEST_ASSERT_EQUAL(sizeof (void*), v1.cap());
 #endif
     }
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void reuseVecs () {
@@ -245,55 +245,55 @@ void reuseVecs () {
     Vec v2;
     v2.adj(20);                     // [ v1 v2 ]
 
-    auto a = gcAvail();
+    auto a = gcMax();
     TEST_ASSERT_LESS_THAN(memAvail, a);
     TEST_ASSERT_GREATER_THAN(v1.ptr(), v2.ptr());
 
     v1.adj(0);                      // [ gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     Vec v3;
     v3.adj(20);                     // [ v3 gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     Vec v4;
     v4.adj(20);                     // [ v3 v4 gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v3.adj(0);                      // [ gap v4 gap v2 ]
     v4.adj(0);                      // [ gap gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     Vec v5;
     v5.adj(100);                    // [ v5 v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v5.adj(40);                     // [ v5 gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v5.adj(80);                     // [ v5 gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v5.adj(100);                    // [ v5 v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v5.adj(20);                     // [ v5 gap v2 ]
     v1.adj(1);                      // [ v5 v1 gap v2 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 
     v1.adj(0);                      // [ v5 gap v2 ]
     v5.adj(0);                      // [ gap v2 ]
 
     v2.adj(0);                      // [ gap ]
-    auto b = gcAvail();
+    auto b = gcMax();
     TEST_ASSERT_GREATER_THAN(a, b);
     TEST_ASSERT_LESS_THAN(memAvail, b);
 
     v1.adj(1);                      // [ v1 ]
-    TEST_ASSERT_GREATER_THAN(b, gcAvail());
+    TEST_ASSERT_GREATER_THAN(b, gcMax());
 
     v1.adj(0);                      // [ ]
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void compactVecs () {
@@ -302,36 +302,36 @@ void compactVecs () {
     Vec v2;
     v2.adj(20);                     // [ v1 v2 ]
 
-    auto a = gcAvail();
+    auto a = gcMax();
 
     Vec v3;
     v3.adj(20);                     // [ v1 v2 v3 ]
 
-    auto b = gcAvail();
+    auto b = gcMax();
 
     Vec v4;
     v4.adj(20);                     // [ v1 v2 v3 v4 ]
     Vec v5;
     v5.adj(20);                     // [ v1 v2 v3 v4 v5 ]
 
-    auto c = gcAvail();
+    auto c = gcMax();
     TEST_ASSERT_LESS_THAN(b, c);
 
     compact();                      // [ v1 v2 v3 v4 v5 ]
-    TEST_ASSERT_EQUAL(c, gcAvail());
+    TEST_ASSERT_EQUAL(c, gcMax());
 
     v2.adj(0);                      // [ v1 gap v3 v4 v5 ]
     v4.adj(0);                      // [ v1 gap v3 gap v5 ]
-    TEST_ASSERT_EQUAL(c, gcAvail());
+    TEST_ASSERT_EQUAL(c, gcMax());
 
     compact();                      // [ v1 v3 v5 ]
-    TEST_ASSERT_EQUAL(b, gcAvail());
+    TEST_ASSERT_EQUAL(b, gcMax());
 
     v1.adj(0);                      // [ gap v3 v5 ]
-    TEST_ASSERT_EQUAL(b, gcAvail());
+    TEST_ASSERT_EQUAL(b, gcMax());
 
     compact();                      // [ v3 v5 ]
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 }
 
 void vecData () {
@@ -399,9 +399,9 @@ void vecData () {
     TEST_ASSERT_EQUAL(33, v3.ptr()[n]);
     TEST_ASSERT_EQUAL(44, v3.ptr()[v3.cap()-1]);
 
-    auto a = gcAvail();
+    auto a = gcMax();
     compact();                      // [ v2 v4 v3 ]
-    TEST_ASSERT_GREATER_THAN(a, gcAvail());
+    TEST_ASSERT_GREATER_THAN(a, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v2.ptr());
     TEST_ASSERT_EQUAL_PTR(p3, v4.ptr());
@@ -420,7 +420,7 @@ void vecData () {
     v4.adj(0);                      // [ gap gap v3 ]
 
     compact();                      // [ v3 ]
-    TEST_ASSERT_LESS_THAN(memAvail, gcAvail());
+    TEST_ASSERT_LESS_THAN(memAvail, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v3.ptr());
 
@@ -436,7 +436,7 @@ void outOfVecs () {
 
     auto p = v1.ptr();
     auto n = v1.cap();
-    auto a = gcAvail();
+    auto a = gcMax();
     TEST_ASSERT_NOT_EQUAL(0, p);
     TEST_ASSERT_GREATER_THAN(999, n);
     TEST_ASSERT_LESS_THAN(memAvail, a);
@@ -447,7 +447,7 @@ void outOfVecs () {
     TEST_ASSERT_GREATER_THAN(0, failed);
     TEST_ASSERT_EQUAL_PTR(p, v1.ptr());
     TEST_ASSERT_EQUAL(n, v1.cap());
-    TEST_ASSERT_EQUAL(a, gcAvail());
+    TEST_ASSERT_EQUAL(a, gcMax());
 }
 
 void gcRomOrRam () {

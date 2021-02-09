@@ -59,7 +59,7 @@ int main () {
 
     // create 7 stacklets, with different delays
     for (int i = 0; i < 7; ++i)
-        tasks.append(new Toggler (i));
+        Stacklet::tasks.append(new Toggler (i));
 
     // minimal loop to keep stacklets going
     while (Stacklet::runLoop()) {}

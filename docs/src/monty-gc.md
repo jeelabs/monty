@@ -132,7 +132,7 @@ The GC collects some basic statistics. Here is an example, as printed with
 `gcReport()`:
 
 ```
-gc: avail 3216 b, 1230 checks, 1 sweeps, 1 compacts
+gc: max 3216 b, 1230 checks, 1 sweeps, 1 compacts
 gc: total     78 objs     5376 b,     50 vecs     2832 b
 gc:  curr     43 objs     3872 b,     25 vecs     1552 b
 gc:   max     70 objs     5024 b,     44 vecs     2400 b

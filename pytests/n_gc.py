@@ -1,8 +1,8 @@
-print(sys.gc_avail(), sys.gc_stats())
-print(sys.gc_avail(), sys.gc_stats())
+print(sys.gcmax(), sys.gcstats())
+print(sys.gcmax(), sys.gcstats())
 a = []
-print(sys.gc_avail(), sys.gc_stats())
-print(sys.gc_avail(), sys.gc_stats())
+print(sys.gcmax(), sys.gcstats())
+print(sys.gcmax(), sys.gcstats())
 
 def f():
     t0 = machine.ticks()
@@ -13,10 +13,10 @@ def f():
     print(t1-t0, 'ms')
 
 f()
-print(sys.gc_avail(), sys.gc_stats())
+print(sys.gcmax(), sys.gcstats())
 
-sys.gc_now()
-print(sys.gc_avail(), sys.gc_stats())
+sys.gc()
+print(sys.gcmax(), sys.gcstats())
 
 del a
 del l
@@ -25,5 +25,5 @@ del t1
 del z
 del i
 
-sys.gc_now()
-print(sys.gc_avail(), sys.gc_stats())
+sys.gc()
+print(sys.gcmax(), sys.gcstats())

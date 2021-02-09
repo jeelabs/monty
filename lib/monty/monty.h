@@ -58,10 +58,10 @@ namespace monty {
     };
 
     void gcSetup (void* base, uint32_t size); // configure the memory pool
-    auto gcAvail () -> uint32_t; // return free space between objects & vectors
-    auto gcCheck () -> bool;     // true when it's time to collect the garbage
-    void gcObjDump ();           // like sweep, but only to print all obj+free
-    void gcReport ();            // print a brief gc summary with statistics
+    auto gcMax () -> uint32_t; // return free space between objects & vectors
+    auto gcCheck () -> bool;   // true when it's time to collect the garbage
+    void gcObjDump ();         // like sweep, but only to print all obj+free
+    void gcReport ();          // print a brief gc summary with statistics
 
     union GCStats {
         struct {
@@ -797,8 +797,6 @@ namespace monty {
 
 // see stack.cpp - events, stacklets, and various call mechanisms
 
-    void gcNow ();
-
     //CG< type event
     struct Event : List {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
@@ -846,6 +844,9 @@ namespace monty {
         virtual auto run () -> bool =0;
         virtual void raise (Value);
 
+        static void exception (Value); // a safe way to current->raise()
+        static void gcAll ();
+
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
         static auto setPending (uint32_t n) -> bool {
@@ -863,7 +864,6 @@ namespace monty {
         static List tasks;
         static volatile uint32_t pending;
         static Stacklet* current;
-        static void* resumer;
     };
 
     //CG3 type <module>
@@ -897,7 +897,7 @@ namespace monty {
         Prim func;
     };
 
-    // Horrendous C++ ... this wraps several different argument calls into a
+    // Horrendous C++11 ... this wraps several different argument calls into a
     // virtual MethodBase object, which Method can then call in a generic way.
     // It's probably just a neophyte's version of STL's <functional> types ...
     // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?

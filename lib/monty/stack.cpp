@@ -16,17 +16,18 @@ using namespace monty;
 List Stacklet::tasks;
 uint32_t volatile Stacklet::pending;
 Stacklet* Stacklet::current;
-void* Stacklet::resumer;
 
 int Event::queued;
 Vector Event::triggers;
 
 Dict Module::loaded;
 
-void monty::gcNow () {
-    mark(Stacklet::current);
-    Stacklet::tasks.marker();
+static jmp_buf* resumer;
+
+void Stacklet::gcAll () {
     markVec(Event::triggers);
+    mark(current);
+    tasks.marker();
     sweep();
     compact();
 }
@@ -109,6 +110,11 @@ void Stacklet::raise (Value v) {
     assert(false); // TODO unhandled exception, can't continue
 }
 
+void Stacklet::exception (Value e) {
+    assert(current != nullptr);
+    current->raise(e);
+}
+
 void Stacklet::yield (bool fast) {
     assert(current != nullptr);
     if (fast) {
@@ -138,14 +144,14 @@ void Stacklet::suspend (Vector& queue) {
     if (setjmp(top) == 0) {
         // suspending: copy stack out and jump to caller
         duff(current->end(), &top, need);
-        longjmp(*(jmp_buf*) resumer, 1);
+        longjmp(*resumer, 1);
     }
 
     // resuming: copy stack back in
-    assert(Stacklet::resumer != nullptr);
-    assert(Stacklet::current != nullptr);
-    need = (uint8_t*) Stacklet::resumer - (uint8_t*) &top;
-    duff(&top, Stacklet::current->end(), need);
+    assert(resumer != nullptr);
+    assert(current != nullptr);
+    need = (uint8_t*) resumer - (uint8_t*) &top;
+    duff(&top, current->end(), need);
 }
 
 auto Stacklet::runLoop () -> bool {

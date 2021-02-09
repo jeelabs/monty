@@ -13,13 +13,13 @@ uint32_t memAvail;
 
 void setUp () {
     gcSetup(memory, sizeof memory);
-    memAvail = gcAvail();
+    memAvail = gcMax();
 }
 
 void tearDown () {
     sweep();
     compact();
-    TEST_ASSERT_EQUAL(memAvail, gcAvail());
+    TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
 void smokeTest () {
