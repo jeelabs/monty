@@ -1,4 +1,7 @@
 main
 11
 <type bytes>
+AttributeError("count","type")
+AttributeError("count","bytes")
+22
 done

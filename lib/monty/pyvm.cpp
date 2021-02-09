@@ -1141,11 +1141,11 @@ struct PyVM : Stacklet {
         spOff = sp - begin();
         ipOff = ip - ipBase();
 
-        if (current != this)
-            return; // last frame popped, there's no context left
-
         if (pending & (1<<0))
             caught();
+
+        if (current != this)
+            return; // last frame popped, there's no context left
     }
 
     void enter (Callable const& func) {
@@ -1221,7 +1221,14 @@ struct PyVM : Stacklet {
             begin()[++spOff] = e.isNil() ? ep[2] : e;
         } else {
             leave();
-            raise(e);
+            if (current != nullptr)
+                current->raise(e);
+            else {
+                Buffer buf;
+                buf.print("uncaught exception: ");
+                e.obj().repr(buf);
+                buf.putc('\n');
+            }
         }
     }
 
@@ -1256,12 +1263,6 @@ struct PyVM : Stacklet {
     }
 
     void raise (Value exc) override {
-        // TODO wrong place: bail out & print exception details
-        //buf.print("uncaught exception: ");
-        //exc.obj().repr(buf);
-        //buf.putc('\n');
-        //return;
-
         uint32_t num = 0;
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
