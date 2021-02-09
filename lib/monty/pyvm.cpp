@@ -136,11 +136,6 @@ struct PyVM : Stacklet {
     static Type info;
     auto type () const -> Type const& override;
 
-    // first entries in a context are reserved slots for specific state
-    enum Slot { Caller, Signal, NumSlots };
-    auto caller () const -> Value& { return begin()[Caller]; }
-    auto signal () const -> Value& { return begin()[Signal]; }
-
     struct Frame {
         //    <------- previous ------->  <---- actual ---->
         Value base, spOff, ipOff, callee, ep, locals, result, stack [];
@@ -164,13 +159,20 @@ struct PyVM : Stacklet {
 
     auto globals () const -> Module& { return callee->mo; }
 
-    void marker () const override { Stacklet::marker(); mark(callee); }
+    void marker () const override {
+        Stacklet::marker();
+        mark(callee);
+        mark(caller);
+        signal.marker();
+    }
 
     // previous values are saved in current stack frame
     uint16_t base = 0;
     uint16_t spOff = 0;
     uint16_t ipOff = 0;
     Callable const* callee = nullptr;
+    Stacklet* caller = nullptr;
+    Value signal = {};
 
     Value* sp = nullptr;
     uint8_t const* ip = nullptr;
@@ -653,10 +655,11 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opYieldValue () {
-        auto& myCaller = caller().asType<PyVM>();
-        assert(&myCaller != this);
-        caller() = {};
-        // TODO messy: result needs to be stored in another stacklet
+        assert(caller != nullptr);
+        assert(caller != this);
+        auto& myCaller = Value(caller).asType<PyVM>(); // TODO non-PyVM caller ?
+        caller = nullptr;
+        // TODO messy: result needs to be stored in another PyVM instance
         myCaller[myCaller.spOff] = *sp;
         switchTo(&myCaller);
     }
@@ -664,8 +667,8 @@ struct PyVM : Stacklet {
     void opYieldFrom () {
         --sp;
         auto& child = sp->asType<PyVM>();
-        assert(child.caller().isNil());
-        child.caller() = this;
+        assert(child.caller == nullptr);
+        child.caller = this;
         switchTo(nullptr);
     }
     //CG1 op
@@ -1174,7 +1177,7 @@ struct PyVM : Stacklet {
         if (r.isNil())              // use return result if set
             r = v;                  // ... else arg
 
-        if (base > NumSlots) {
+        if (base > 0) {
             int prev = f.base;      // previous frame offset
             spOff = f.spOff;        // restore stack index
             ipOff = f.ipOff;        // restore instruction index
@@ -1187,10 +1190,9 @@ struct PyVM : Stacklet {
             base = prev;            // new lower frame offset
         } else {
             // last frame, drop context, restore caller
-            fill = NumSlots; // delete stack entries
-            adj(NumSlots); // release vector
-
-            switchTo(caller().ifType<PyVM>()); // TODO also support non-PyVM
+            fill = 0; // delete stack entries
+            adj(1); // release vector FIXME crashes when set to 0 (???)
+            switchTo(caller);
         }
 
         return r;
@@ -1205,10 +1207,10 @@ struct PyVM : Stacklet {
     }
 
     void caught () {
-        auto e = signal();
+        auto e = signal;
         if (e.isNil())
             return; // there was no exception, just an inner loop exit
-        signal() = {};
+        signal = {};
 
         auto& einfo = e.asType<Exception>().extra();
         einfo.ipOff = ipOff;
@@ -1232,10 +1234,6 @@ struct PyVM : Stacklet {
         }
     }
 
-    PyVM () {
-        insert(0, NumSlots);
-    }
-
     auto run () -> bool override {
         while (current == this) {
             inner();
@@ -1251,8 +1249,8 @@ struct PyVM : Stacklet {
         assert(fill > 0); // can only resume if not ended
         assert(current != nullptr);
         assert(current != this);
-        assert(caller().isNil());
-        caller() = current;
+        assert(caller == nullptr);
+        caller = &Value(current).asType<PyVM>();
         current = this;
         setPending(0);
         return {}; // no result yet
@@ -1263,7 +1261,7 @@ struct PyVM : Stacklet {
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
         else
-            signal() = exc;  // trigger exception or other outer-loop req
+            signal = exc;  // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
 };
