@@ -3,27 +3,23 @@
 
 using namespace monty;
 
-uint8_t memPool [10*1024];
-
 auto monty::vmImport (char const* name) -> uint8_t const* {
-    return arch::importer(name); // TODO yuck, monty does not know about arch-*
+    return arch::importer(name); // TODO get rid of this
 }
 
 int main (int argc, char const** argv) {
-    arch::init();
-
+    static uint8_t memPool [10*1024];
     gcSetup(memPool, sizeof memPool);
 
-    Event::triggers.append(0); // reserve 1st entry for VM TODO yuck
+    Event::triggers.append(0); // TODO get rid of this
 
     auto task = argc > 1 ? vmLaunch(argv[1]) : nullptr;
-    if (task == nullptr)
-        printf("no task\n");
-    else
+    if (task != nullptr)
         Stacklet::tasks.append(task);
+    else
+        printf("no bytecode\n");
 
-    while (Stacklet::runLoop())
-        arch::idle();
+    while (Stacklet::runLoop()) {}
 
-    return arch::done();
+    return 0;
 }
