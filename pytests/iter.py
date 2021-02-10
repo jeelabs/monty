@@ -17,3 +17,8 @@ print(type(iter(b)))
 
 for i in (11,22,33):
     print(i)
+
+c = [111,222,333]
+print(type(iter(c)))
+for i in c:
+    print(i)
