@@ -74,7 +74,7 @@ struct PyRunner : Object {
 
 struct Command {
     char const* desc;
-    void (*proc)(char*);
+    void (*proc)();
 };
 
 static void printBuildVer () {
@@ -84,12 +84,12 @@ static void printBuildVer () {
 static void helpCmd ();
 
 static Command const commands [] = {
-    { "bv    show build version"          , [](char*) { printBuildVer(); }},
-    { "gc    trigger garbage collection"  , [](char*) { Stacklet::gcAll(); }},
-    { "gr    generate a GC report"        , [](char*) { gcReport(); }},
-    { "od    object dump"                 , [](char*) { gcObjDump(); }},
-    { "vd    vector dump"                 , [](char*) { gcVecDump(); }},
-    { "-h    this help"                   , [](char*) { helpCmd(); }},
+    { "bv    show build version"          , printBuildVer },
+    { "gc    trigger garbage collection"  , Stacklet::gcAll },
+    { "gr    generate a GC report"        , gcReport },
+    { "od    object dump"                 , gcObjDump },
+    { "vd    vector dump"                 , gcVecDump },
+    { "-h    this help"                   , helpCmd },
 };
 
 void helpCmd () {
@@ -108,7 +108,7 @@ struct CmdRunner : Object {
             char const* buf = v;
             for (auto& cmd : commands)
                 if (memcmp(buf, cmd.desc, 2) == 0) {
-                    cmd.proc(nullptr);
+                    cmd.proc();
                     return 0;
                 }
         }
