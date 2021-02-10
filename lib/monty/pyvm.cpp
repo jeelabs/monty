@@ -3,6 +3,8 @@
 #include "monty.h"
 #include <cassert>
 
+#ifndef NOPYVM
+
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through inner loop
 //CG: off op:print # set to "on" to enable per-opcode debug output
 
@@ -1328,3 +1330,9 @@ auto monty::vmLaunch (void const* data) -> Stacklet* {
     vm->frame().locals = &init->mo;
     return vm;
 }
+
+#else
+auto monty::vmLaunch (void const* data) -> Stacklet* {
+    return nullptr;
+}
+#endif

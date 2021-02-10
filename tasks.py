@@ -29,9 +29,10 @@ def x_rsync(c, host, dest="monty-test"):
 
 @task
 def x_sizes(c):
-    """show µC build sizes, w/ and w/o assertions"""
+    """show µC build sizes, w/ and w/o assertions or Python VM"""
     c.run("pio run -t size | tail -8 | head -2")
     c.run("pio run -e noassert | tail -7 | head -1")
+    c.run("pio run -e nopyvm | tail -7 | head -1")
 
 @task
 def x_tags(c):
