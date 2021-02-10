@@ -1320,9 +1320,14 @@ Type PyVM::info (Q(198,"<pyvm>"));
 auto PyVM::type () const -> Type const& { return info; }
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
+    if (data == nullptr)
+        return nullptr;
     auto init = Bytecode::load(data);
-    if (init == nullptr) // try doing an MRFS lookup if it's a name
-        init = Bytecode::load(vmImport((char const*) data));
+    if (init == nullptr) { // try doing an MRFS lookup if it's a name
+        auto mpy = vmImport((char const*) data);
+        if (mpy != nullptr)
+            init = Bytecode::load(mpy);
+    }
     if (init == nullptr)
         return nullptr;
     auto vm = new PyVM;

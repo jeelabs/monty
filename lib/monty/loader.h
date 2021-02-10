@@ -27,7 +27,7 @@ struct Bytecode : List {
         return (uint8_t const*) (this + 1) + code;
     }
 
-    static Callable* load (void const*);
+    static auto load (void const*) -> Callable*;
 private:
     Bytecode () {}
 
@@ -122,6 +122,7 @@ struct Loader {
     Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
     Callable* load (const uint8_t* data) {
+        assert(data != nullptr);
         dp  = data;
         if (*dp++ != 'M')
             return 0; // incorrect file format
@@ -411,7 +412,7 @@ struct Loader {
     }
 };
 
-Callable* Bytecode::load (void const* p) {
+auto Bytecode::load (void const* p) -> Callable* {
     Loader loader;
     return loader.load((uint8_t const*) p);
 }

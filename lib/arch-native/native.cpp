@@ -13,7 +13,7 @@ auto micros () -> uint64_t {
     return tv.tv_sec * 1000000LL + tv.tv_nsec / 1000; // µs resolution
 }
 
-static auto loadFile (char const* name) -> uint8_t const* {
+auto arch::loadFile (char const* name) -> uint8_t const* {
     auto fp = fopen(name, "rb");
     if (fp == nullptr)
         return nullptr;
