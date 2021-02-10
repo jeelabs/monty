@@ -1251,7 +1251,7 @@ struct PyVM : Stacklet {
         assert(current != nullptr);
         assert(current != this);
         assert(caller == nullptr);
-        caller = &Value(current).asType<PyVM>();
+        caller = current;
         current = this;
         setPending(0);
         return {}; // no result yet
