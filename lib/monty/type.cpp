@@ -14,8 +14,6 @@ void monty::markVec (Vector const& vec) {
 }
 
 auto Iterator::next() -> Value {
-    if (ipos < 0)
-        return iobj.next();
     if (ipos >= (int) iobj.len())
         return E::StopIteration;
     // TODO duplicate code, see opForIter in pyvm.h
