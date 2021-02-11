@@ -257,7 +257,10 @@ namespace monty {
         uint32_t fill = 0;
 
         constexpr VecOf () {}
-        constexpr VecOf (T const* ptr, uint32_t num =0)
+        template< size_t N >
+        constexpr VecOf (T const (&ary)[N])
+                    : Vec (&ary, N * sizeof (T)), fill (N) {}
+        constexpr VecOf (T const* ptr, uint32_t num)
                     : Vec (ptr, num * sizeof (T)), fill (num) {}
 
         auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
