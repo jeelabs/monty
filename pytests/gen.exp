@@ -1,0 +1,19 @@
+main
+1 outside 0
+  inside  null
+2 outside 1
+  inside  null
+3 outside 2
+  inside  null
+4 outside 3
+  inside  0
+5 result: 4
+  inside  77
+6 result: 5
+  inside  88
+7 result: 6
+  inside  99
+8 result: 7
+  inside  0
+9 result: 8
+done

@@ -135,6 +135,7 @@ auto Callable::funcAt (int n) const -> Bytecode const& {
 }
 
 struct PyVM : Stacklet {
+    static Lookup const attrs;
     static Type info;
     auto type () const -> Type const& override;
 
@@ -1254,7 +1255,9 @@ struct PyVM : Stacklet {
 
     auto iter () const -> Value override { return this; }
 
-    auto next () -> Value override {
+    auto next () -> Value override { return send(None::nullObj); }
+
+    auto send (Value arg) -> Value {
         assert(fill > 0); // can only resume if not ended
         assert(current != nullptr);
         assert(current != this);
@@ -1262,6 +1265,9 @@ struct PyVM : Stacklet {
         caller = current;
         current = this;
         setPending(0);
+        // TODO messy: arg needs to be stored at the top of the stack
+        //  see also YieldValue
+        (*this)[spOff] = arg;
         return {}; // no result yet
     }
 
@@ -1324,7 +1330,16 @@ auto Bytecode::type () const -> Type const& { return info; }
 Type Callable::info (Q(197,"<callable>"));
 auto Callable::type () const -> Type const& { return info; }
 
-Type PyVM::info (Q(198,"<pyvm>"));
+static auto d_pyvm_send = Method::wrap(&PyVM::send);
+static Method const m_pyvm_send (d_pyvm_send);
+
+static Lookup::Item const pyvmMap [] = {
+    { Q(138,"send"), m_pyvm_send },
+};
+
+Lookup const PyVM::attrs (pyvmMap, sizeof pyvmMap);
+
+Type PyVM::info (Q(198,"<pyvm>"), nullptr, &PyVM::attrs);
 auto PyVM::type () const -> Type const& { return info; }
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
