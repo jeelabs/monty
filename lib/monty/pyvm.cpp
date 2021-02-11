@@ -662,6 +662,7 @@ struct PyVM : Stacklet {
         auto& myCaller = Value(caller).asType<PyVM>(); // TODO non-PyVM caller ?
         caller = nullptr;
         // TODO messy: result needs to be stored in another PyVM instance
+        //  might be better to store it its signal slot, then pick up on resume
         myCaller[myCaller.spOff] = *sp;
         switchTo(&myCaller);
     }
@@ -670,7 +671,14 @@ struct PyVM : Stacklet {
         --sp;
         auto& child = sp->asType<PyVM>();
         assert(child.caller == nullptr);
+#if 1
+        // FIXME not sure, shouldn't "yield from" pull out of the call chain?
         child.caller = this;
+#else
+        assert(caller != nullptr);
+        child.caller = caller;
+        caller = nullptr;
+#endif
         switchTo(nullptr);
     }
     //CG1 op
