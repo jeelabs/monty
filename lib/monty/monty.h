@@ -266,9 +266,9 @@ namespace monty {
         auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
         auto adj (uint32_t num) -> bool { return Vec::adj(num * sizeof (T)); }
 
-        auto size () const -> uint32_t { return fill; }
-        auto begin () const -> T* { return (T*) Vec::ptr(); }
-        auto end () const -> T* { return begin() + fill; }
+        constexpr auto size () const -> uint32_t { return fill; }
+        constexpr auto begin () const -> T* { return (T*) Vec::ptr(); }
+        constexpr auto end () const -> T* { return begin() + fill; }
         auto operator[] (uint32_t idx) const -> T& { return begin()[idx]; }
 
         auto relPos (int i) const -> uint32_t { return i < 0 ? i + fill : i; }
@@ -338,9 +338,12 @@ namespace monty {
     void markVec (Vector const&);
 
     struct ArgVec {
-        ArgVec (Vector const& v, int n, Value const* p)
+        constexpr ArgVec (Vector const& v)
+            : ArgVec (v, v.size()) {}
+        constexpr ArgVec (Vector const& v, int n, Value const* p)
             : ArgVec (v, n, p - v.begin()) {}
-        ArgVec (Vector const& v, int n, int o =0) : vec (v), num (n), off (o) {}
+        constexpr ArgVec (Vector const& v, int n, int o =0)
+            : vec (v), num (n), off (o) {}
 
         auto size () const -> uint32_t { return num; }
         auto begin () const -> Value const* { return vec.begin() + off; }
