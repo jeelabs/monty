@@ -78,12 +78,11 @@ auto Q::make (char const* s) -> uint16_t {
 }
 
 Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
-    if (Vec::inPool(arg)) // don't store pointers into movable vector space
-#if 0
-        *this = new struct Str (arg); // TODO should try Q::find first
-#else
-        v = Q::make(arg) * 4 + 2;
-#endif
+    auto id = Q::find(arg);
+    if (id > 0)
+        v = id * 4 + 2;
+    else if (Vec::inPool(arg)) // don't store ptrs into movable vector space
+        *this = new struct Str (arg);
     else
         assert((char const*) *this == arg); // watch out for address truncation
 }
@@ -136,10 +135,6 @@ bool Value::truthy () const {
 auto Value::operator== (Value rhs) const -> bool {
     if (v == rhs.v)
         return true;
-#if 0
-    // FIXME (?) object equality is object identity for now
-    return tag() == rhs.tag() && tag() == Str && strcmp(*this, rhs) == 0;
-#else
     if (tag() == rhs.tag())
         switch (tag()) {
             case Nil: // fall through
@@ -147,7 +142,6 @@ auto Value::operator== (Value rhs) const -> bool {
             case Str: return strcmp(*this, rhs) == 0;
             case Obj: return obj().binop(BinOp::Equal, rhs).truthy();
         }
-#endif
     return false;
 }
 
