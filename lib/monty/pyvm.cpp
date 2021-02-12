@@ -1255,9 +1255,9 @@ struct PyVM : Stacklet {
 
     auto iter () const -> Value override { return this; }
 
-    auto next () -> Value override { return send(None::nullObj); }
+    auto next () -> Value override { return send(); }
 
-    auto send (Value arg) -> Value {
+    auto send (Value arg =Null) -> Value {
         assert(fill > 0); // can only resume if not ended
         assert(current != nullptr);
         assert(current != this);
@@ -1276,7 +1276,7 @@ struct PyVM : Stacklet {
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
         else
-            signal = exc;  // trigger exception or other outer-loop req
+            signal = exc;   // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
 };

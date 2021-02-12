@@ -108,7 +108,7 @@ Value::operator char const* () const {
 
 auto Value::asObj () const -> Object& {
     switch (tag()) {
-        case Nil: return (Object&) None::nullObj; // drop const
+        case Nil: return Null.obj();
         case Int: return *new struct Int (*this);
         case Str: return *new struct Str (*this);
         case Obj: break;
