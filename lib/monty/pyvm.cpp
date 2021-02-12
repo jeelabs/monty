@@ -665,22 +665,19 @@ struct PyVM : Stacklet {
         // TODO messy: result needs to be stored in another PyVM instance
         //  might be better to store it its signal slot, then pick up on resume
         myCaller[myCaller.spOff] = *sp;
+        auto callerIp = (Op*) (myCaller.ipBase() + myCaller.ipOff);
+        if (callerIp[-1] == YieldFrom)
+            --myCaller.ipOff;
         switchTo(&myCaller);
     }
     //CG1 op
     void opYieldFrom () {
-        --sp;
-        auto& child = sp->asType<PyVM>();
+        auto& child = sp[-1].asType<PyVM>();
         assert(child.caller == nullptr);
-#if 1
-        // FIXME not sure, shouldn't "yield from" pull out of the call chain?
-        child.caller = this;
-#else
         assert(caller != nullptr);
-        child.caller = caller;
-        caller = nullptr;
-#endif
-        switchTo(nullptr);
+        child.caller = this;
+printf("new yielder %p\n", ip);
+        switchTo(&child);
     }
     //CG1 op
     void opReturnValue () {
@@ -709,26 +706,24 @@ struct PyVM : Stacklet {
     }
     //CG1 op o
     void opForIter (int arg) {
-        Value v;
-        auto& pos = sp[-2];
+        ++sp;
+        auto& pos = sp[-3];
         if (pos.isInt()) {
-            assert(sp[-3].isObj());
-            auto& seq = sp[-3].obj();
+            assert(sp[-4].isObj());
+            auto& seq = sp[-4].obj();
             int n = pos;
             if (n < (int) seq.len()) {
                 if (&seq.type() == &Dict::info || &seq.type() == &Set::info)
-                    v = ((List&) seq)[n]; // avoid keyed access
+                    *sp = ((List&) seq)[n]; // avoid keyed access
                 else
-                    v = seq.getAt(n);
+                    *sp = seq.getAt(n);
                 pos = n + 1;
+            } else {
+                sp -= 5;
+                ip += arg;
             }
         } else
-            v = pos.obj().next();
-        if (v.isNil()) {
-            sp -= 4;
-            ip += arg;
-        } else
-            *++sp = v;
+            *sp = pos.obj().next();
     }
 
     //CG1 op q
