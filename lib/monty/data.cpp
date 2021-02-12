@@ -109,10 +109,10 @@ Value::operator char const* () const {
 
 auto Value::asObj () const -> Object& {
     switch (tag()) {
-        case Value::Nil: return (Object&) None::nullObj; // drop const
-        case Value::Int: return *new struct Int (*this);
-        case Value::Str: return *new struct Str (*this);
-        case Value::Obj: break;
+        case Nil: return (Object&) None::nullObj; // drop const
+        case Int: return *new struct Int (*this);
+        case Str: return *new struct Str (*this);
+        case Obj: break;
     }
     return obj();
 }
@@ -125,10 +125,10 @@ auto Value::asInt () const -> int64_t {
 
 bool Value::truthy () const {
     switch (tag()) {
-        case Value::Nil: break;
-        case Value::Int: return (int) *this != 0;
-        case Value::Str: return *(char const*) *this != 0;
-        case Value::Obj: return obj().unop(UnOp::Boln).isTrue();
+        case Nil: break;
+        case Int: return (int) *this != 0;
+        case Str: return *(char const*) *this != 0;
+        case Obj: return obj().unop(UnOp::Boln).isTrue();
     }
     return false;
 }
