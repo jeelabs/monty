@@ -17,6 +17,9 @@ MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
 
 ## Development
 
+PlatformIO can be used from an IDE, but most development tasks are performed
+via the command line:
+
 **MacOS & Linux**
 
 | Type | Command | Notes |
@@ -45,7 +48,7 @@ There are several other tasks (the `x-*` tasks are mostly special-purpose):
 |------|---------|-------|
 | list | `inv -l` | lists all available tasks, see `tasks.py` |
 | help | `inv -h` | help about the `invoke` command |
-| info | `inv serial -h` | information about a specific task |
+| info | `inv -h serial` | information about a specific task |
 
 By default, the embedded builds are for a Nucleo-32 board with STM32L432KC
 µC.<br/>
@@ -63,7 +66,8 @@ build_flags = ${stm32.build_flags} -DSTM32F1
 upload_protocol = blackmagic
 ```
 
-Other embedded platforms will require additional code in `lib/arch-*/`.
+Embedded platforms other than STM32 will require additional code in
+`lib/arch-*/`.
 
 [PY3]: https://www.python.org/
 [PIO]: https://docs.platformio.org/en/latest/

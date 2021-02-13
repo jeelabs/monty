@@ -39,12 +39,17 @@ Here's how to build the native executable and run Python scripts:
 | Command | Description |
 |---|---|
 | `inv native` | this is the simplest test, it runs a minimal "hello" Python script |
-| `inv native -f pytests/hello.py` | the same test, spelled out in full detail |
+| `inv native -f hello` | the same test, with script from `pytests/` |
+| `inv native -f pytests/hello.py` | again the same, this time spelled out in full detail |
+| `inv native -f pytests/hello.mpy` | refers to the bytecode file, `inv` will not launch `mpy-cross` |
 | `inv python` | run the full Python test suite, reporting only differences and failures |
 | `inv python -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv test` | run the C++ test suite, with results summarised at the end |
 
-The above command work on MacOS (verified on 11.2) and on Linux (verified on
+Tests named `n_*` are included, others starting with `<letter>_` will be skipped
+unless mentioned by name.
+
+The above commands work on MacOS (verified on 11.2) and on Linux (verified on
 Ubuntu 20.04), and run in a matter of seconds. Here is some sample output:
 
 ```
@@ -53,7 +58,7 @@ main
 hello monty cdd7e0d
 done
 $ inv python
-32 tests, 32 matches, 0 failures
+34 tests, 34 matches, 0 failures, 2 skipped
 $ inv test
 [...]
 Test    Environment    Status    Duration
@@ -96,6 +101,9 @@ Here's how to build and upload the µC firmware and run Python scripts:
 | `inv runner -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv upload` | run the C++ test suite, with results summarised at the end |
 | `inv all` | run **all** C++ and Python tests, on native and embedded |
+
+Tests named `s_*` are included on STM32, all others starting with `<letter>_`
+will be skipped.
 
 These commands look very similar to the native versions, but the process is
 quite different as the firmware has to be uploaded before running any Python
@@ -212,6 +220,6 @@ hello monty cdd7e0d
 done
 ```
 
-Which - after modification - will indeed match the expected output. Only a few
-tests rely on this feature, but it can be really effective at keeping tests
-working properly.
+Which - after performing the specified replacement(s) - will indeed match the
+expected output. Only a few tests rely on this feature, but it can be really
+effective to keep test output limited to "real" differences.

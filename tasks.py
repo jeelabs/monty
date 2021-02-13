@@ -71,7 +71,7 @@ def python(c, tests=""):
         files.sort()
     for fn in files:
         if fn.endswith(".py"):
-            if fn[1:2] == "_" and fn[0] != 'n':
+            if not tests and fn[1:2] == "_" and fn[0] != 'n':
                 skip += 1
                 continue # skip non-native tests
             num += 1
