@@ -1,5 +1,24 @@
 # Conventions
 
+## Directory layout
+```
+├── docs/               # this documentation
+├── examples/
+│   ├── blinker/        # minimal stacklet demo, see the README
+│   └── ...
+├── lib/
+│   ├── arch-native/    # only included in native builds
+│   ├── arch-stm32/     # only included in ... yeah, STM32 builds
+│   ├── monty/          # main code area for Monty
+│   └── ...
+├── pytests/            # Python tests for native & remote use
+├── src/                # small main.cpp and some utility scripts
+└── test/               # Unity C++ tests for native & remote use
+    └── ...
+```
+
+[MPY]: https://micropython.org/
+
 ## Code formatting
 
 * no braces around single statements
