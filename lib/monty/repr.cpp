@@ -336,3 +336,7 @@ Value Event::repr (Buffer& buf) const {
 auto Stacklet::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
+
+Value Buffer::repr (Buffer& buf) const {
+    return Object::repr(buf); // don't print as bytes
+}

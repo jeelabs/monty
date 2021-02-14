@@ -1021,6 +1021,7 @@ namespace monty {
     struct Buffer : Bytes {
         static Type info;
         auto type () const -> Type const& override;
+        auto repr (Buffer& buf) const -> Value override;
 
         Buffer () {}
         ~Buffer () override;
