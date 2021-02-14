@@ -7,15 +7,15 @@ uint8_t memory [3*1024];
 uint32_t memAvail;
 
 static char buf [250];
-static char* fill;
+static char* bufEnd;
 
 struct TestBuffer : Buffer {
-    TestBuffer () { fill = buf; }
-    ~TestBuffer () override { *fill = 0; }
-
-    void write (uint8_t const* ptr, uint32_t len) const override {
-        while (len-- > 0 && fill < buf + sizeof buf - 1)
-            *fill++ = *ptr++;
+    TestBuffer () { bufEnd = buf; }
+    ~TestBuffer () override {
+        for (uint32_t i = 0; i < fill && bufEnd < buf + sizeof buf - 1; ++i)
+            *bufEnd++ = begin()[i];
+        fill = 0;
+        *bufEnd = 0;
     }
 };
 
@@ -35,11 +35,11 @@ void smokeTest () {
 }
 
 void reprTypeSizes () {
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Buffer));
+    TEST_ASSERT_EQUAL(2*sizeof (uint32_t) + 2*sizeof (void*), sizeof (Buffer));
 }
 
 static void reprBasics () {
-    { TestBuffer tb; TEST_ASSERT_EQUAL(buf, fill); }
+    { TestBuffer tb; TEST_ASSERT_EQUAL(buf, bufEnd); }
     TEST_ASSERT_EQUAL_STRING("", buf);
 
     { TestBuffer tb; tb.print("<%d>", 42); }

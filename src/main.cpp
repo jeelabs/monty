@@ -3,7 +3,11 @@
 
 using namespace monty;
 
+#if NATIVE
+uint8_t memPool [20*1024];
+#else
 uint8_t memPool [10*1024];
+#endif
 
 auto monty::vmImport (char const* name) -> uint8_t const* {
     return arch::importer(name); // TODO yuck, monty does not know about arch-*

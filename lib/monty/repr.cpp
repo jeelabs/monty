@@ -45,9 +45,16 @@ static void putsEsc (Buffer& buf, Value s) {
     buf.putc('"');
 }
 
-void Buffer::write (uint8_t const* ptr, uint32_t len) const {
-    for (uint32_t i = 0; i < len; ++i)
-        printf("%c", ptr[i]); // TODO yuck
+Buffer::~Buffer () {
+    for (uint32_t i = 0; i < fill; ++i)
+        printf("%c", begin()[i]); // TODO yuck
+}
+
+void Buffer::write (uint8_t const* ptr, uint32_t len) {
+    if (fill + len > cap())
+        adj(fill + len + 50);
+    memcpy(end(), ptr, len);
+    fill += len;
 }
 
 auto Buffer::operator<< (Value v) -> Buffer& {
@@ -328,4 +335,8 @@ Value Event::repr (Buffer& buf) const {
 
 auto Stacklet::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
+}
+
+Value Buffer::repr (Buffer& buf) const {
+    return Object::repr(buf); // don't print as bytes
 }

@@ -1,4 +1,4 @@
-/1 rate/0 rate/
+/[123] rate/0 rate/
 main
 t 20 rate 2 i 0
 t 30 rate 3 i 0

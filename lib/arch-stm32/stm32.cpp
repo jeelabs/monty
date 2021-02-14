@@ -20,8 +20,14 @@ UartBufDev< PinA<9>, PinA<10>, 100 > console;
 
 PinB<3> led;
 
+static void outch (int c) {
+    console.putc(c);
+}
+
+static auto outFun = outch;
+
 int printf(const char* fmt, ...) {
-    va_list ap; va_start(ap, fmt); veprintf(console.putc, fmt, ap); va_end(ap);
+    va_list ap; va_start(ap, fmt); veprintf(outFun, fmt, ap); va_end(ap);
     return 0;
 }
 
@@ -90,23 +96,32 @@ void printDevInfo () {
 
 struct LineSerial : Stacklet {
     Event incoming;
+    //Event outgoing;
     char buf [100]; // TODO avoid hard limit for input line length
     uint32_t fill = 0;
 
     LineSerial () {
-        irqId = incoming.regHandler();
+        rxId = incoming.regHandler();
+        txId = outQueue.regHandler();
         prevIsr = console.handler();
 
         console.handler() = []() {
             prevIsr();
             if (console.readable())
-                Stacklet::setPending(irqId);
+                Stacklet::setPending(rxId);
+            // TODO this triggers too often, even when there is no TX activity
+            if (console.xmit.almostEmpty())
+                Stacklet::setPending(txId);
         };
+
+        outFun = writer;
     }
 
     ~LineSerial () {
+        outFun = outch; // restore non-stacklet-aware version
         console.handler() = prevIsr;
         incoming.deregHandler();
+        outQueue.deregHandler();
     }
 
     auto run () -> bool override {
@@ -130,13 +145,37 @@ struct LineSerial : Stacklet {
 
     virtual auto exec (char const*) -> bool = 0;
 
-    // these are static because the replacement (static) console ISR uses them
+    static auto writeMax (uint8_t const* ptr, size_t len) -> size_t {
+        size_t i = 0;
+        while (i < len && console.writable())
+            console.putc(ptr[i++]);
+        return i;
+    }
+
+    static auto writeAll (uint8_t const* ptr, size_t len) -> size_t {
+        size_t i = 0;
+        while (i < len) {
+            i += writeMax(ptr + i, len - i);
+            outQueue.wait();
+            outQueue.clear();
+        }
+        return len;
+    }
+
+    static void writer (int c) {
+        writeAll((uint8_t const*) &c, 1);
+    }
+
+    // TODO messy use of static scope
     static void (*prevIsr)();
-    static uint32_t irqId;
+    static uint8_t rxId, txId;
+    static Event outQueue;
 };
 
 void (*LineSerial::prevIsr)();
-uint32_t LineSerial::irqId;
+uint8_t LineSerial::rxId;
+uint8_t LineSerial::txId;
+Event LineSerial::outQueue;
 
 struct HexSerial : LineSerial {
     static constexpr auto PERSIST_SIZE = 2048;
