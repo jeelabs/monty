@@ -25,6 +25,7 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 » Small code base, well under 10,000 lines of C++ for the core + VM  
 » Most non-hardware features can also be used on MacOS and Linux  
 » C++ and Python test suites are used to drive (and verify) progress  
+» Goals: support messaging, dataflow, and scripting on low-power µCs  
 » Non-goals: full Python conformance, replicating MicroPython  
 » This is experimental code: some things work, many don't, asserts will fail  
 
