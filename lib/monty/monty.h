@@ -804,7 +804,7 @@ namespace monty {
 // see stack.cpp - events, stacklets, and various call mechanisms
 
     //CG< type event
-    struct Event : List {
+    struct Event : Object {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type info;
@@ -817,6 +817,8 @@ namespace monty {
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
 
+        void marker () const override { markVec(queue); }
+
         auto regHandler () -> uint32_t;
         void deregHandler ();
 
@@ -828,12 +830,13 @@ namespace monty {
         static int queued;
         static Vector triggers;
     private:
+        Vector queue;
         bool value = false;
         int8_t id = -1;
     };
 
     //CG3 type <stacklet>
-    struct Stacklet : List {
+    struct Stacklet : Event, Vector {
         static Type info;
         auto type () const -> Type const& override;
         auto repr (Buffer&) const -> Value override;
@@ -852,6 +855,8 @@ namespace monty {
 
         static void exception (Value); // a safe way to current->raise()
         static void gcAll ();
+
+        void marker () const override { Event::marker(); markVec(*this); }
 
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html

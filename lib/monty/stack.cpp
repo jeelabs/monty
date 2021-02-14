@@ -66,14 +66,15 @@ void Event::deregHandler () {
 
 void Event::set () {
     value = true;
-    if (size() > 0) {
+    auto n = queue.size();
+    if (n > 0) {
         // insert all entries at head of tasks and remove them from this event
-        Stacklet::tasks.insert(0, size());
-        memcpy(Stacklet::tasks.begin(), begin(), size() * sizeof (Value));
+        Stacklet::tasks.insert(0, n);
+        memcpy(Stacklet::tasks.begin(), queue.begin(), n * sizeof (Value));
         if (id >= 0)
-            queued -= size();
+            queued -= n;
         assert(queued >= 0);
-        remove(0, size());
+        queue.remove(0, n);
     }
 }
 
@@ -81,7 +82,7 @@ void Event::wait () {
     if (!value) {
         if (id >= 0)
             ++queued;
-        Stacklet::suspend(*this);
+        Stacklet::suspend(queue);
     }
 }
 
