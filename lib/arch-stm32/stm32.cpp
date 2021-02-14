@@ -13,7 +13,7 @@ const auto mrfsSize = 32*1024;
 #if STM32F103xB
 UartBufDev< PinA<2>, PinA<3>, 100 > console;
 #elif STM32L432xx
-UartBufDev< PinA<2>, PinA<15>, 10 > console;
+UartBufDev< PinA<2>, PinA<15>, 100 > console;
 #else
 UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
@@ -24,7 +24,7 @@ static void outch (int c) {
     console.putc(c);
 }
 
-static void (*outFun)(int) = outch;
+static auto outFun = outch;
 
 int printf(const char* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(outFun, fmt, ap); va_end(ap);
@@ -109,11 +109,12 @@ struct LineSerial : Stacklet {
             prevIsr();
             if (console.readable())
                 Stacklet::setPending(rxId);
-            if (console.writable())
+            // TODO this triggers too often, even when there is no TX activity
+            if (console.xmit.almostEmpty())
                 Stacklet::setPending(txId);
         };
 
-        //outFun = writer;
+        outFun = writer;
     }
 
     ~LineSerial () {
@@ -144,11 +145,25 @@ struct LineSerial : Stacklet {
 
     virtual auto exec (char const*) -> bool = 0;
 
-    static void writer (int c) {
-        while (!console.writable())
+    static auto writeMax (uint8_t const* ptr, size_t len) -> size_t {
+        size_t i = 0;
+        while (i < len && console.writable())
+            console.putc(ptr[i++]);
+        return i;
+    }
+
+    static auto writeAll (uint8_t const* ptr, size_t len) -> size_t {
+        size_t i = 0;
+        while (i < len) {
+            i += writeMax(ptr + i, len - i);
             outQueue.wait();
-        console.putc(c);
-        outQueue.clear();
+            outQueue.clear();
+        }
+        return len;
+    }
+
+    static void writer (int c) {
+        writeAll((uint8_t const*) &c, 1);
     }
 
     // TODO messy use of static scope

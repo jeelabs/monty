@@ -5,8 +5,6 @@
 #include <cstring>
 
 extern "C" int printf (char const*, ...);
-extern "C" int puts (char const*);
-extern "C" int putchar (int);
 
 namespace monty {
 
