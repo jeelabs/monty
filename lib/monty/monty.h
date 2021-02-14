@@ -338,9 +338,9 @@ namespace monty {
     void markVec (Vector const&);
 
     struct ArgVec {
-        constexpr ArgVec (Vector const& v)
+        ArgVec (Vector const& v)
             : ArgVec (v, v.size()) {}
-        constexpr ArgVec (Vector const& v, int n, Value const* p)
+        ArgVec (Vector const& v, int n, Value const* p)
             : ArgVec (v, n, p - v.begin()) {}
         constexpr ArgVec (Vector const& v, int n, int o =0)
             : vec (v), num (n), off (o) {}
