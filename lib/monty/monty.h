@@ -1018,10 +1018,14 @@ namespace monty {
 // see repr.cpp - repr, printing, and buffering
 
     //CG3 type <buffer>
-    struct Buffer : Object {
+    struct Buffer : Bytes {
         static Type info;
         auto type () const -> Type const& override;
 
+        Buffer () {}
+        ~Buffer () override;
+
+        void write (uint8_t const* ptr, uint32_t num);
         void putc (char v) { write((uint8_t const*) &v, 1); }
         void puts (char const* s) { while (*s != 0) putc(*s++); }
         void print (char const* fmt, ...);
@@ -1031,8 +1035,6 @@ namespace monty {
         auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
         auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
 
-    protected:
-        virtual void write (uint8_t const* ptr, uint32_t num) const;
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
