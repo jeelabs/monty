@@ -330,6 +330,55 @@ auto arch::done () -> int {
 }
 
 namespace machine {
+    // FIXME this is an AWFUL fight with template types vs runtime settings!
+    //  all these template expansions lead to extreme code bloat :(
+
+    template< char C >
+    auto get (int pin) -> int {
+        return (MMIO32(Port<C>::idr) >> pin) & 1;
+    }
+
+    template< char C >
+    void set (int pin, int val) {
+        typedef Port<C> gpio;
+        uint16_t mask = 1U << pin;
+        gpio::mode(pin, Pinmode::out); // TODO implicit, really?
+        MMIO32(gpio::bsrr) = val ? mask : mask << 16;
+    }
+
+    struct Pins : Object {
+        static Type info;
+        auto type () const -> Type const& override;
+
+        auto attr (char const* name, Value&) const -> Value override {
+            assert(strlen(name) == 2);
+            int pin = atoi(name + 1);
+            switch (name[0]) {
+                case 'A': return get<'A'>(pin);
+                case 'B': return get<'B'>(pin);
+                case 'C': return get<'C'>(pin);
+            }
+            return 0;
+        }
+
+        auto setAt (Value arg, Value val) -> Value override {
+            assert(arg.isStr() && strlen(arg) >= 2 && val.isInt());
+            char port = arg[0];
+            int pin = atoi((char const*) arg + 1);
+            switch (port) {
+                case 'A': set<'A'>(pin, val); break;
+                case 'B': set<'B'>(pin, val); break;
+                case 'C': set<'C'>(pin, val); break;
+            }
+            return {};
+        }
+    };
+
+    Type Pins::info ("<machine.pins>");
+    auto Pins::type () const -> Type const& { return info; }
+
+    static Pins pins;
+
     Event tickEvent;
     int ms, tickerId;
     uint32_t start, last;
@@ -379,6 +428,7 @@ namespace machine {
     Function const fo_ticks (f_ticks);
 
     Lookup::Item const attrs [] = {
+        { "pins", pins },
         { "ticker", fo_ticker },
         { "ticks", fo_ticks },
     };

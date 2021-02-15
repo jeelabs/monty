@@ -8,15 +8,20 @@ def delay(n):
 async def task(rate):
     i = 0
     while True:
+        machine.pins.B3 = 1
+        delay(10)
+        machine.pins.B3 = 0
         delay(rate)
-        print('t', machine.ticks(), 'rate', rate, 'i', i)
         i += 1
 
-for i in [2, 3, 5]:
+for i in [25]:
     sys.tasks.append(task(i))
 
 async def timeout():
-    delay(20)
+    print(machine.pins)
+    for i in range(8):
+        delay(9)
+        print(i, machine.pins.B3, machine.ticks())
     machine.ticker()
 
 sys.tasks.append(timeout())
