@@ -188,8 +188,6 @@ static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
 Type const Object::info (Q(183,"<object>"));
-auto Object::type () const -> Type const& { return info; }
-
 Type const Inst::info (Q(184,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
@@ -223,34 +221,6 @@ Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
 
-auto    BoundMeth::type () const -> Type const& { return info; }
-auto       Buffer::type () const -> Type const& { return info; }
-auto         Cell::type () const -> Type const& { return info; }
-auto      Closure::type () const -> Type const& { return info; }
-auto     DictView::type () const -> Type const& { return info; }
-auto    Exception::type () const -> Type const& { return info; }
-auto     Function::type () const -> Type const& { return info; }
-auto     Iterator::type () const -> Type const& { return info; }
-auto       Lookup::type () const -> Type const& { return info; }
-auto       Method::type () const -> Type const& { return info; }
-auto       Module::type () const -> Type const& { return info; }
-auto         None::type () const -> Type const& { return info; }
-auto     Stacklet::type () const -> Type const& { return info; }
-auto        Array::type () const -> Type const& { return info; }
-auto         Bool::type () const -> Type const& { return info; }
-auto        Bytes::type () const -> Type const& { return info; }
-auto        Class::type () const -> Type const& { return info; }
-auto         Dict::type () const -> Type const& { return info; }
-auto        Event::type () const -> Type const& { return info; }
-auto          Int::type () const -> Type const& { return info; }
-auto         List::type () const -> Type const& { return info; }
-auto        Range::type () const -> Type const& { return info; }
-auto          Set::type () const -> Type const& { return info; }
-auto        Slice::type () const -> Type const& { return info; }
-auto          Str::type () const -> Type const& { return info; }
-auto        Super::type () const -> Type const& { return info; }
-auto        Tuple::type () const -> Type const& { return info; }
-auto         Type::type () const -> Type const& { return info; }
 //CG>
 
 static auto bi_print (ArgVec const& args) -> Value {

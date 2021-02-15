@@ -103,7 +103,7 @@ struct Bytecode; // forward decl
 
 struct Callable : Object {
     static Type info;
-    auto type () const -> Type const& override;
+    auto type () const -> Type const& override { return info; }
 
     Callable (Bytecode const& callee, Value pos, Value kw)
             : Callable (callee, nullptr, pos.ifType<Tuple>(), kw.ifType<Dict>()) {}
@@ -137,7 +137,7 @@ auto Callable::funcAt (int n) const -> Bytecode const& {
 struct PyVM : Stacklet {
     static Lookup const attrs;
     static Type info;
-    auto type () const -> Type const& override;
+    auto type () const -> Type const& override { return info; }
 
     struct Frame {
         //    <------- previous ------->  <---- actual ---->
@@ -1326,10 +1326,7 @@ auto Callable::call (ArgVec const& args) const -> Value {
 }
 
 Type Bytecode::info (Q(196,"<bytecode>"));
-auto Bytecode::type () const -> Type const& { return info; }
-
 Type Callable::info (Q(197,"<callable>"));
-auto Callable::type () const -> Type const& { return info; }
 
 static auto d_pyvm_send = Method::wrap(&PyVM::send);
 static Method const m_pyvm_send (d_pyvm_send);
@@ -1341,7 +1338,6 @@ static Lookup::Item const pyvmMap [] = {
 Lookup const PyVM::attrs (pyvmMap, sizeof pyvmMap);
 
 Type PyVM::info (Q(198,"<pyvm>"), nullptr, &PyVM::attrs);
-auto PyVM::type () const -> Type const& { return info; }
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)

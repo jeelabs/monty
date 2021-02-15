@@ -134,7 +134,7 @@ def TYPE(block, tag, *_):
         '    static auto create (ArgVec const&,Type const* =nullptr) -> Value;',
         '    static Lookup const attrs;',
         '    static Type info;',
-        '    auto type () const -> Type const& override;',
+        '    auto type () const -> Type const& override { return info; }',
         '    auto repr (Buffer&) const -> Value override;',
     ]
     if tag.startswith('<'):
@@ -174,7 +174,6 @@ def BUILTIN_TYPES(block, fname):
     out = []
     fmt1a = 'Type %12s::info (%s);'
     fmt1b = 'Type %8s::info (%-15s, %6s::create, &%s::attrs);'
-    fmt2 = 'auto %12s::type () const -> Type const& { return info; }'
     sep = True
     for tag, name, base in info:
         if tag.startswith('<'):
@@ -185,7 +184,6 @@ def BUILTIN_TYPES(block, fname):
             out.append(fmt1b % (name, q(tag), name, name))
     out.append('')
     for tag, name, base in info:
-        out.append(fmt2 % name)
         if not tag.startswith('<'):
             builtins[1].append('{ %-15s, %s::info },' % (q(tag), name))
     return out

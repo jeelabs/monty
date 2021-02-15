@@ -9,10 +9,10 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     return arch::loadFile(name);
 }
 
-struct Drain : Stacklet {
+struct Pipeline : Stacklet {
     Value feed;
 
-    Drain (Value src) : feed (src) {}
+    Pipeline (Value src) : feed (src) {}
 
     auto run () -> bool override {
         auto v = feed.asObj().next();
@@ -29,6 +29,9 @@ struct Drain : Stacklet {
 };
 
 struct Runner : Object {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+
     using Func = auto (*)(Runner*) -> Value;
     Func func;
     Runner* feed;
@@ -41,6 +44,8 @@ struct Runner : Object {
 
     void marker () const override { mark(feed); }
 };
+
+Type Runner::info ("<runner>");
 
 struct ArgRunner : Runner {
     int i = 0;
@@ -130,7 +135,7 @@ int main (int argc, char const** argv) {
     auto file = new Runner (fileRunner, args);
     auto py   = new Runner (pyRunner, file);
     auto cmd  = new Runner (cmdRunner, py);
-    Drain pipe (cmd);
+    Pipeline pipe (cmd);
 
     Stacklet::tasks.append(&pipe);
 

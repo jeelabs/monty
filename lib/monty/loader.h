@@ -11,7 +11,7 @@
 // was: CG3 type <bytecode>
 struct Bytecode : List {
     static Type info;
-    auto type () const -> Type const& override;
+    auto type () const -> Type const& override { return info; }
 
     auto fastSlotTop () const -> uint32_t { return stackSz; }
     auto excLevel () const -> uint32_t { return excDepth; }

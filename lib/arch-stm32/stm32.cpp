@@ -367,7 +367,7 @@ namespace machine {
 
     struct Pins : Object {
         static Type info;
-        auto type () const -> Type const& override;
+        auto type () const -> Type const& override { return info; }
 
         auto attr (char const* name, Value&) const -> Value override {
             assert(strlen(name) == 2);
@@ -385,7 +385,6 @@ namespace machine {
     };
 
     Type Pins::info ("<machine.pins>");
-    auto Pins::type () const -> Type const& { return info; }
 
     static Pins pins;
 
