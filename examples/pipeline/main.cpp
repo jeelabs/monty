@@ -24,6 +24,8 @@ struct Drain : Stacklet {
             v.dump("pipe?");
         return true;
     }
+
+    void marker () const override { feed.marker(); }
 };
 
 struct Runner : Object {
@@ -36,6 +38,8 @@ struct Runner : Object {
     auto next  () -> Value override {
         return func(feed);
     }
+
+    void marker () const override { mark(feed); }
 };
 
 struct ArgRunner : Runner {
