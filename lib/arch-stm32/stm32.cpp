@@ -18,8 +18,6 @@ UartBufDev< PinA<2>, PinA<15>, 100 > console;
 UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
 
-PinB<3> led;
-
 static void outch (int c) {
     console.putc(c);
 }
@@ -310,7 +308,6 @@ void arch::init () {
 #else
     console.baud(115200, fullSpeedClock());
 #endif
-    led.mode(Pinmode::out);
 
     printf("\n"); // TODO yuck, the uart TX sends a 0xFF junk char after reset
 
