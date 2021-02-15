@@ -10,6 +10,8 @@ Object
 ├─ None
 ├─ Bool
 ├─ Int
+├─ Event
+│  └─ Stacklet
 ├─ Bytes
 │  ├─ Str
 │  └─ Array
@@ -22,7 +24,6 @@ Object
    │     ├─ Type
    │     │  └─ Class
    │     └─ Inst
-   ├─ Stacklet
    └─ Closure
 ```
 
