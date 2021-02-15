@@ -1,6 +1,8 @@
 #include "monty.h"
 #include "arch.h"
 
+#include <cassert>
+
 using namespace monty;
 
 auto monty::vmImport (char const* name) -> uint8_t const* {
@@ -24,7 +26,19 @@ struct Drain : Stacklet {
     }
 };
 
-struct ArgRunner : Object {
+struct Runner : Object {
+    using Func = auto (*)(Runner*) -> Value;
+    Func func;
+    Runner* feed;
+
+    Runner (Func f =nullptr, Runner* in =nullptr) : func (f), feed (in) {}
+
+    auto next  () -> Value override {
+        return func(feed);
+    }
+};
+
+struct ArgRunner : Runner {
     int i = 0;
     int ac;
     char const** av;
@@ -38,39 +52,30 @@ struct ArgRunner : Object {
     }
 };
 
-struct FileRunner : Object {
-    Value feed;
-
-    FileRunner (Value src) : feed (src) {}
-
-    auto next  () -> Value override {
-        Value v = feed.asObj().next();
-        if (v.isStr()) {
-            auto data = arch::loadFile(v);
-            if (data != nullptr)
-                v = new Bytes (data, 2000); // FIXME, length is wrong
-        }
-        return v;
+static auto fileRunner (Runner* feed) -> Value {
+    assert(feed != nullptr);
+    Value v = feed->next();
+    if (v.isStr()) {
+        auto data = arch::loadFile(v);
+        if (data != nullptr)
+            v = new Bytes (data, 2000); // FIXME, length is wrong
     }
-};
+    return v;
+}
 
-struct PyRunner : Object {
-    Value feed;
-
-    PyRunner (Value src) : feed (src) {}
-
-    auto next  () -> Value override {
-        Value v = feed.asObj().next();
-        if (v.ifType<Bytes>() != nullptr) {
-            auto task = vmLaunch(v.asType<Bytes>().begin());
-            if (task != nullptr) {
-                Stacklet::tasks.append(task);
-                return 0;
-            }
+static auto pyRunner (Runner* feed) -> Value {
+    assert(feed != nullptr);
+    Value v = feed->next();
+    if (v.ifType<Bytes>() != nullptr) {
+        auto task = vmLaunch(v.asType<Bytes>().begin());
+        if (task != nullptr) {
+            Stacklet::tasks.append(task);
+            task->wait();
+            return 0;
         }
-        return v;
     }
-};
+    return v;
+}
 
 struct Command {
     char const* desc;
@@ -97,24 +102,19 @@ void helpCmd () {
         printf("  %s\n", cmd.desc);
 }
 
-struct CmdRunner : Object {
-    Value feed;
-
-    CmdRunner (Value src) : feed (src) {}
-
-    auto next  () -> Value override {
-        Value v = feed.asObj().next();
-        if (v.isStr()) {
-            char const* buf = v;
-            for (auto& cmd : commands)
-                if (memcmp(buf, cmd.desc, 2) == 0) {
-                    cmd.proc();
-                    return 0;
-                }
-        }
-        return v;
+static auto cmdRunner (Runner* feed) -> Value {
+    assert(feed != nullptr);
+    Value v = feed->next();
+    if (v.isStr()) {
+        char const* buf = v;
+        for (auto& cmd : commands)
+            if (memcmp(buf, cmd.desc, 2) == 0) {
+                cmd.proc();
+                return 0;
+            }
     }
-};
+    return v;
+}
 
 int main (int argc, char const** argv) {
     static uint8_t memPool [10*1024];
@@ -122,11 +122,11 @@ int main (int argc, char const** argv) {
 
     Event::triggers.append(0); // TODO get rid of this
 
-    ArgRunner  args (argc-1, argv+1);
-    FileRunner file (args);
-    PyRunner   py   (file);
-    CmdRunner  cmd  (py);
-    Drain      pipe (cmd);
+    auto args = new ArgRunner (argc-1, argv+1);
+    auto file = new Runner (fileRunner, args);
+    auto py   = new Runner (pyRunner, file);
+    auto cmd  = new Runner (cmdRunner, py);
+    Drain pipe (cmd);
 
     Stacklet::tasks.append(&pipe);
 
