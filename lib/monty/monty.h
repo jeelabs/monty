@@ -552,7 +552,7 @@ namespace monty {
 
         struct Item { Value k, v; }; // TODO plain const Value list or dict ?
 
-        constexpr Lookup (Item const* p, uint32_t sz)
+        constexpr Lookup (Item const* p =nullptr, uint32_t sz =0)
                         : items (p), count (sz / sizeof (Item)) {}
 
         auto operator[] (char const* key) const -> Value;

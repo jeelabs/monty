@@ -19,14 +19,13 @@ def EXCEPTION(block, name, base=''):
     excFuns.append('}')
     excFuns.append('static Function const f_%s (e_%s);' % (name, name))
     excDefs.append('{ %-29s, f_%s },' % (q(name), name))
-    excFuns.append('')
     return []
 
 def EXCEPTION_EMIT(block, sel='h'):
     if sel == 'h':
         return excHier
     if sel == 'f':
-        return excFuns[:-1]
+        return excFuns
     if sel == 'd':
         return excDefs
 
@@ -182,9 +181,6 @@ def BUILTIN_TYPES(block, fname):
             if sep: out.append('')
             sep = False
             out.append(fmt1b % (name, q(tag), name, name))
-    out.append('')
-    for tag, name, base in info:
-        if not tag.startswith('<'):
             builtins[1].append('{ %-15s, %s::info },' % (q(tag), name))
     return out
 

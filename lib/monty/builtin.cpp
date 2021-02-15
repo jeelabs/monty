@@ -90,97 +90,78 @@ static auto e_BaseException (ArgVec const& args) -> Value {
     return Exception::create(E::BaseException, args);
 }
 static Function const f_BaseException (e_BaseException);
-
 static auto e_Exception (ArgVec const& args) -> Value {
     return Exception::create(E::Exception, args);
 }
 static Function const f_Exception (e_Exception);
-
 static auto e_StopIteration (ArgVec const& args) -> Value {
     return Exception::create(E::StopIteration, args);
 }
 static Function const f_StopIteration (e_StopIteration);
-
 static auto e_ArithmeticError (ArgVec const& args) -> Value {
     return Exception::create(E::ArithmeticError, args);
 }
 static Function const f_ArithmeticError (e_ArithmeticError);
-
 static auto e_ZeroDivisionError (ArgVec const& args) -> Value {
     return Exception::create(E::ZeroDivisionError, args);
 }
 static Function const f_ZeroDivisionError (e_ZeroDivisionError);
-
 static auto e_AssertionError (ArgVec const& args) -> Value {
     return Exception::create(E::AssertionError, args);
 }
 static Function const f_AssertionError (e_AssertionError);
-
 static auto e_AttributeError (ArgVec const& args) -> Value {
     return Exception::create(E::AttributeError, args);
 }
 static Function const f_AttributeError (e_AttributeError);
-
 static auto e_EOFError (ArgVec const& args) -> Value {
     return Exception::create(E::EOFError, args);
 }
 static Function const f_EOFError (e_EOFError);
-
 static auto e_ImportError (ArgVec const& args) -> Value {
     return Exception::create(E::ImportError, args);
 }
 static Function const f_ImportError (e_ImportError);
-
 static auto e_LookupError (ArgVec const& args) -> Value {
     return Exception::create(E::LookupError, args);
 }
 static Function const f_LookupError (e_LookupError);
-
 static auto e_IndexError (ArgVec const& args) -> Value {
     return Exception::create(E::IndexError, args);
 }
 static Function const f_IndexError (e_IndexError);
-
 static auto e_KeyError (ArgVec const& args) -> Value {
     return Exception::create(E::KeyError, args);
 }
 static Function const f_KeyError (e_KeyError);
-
 static auto e_MemoryError (ArgVec const& args) -> Value {
     return Exception::create(E::MemoryError, args);
 }
 static Function const f_MemoryError (e_MemoryError);
-
 static auto e_NameError (ArgVec const& args) -> Value {
     return Exception::create(E::NameError, args);
 }
 static Function const f_NameError (e_NameError);
-
 static auto e_OSError (ArgVec const& args) -> Value {
     return Exception::create(E::OSError, args);
 }
 static Function const f_OSError (e_OSError);
-
 static auto e_RuntimeError (ArgVec const& args) -> Value {
     return Exception::create(E::RuntimeError, args);
 }
 static Function const f_RuntimeError (e_RuntimeError);
-
 static auto e_NotImplementedError (ArgVec const& args) -> Value {
     return Exception::create(E::NotImplementedError, args);
 }
 static Function const f_NotImplementedError (e_NotImplementedError);
-
 static auto e_TypeError (ArgVec const& args) -> Value {
     return Exception::create(E::TypeError, args);
 }
 static Function const f_TypeError (e_TypeError);
-
 static auto e_ValueError (ArgVec const& args) -> Value {
     return Exception::create(E::ValueError, args);
 }
 static Function const f_ValueError (e_ValueError);
-
 static auto e_UnicodeError (ArgVec const& args) -> Value {
     return Exception::create(E::UnicodeError, args);
 }
@@ -220,7 +201,6 @@ Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
 Type     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
-
 //CG>
 
 static auto bi_print (ArgVec const& args) -> Value {
@@ -402,17 +382,16 @@ static Lookup::Item const eventMap [] = {
 Lookup const Event::attrs (eventMap, sizeof eventMap);
 
 // added to satisfy linker
-
-Lookup const     Bool::attrs {nullptr, 0};
-Lookup const      Int::attrs {nullptr, 0};
-Lookup const    Bytes::attrs {nullptr, 0};
-Lookup const      Str::attrs (nullptr, 0);
-Lookup const    Range::attrs {nullptr, 0};
-Lookup const    Slice::attrs {nullptr, 0};
-Lookup const    Tuple::attrs {nullptr, 0};
-Lookup const      Set::attrs {nullptr, 0};
-Lookup const     Type::attrs {nullptr, 0};
-Lookup const    Class::attrs {nullptr, 0};
-Lookup const    Super::attrs {nullptr, 0};
-Lookup const     Inst::attrs {nullptr, 0};
-Lookup const    Array::attrs {nullptr, 0};
+Lookup const   Bool::attrs;
+Lookup const    Int::attrs;
+Lookup const  Bytes::attrs;
+Lookup const    Str::attrs;
+Lookup const  Array::attrs;
+Lookup const  Range::attrs;
+Lookup const  Slice::attrs;
+Lookup const  Tuple::attrs;
+Lookup const    Set::attrs;
+Lookup const   Type::attrs;
+Lookup const  Class::attrs;
+Lookup const  Super::attrs;
+Lookup const   Inst::attrs;
