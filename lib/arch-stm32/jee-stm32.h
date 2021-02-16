@@ -2,16 +2,17 @@
 
 namespace jeeh {
     struct Pin {
-        uint32_t _base =0;
-        uint8_t _port =0;
-        uint8_t _pin =0;
+        uint8_t _port, _pin;
         
-        Pin () {}
-        Pin (char port, int pin) : _base (Periph::gpio+0x400*(port-'A')),
-                                    _port (port-'A'), _pin (pin) {}
+        constexpr Pin () : _port (0xFF), _pin (0xFF) {}
+        constexpr Pin (char port, int pin) : _port (port-'A'), _pin (pin) {}
+
+        auto gpio32 (int off) const -> volatile uint32_t& {
+            return MMIO32(Periph::gpio + 0x400 * _port + off);
+        }
 
         auto isValid () const -> bool {
-            return _base != 0 && _port < 16 && _pin < 16;
+            return _port < 16 && _pin < 16;
         }
 
 #if STM32F1
@@ -23,14 +24,13 @@ namespace jeeh {
 
             if (mval == 0b1000 || mval == 0b1100) {
                 uint16_t mask = 1 << pin;
-                MMIO32(_base+bsrr) = mval & 0b0100 ? mask : mask << 16;
+                gpio32(bsrr) = mval & 0b0100 ? mask : mask << 16;
                 mval = 0b1000;
             }
 
             uint32_t cr = pin & 8 ? crh : crl;
             int shift = 4 * (pin & 7);
-            MMIO32(_base+cr) = (MMIO32(_base+cr) & ~(0xF << shift))
-                                                 | (mval << shift);
+            gpio32(cr) = (gpio32(cr) & ~(0xF << shift)) | (mval << shift);
         }
 #else
         enum { moder=0x00, typer=0x04, ospeedr=0x08, pupdr=0x0C, idr=0x10,
@@ -51,28 +51,27 @@ namespace jeeh {
 #elif STM32L4
             Periph::bitSet(Periph::rcc+0x4C, _port);
 #endif
-            MMIO32(_base+moder) = (MMIO32(_base+moder) & ~(3 << 2*_pin))
-                                                | ((mval>>3) << 2*_pin);
-            MMIO32(_base+typer) = (MMIO32(_base+typer) & ~(1 << _pin))
-                                            | (((mval>>2)&1) << _pin);
-            MMIO32(_base+pupdr) = (MMIO32(_base+pupdr) & ~(3 << 2*_pin))
-                                                 | ((mval&3) << 2*_pin);
-            MMIO32(_base+ospeedr) = (MMIO32(_base+ospeedr) & ~(3 << 2*_pin))
-                                                         | (0b11 << 2*_pin);
-            uint32_t afr = _pin & 8 ? afrh : afrl;
+            gpio32(moder) = (gpio32(moder) & ~(3 << 2*_pin))
+                                    | ((mval>>3) << 2*_pin);
+            gpio32(typer) = (gpio32(typer) & ~(1 << _pin))
+                                | (((mval>>2)&1) << _pin);
+            gpio32(pupdr) = (gpio32(pupdr) & ~(3 << 2*_pin))
+                                     | ((mval&3) << 2*_pin);
+            gpio32(ospeedr) = (gpio32(ospeedr) & ~(3 << 2*_pin))
+                                             | (0b11 << 2*_pin);
+            auto afr = _pin & 8 ? afrh : afrl;
             int shift = 4 * (_pin & 7);
-            MMIO32(_base+afr) = (MMIO32(_base+afr) & ~(0xF << shift))
-                                                    | (alt << shift);
+            gpio32(afr) = (gpio32(afr) & ~(0xF << shift)) | (alt << shift);
         }
 #endif
 
         auto read () const -> int {
-            return (MMIO32(_base+idr) >> _pin) & 1;
+            return (gpio32(idr) >> _pin) & 1;
         }
 
         void write (int v) const {
             auto mask = 1 << _pin;
-            MMIO32(_base+bsrr) = v ? mask : mask << 16;
+            gpio32(bsrr) = v ? mask : mask << 16;
         }
 
         // shorthand
@@ -144,8 +143,8 @@ namespace jeeh {
         Pin _mosi, _miso, _sclk, _nsel;
         uint8_t _cpol =0;
 
-        SpiGpio () {}
-        SpiGpio (Pin mo, Pin mi, Pin ck, Pin ss, int cp =0)
+        constexpr SpiGpio () {}
+        constexpr SpiGpio (Pin mo, Pin mi, Pin ck, Pin ss, int cp =0)
             : _mosi (mo), _miso (mi), _sclk (ck), _nsel (ss), _cpol (cp) {}
 
         void init () {
