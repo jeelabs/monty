@@ -416,7 +416,13 @@ namespace machine {
         auto recv (ArgVec const& args) -> Value {
             assert(args.num == 1);
             auto& a = args[0].asType<Array>();
-            return receive(a.begin(), a.size());
+            assert(a.size() >= 4);
+            auto r = receive(a.begin()+4, a.size()-4);
+            a[0] = rssi;
+            a[1] = lna;
+            a[2] = afc;
+            a[3] = afc >> 8;
+            return r+4;
         }
 
         auto xmit (ArgVec const& args) -> Value {
