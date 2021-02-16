@@ -7,6 +7,7 @@ def delay(n):
 
 async def task(rate):
     i = 0
+    machine.pins.B3 = "P" # mode: push-pull output
     while True:
         machine.pins.B3 = 1
         delay(10)

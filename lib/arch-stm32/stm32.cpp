@@ -338,10 +338,35 @@ namespace machine {
         }
 
         auto setAt (Value arg, Value val) -> Value override {
-            assert(arg.isStr() && strlen(arg) >= 2 && val.isInt());
+            assert(arg.isStr() && strlen(arg) >= 2);
             jeeh::Pin p (arg[0], atoi((char const*) arg + 1));
-            p.mode(Pinmode::out); // TODO implicit, really?
-            p.write(val);
+            if (val.isInt())
+                p.write(val);
+            else {
+                int a = 0, m = 0;
+                for (char const* s = val; *s != 0; ++s)
+                    switch (*s) {
+                        case 'A': m = (int) Pinmode::in_analog; break;
+                        case 'F': m = (int) Pinmode::in_float; break;
+                        case 'D': m = (int) Pinmode::in_pulldown; break;
+                        case 'U': m = (int) Pinmode::in_pullup; break;
+
+                        case 'P': m = (int) Pinmode::out; break; // push-pull
+                        case 'O': m = (int) Pinmode::out_od; break;
+
+                        case 'L': m = m & 0x1F; break;          // low speed
+                        case 'N': break;                        // normal speed
+                        case 'H': m = (m & 0x1F) | 0x40; break; // high speed
+                        case 'V': m = m | 0x60; break;          // very high
+
+                        default:
+                            if (*s < '0' || *s > '9')
+                                return {E::ValueError, "invalid pin mode", val};
+                            m |= 0x10; // alt mode
+                            a = 10 * a + *s - '0';
+                    }
+                p.mode((Pinmode) m, a);
+            }
             return {};
         }
     };
