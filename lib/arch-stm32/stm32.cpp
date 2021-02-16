@@ -343,29 +343,9 @@ namespace machine {
             if (val.isInt())
                 p.write(val);
             else {
-                int a = 0, m = 0;
-                for (char const* s = val; *s != 0; ++s)
-                    switch (*s) {
-                        case 'A': m = (int) Pinmode::in_analog; break;
-                        case 'F': m = (int) Pinmode::in_float; break;
-                        case 'D': m = (int) Pinmode::in_pulldown; break;
-                        case 'U': m = (int) Pinmode::in_pullup; break;
-
-                        case 'P': m = (int) Pinmode::out; break; // push-pull
-                        case 'O': m = (int) Pinmode::out_od; break;
-
-                        case 'L': m = m & 0x1F; break;          // low speed
-                        case 'N': break;                        // normal speed
-                        case 'H': m = (m & 0x1F) | 0x40; break; // high speed
-                        case 'V': m = m | 0x60; break;          // very high
-
-                        default:
-                            if (*s < '0' || *s > '9')
-                                return {E::ValueError, "invalid pin mode", val};
-                            m |= 0x10; // alt mode
-                            a = 10 * a + *s - '0';
-                    }
-                p.mode((Pinmode) m, a);
+                assert(val.isStr());
+                if (!p.mode((char const*) val))
+                    return {E::ValueError, "invalid pin mode", val};
             }
             return {};
         }
@@ -374,6 +354,47 @@ namespace machine {
     Type Pins::info ("<machine.pins>");
 
     static Pins pins;
+
+    struct Spi : Object, jeeh::SpiGpio {
+        static Lookup const attrs;
+        static Type info;
+        auto type () const -> Type const& override { return info; }
+
+        auto xfer (Value v) -> Value {
+            assert(v.isInt());
+            return transfer(v);
+        }
+    };
+
+    static auto d_spi_enable = Method::wrap(&Spi::enable);
+    static Method const m_spi_enable (d_spi_enable);
+
+    static auto d_spi_disable = Method::wrap(&Spi::disable);
+    static Method const m_spi_disable (d_spi_disable);
+
+    static auto d_spi_transfer = Method::wrap(&Spi::xfer);
+    static Method const m_spi_transfer (d_spi_transfer);
+
+    Lookup::Item const spiMap [] = {
+        { "enable", m_spi_enable },
+        { "disable", m_spi_disable },
+        { "transfer", m_spi_transfer },
+    };
+
+    Lookup const Spi::attrs (spiMap, sizeof spiMap);
+
+    Type Spi::info ("<machine.spi>", nullptr, &Spi::attrs);
+
+    auto f_spi (ArgVec const& args) -> Value {
+        assert(args.num == 1);
+        auto spi = new Spi;
+        auto err = jeeh::Pin::define(args[0].asType<Str>(), &spi->_mosi, 4);
+        if (err != nullptr)
+            return {E::ValueError, "invalid SPI pin", err};
+        return spi;
+    }
+
+    Function const fo_spi (f_spi);
 
     Event tickEvent;
     int ms, tickerId;
@@ -425,6 +446,7 @@ namespace machine {
 
     Lookup::Item const attrs [] = {
         { "pins", pins },
+        { "spi", fo_spi },
         { "ticker", fo_ticker },
         { "ticks", fo_ticks },
     };

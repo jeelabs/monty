@@ -913,6 +913,12 @@ namespace monty {
     // It's probably just a neophyte's version of STL's <functional> types ...
     // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
 
+    // obj.meth() const -> void
+    template< typename T >
+    auto argConv (void (T::*m)() const, Object& o, ArgVec const&) -> Value {
+        (((T&) o).*m)();
+        return {};
+    }
     // obj.meth() -> void
     template< typename T >
     auto argConv (void (T::*m)(), Object& o, ArgVec const&) -> Value {
