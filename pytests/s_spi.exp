@@ -1,4 +1,5 @@
 main
 <machine.spi>
 255
+ValueError("invalid SPI pin","abc,A7")
 done
