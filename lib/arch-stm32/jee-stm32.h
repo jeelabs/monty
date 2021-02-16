@@ -128,6 +128,7 @@ namespace jeeh {
                 *v = define(d);
                 if (!v->isValid())
                     break;
+                ++v;
                 auto p = strchr(d, ',');
                 if (n == 0)
                     return *d != 0 ? p : nullptr; // point to comma if more

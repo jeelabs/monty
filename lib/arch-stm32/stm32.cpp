@@ -327,6 +327,10 @@ auto arch::done () -> int {
 }
 
 namespace machine {
+    // machine.pins.B3 = "PL"   : set mode of PB3 to push-pull, low speed
+    // machine.pins.B3 = 1      : set output pin to 1
+    // if machine.pins.B3: ...  : get input pin state
+
     struct Pins : Object {
         static Type info;
         auto type () const -> Type const& override { return info; }
@@ -353,7 +357,12 @@ namespace machine {
 
     Type Pins::info ("<machine.pins>");
 
-    static Pins pins;
+    static Pins pins; // there is one static pins object, used via attr access
+
+    // spi = machine.spi("A4,A5,A6,A7")
+    // spi.enable()
+    // x = spi.transfer(123)
+    // spi.disable()
 
     struct Spi : Object, jeeh::SpiGpio {
         static Lookup const attrs;
@@ -388,9 +397,10 @@ namespace machine {
     auto f_spi (ArgVec const& args) -> Value {
         assert(args.num == 1);
         auto spi = new Spi;
-        auto err = jeeh::Pin::define(args[0].asType<Str>(), &spi->_mosi, 4);
-        if (err != nullptr)
+        auto err = jeeh::Pin::define(args[0], &spi->_mosi, 4);
+        if (err != nullptr || !spi->isValid())
             return {E::ValueError, "invalid SPI pin", err};
+        spi->init();
         return spi;
     }
 
