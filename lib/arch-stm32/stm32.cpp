@@ -1,8 +1,10 @@
 #include "monty.h"
 #include "arch.h"
 
-#include "jee-stm32.h"
+#include <jee.h>
 #include <jee/text-ihex.h>
+#include "jee-stm32.h"
+#include "jee-rf69.h"
 
 #include <cassert>
 #include <unistd.h>
@@ -406,6 +408,58 @@ namespace machine {
 
     Function const fo_spi (f_spi);
 
+    struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
+        static Lookup const attrs;
+        static Type info;
+        auto type () const -> Type const& override { return info; }
+
+        auto recv (ArgVec const& args) -> Value {
+            assert(args.num == 1);
+            auto& a = args[0].asType<Array>();
+            return receive(a.begin(), a.size());
+        }
+
+        auto xmit (ArgVec const& args) -> Value {
+            assert(args.num == 2 && args[0].isInt());
+            auto& a = args[1].asType<Array>();
+            send(args[0], a.begin(), a.size());
+            return {};
+        }
+    };
+
+    static auto d_rf69_receive = Method::wrap(&RF69::recv);
+    static Method const m_rf69_receive (d_rf69_receive);
+
+    static auto d_rf69_send = Method::wrap(&RF69::xmit);
+    static Method const m_rf69_send (d_rf69_send);
+
+    static auto d_rf69_sleep = Method::wrap(&RF69::sleep);
+    static Method const m_rf69_sleep (d_rf69_sleep);
+
+    Lookup::Item const rf69Map [] = {
+        { "receive", m_rf69_receive },
+        { "send", m_rf69_send },
+        { "sleep", m_rf69_sleep },
+    };
+
+    Lookup const RF69::attrs (rf69Map, sizeof rf69Map);
+
+    Type RF69::info ("<machine.rf69>", nullptr, &RF69::attrs);
+
+    auto f_rf69 (ArgVec const& args) -> Value {
+        assert(args.num == 4);
+        assert(args[1].isInt() && args[2].isInt() && args[3].isInt());
+        auto rf69 = new RF69;
+        auto err = jeeh::Pin::define(args[0], &rf69->spi._mosi, 4);
+        if (err != nullptr || !rf69->spi.isValid())
+            return {E::ValueError, "invalid SPI pin", err};
+        rf69->spi.init();
+        rf69->init(args[1], args[2], args[3]);
+        return rf69;
+    }
+
+    Function const fo_rf69 (f_rf69);
+
     Event tickEvent;
     int ms, tickerId;
     uint32_t start, last;
@@ -457,6 +511,7 @@ namespace machine {
     Lookup::Item const attrs [] = {
         { "pins", pins },
         { "spi", fo_spi },
+        { "rf69", fo_rf69 },
         { "ticker", fo_ticker },
         { "ticks", fo_ticks },
     };
