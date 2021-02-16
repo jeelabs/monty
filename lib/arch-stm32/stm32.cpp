@@ -1,7 +1,7 @@
 #include "monty.h"
 #include "arch.h"
 
-#include <jee.h>
+#include "jee-stm32.h"
 #include <jee/text-ihex.h>
 
 #include <cassert>
@@ -327,59 +327,21 @@ auto arch::done () -> int {
 }
 
 namespace machine {
-    // FIXME what an AWFUL fight with JeeH's template types vs runtime settings!
-    //  the following Pin* functions should probably be moved into JeeH ...
-
-    static void PinMode (char port, int pin, Pinmode mode, int alt =0) {
-        typedef Port<'A'> base;
-        auto off = 0x400 * (port - 'A');
-
-        // enable GPIOx clock
-        MMIO32(Periph::rcc + 0x4C) |= 1 << (port-'A');
-
-        auto mval = static_cast<int>(mode);
-        MMIO32(off+base::moder) = (MMIO32(off+base::moder) & ~(3 << 2*pin))
-                                    | ((mval >> 3) << 2*pin);
-        MMIO32(off+base::typer) = (MMIO32(off+base::typer) & ~(1 << pin))
-                                    | (((mval >> 2) & 1) << pin);
-        MMIO32(off+base::pupdr) = (MMIO32(off+base::pupdr) & ~(3 << 2*pin))
-                                    | ((mval & 3) << 2*pin);
-        MMIO32(off+base::ospeedr) = (MMIO32(off+base::ospeedr) & ~(3 << 2*pin))
-                                    | (0b11 << 2*pin);
-
-        uint32_t afr = pin & 8 ? base::afrh : base::afrl;
-        int shift = 4 * (pin & 7);
-        MMIO32(off+afr) = (MMIO32(off+afr) & ~(0xF << shift)) | (alt << shift);
-    }
-
-    static auto PinRead (char port, int pin) -> int {
-        typedef Port<'A'> base;
-        auto off = 0x400 * (port - 'A');
-        return (MMIO32(off+base::idr) >> pin) & 1;
-    }
-
-    static void PinWrite (char port, int pin, int val) {
-        typedef Port<'A'> base;
-        auto off = 0x400 * (port - 'A');
-        uint16_t mask = 1U << pin;
-        MMIO32(off+base::bsrr) = val ? mask : mask << 16;
-    }
-
     struct Pins : Object {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
         auto attr (char const* name, Value&) const -> Value override {
-            assert(strlen(name) == 2);
-            return PinRead(name[0], atoi(name + 1));
+            assert(strlen(name) >= 2);
+            jeeh::Pin p (name[0], atoi(name + 1));
+            return p.read();
         }
 
         auto setAt (Value arg, Value val) -> Value override {
             assert(arg.isStr() && strlen(arg) >= 2 && val.isInt());
-            char port = arg[0];
-            int pin = atoi((char const*) arg + 1);
-            PinMode(port, pin, Pinmode::out); // TODO implicit, really?
-            PinWrite(port, pin, val);
+            jeeh::Pin p (arg[0], atoi((char const*) arg + 1));
+            p.mode(Pinmode::out); // TODO implicit, really?
+            p.write(val);
             return {};
         }
     };
