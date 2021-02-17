@@ -502,6 +502,7 @@ namespace monty {
     //CG>
         constexpr Bytes () {}
         Bytes (void const*, uint32_t =0);
+        ~Bytes () override;
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
@@ -616,6 +617,7 @@ namespace monty {
         auto repr (Buffer&) const -> Value override;
     //CG>
         constexpr List () {}
+        ~List () override;
 
         auto pop (int idx) -> Value;
         void append (Value v);
@@ -852,6 +854,9 @@ namespace monty {
 
         uint16_t ms = 0;
         int8_t sema = -1;
+
+        Stacklet () {}
+        ~Stacklet () override;
 
         auto binop (BinOp, Value) const -> Value override;
 

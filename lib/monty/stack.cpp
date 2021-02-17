@@ -101,6 +101,8 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
     return new Event;
 }
 
+Stacklet::~Stacklet () {}
+
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
     assert(op == BinOp::Equal);
     return Value::asBool(rhs.isObj() && this == &rhs.obj());
