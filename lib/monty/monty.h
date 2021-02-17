@@ -90,6 +90,7 @@ namespace monty {
     struct Buffer;
     struct Type;
     struct Range;
+    struct ArgVec;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -179,10 +180,16 @@ namespace monty {
     };
 
     struct Value {
+        using Func = auto (*)(ArgVec const&) -> Value;
         enum Tag { Nil, Int, Str, Obj };
 
         constexpr Value () : v (0) {}
         constexpr Value (int arg) : v (arg * 2 + 1) {}
+#if NATIVE
+                  Value (Func arg) : v ((uintptr_t) arg | 1) {}
+#else
+        constexpr Value (Func arg) : f (arg) {}
+#endif
         constexpr Value (Q const& arg) : v (arg.id * 4 + 2) {}
                   Value (char const* arg);
         constexpr Value (Object const* arg) : p (arg) {} // TODO keep?
@@ -194,6 +201,7 @@ namespace monty {
         auto obj () const -> Object& { return *(Object*) v; }
         auto asObj () const -> Object&; // create int/str object if needed
         auto asInt () const -> int64_t;
+        auto asFun (ArgVec const& args) const -> Value;
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
@@ -240,6 +248,7 @@ namespace monty {
         union {
             uintptr_t v;
             const void* p;
+            Func f;
         };
     };
 
@@ -892,22 +901,6 @@ namespace monty {
         static Dict loaded;
     };
 
-    //CG3 type <function>
-    struct Function : Object {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-        using Prim = auto (*)(ArgVec const&) -> Value;
-
-        constexpr Function (Prim f) : func (f) {}
-
-        auto call (ArgVec const& args) const -> Value override {
-            return func(args);
-        }
-
-    private:
-        Prim func;
-    };
-
     // Horrendous C++11 ... this wraps several different argument calls into a
     // virtual MethodBase object, which Method can then call in a generic way.
     // It's probably just a neophyte's version of STL's <functional> types ...
@@ -1066,7 +1059,7 @@ namespace monty {
 
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
-        static auto findId (Function const&) -> int; // find in builtinsMap
+        static auto findId (Value) -> int; // find in builtinsMap
 
         void marker () const override;
     private:

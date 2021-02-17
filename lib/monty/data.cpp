@@ -122,6 +122,17 @@ auto Value::asInt () const -> int64_t {
     return asType<struct Int>();
 }
 
+auto Value::asFun (ArgVec const& args) const -> Value {
+    if (isInt())
+#if NATIVE
+        return ((Func) (v&~1))(args);
+#else
+        return f(args);
+#endif
+    assert(isObj());
+    return obj().call(args);
+}
+
 bool Value::truthy () const {
     switch (tag()) {
         case Nil: break;

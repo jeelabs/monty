@@ -406,8 +406,6 @@ namespace machine {
         return spi;
     }
 
-    Function const fo_spi (f_spi);
-
     struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
         static Lookup const attrs;
         static Type info;
@@ -464,8 +462,6 @@ namespace machine {
         return rf69;
     }
 
-    Function const fo_rf69 (f_rf69);
-
     Event tickEvent;
     int ms, tickerId;
     uint32_t start, last;
@@ -506,20 +502,16 @@ namespace machine {
         return tickEvent;
     }
 
-    Function const fo_ticker (f_ticker);
-
     auto f_ticks (ArgVec const&) -> Value {
         return msNow();
     }
 
-    Function const fo_ticks (f_ticks);
-
     Lookup::Item const attrs [] = {
         { "pins", pins },
-        { "spi", fo_spi },
-        { "rf69", fo_rf69 },
-        { "ticker", fo_ticker },
-        { "ticks", fo_ticks },
+        { "spi", f_spi },
+        { "rf69", f_rf69 },
+        { "ticker", f_ticker },
+        { "ticks", f_ticks },
     };
 }
 

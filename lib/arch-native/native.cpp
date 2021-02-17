@@ -90,17 +90,13 @@ namespace machine {
         return tickEvent;
     }
 
-    Function const fo_ticker (f_ticker);
-
     auto f_ticks (ArgVec const&) -> Value {
         return msNow();
     }
 
-    Function const fo_ticks (f_ticks);
-
     Lookup::Item const attrs [] = {
-        { "ticker", fo_ticker },
-        { "ticks", fo_ticks },
+        { "ticker", f_ticker },
+        { "ticks", f_ticks },
     };
 }
 
