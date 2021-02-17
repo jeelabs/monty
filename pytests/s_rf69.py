@@ -1,4 +1,13 @@
-machine.dog(250) # get out of hang in init when RF69 is not present
+# The RFM69 module is connected to the Nucleo-L432 as follows:
+#
+#   | Nucleo | STM32 | RFM69 |
+#   |--------|-------|-------|
+#   |   D2   | PA12  | NSS   |
+#   |   D3   | PB0   | SCK   |
+#   |   D4   | PB7   | MOSI  |
+#   |   D5   | PB6   | MISO  |
+
+machine.dog(250) # avoid hang in init if the RF69 is not present
 
 evt = machine.ticker(10)
 
