@@ -1,6 +1,6 @@
 evt = machine.ticker(10)
 
-rf69 = machine.rf69("A4,A5,A6,A7", 63, 42, 868)
+rf69 = machine.rf69("B7,B6,B0,A12", 63, 42, 868)
 print(machine.ticks(), type(rf69))
 
 async def loop():
