@@ -412,8 +412,8 @@ namespace machine {
         auto type () const -> Type const& override { return info; }
 
         auto recv (ArgVec const& args) -> Value {
-            assert(args.num == 1);
-            auto& a = args[0].asType<Array>();
+            assert(args.num == 2);
+            auto& a = args[1].asType<Array>();
             assert(a.size() >= 4);
             auto r = receive(a.begin()+4, a.size()-4);
             a[0] = rssi;
