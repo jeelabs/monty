@@ -506,12 +506,30 @@ namespace machine {
         return msNow();
     }
 
+    auto f_dog (ArgVec const& args) -> Value {
+        int count = 4095;
+        if (args.num > 0 && args[0].isInt())
+            count = args[0];
+
+        static Iwdg dog;
+        dog.reload(count);
+        return {};
+    }
+
+    auto f_kick (ArgVec const& args) -> Value {
+        assert(args.num == 0);
+        Iwdg::kick();
+        return {};
+    }
+
     Lookup::Item const attrs [] = {
         { "pins", pins },
         { "spi", f_spi },
         { "rf69", f_rf69 },
         { "ticker", f_ticker },
         { "ticks", f_ticks },
+        { "dog", f_dog },
+        { "kick", f_kick },
     };
 }
 

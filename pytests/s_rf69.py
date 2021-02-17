@@ -1,3 +1,5 @@
+machine.dog(200) # get out of hang in init when RF69 is not present
+
 evt = machine.ticker(10)
 
 rf69 = machine.rf69("B7,B6,B0,A12", 63, 42, 868)
