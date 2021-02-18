@@ -5,7 +5,7 @@ namespace jet {
         void marker () const override;
     };
 
-    struct Flow : Stacklet {
+    struct Flow : Object {
         Array _fanout;  // number of outgoing wires per outlet
         Array _wires;   // ieach one is stored as an EndPoint
         Array _index;   // offset into _state
@@ -38,12 +38,6 @@ namespace jet {
         auto entry (int i) const -> ArgVec {
             auto off = offset (i);
             return {_state, off, offset(i+1)-off};
-        }
-
-        auto run () -> bool override {
-            printf("Hello flow\n");
-            current = nullptr;
-            return false;
         }
 
         void marker () const override;

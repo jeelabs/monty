@@ -17,5 +17,4 @@ void Flow::marker () const {
     mark(_wires);
     mark(_index);
     markVec(_state);
-    Stacklet::marker();
 }

@@ -1,9 +1,7 @@
 #include "monty.h"
-#include "jet.h"
 #include "arch.h"
 
 using namespace monty;
-using namespace jet;
 
 auto monty::vmImport (char const* name) -> uint8_t const* {
     return arch::importer(name); // TODO get rid of this
@@ -15,8 +13,11 @@ int main (int argc, char const** argv) {
 
     Event::triggers.append(0); // TODO get rid of this
 
-    auto task = new Flow;
-    Stacklet::tasks.append(task);
+    auto task = argc > 1 ? vmLaunch(argv[1]) : nullptr;
+    if (task != nullptr)
+        Stacklet::tasks.append(task);
+    else
+        printf("no bytecode\n");
 
     while (Stacklet::runLoop()) {}
 
