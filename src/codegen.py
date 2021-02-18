@@ -9,17 +9,22 @@ excHier = []
 excFuns = []
 excDefs = []
 
-def EXCEPTION(block, name, base=''):
-    id = len(excHier)
-    baseId = -1 if base == '' else excIds[base]
-    excIds[name] = id
-    excHier.append('{ %-29s, %2d }, // %2d -> %s' % (q(name), baseId, id, base))
-    excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
-    excFuns.append('    return Exception::create(E::%s, args);' % name)
-    excFuns.append('}')
-    excFuns.append('static Function const fo_%s (e_%s);' % (name, name))
-    excDefs.append('{ %-29s, fo_%s },' % (q(name), name))
-    return []
+def EXCEPTIONS(block):
+    out = []
+    for line in block:
+        id = len(excHier)
+        name, _, base = line.split()
+        name = name.strip(",")
+        baseId = -1 if base == '-' else excIds[base]
+        excIds[name] = id
+        excHier.append('{ %-29s, %2d }, // %2d -> %s' % (q(name), baseId, id, base))
+        excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
+        excFuns.append('    return Exception::create(E::%s, args);' % name)
+        excFuns.append('}')
+        excFuns.append('static Function const fo_%s (e_%s);' % (name, name))
+        excDefs.append('{ %-29s, fo_%s },' % (q(name), name))
+        out.append("%-20s // %s" % (name + ",", base))
+    return out
 
 def EXCEPTION_EMIT(block, sel='h'):
     if sel == 'h':

@@ -28,9 +28,9 @@ namespace monty {
         "\x00\x07\x06\x07\x0A\x07\x10\x07\x16\x07\x1F\x07\x25\x07\x2A\x07"
         "\x31\x07\x37\x07\x3D\x07\x43\x07\x4A\x07\x50\x07\x54\x07\x5A\x07"
         "\x62\x07\x68\x07\x6B\x07\x71\x07\x79\x07\x88\x07\x8E\x07\x96\x07"
-        "\xA1\x07\xAC\x07\xB3\x07\xBD\x07\xCA\x07\xD0\x07\xD6\x07\xDC\x07"
+        "\xA3\x07\xAE\x07\xB9\x07\xC0\x07\xCA\x07\xD0\x07\xD6\x07\xDC\x07"
         "\xE8\x07\xF1\x07\xF8\x07\x02\x08\x0D\x08\x19\x08\x24\x08\x2F\x08"
-        "\x38\x08\x41\x08\x48\x08\x53\x08\x5C\x08\x67\x08\x6B\x08\x73\x08"
+        "\x38\x08\x41\x08\x48\x08\x53\x08\x5C\x08\x67\x08\x6C\x08\x70\x08"
         "\x78\x08"
         // index [0..401], hashes [402..600], 199 strings [601..2167]
         "\x05\x7A\xB0\x85\x8F\x8A\xBD\xFA\xA7\x2B\xFD\x6D\x45\x40\x26\xF7"
@@ -43,9 +43,9 @@ namespace monty {
         "\xCE\xB9\x0B\x42\x90\xD1\x1C\x2A\xBF\x2D\x54\x1A\xB7\x4B\xF9\x63"
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
-        "\xB7\x4E\x7D\x98\xE6\x5B\xEC\xC9\x61\xD5\xE0\x17\x64\xBF\x40\x8F"
-        "\x15\x03\x22\x7C\xAB\xB5\xC1\xA7\xE1\x56\xB0\xB0\x25\x05\x45\xF8"
-        "\x4D\xF4\xB2\x2E\xBC\x60\x8E"
+        "\xB7\x4E\x7D\x98\xE6\x5B\xEC\xC9\x61\xD5\xE0\x17\x64\xBF\x22\x40"
+        "\x8F\x15\x03\x7C\xAB\xB5\xC1\xA7\xE1\x56\xB0\xB0\x25\x05\x45\xF8"
+        "\x4D\xF4\xB2\x2E\x8E\xBC\x60"
         // found 142 distinct hashes
         ""                     "\0" // 1
         "__dir__"              "\0" // 2
@@ -221,11 +221,11 @@ namespace monty {
         "implementation"       "\0" // 172
         "monty"                "\0" // 173
         "version"              "\0" // 174
-        "<bytecode>"           "\0" // 175
-        "<callable>"           "\0" // 176
-        "<pyvm>"               "\0" // 177
-        "__bases__"            "\0" // 178
-        "UnicodeError"         "\0" // 179
+        "UnicodeError"         "\0" // 175
+        "<bytecode>"           "\0" // 176
+        "<callable>"           "\0" // 177
+        "<pyvm>"               "\0" // 178
+        "__bases__"            "\0" // 179
         "array"                "\0" // 180
         "class"                "\0" // 181
         "slice"                "\0" // 182
@@ -243,9 +243,9 @@ namespace monty {
         "<stacklet>"           "\0" // 194
         "<object>"             "\0" // 195
         "<instance>"           "\0" // 196
-        "sys"                  "\0" // 197
-        "machine"              "\0" // 198
-        "wait"                 "\0" // 199
+        "wait"                 "\0" // 197
+        "sys"                  "\0" // 198
+        "machine"              "\0" // 199
         //CG>
     ;
 
