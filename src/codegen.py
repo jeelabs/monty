@@ -23,6 +23,8 @@ def WRAPPERS(block):
     out = []
     types = list(funmeths.keys())
     types.sort()
+    for t in types:
+        funmeths[t].sort()
 
     for f in funmeths[""]:
         out.append("static Function const fo_%s (f_%s);" % (f, f))
@@ -35,11 +37,11 @@ def WRAPPERS(block):
             out.append(fmt1 % (l, f, t, f))
             out.append(fmt2 % (l, f, l, f))
         out.append("")
-        out.append("static Lookup::Item const %sMap [] = {" % l)
+        out.append("static Lookup::Item const %s_map [] = {" % l)
         for f in funmeths[t]:
             out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
         out.append("};")
-        out.append("Lookup const %s::attrs (%sMap, sizeof %sMap);" % (t, l, l))
+        out.append("Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l))
 
     return out
 

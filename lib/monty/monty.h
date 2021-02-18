@@ -893,12 +893,13 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
 
-        Module (Lookup const& lu) : Dict (&lu) {}
+        Module (Lookup const& lu =builtins) : Dict (&lu) {}
 
         auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
 
+        static Lookup const builtins;
         static Dict loaded;
     };
 
@@ -1084,8 +1085,6 @@ namespace monty {
 
         auto binop (BinOp, Value) const -> Value override;
     };
-
-    extern Lookup const builtins;
 
 // see library.cpp - runtime library functions for several datatypes
     void libInstall ();

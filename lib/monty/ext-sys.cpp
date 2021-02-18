@@ -38,18 +38,18 @@ static Function const fo_gc (f_gc);
 static Function const fo_gcmax (f_gcmax);
 static Function const fo_gcstats (f_gcstats);
 
-static Lookup::Item const lo_sys [] = {
-    { Q(166,"tasks"), Stacklet::tasks },
-    { Q(167,"modules"), Module::loaded },
-    { Q(168,"event"), fo_event },
-    { Q(169,"gc"), fo_gc },
-    { Q(170,"gcmax"), fo_gcmax },
-    { Q(171,"gcstats"), fo_gcstats },
-    { Q(172,"implementation"), Q(173,"monty") },
+static Lookup::Item const sys_map [] = {
+    { Q(167,"tasks"), Stacklet::tasks },
+    { Q(168,"modules"), Module::loaded },
+    { Q(169,"event"), fo_event },
+    { Q(170,"gc"), fo_gc },
+    { Q(171,"gcmax"), fo_gcmax },
+    { Q(172,"gcstats"), fo_gcstats },
+    { Q(173,"implementation"), Q(174,"monty") },
 #ifdef VERSION
-    { Q(174,"version"), VERSION },
+    { Q(175,"version"), VERSION },
 #endif
 };
 
-static Lookup const ma_sys (lo_sys, sizeof lo_sys);
+static Lookup const ma_sys (sys_map, sizeof sys_map);
 extern Module const m_sys (ma_sys);

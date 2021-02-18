@@ -14,6 +14,8 @@ Value const monty::Null  {None::nullObj};
 Value const monty::False {Bool::falseObj};
 Value const monty::True  {Bool::trueObj};
 
+Type const Object::info (Q(166,"<object>"));
+
 constexpr int QID_RAM_BASE = 32*1024;
 constexpr int QID_RAM_LAST = 48*1024;
 

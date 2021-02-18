@@ -8,9 +8,6 @@ using namespace monty;
 extern Module const m_sys;
 extern Module const m_machine;
 
-Type const Object::info (Q(196,"<object>"));
-Type const Inst::info (Q(197,"<instance>"));
-
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
@@ -176,19 +173,22 @@ static Lookup::Item const exceptionMap [] = {
     { Q( 50,"RuntimeError"),         1 }, // 16 -> Exception
     { Q( 47,"NotImplementedError"), 16 }, // 17 -> RuntimeError
     { Q( 55,"ValueError"),           1 }, // 18 -> Exception
-    { Q(175,"UnicodeError"),        18 }, // 19 -> ValueError
+    { Q(176,"UnicodeError"),        18 }, // 19 -> ValueError
     //CG>
 };
 
 Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
 
 //CG< wrappers
-static Function const fo_print (f_print);
-static Function const fo_iter (f_iter);
-static Function const fo_next (f_next);
-static Function const fo_len (f_len);
 static Function const fo_abs (f_abs);
 static Function const fo_hash (f_hash);
+static Function const fo_iter (f_iter);
+static Function const fo_len (f_len);
+static Function const fo_next (f_next);
+static Function const fo_print (f_print);
+
+static auto m_dict_items = Method::wrap(&Dict::items);
+static Method const mo_dict_items (m_dict_items);
 
 static auto m_dict_keys = Method::wrap(&Dict::keys);
 static Method const mo_dict_keys (m_dict_keys);
@@ -196,34 +196,28 @@ static Method const mo_dict_keys (m_dict_keys);
 static auto m_dict_values = Method::wrap(&Dict::values);
 static Method const mo_dict_values (m_dict_values);
 
-static auto m_dict_items = Method::wrap(&Dict::items);
-static Method const mo_dict_items (m_dict_items);
-
-static Lookup::Item const dictMap [] = {
+static Lookup::Item const dict_map [] = {
+    { Q(102,"items"), mo_dict_items },
     { Q(106,"keys"), mo_dict_keys },
     { Q(163,"values"), mo_dict_values },
-    { Q(102,"items"), mo_dict_items },
 };
-Lookup const Dict::attrs (dictMap, sizeof dictMap);
-
-static auto m_event_wait = Method::wrap(&Event::wait);
-static Method const mo_event_wait (m_event_wait);
-
-static auto m_event_set = Method::wrap(&Event::set);
-static Method const mo_event_set (m_event_set);
+Lookup const Dict::attrs (dict_map, sizeof dict_map);
 
 static auto m_event_clear = Method::wrap(&Event::clear);
 static Method const mo_event_clear (m_event_clear);
 
-static Lookup::Item const eventMap [] = {
-    { Q(180,"wait"), mo_event_wait },
-    { Q(140,"set"), mo_event_set },
-    { Q( 70,"clear"), mo_event_clear },
-};
-Lookup const Event::attrs (eventMap, sizeof eventMap);
+static auto m_event_set = Method::wrap(&Event::set);
+static Method const mo_event_set (m_event_set);
 
-static auto m_list_pop = Method::wrap(&List::pop);
-static Method const mo_list_pop (m_list_pop);
+static auto m_event_wait = Method::wrap(&Event::wait);
+static Method const mo_event_wait (m_event_wait);
+
+static Lookup::Item const event_map [] = {
+    { Q( 70,"clear"), mo_event_clear },
+    { Q(140,"set"), mo_event_set },
+    { Q(182,"wait"), mo_event_wait },
+};
+Lookup const Event::attrs (event_map, sizeof event_map);
 
 static auto m_list_append = Method::wrap(&List::append);
 static Method const mo_list_append (m_list_append);
@@ -231,12 +225,15 @@ static Method const mo_list_append (m_list_append);
 static auto m_list_clear = Method::wrap(&List::clear);
 static Method const mo_list_clear (m_list_clear);
 
-static Lookup::Item const listMap [] = {
-    { Q(120,"pop"), mo_list_pop },
+static auto m_list_pop = Method::wrap(&List::pop);
+static Method const mo_list_pop (m_list_pop);
+
+static Lookup::Item const list_map [] = {
     { Q( 60,"append"), mo_list_append },
     { Q( 70,"clear"), mo_list_clear },
+    { Q(120,"pop"), mo_list_pop },
 };
-Lookup const List::attrs (listMap, sizeof listMap);
+Lookup const List::attrs (list_map, sizeof list_map);
 //CG>
 
 static Lookup::Item const builtinsMap [] = {
@@ -261,20 +258,20 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 50,"RuntimeError"),        fo_RuntimeError },
     { Q( 47,"NotImplementedError"), fo_NotImplementedError },
     { Q( 55,"ValueError"),          fo_ValueError },
-    { Q(175,"UnicodeError"),        fo_UnicodeError },
+    { Q(176,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(181,"array"), Array::info },
+    { Q(183,"array"), Array::info },
     { Q( 62,"bool"),  Bool::info },
     { Q( 66,"bytes"), Bytes::info },
-    { Q(182,"class"), Class::info },
+    { Q(184,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
-    { Q(168,"event"), Event::info },
+    { Q(169,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
     { Q(140,"set"),   Set::info },
-    { Q(183,"slice"), Slice::info },
+    { Q(185,"slice"), Slice::info },
     { Q(151,"str"),   Str::info },
     { Q(154,"super"), Super::info },
     { Q(157,"tuple"), Tuple::info },
@@ -292,7 +289,7 @@ static Lookup::Item const builtinsMap [] = {
 #endif
 };
 
-Lookup const monty::builtins (builtinsMap, sizeof builtinsMap);
+Lookup const Module::builtins (builtinsMap, sizeof builtinsMap);
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
     extra() = { .code=exc, .ipOff=0, .callee=nullptr };
@@ -333,31 +330,31 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
 }
 
 //CG< type-info
-Type    BoundMeth::info (Q(184,"<boundmeth>"));
-Type       Buffer::info (Q(185,"<buffer>"));
-Type         Cell::info (Q(186,"<cell>"));
-Type      Closure::info (Q(187,"<closure>"));
-Type     DictView::info (Q(188,"<dictview>"));
-Type    Exception::info (Q(189,"<exception>"));
-Type     Function::info (Q(190,"<function>"));
-Type     Iterator::info (Q(191,"<iterator>"));
-Type       Lookup::info (Q(192,"<lookup>"));
-Type       Method::info (Q(193,"<method>"));
+Type    BoundMeth::info (Q(186,"<boundmeth>"));
+Type       Buffer::info (Q(187,"<buffer>"));
+Type         Cell::info (Q(188,"<cell>"));
+Type      Closure::info (Q(189,"<closure>"));
+Type     DictView::info (Q(190,"<dictview>"));
+Type    Exception::info (Q(191,"<exception>"));
+Type     Function::info (Q(192,"<function>"));
+Type     Iterator::info (Q(193,"<iterator>"));
+Type       Lookup::info (Q(194,"<lookup>"));
+Type       Method::info (Q(195,"<method>"));
 Type       Module::info (Q(  7,"<module>"));
-Type         None::info (Q(194,"<none>"));
-Type     Stacklet::info (Q(195,"<stacklet>"));
+Type         None::info (Q(196,"<none>"));
+Type     Stacklet::info (Q(197,"<stacklet>"));
 
-Type    Array::info (Q(181,"array") ,  Array::create, &Array::attrs);
+Type    Array::info (Q(183,"array") ,  Array::create, &Array::attrs);
 Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(182,"class") ,  Class::create, &Class::attrs);
+Type    Class::info (Q(184,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type    Event::info (Q(168,"event") ,  Event::create, &Event::attrs);
+Type    Event::info (Q(169,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type    Slice::info (Q(183,"slice") ,  Slice::create, &Slice::attrs);
+Type    Slice::info (Q(185,"slice") ,  Slice::create, &Slice::attrs);
 Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);

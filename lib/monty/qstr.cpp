@@ -26,11 +26,11 @@ namespace monty {
         "\x96\x06\x9D\x06\xA2\x06\xA7\x06\xAB\x06\xAF\x06\xB7\x06\xC2\x06"
         "\xC7\x06\xCE\x06\xD4\x06\xDA\x06\xE5\x06\xF2\x06\xF7\x06\xFC\x06"
         "\x00\x07\x06\x07\x0A\x07\x10\x07\x16\x07\x1F\x07\x25\x07\x2A\x07"
-        "\x31\x07\x37\x07\x3D\x07\x43\x07\x4A\x07\x50\x07\x54\x07\x5A\x07"
-        "\x62\x07\x68\x07\x6B\x07\x71\x07\x79\x07\x88\x07\x8E\x07\x96\x07"
-        "\xA3\x07\xAE\x07\xB9\x07\xC0\x07\xCA\x07\xCF\x07\xD5\x07\xDB\x07"
-        "\xE1\x07\xED\x07\xF6\x07\xFD\x07\x07\x08\x12\x08\x1E\x08\x29\x08"
-        "\x34\x08\x3D\x08\x46\x08\x4D\x08\x58\x08\x61\x08\x6C\x08\x70\x08"
+        "\x31\x07\x37\x07\x3D\x07\x43\x07\x4A\x07\x50\x07\x54\x07\x5D\x07"
+        "\x63\x07\x6B\x07\x71\x07\x74\x07\x7A\x07\x82\x07\x91\x07\x97\x07"
+        "\x9F\x07\xAC\x07\xB7\x07\xC2\x07\xC9\x07\xD4\x07\xDE\x07\xE3\x07"
+        "\xE9\x07\xEF\x07\xF5\x07\x01\x08\x0A\x08\x11\x08\x1B\x08\x26\x08"
+        "\x32\x08\x3D\x08\x48\x08\x51\x08\x5A\x08\x61\x08\x6C\x08\x70\x08"
         "\x78\x08"
         // index [0..401], hashes [402..600], 199 strings [601..2167]
         "\x05\x7A\xB0\x85\x8F\x8A\xBD\xFA\xA7\x2B\xFD\x6D\x45\x40\x26\xF7"
@@ -43,9 +43,9 @@ namespace monty {
         "\xCE\xB9\x0B\x42\x90\xD1\x1C\x2A\xBF\x2D\x54\x1A\xB7\x4B\xF9\x63"
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
-        "\xB7\x4E\x7D\x98\xE6\x5B\xEC\xC9\x61\xD5\xE0\x17\x64\xBF\x22\x40"
-        "\x8F\x15\x03\x8E\x7C\xAB\xB5\xC1\xA7\xE1\x56\xB0\xB0\x25\x05\x45"
-        "\xF8\x4D\xF4\xB2\x2E\xBC\x60"
+        "\xB7\x4E\x7D\x98\xE6\xB2\x5B\xEC\xC9\x61\xD5\xE0\x17\x64\xBF\x22"
+        "\x40\x8F\x15\x2E\x03\x8E\x7C\xAB\xB5\xC1\xA7\xE1\x56\xB0\xB0\x25"
+        "\x05\x45\xF8\x4D\xF4\xBC\x60"
         // found 142 distinct hashes
         ""                     "\0" // 1
         "__dir__"              "\0" // 2
@@ -212,38 +212,38 @@ namespace monty {
         "values"               "\0" // 163
         "write"                "\0" // 164
         "zip"                  "\0" // 165
-        "tasks"                "\0" // 166
-        "modules"              "\0" // 167
-        "event"                "\0" // 168
-        "gc"                   "\0" // 169
-        "gcmax"                "\0" // 170
-        "gcstats"              "\0" // 171
-        "implementation"       "\0" // 172
-        "monty"                "\0" // 173
-        "version"              "\0" // 174
-        "UnicodeError"         "\0" // 175
-        "<bytecode>"           "\0" // 176
-        "<callable>"           "\0" // 177
-        "<pyvm>"               "\0" // 178
-        "__bases__"            "\0" // 179
-        "wait"                 "\0" // 180
-        "array"                "\0" // 181
-        "class"                "\0" // 182
-        "slice"                "\0" // 183
-        "<boundmeth>"          "\0" // 184
-        "<buffer>"             "\0" // 185
-        "<cell>"               "\0" // 186
-        "<closure>"            "\0" // 187
-        "<dictview>"           "\0" // 188
-        "<exception>"          "\0" // 189
-        "<function>"           "\0" // 190
-        "<iterator>"           "\0" // 191
-        "<lookup>"             "\0" // 192
-        "<method>"             "\0" // 193
-        "<none>"               "\0" // 194
-        "<stacklet>"           "\0" // 195
-        "<object>"             "\0" // 196
-        "<instance>"           "\0" // 197
+        "<object>"             "\0" // 166
+        "tasks"                "\0" // 167
+        "modules"              "\0" // 168
+        "event"                "\0" // 169
+        "gc"                   "\0" // 170
+        "gcmax"                "\0" // 171
+        "gcstats"              "\0" // 172
+        "implementation"       "\0" // 173
+        "monty"                "\0" // 174
+        "version"              "\0" // 175
+        "UnicodeError"         "\0" // 176
+        "<bytecode>"           "\0" // 177
+        "<callable>"           "\0" // 178
+        "<pyvm>"               "\0" // 179
+        "<instance>"           "\0" // 180
+        "__bases__"            "\0" // 181
+        "wait"                 "\0" // 182
+        "array"                "\0" // 183
+        "class"                "\0" // 184
+        "slice"                "\0" // 185
+        "<boundmeth>"          "\0" // 186
+        "<buffer>"             "\0" // 187
+        "<cell>"               "\0" // 188
+        "<closure>"            "\0" // 189
+        "<dictview>"           "\0" // 190
+        "<exception>"          "\0" // 191
+        "<function>"           "\0" // 192
+        "<iterator>"           "\0" // 193
+        "<lookup>"             "\0" // 194
+        "<method>"             "\0" // 195
+        "<none>"               "\0" // 196
+        "<stacklet>"           "\0" // 197
         "sys"                  "\0" // 198
         "machine"              "\0" // 199
         //CG>
