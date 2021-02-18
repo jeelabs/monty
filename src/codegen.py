@@ -4,6 +4,45 @@ import os, re, sys, subprocess
 
 verbose = 0
 
+funmeths = {}
+
+def BIND(block, fun):
+    if "" not in funmeths:
+        funmeths[""] = []
+    funmeths[""].append(fun)
+    return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
+
+def WRAP(block, typ, *funs):
+    if typ not in funmeths:
+        funmeths[typ] = []
+    for f in funs:
+        funmeths[typ].append(f)
+    return block
+
+def WRAPPERS(block):
+    out = []
+    types = list(funmeths.keys())
+    types.sort()
+
+    for f in funmeths[""]:
+        out.append("static Function const fo_%s (f_%s);" % (f, f))
+    fmt1 = "static auto m_%s_%s = Method::wrap(&%s::%s);"
+    fmt2 = "static Method const mo_%s_%s (m_%s_%s);"
+    for t in types[1:]:
+        l = t.lower()
+        for f in funmeths[t]:
+            out.append("")
+            out.append(fmt1 % (l, f, t, f))
+            out.append(fmt2 % (l, f, l, f))
+        out.append("")
+        out.append("static Lookup::Item const %sMap [] = {" % l)
+        for f in funmeths[t]:
+            out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
+        out.append("};")
+        out.append("Lookup const %s::attrs (%sMap, sizeof %sMap);" % (t, l, l))
+
+    return out
+
 excIds = {}
 excHier = []
 excFuns = []
@@ -17,12 +56,12 @@ def EXCEPTIONS(block):
         name = name.strip(",")
         baseId = -1 if base == '-' else excIds[base]
         excIds[name] = id
-        excHier.append('{ %-29s, %2d }, // %2d -> %s' % (q(name), baseId, id, base))
+        excHier.append('{ %-29s %2d }, // %2d -> %s' % (q(name) + ",", baseId, id, base))
         excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
         excFuns.append('    return Exception::create(E::%s, args);' % name)
         excFuns.append('}')
         excFuns.append('static Function const fo_%s (e_%s);' % (name, name))
-        excDefs.append('{ %-29s, fo_%s },' % (q(name), name))
+        excDefs.append('{ %-29s fo_%s },' % (q(name) + ",", name))
         out.append("%-20s // %s" % (name + ",", base))
     return out
 
@@ -170,7 +209,7 @@ def TYPE_BUILTIN(block):
     out = []
     types[1].sort()
     for tag, name, base in types[1]:
-            out.append('{ %-15s, %s::info },' % (q(tag), name))
+            out.append('{ %-15s %s::info },' % (q(tag) + ",", name))
     return out
 
 # enable/disable flags for current file
