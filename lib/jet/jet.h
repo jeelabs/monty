@@ -6,6 +6,9 @@ namespace jet {
     };
 
     struct Flow : Object {
+        static Type info;
+        auto type () const -> Type const& override { return info; }
+
         Array _fanout;  // number of outgoing wires per outlet
         Array _wires;   // ieach one is stored as an EndPoint
         Array _index;   // offset into _state
@@ -30,7 +33,7 @@ namespace jet {
             return ((uint16_t const*) _index.begin())[i];
         }
 
-        auto info (int i) const -> GadGetInfo {
+        auto ginfo (int i) const -> GadGetInfo {
             int v = _state[offset(i)];
             return (GadGetInfo&) v;
         }
