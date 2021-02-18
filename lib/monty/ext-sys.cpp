@@ -39,15 +39,15 @@ static Function const fo_gcmax (f_gcmax);
 static Function const fo_gcstats (f_gcstats);
 
 static Lookup::Item const lo_sys [] = {
-    { Q(188,"tasks"), Stacklet::tasks },
-    { Q(189,"modules"), Module::loaded },
-    { Q(181,"event"), fo_event },
-    { Q(190,"gc"), fo_gc },
-    { Q(191,"gcmax"), fo_gcmax },
-    { Q(192,"gcstats"), fo_gcstats },
-    { Q(193,"implementation"), Q(194,"monty") },
+    { Q(166,"tasks"), Stacklet::tasks },
+    { Q(167,"modules"), Module::loaded },
+    { Q(168,"event"), fo_event },
+    { Q(169,"gc"), fo_gc },
+    { Q(170,"gcmax"), fo_gcmax },
+    { Q(171,"gcstats"), fo_gcstats },
+    { Q(172,"implementation"), Q(173,"monty") },
 #ifdef VERSION
-    { Q(195,"version"), VERSION },
+    { Q(174,"version"), VERSION },
 #endif
 };
 

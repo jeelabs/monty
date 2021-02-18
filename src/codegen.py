@@ -17,8 +17,8 @@ def EXCEPTION(block, name, base=''):
     excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
     excFuns.append('    return Exception::create(E::%s, args);' % name)
     excFuns.append('}')
-    excFuns.append('static Function const f_%s (e_%s);' % (name, name))
-    excDefs.append('{ %-29s, f_%s },' % (q(name), name))
+    excFuns.append('static Function const fo_%s (e_%s);' % (name, name))
+    excDefs.append('{ %-29s, fo_%s },' % (q(name), name))
     return []
 
 def EXCEPTION_EMIT(block, sel='h'):
@@ -123,6 +123,9 @@ def TAG(block, *args):
     text = ' '.join(args)
     return [(76-len(text)) * ' ' + '// ' + text]
 
+# generate builtin function table
+types = [[], []]
+
 # generate the header of an exposed type
 def TYPE(block, tag, *_):
     line = block[0].split()
@@ -137,8 +140,32 @@ def TYPE(block, tag, *_):
         '    auto repr (Buffer&) const -> Value override;',
     ]
     if tag.startswith('<'):
+        types[0].append([tag,name,base])
         del out[1:3] # can't construct from the VM
         del out[-1]  # no need for default repr override
+    else:
+        types[1].append([tag,name,base])
+    return out
+
+# emit the info definitions
+def TYPE_INFO(block):
+    out = []
+    types[0].sort()
+    for tag, name, base in types[0]:
+        out.append('Type %12s::info (%s);' % (name, q(tag)))
+    out.append("")
+    types[1].sort()
+    fmt = 'Type %8s::info (%-15s, %6s::create, &%s::attrs);'
+    for tag, name, base in types[1]:
+        out.append(fmt % (name, q(tag), name, name))
+    return out
+
+# generate builtin function attributes
+def TYPE_BUILTIN(block):
+    out = []
+    types[1].sort()
+    for tag, name, base in types[1]:
+            out.append('{ %-15s, %s::info },' % (q(tag), name))
     return out
 
 # enable/disable flags for current file
@@ -152,46 +179,6 @@ def OFF(block, *args):
     for f in args:
         if hasattr(flags, f):
             del flags[f]
-
-# generate builtin function table
-builtins = [[], []]
-
-# parse the src/defs.h header
-def BUILTIN_TYPES(block, fname):
-    builtins[0].clear()
-    builtins[1].clear()
-    info = []
-    with open(fname, 'r') as f:
-        for line in f:
-            line = line.strip()
-            if line.startswith('//CG'):
-                f1 = line.split()
-                if len(f1) > 1 and f1[1] == 'type':
-                    f2 = next(f).split()
-                    info.append([f1[2], f2[1], f2[3]])
-    info.sort()
-    out = []
-    fmt1a = 'Type %12s::info (%s);'
-    fmt1b = 'Type %8s::info (%-15s, %6s::create, &%s::attrs);'
-    sep = True
-    for tag, name, base in info:
-        if tag.startswith('<'):
-            out.append(fmt1a % (name, q(tag)))
-        else:
-            if sep: out.append('')
-            sep = False
-            out.append(fmt1b % (name, q(tag), name, name))
-            builtins[1].append('{ %-15s, %s::info },' % (q(tag), name))
-    return out
-
-def BUILTIN_EMIT(block, sel):
-    return builtins[sel]
-
-def BUILTIN(block, name):
-    builtins[0].append('static FunObj const f_%s (bi_%s);' % (name, name))
-    builtins[1].append('{ %-20s, f_%s },' % (q(name), name))
-    fmt = 'static Value bi_%s (int argc, Value argv[]) {'
-    return [fmt % name]
 
 # generate opcode switch entries
 opdefs = []

@@ -9,7 +9,7 @@ os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always
 @task
 def x_codegen(c):
     """process sources with code generator"""
-    c.run("src/codegen.py qstr.h lib/monty/ qstr.cpp")
+    c.run("src/codegen.py qstr.h lib/monty/ builtin.cpp qstr.cpp")
 
 @task
 def x_examples(c):

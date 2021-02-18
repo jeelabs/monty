@@ -1,5 +1,7 @@
 // qstr.cpp - set of "quick strings" from MicroPython 1.13 plus own entries
 
+#include "monty.h"
+
 namespace monty {
 
     extern char const qstrBase [] =
@@ -24,11 +26,11 @@ namespace monty {
         "\x96\x06\x9D\x06\xA2\x06\xA7\x06\xAB\x06\xAF\x06\xB7\x06\xC2\x06"
         "\xC7\x06\xCE\x06\xD4\x06\xDA\x06\xE5\x06\xF2\x06\xF7\x06\xFC\x06"
         "\x00\x07\x06\x07\x0A\x07\x10\x07\x16\x07\x1F\x07\x25\x07\x2A\x07"
-        "\x31\x07\x37\x07\x3D\x07\x43\x07\x4A\x07\x50\x07\x54\x07\x61\x07"
-        "\x6D\x07\x76\x07\x7D\x07\x87\x07\x92\x07\x9E\x07\xA9\x07\xB4\x07"
-        "\xBD\x07\xC6\x07\xCD\x07\xD8\x07\xDE\x07\xE4\x07\xEA\x07\xF0\x07"
-        "\xF9\x07\x04\x08\x08\x08\x10\x08\x15\x08\x1B\x08\x23\x08\x26\x08"
-        "\x2C\x08\x34\x08\x43\x08\x49\x08\x51\x08\x5C\x08\x67\x08\x6E\x08"
+        "\x31\x07\x37\x07\x3D\x07\x43\x07\x4A\x07\x50\x07\x54\x07\x5A\x07"
+        "\x62\x07\x68\x07\x6B\x07\x71\x07\x79\x07\x88\x07\x8E\x07\x96\x07"
+        "\xA1\x07\xAC\x07\xB3\x07\xBD\x07\xCA\x07\xD0\x07\xD6\x07\xDC\x07"
+        "\xE8\x07\xF1\x07\xF8\x07\x02\x08\x0D\x08\x19\x08\x24\x08\x2F\x08"
+        "\x38\x08\x41\x08\x48\x08\x53\x08\x5C\x08\x67\x08\x6B\x08\x73\x08"
         "\x78\x08"
         // index [0..401], hashes [402..600], 199 strings [601..2167]
         "\x05\x7A\xB0\x85\x8F\x8A\xBD\xFA\xA7\x2B\xFD\x6D\x45\x40\x26\xF7"
@@ -41,9 +43,9 @@ namespace monty {
         "\xCE\xB9\x0B\x42\x90\xD1\x1C\x2A\xBF\x2D\x54\x1A\xB7\x4B\xF9\x63"
         "\x49\xD0\x25\xD2\xE9\xE7\xA5\x3B\x79\xB9\x23\x27\xD4\x6C\xBF\x5E"
         "\xB7\x85\x74\x62\x57\x9D\x50\x29\x2E\xC4\xB3\xD8\xFD\x9D\xB4\x27"
-        "\xB7\x4E\x7D\x98\xE6\x22\xC1\xA7\xE1\x56\xB0\xB0\x25\x05\x45\xF8"
-        "\x4D\xF4\x7C\xAB\xC9\xB5\xB2\x2E\xBC\x60\x8E\x5B\xEC\x61\xD5\xE0"
-        "\x17\x64\xBF\x40\x8F\x15\x03"
+        "\xB7\x4E\x7D\x98\xE6\x5B\xEC\xC9\x61\xD5\xE0\x17\x64\xBF\x40\x8F"
+        "\x15\x03\x22\x7C\xAB\xB5\xC1\xA7\xE1\x56\xB0\xB0\x25\x05\x45\xF8"
+        "\x4D\xF4\xB2\x2E\xBC\x60\x8E"
         // found 142 distinct hashes
         ""                     "\0" // 1
         "__dir__"              "\0" // 2
@@ -210,40 +212,40 @@ namespace monty {
         "values"               "\0" // 163
         "write"                "\0" // 164
         "zip"                  "\0" // 165
-        "UnicodeError"         "\0" // 166
-        "<boundmeth>"          "\0" // 167
-        "<buffer>"             "\0" // 168
-        "<cell>"               "\0" // 169
-        "<closure>"            "\0" // 170
-        "<dictview>"           "\0" // 171
-        "<exception>"          "\0" // 172
-        "<function>"           "\0" // 173
-        "<iterator>"           "\0" // 174
-        "<lookup>"             "\0" // 175
-        "<method>"             "\0" // 176
-        "<none>"               "\0" // 177
-        "<stacklet>"           "\0" // 178
-        "array"                "\0" // 179
-        "class"                "\0" // 180
-        "event"                "\0" // 181
+        "tasks"                "\0" // 166
+        "modules"              "\0" // 167
+        "event"                "\0" // 168
+        "gc"                   "\0" // 169
+        "gcmax"                "\0" // 170
+        "gcstats"              "\0" // 171
+        "implementation"       "\0" // 172
+        "monty"                "\0" // 173
+        "version"              "\0" // 174
+        "<bytecode>"           "\0" // 175
+        "<callable>"           "\0" // 176
+        "<pyvm>"               "\0" // 177
+        "__bases__"            "\0" // 178
+        "UnicodeError"         "\0" // 179
+        "array"                "\0" // 180
+        "class"                "\0" // 181
         "slice"                "\0" // 182
-        "<object>"             "\0" // 183
-        "<instance>"           "\0" // 184
-        "sys"                  "\0" // 185
-        "machine"              "\0" // 186
-        "wait"                 "\0" // 187
-        "tasks"                "\0" // 188
-        "modules"              "\0" // 189
-        "gc"                   "\0" // 190
-        "gcmax"                "\0" // 191
-        "gcstats"              "\0" // 192
-        "implementation"       "\0" // 193
-        "monty"                "\0" // 194
-        "version"              "\0" // 195
-        "<bytecode>"           "\0" // 196
-        "<callable>"           "\0" // 197
-        "<pyvm>"               "\0" // 198
-        "__bases__"            "\0" // 199
+        "<boundmeth>"          "\0" // 183
+        "<buffer>"             "\0" // 184
+        "<cell>"               "\0" // 185
+        "<closure>"            "\0" // 186
+        "<dictview>"           "\0" // 187
+        "<exception>"          "\0" // 188
+        "<function>"           "\0" // 189
+        "<iterator>"           "\0" // 190
+        "<lookup>"             "\0" // 191
+        "<method>"             "\0" // 192
+        "<none>"               "\0" // 193
+        "<stacklet>"           "\0" // 194
+        "<object>"             "\0" // 195
+        "<instance>"           "\0" // 196
+        "sys"                  "\0" // 197
+        "machine"              "\0" // 198
+        "wait"                 "\0" // 199
         //CG>
     ;
 
