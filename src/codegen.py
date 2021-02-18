@@ -2,20 +2,30 @@
 
 import os, re, sys, subprocess
 
+class Flags: # make all missing attributes return ""
+    def __getattribute__(self,name):
+        try:
+            return object.__getattribute__(self, name)
+        except:
+            return ""
+flags = Flags()
+
 verbose = 0
+
+arch = ""
+archs = {"": []}
 
 funs = {"": []}
 meths = {"": []}
 
 def MODULE(block, mod):
-    flags["mod"] = mod
+    flags.mod = mod
     funs[mod] = []
     meths[mod] = []
     return []
 
 def BIND(block, fun):
-    mod = flags["mod"]
-    funs[mod].append(fun)
+    funs[flags.mod].append(fun)
     return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
 
 def WRAP(block, typ, *methods):
@@ -27,7 +37,7 @@ def WRAP(block, typ, *methods):
     return block
 
 def WRAPPERS(block, typ=None):
-    mod = typ or flags["mod"]
+    mod = typ or flags.mod
     out = []
 
     funs[mod].sort()
@@ -116,6 +126,7 @@ def qid(s):
         i = len(qstrMap) + 1
         qstrMap[s] = i
         qstrLen.append(len(s) + 1)
+        archs[arch].append(s)
     return i
 
 def q(s):
@@ -240,16 +251,14 @@ def TYPE_BUILTIN(block):
     return out
 
 # enable/disable flags for current file
-flags = {}
 
 def ON(block, *args):
     for f in args:
-        flags[f] = True
+        setattr(flags, f, True)
 
 def OFF(block, *args):
     for f in args:
-        if hasattr(flags, f):
-            del flags[f]
+        setattr(flags, f, "")
 
 # generate opcode switch entries
 opdefs = []
@@ -283,7 +292,7 @@ def OP(block, typ='', multi=0):
     if 'm' in typ:
         opmulti.append('if ((uint32_t) (ip[-1] - Op::%s) < %d) {' % (op, multi))
         opmulti.append('    %s = ip[-1] - Op::%s;' % (decl, op))
-        if 'op:print' in flags:
+        if flags.op_print:
             opmulti.append('    printf("%s%s\\n", (int) arg);' % (op, fmt))
         opmulti.append('    %s(arg);' % name)
         opmulti.append('    break;')
@@ -293,7 +302,7 @@ def OP(block, typ='', multi=0):
         if arg:
             opdefs.append('    %s = %s;' % (decl, arg))
         info = ', arg' if arg else ''
-        if 'op:print' in flags:
+        if flags.op_print:
             if fmt == ' %s': info = ', (char const*) arg' # convert from qstr
             if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
             opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
@@ -400,7 +409,7 @@ def processLines(lines):
                     block.append(s)
 
             name = tag.replace('-','_').upper()
-            if 'x' in flags and 'x'+name in globals():
+            if flags.x and 'x'+name in globals():
                 name = 'x'+name
             try:
                 handler = globals()[name]
@@ -447,11 +456,11 @@ def processLines(lines):
 
 # process one source file, replace it only if the new contents is different
 def processFile(d, f):
+    global flags
     path = os.path.join(d, f)
-    flags.clear()
-    flags["mod"] = ""
+    flags = Flags()
     if '/x' in path: # new code style
-        flags['x'] = True
+        flags.x = True
     if verbose:
         print(path)
     # TODO only process files if they have changed
@@ -465,28 +474,37 @@ def processFile(d, f):
                 f.write(s+'\n')
 
 if __name__ == '__main__':
-    # args should be: first-files* root-dir last-files*
-    first, root, last = [], None, []
-    for f in sys.argv[1:]:
-        if f == "-v":
-            verbose = 1
-        elif os.path.isdir(f):
-            root = f
-        elif not root:
-            first.append(f)
-        else:
-            last.append(f)
+    # args should be: [-v] first* dirs* middle* [+ARCH dirs+]* last*
+    del sys.argv[0]
+    if sys.argv and sys.argv[0] == "-v":
+        del sys.argv[0]
+        verbose = 1
+
+    # identify the separately-processed files
+    separate, root = [], None
+    for arg in sys.argv:
+        if os.path.isdir(arg):
+            root = root or arg # remember first one
+        if arg[0] != "+":
+            separate.append(arg)
     assert root, "no directory arg found"
-    # process the first files
-    for f in first:
-        processFile(root, f)
-    # process all files not listed as first or last
-    files = os.listdir(root)
-    files.sort();
-    for f in files:
-        if not f in first and not f in last:
-            if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
-                processFile(root, f)
-    # process the last files
-    for f in last:
-        processFile(root, f)
+
+    # process all specified args in order
+    for arg in sys.argv:
+        if arg[0] == "+":
+            arch = arg[1:]
+            archs[arch] = []
+            if verbose:
+                print(arg)
+        elif not os.path.isdir(arg):
+            if verbose and arch:
+                print("+")
+            arch = ""
+            processFile(root, arg)
+        else:
+            files = os.listdir(arg)
+            files.sort();
+            for f in files:
+                if not f in separate:
+                    if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
+                        processFile(arg, f)

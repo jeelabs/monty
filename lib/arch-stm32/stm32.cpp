@@ -357,7 +357,7 @@ namespace machine {
         }
     };
 
-    Type Pins::info ("<machine.pins>");
+    Type Pins::info (Q(202,"<machine.pins>"));
 
     static Pins pins; // there is one static pins object, used via attr access
 
@@ -387,14 +387,14 @@ namespace machine {
     static Method const m_spi_transfer (d_spi_transfer);
 
     Lookup::Item const spiMap [] = {
-        { "enable", m_spi_enable },
-        { "disable", m_spi_disable },
-        { "transfer", m_spi_transfer },
+        { Q(203,"enable"), m_spi_enable },
+        { Q(204,"disable"), m_spi_disable },
+        { Q(205,"transfer"), m_spi_transfer },
     };
 
     Lookup const Spi::attrs (spiMap, sizeof spiMap);
 
-    Type Spi::info ("<machine.spi>", nullptr, &Spi::attrs);
+    Type Spi::info (Q(206,"<machine.spi>"), nullptr, &Spi::attrs);
 
     auto f_spi (ArgVec const& args) -> Value {
         assert(args.num == 1);
@@ -441,14 +441,14 @@ namespace machine {
     static Method const m_rf69_sleep (d_rf69_sleep);
 
     Lookup::Item const rf69Map [] = {
-        { "receive", m_rf69_receive },
-        { "send", m_rf69_send },
-        { "sleep", m_rf69_sleep },
+        { Q(207,"receive"), m_rf69_receive },
+        { Q(138,"send"), m_rf69_send },
+        { Q(208,"sleep"), m_rf69_sleep },
     };
 
     Lookup const RF69::attrs (rf69Map, sizeof rf69Map);
 
-    Type RF69::info ("<machine.rf69>", nullptr, &RF69::attrs);
+    Type RF69::info (Q(209,"<machine.rf69>"), nullptr, &RF69::attrs);
 
     auto f_rf69 (ArgVec const& args) -> Value {
         assert(args.num == 4);
@@ -530,13 +530,13 @@ namespace machine {
     Function const fo_kick (f_kick);
 
     Lookup::Item const map [] = {
-        { "pins", pins },
-        { "spi", fo_spi },
-        { "rf69", fo_rf69 },
-        { "ticker", fo_ticker },
-        { "ticks", fo_ticks },
-        { "dog", fo_dog },
-        { "kick", fo_kick },
+        { Q(210,"pins"), pins },
+        { Q(211,"spi"), fo_spi },
+        { Q(212,"rf69"), fo_rf69 },
+        { Q(200,"ticker"), fo_ticker },
+        { Q(201,"ticks"), fo_ticks },
+        { Q(213,"dog"), fo_dog },
+        { Q(214,"kick"), fo_kick },
     };
 }
 

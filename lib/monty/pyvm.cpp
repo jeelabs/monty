@@ -6,7 +6,7 @@
 #ifndef NOPYVM
 
 #define SHOW_INSTR_PTR 0 // show instr ptr each time through inner loop
-//CG: off op:print # set to "on" to enable per-opcode debug output
+//CG: off op_print # set to "on" to enable per-opcode debug output
 
 #if NATIVE
 namespace machine { void timerHook (); }

@@ -99,8 +99,8 @@ namespace machine {
     Function const fo_ticks (f_ticks);
 
     Lookup::Item const attrs [] = {
-        { "ticker", fo_ticker },
-        { "ticks", fo_ticks },
+        { Q(200,"ticker"), fo_ticker },
+        { Q(201,"ticks"), fo_ticks },
     };
 }
 
