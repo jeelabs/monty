@@ -7,7 +7,7 @@
 #   |   D4   | PB7   | MOSI  |
 #   |   D5   | PB6   | MISO  |
 
-machine.dog(250) # avoid hang in init if the RF69 is not present
+machine.dog(200) # avoid hang in init if the RF69 is not present
 
 evt = machine.ticker(10)
 
