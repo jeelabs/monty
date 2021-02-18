@@ -8,9 +8,9 @@ $ inv native
     8 b  Bool
    24 b  BoundMeth
 [...]
-    8 b  Value
    16 b  VaryVec
    16 b  Vec
+   16 b  Vector
 $
 ```
 
@@ -22,9 +22,9 @@ $ inv stm32
     4 b  Bool
    12 b  BoundMeth
 [...]
-    4 b  Value
    12 b  VaryVec
     8 b  Vec
+   12 b  Vector
 ^C
 $
 ```

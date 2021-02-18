@@ -3,11 +3,7 @@
 
 using namespace monty;
 
-auto monty::vmImport (char const* name) -> uint8_t const* {
-    return arch::importer(name); // TODO get rid of this
-}
-
-#define SIZEOF(name) printf("%5d b  %s\n", (int) sizeof (struct name), #name);
+#define SIZEOF(name) printf("%5d b  %s\n", (int) sizeof (name), #name);
 
 int main () {
     arch::init();
@@ -26,7 +22,6 @@ int main () {
     SIZEOF(Dict)
     SIZEOF(DictView)
     SIZEOF(Event)
-    SIZEOF(Exception)
     SIZEOF(Exception)
     SIZEOF(Inst)
     SIZEOF(Int)
@@ -49,6 +44,7 @@ int main () {
     SIZEOF(Value)
     SIZEOF(VaryVec)
     SIZEOF(Vec)
+    SIZEOF(Vector)
 
     return 0;
 }

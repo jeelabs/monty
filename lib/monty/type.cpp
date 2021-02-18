@@ -152,7 +152,7 @@ Str::Str (char const* s, int n) {
 
 auto Str::unop (UnOp op) const -> Value {
     switch (op) {
-        case UnOp::Int:  return Int::conv((char const*) begin());
+        case UnOp::Intg: return Int::conv((char const*) begin());
         default:         break;
     }
     return Bytes::unop(op);

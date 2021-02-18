@@ -161,7 +161,7 @@ auto Value::unOp (UnOp op) const -> Value {
         case Int: {
             int n = *this;
             switch (op) {
-                case UnOp::Int:  // fall through
+                case UnOp::Intg: // fall through
                 case UnOp::Pos:  // fall through
                 case UnOp::Hash: return *this;
                 case UnOp::Abs:  if (n > 0) return *this;
@@ -352,7 +352,7 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Not:  return Value::asBool(this != &trueObj);
-        case UnOp::Int:  // fall through
+        case UnOp::Intg: // fall through
         case UnOp::Hash: return this == &trueObj;
         case UnOp::Boln: return *this;
         default:         break;
@@ -381,7 +381,7 @@ auto Int::conv (char const* s) -> Value {
 auto Int::unop (UnOp op) const -> Value {
     // TODO use templates to share code with Value::unOp ?
     switch (op) {
-        case UnOp::Int:  // fall through
+        case UnOp::Intg: // fall through
         case UnOp::Pos:  return *this;
         case UnOp::Hash: return Q::hash(&i64, sizeof i64);
         case UnOp::Abs:  if (i64 > 0) return *this; // else fall through
@@ -442,7 +442,7 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
         case Value::Nil: // fall through
         case Value::Int: return v;
         case Value::Str: return Int::conv(v);
-        case Value::Obj: return v.unOp(UnOp::Int);
+        case Value::Obj: return v.unOp(UnOp::Intg);
     }
     return {};
 }

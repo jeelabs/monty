@@ -135,7 +135,7 @@ namespace monty {
 
     enum UnOp : uint8_t {
         Pos, Neg, Inv, Not,
-        Boln, Hash, Abs, Int,
+        Boln, Hash, Abs, Intg,
     };
 
     enum BinOp : uint8_t {
