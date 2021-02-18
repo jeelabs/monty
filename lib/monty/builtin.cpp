@@ -62,7 +62,7 @@ Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
 
 auto Exception::binop (BinOp op, Value rhs) const -> Value {
     if (op == BinOp::ExceptionMatch) {
-        auto id = findId(rhs);
+        auto id = findId(rhs.asType<Function>());
         auto code = (int) extra().code;
         do {
             if (code == id)
@@ -89,67 +89,87 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
 static auto e_BaseException (ArgVec const& args) -> Value {
     return Exception::create(E::BaseException, args);
 }
+static Function const f_BaseException (e_BaseException);
 static auto e_Exception (ArgVec const& args) -> Value {
     return Exception::create(E::Exception, args);
 }
+static Function const f_Exception (e_Exception);
 static auto e_StopIteration (ArgVec const& args) -> Value {
     return Exception::create(E::StopIteration, args);
 }
+static Function const f_StopIteration (e_StopIteration);
 static auto e_ArithmeticError (ArgVec const& args) -> Value {
     return Exception::create(E::ArithmeticError, args);
 }
+static Function const f_ArithmeticError (e_ArithmeticError);
 static auto e_ZeroDivisionError (ArgVec const& args) -> Value {
     return Exception::create(E::ZeroDivisionError, args);
 }
+static Function const f_ZeroDivisionError (e_ZeroDivisionError);
 static auto e_AssertionError (ArgVec const& args) -> Value {
     return Exception::create(E::AssertionError, args);
 }
+static Function const f_AssertionError (e_AssertionError);
 static auto e_AttributeError (ArgVec const& args) -> Value {
     return Exception::create(E::AttributeError, args);
 }
+static Function const f_AttributeError (e_AttributeError);
 static auto e_EOFError (ArgVec const& args) -> Value {
     return Exception::create(E::EOFError, args);
 }
+static Function const f_EOFError (e_EOFError);
 static auto e_ImportError (ArgVec const& args) -> Value {
     return Exception::create(E::ImportError, args);
 }
+static Function const f_ImportError (e_ImportError);
 static auto e_LookupError (ArgVec const& args) -> Value {
     return Exception::create(E::LookupError, args);
 }
+static Function const f_LookupError (e_LookupError);
 static auto e_IndexError (ArgVec const& args) -> Value {
     return Exception::create(E::IndexError, args);
 }
+static Function const f_IndexError (e_IndexError);
 static auto e_KeyError (ArgVec const& args) -> Value {
     return Exception::create(E::KeyError, args);
 }
+static Function const f_KeyError (e_KeyError);
 static auto e_MemoryError (ArgVec const& args) -> Value {
     return Exception::create(E::MemoryError, args);
 }
+static Function const f_MemoryError (e_MemoryError);
 static auto e_NameError (ArgVec const& args) -> Value {
     return Exception::create(E::NameError, args);
 }
+static Function const f_NameError (e_NameError);
 static auto e_OSError (ArgVec const& args) -> Value {
     return Exception::create(E::OSError, args);
 }
+static Function const f_OSError (e_OSError);
 static auto e_RuntimeError (ArgVec const& args) -> Value {
     return Exception::create(E::RuntimeError, args);
 }
+static Function const f_RuntimeError (e_RuntimeError);
 static auto e_NotImplementedError (ArgVec const& args) -> Value {
     return Exception::create(E::NotImplementedError, args);
 }
+static Function const f_NotImplementedError (e_NotImplementedError);
 static auto e_TypeError (ArgVec const& args) -> Value {
     return Exception::create(E::TypeError, args);
 }
+static Function const f_TypeError (e_TypeError);
 static auto e_ValueError (ArgVec const& args) -> Value {
     return Exception::create(E::ValueError, args);
 }
+static Function const f_ValueError (e_ValueError);
 static auto e_UnicodeError (ArgVec const& args) -> Value {
     return Exception::create(E::UnicodeError, args);
 }
+static Function const f_UnicodeError (e_UnicodeError);
 //CG>
 
-Type const Object::info (Q(182,"<object>"));
-Type const Inst::info (Q(183,"<instance>"));
+Type const Object::info (Q(183,"<object>"));
+Type const Inst::info (Q(184,"<instance>"));
 
 //CG< builtin-types lib/monty/monty.h
 Type    BoundMeth::info (Q(167,"<boundmeth>"));
@@ -158,24 +178,25 @@ Type         Cell::info (Q(169,"<cell>"));
 Type      Closure::info (Q(170,"<closure>"));
 Type     DictView::info (Q(171,"<dictview>"));
 Type    Exception::info (Q(172,"<exception>"));
-Type     Iterator::info (Q(173,"<iterator>"));
-Type       Lookup::info (Q(174,"<lookup>"));
-Type       Method::info (Q(175,"<method>"));
+Type     Function::info (Q(173,"<function>"));
+Type     Iterator::info (Q(174,"<iterator>"));
+Type       Lookup::info (Q(175,"<lookup>"));
+Type       Method::info (Q(176,"<method>"));
 Type       Module::info (Q(  7,"<module>"));
-Type         None::info (Q(176,"<none>"));
-Type     Stacklet::info (Q(177,"<stacklet>"));
+Type         None::info (Q(177,"<none>"));
+Type     Stacklet::info (Q(178,"<stacklet>"));
 
-Type    Array::info (Q(178,"array") ,  Array::create, &Array::attrs);
+Type    Array::info (Q(179,"array") ,  Array::create, &Array::attrs);
 Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(179,"class") ,  Class::create, &Class::attrs);
+Type    Class::info (Q(180,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type    Event::info (Q(180,"event") ,  Event::create, &Event::attrs);
+Type    Event::info (Q(181,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type    Slice::info (Q(181,"slice") ,  Slice::create, &Slice::attrs);
+Type    Slice::info (Q(182,"slice") ,  Slice::create, &Slice::attrs);
 Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
@@ -208,6 +229,8 @@ static auto bi_print (ArgVec const& args) -> Value {
     return {};
 }
 
+static Function const f_print (bi_print);
+
 static auto bi_iter (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isObj());
     auto& o = args[0].obj();
@@ -217,84 +240,94 @@ static auto bi_iter (ArgVec const& args) -> Value {
     return v;
 }
 
+static Function const f_iter (bi_iter);
+
 static auto bi_next (ArgVec const& args) -> Value {
     assert(args.num == 1 && args[0].isObj());
     return args[0].obj().next();
 }
+
+static Function const f_next (bi_next);
 
 static auto bi_len (ArgVec const& args) -> Value {
     assert(args.num == 1);
     return args[0].asObj().len();
 }
 
+static Function const f_len (bi_len);
+
 static auto bi_abs (ArgVec const& args) -> Value {
     assert(args.num == 1);
     return args[0].unOp(UnOp::Abs);
 }
+
+static Function const f_abs (bi_abs);
 
 static auto bi_hash (ArgVec const& args) -> Value {
     assert(args.num == 1);
     return args[0].unOp(UnOp::Hash);
 }
 
+static Function const f_hash (bi_hash);
+
 static Lookup::Item const builtinsMap [] = {
     // exceptions must be first in the map, see Exception::findId
     //CG< exception-emit d
-    { Q( 33,"BaseException")       , e_BaseException },
-    { Q( 36,"Exception")           , e_Exception },
-    { Q( 51,"StopIteration")       , e_StopIteration },
-    { Q( 30,"ArithmeticError")     , e_ArithmeticError },
-    { Q( 56,"ZeroDivisionError")   , e_ZeroDivisionError },
-    { Q( 31,"AssertionError")      , e_AssertionError },
-    { Q( 32,"AttributeError")      , e_AttributeError },
-    { Q( 34,"EOFError")            , e_EOFError },
-    { Q( 38,"ImportError")         , e_ImportError },
-    { Q( 43,"LookupError")         , e_LookupError },
-    { Q( 40,"IndexError")          , e_IndexError },
-    { Q( 41,"KeyError")            , e_KeyError },
-    { Q( 44,"MemoryError")         , e_MemoryError },
-    { Q( 45,"NameError")           , e_NameError },
-    { Q( 48,"OSError")             , e_OSError },
-    { Q( 50,"RuntimeError")        , e_RuntimeError },
-    { Q( 47,"NotImplementedError") , e_NotImplementedError },
-    { Q( 54,"TypeError")           , e_TypeError },
-    { Q( 55,"ValueError")          , e_ValueError },
-    { Q(166,"UnicodeError")        , e_UnicodeError },
+    { Q( 33,"BaseException")       , f_BaseException },
+    { Q( 36,"Exception")           , f_Exception },
+    { Q( 51,"StopIteration")       , f_StopIteration },
+    { Q( 30,"ArithmeticError")     , f_ArithmeticError },
+    { Q( 56,"ZeroDivisionError")   , f_ZeroDivisionError },
+    { Q( 31,"AssertionError")      , f_AssertionError },
+    { Q( 32,"AttributeError")      , f_AttributeError },
+    { Q( 34,"EOFError")            , f_EOFError },
+    { Q( 38,"ImportError")         , f_ImportError },
+    { Q( 43,"LookupError")         , f_LookupError },
+    { Q( 40,"IndexError")          , f_IndexError },
+    { Q( 41,"KeyError")            , f_KeyError },
+    { Q( 44,"MemoryError")         , f_MemoryError },
+    { Q( 45,"NameError")           , f_NameError },
+    { Q( 48,"OSError")             , f_OSError },
+    { Q( 50,"RuntimeError")        , f_RuntimeError },
+    { Q( 47,"NotImplementedError") , f_NotImplementedError },
+    { Q( 54,"TypeError")           , f_TypeError },
+    { Q( 55,"ValueError")          , f_ValueError },
+    { Q(166,"UnicodeError")        , f_UnicodeError },
     //CG>
     //CG< builtin-emit 1
-    { Q(178,"array") , Array::info },
+    { Q(179,"array") , Array::info },
     { Q( 62,"bool")  , Bool::info },
     { Q( 66,"bytes") , Bytes::info },
-    { Q(179,"class") , Class::info },
+    { Q(180,"class") , Class::info },
     { Q( 75,"dict")  , Dict::info },
-    { Q(180,"event") , Event::info },
+    { Q(181,"event") , Event::info },
     { Q( 94,"int")   , Int::info },
     { Q(108,"list")  , List::info },
     { Q(124,"range") , Range::info },
     { Q(140,"set")   , Set::info },
-    { Q(181,"slice") , Slice::info },
+    { Q(182,"slice") , Slice::info },
     { Q(151,"str")   , Str::info },
     { Q(154,"super") , Super::info },
     { Q(157,"tuple") , Tuple::info },
     { Q(158,"type")  , Type::info },
     //CG>
-    { Q(123,"print"), bi_print },
-    { Q(103,"iter"),  bi_iter },
-    { Q(116,"next"),  bi_next },
-    { Q(107,"len"),   bi_len },
-    { Q( 57,"abs"),   bi_abs },
-    { Q( 90,"hash"),  bi_hash },
-    { Q(184,"sys"),   m_sys },
+    { Q(123,"print"), f_print },
+    { Q(103,"iter"),  f_iter },
+    { Q(116,"next"),  f_next },
+    { Q(107,"len"),   f_len },
+    { Q( 57,"abs"),   f_abs },
+    { Q( 90,"hash"),  f_hash },
+    { Q(185,"sys"),   m_sys },
 #ifndef NOARCH
-    { Q(185,"machine"), m_machine },
+    { Q(186,"machine"), m_machine },
 #endif
 };
 
 Lookup const monty::builtins (builtinsMap, sizeof builtinsMap);
 
-auto Exception::findId (Value f) -> int {
+auto Exception::findId (Function const& f) -> int {
     for (auto& e : builtinsMap)
-        if (f.id() == e.v.id())
+        if (&f == &e.v.obj())
             return &e - builtinsMap;
     // searches too many entries, but the assumption is that f will be found
     assert(false);
@@ -341,7 +374,7 @@ static auto d_event_clear = Method::wrap(&Event::clear);
 static Method const m_event_clear (d_event_clear);
 
 static Lookup::Item const eventMap [] = {
-    { Q(186,"wait"), m_event_wait },
+    { Q(187,"wait"), m_event_wait },
     { Q(140,"set"), m_event_set },
     { Q( 70,"clear"), m_event_clear },
 };

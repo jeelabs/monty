@@ -184,7 +184,7 @@ if __name__ == "__main__":
             results.append(line)
 
             if line == "done\n":
-                delay = 0.04
+                delay = 0.03
                 break
             if line == "abort\n":
                 ok = False

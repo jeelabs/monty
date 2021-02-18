@@ -17,7 +17,8 @@ def EXCEPTION(block, name, base=''):
     excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
     excFuns.append('    return Exception::create(E::%s, args);' % name)
     excFuns.append('}')
-    excDefs.append('{ %-29s, e_%s },' % (q(name), name))
+    excFuns.append('static Function const f_%s (e_%s);' % (name, name))
+    excDefs.append('{ %-29s, f_%s },' % (q(name), name))
     return []
 
 def EXCEPTION_EMIT(block, sel='h'):

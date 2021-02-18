@@ -513,9 +513,9 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
         chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(198,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(199,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
-    args[0].asFun({args.vec, args.num - 2, args.off + 2});
+    args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
@@ -539,7 +539,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;
-        init.asFun({args.vec, args.num + 1, args.off - 1});
+        init.obj().call({args.vec, args.num + 1, args.off - 1});
     }
 }
 

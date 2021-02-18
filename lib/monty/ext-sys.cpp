@@ -33,16 +33,21 @@ static auto f_gcstats (ArgVec const& args) -> Value {
     return gcdata;
 }
 
+static Function const fo_event (f_event);
+static Function const fo_gc (f_gc);
+static Function const fo_gcmax (f_gcmax);
+static Function const fo_gcstats (f_gcstats);
+
 static Lookup::Item const lo_sys [] = {
-    { Q(187,"tasks"), Stacklet::tasks },
-    { Q(188,"modules"), Module::loaded },
-    { Q(180,"event"), f_event },
-    { Q(189,"gc"), f_gc },
-    { Q(190,"gcmax"), f_gcmax },
-    { Q(191,"gcstats"), f_gcstats },
-    { Q(192,"implementation"), Q(193,"monty") },
+    { Q(188,"tasks"), Stacklet::tasks },
+    { Q(189,"modules"), Module::loaded },
+    { Q(181,"event"), fo_event },
+    { Q(190,"gc"), fo_gc },
+    { Q(191,"gcmax"), fo_gcmax },
+    { Q(192,"gcstats"), fo_gcstats },
+    { Q(193,"implementation"), Q(194,"monty") },
 #ifdef VERSION
-    { Q(194,"version"), VERSION },
+    { Q(195,"version"), VERSION },
 #endif
 };
 

@@ -5,11 +5,13 @@
 
 using namespace monty;
 
-static auto f_bytes_count (ArgVec const& args) -> Value {
+static auto bytes_count (ArgVec const& args) -> Value {
     if (args.size() != 2)
         return {E::TypeError, "wrong arg count", 2};
     return 123;
 }
+
+static Function const f_bytes_count (bytes_count);
 
 void monty::libInstall () {
     printf("in libInstall\n");

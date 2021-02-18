@@ -229,7 +229,7 @@ struct PyVM : Stacklet {
     // most common use of contextAdjuster, wraps call and saves result (or nil)
     void wrappedCall (Value callee, ArgVec const& args) {
         auto v = contextAdjuster([=]() -> Value {
-            return callee.asFun(args);
+            return callee.obj().call(args);
         });
         *sp = v;
     }
@@ -1325,8 +1325,8 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-Type Bytecode::info (Q(195,"<bytecode>"));
-Type Callable::info (Q(196,"<callable>"));
+Type Bytecode::info (Q(196,"<bytecode>"));
+Type Callable::info (Q(197,"<callable>"));
 
 static auto d_pyvm_send = Method::wrap(&PyVM::send);
 static Method const m_pyvm_send (d_pyvm_send);
@@ -1337,7 +1337,7 @@ static Lookup::Item const pyvmMap [] = {
 
 Lookup const PyVM::attrs (pyvmMap, sizeof pyvmMap);
 
-Type PyVM::info (Q(197,"<pyvm>"), nullptr, &PyVM::attrs);
+Type PyVM::info (Q(198,"<pyvm>"), nullptr, &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)

@@ -522,14 +522,21 @@ namespace machine {
         return {};
     }
 
+    Function const fo_spi (f_spi);
+    Function const fo_rf69 (f_rf69);
+    Function const fo_ticker (f_ticker);
+    Function const fo_ticks (f_ticks);
+    Function const fo_dog (f_dog);
+    Function const fo_kick (f_kick);
+
     Lookup::Item const attrs [] = {
         { "pins", pins },
-        { "spi", f_spi },
-        { "rf69", f_rf69 },
-        { "ticker", f_ticker },
-        { "ticks", f_ticks },
-        { "dog", f_dog },
-        { "kick", f_kick },
+        { "spi", fo_spi },
+        { "rf69", fo_rf69 },
+        { "ticker", fo_ticker },
+        { "ticks", fo_ticks },
+        { "dog", fo_dog },
+        { "kick", fo_kick },
     };
 }
 
