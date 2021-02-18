@@ -741,9 +741,10 @@ struct PyVM : Stacklet {
             assert(data != nullptr);
             auto init = Bytecode::load(data);
             assert(init != nullptr);
+            mod = init->mo;
             init->mo.install(arg);
             wrappedCall(init, {*this, 0});
-            frame().locals = init->mo;
+            frame().locals = mod;
         }
         *sp = mod;
     }
