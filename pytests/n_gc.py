@@ -1,3 +1,5 @@
+import sys, machine
+
 print(sys.gcmax(), sys.gcstats())
 print(sys.gcmax(), sys.gcstats())
 a = []

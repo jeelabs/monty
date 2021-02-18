@@ -1,3 +1,4 @@
+import sys, machine
 print(sys.implementation)
 print(machine.ticks())
 

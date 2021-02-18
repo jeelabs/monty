@@ -1,3 +1,5 @@
+import machine
+
 spi = machine.spi("B7,B6,B0,A12")
 print(type(spi))
 spi.enable()

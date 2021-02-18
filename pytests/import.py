@@ -1,3 +1,5 @@
+import sys
+
 print(123)
 import hello
 print(456)

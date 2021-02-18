@@ -7,6 +7,8 @@
 
 using namespace monty;
 
+//CG: module machine
+
 auto micros () -> uint64_t {
     struct timespec tv;
     clock_gettime(CLOCK_MONOTONIC, &tv);
@@ -99,9 +101,10 @@ namespace machine {
     Function const fo_ticks (f_ticks);
 
     Lookup::Item const attrs [] = {
-        { Q(200,"ticker"), fo_ticker },
-        { Q(201,"ticks"), fo_ticks },
+        { Q(199,"ticker"), fo_ticker },
+        { Q(200,"ticks"), fo_ticks },
     };
 }
 
-extern Lookup const machine_attrs (machine::attrs, sizeof machine::attrs);
+static Lookup const machine_attrs (machine::attrs, sizeof machine::attrs);
+Module ext_machine (machine_attrs, Q(201,"machine"));

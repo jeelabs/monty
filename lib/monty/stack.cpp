@@ -20,13 +20,12 @@ Stacklet* Stacklet::current;
 int Event::queued;
 Vector Event::triggers;
 
-Dict Module::loaded;
-
 static jmp_buf* resumer;
 
 void Stacklet::gcAll () {
     markVec(Event::triggers);
     mark(current);
+    tasks.marker();
     tasks.marker();
     sweep();
     compact();

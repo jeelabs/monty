@@ -741,11 +741,12 @@ struct PyVM : Stacklet {
             assert(data != nullptr);
             auto init = Bytecode::load(data);
             assert(init != nullptr);
-            mod = init->mo;
-            init->mo.install(arg);
             wrappedCall(init, {*this, 0});
-            frame().locals = mod;
+            frame().locals = mod = init->mo;
         }
+        auto m = mod.ifType<Module>();
+        if (m != nullptr)
+            m->install(arg); // TODO or m-> name ???
         *sp = mod;
     }
     //CG1 op q
@@ -1326,8 +1327,8 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-Type Bytecode::info (Q(177,"<bytecode>"));
-Type Callable::info (Q(178,"<callable>"));
+Type Bytecode::info (Q(178,"<bytecode>"));
+Type Callable::info (Q(179,"<callable>"));
 
 //CG< wrappers PyVM
 static auto m_pyvm_send = Method::wrap(&PyVM::send);
@@ -1339,7 +1340,7 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map, sizeof pyvm_map);
 //CG>
 
-Type PyVM::info (Q(179,"<pyvm>"), nullptr, &PyVM::attrs);
+Type PyVM::info (Q(180,"<pyvm>"), nullptr, &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)

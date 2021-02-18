@@ -1,3 +1,5 @@
+import machine
+
 evt = machine.ticker(10)
 
 evt.set()

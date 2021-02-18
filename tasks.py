@@ -9,7 +9,7 @@ os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always
 @task(help={"verbose": "produce some extra output for debugging"})
 def x_codegen(c, verbose=False):
     """process source files with the code generator"""
-    c.run("src/codegen.py %s" % ("-v" if verbose else "") +
+    c.run("src/codegen.py" + (" -v" if verbose else "") +
           " qstr.h"
           " lib/monty/"
           " builtin.cpp"
@@ -135,7 +135,7 @@ def all(c):
 
 @task(help={"addr": "flash address (default: 0x08010000)",
             "write": "also write to flash using st-flash"})
-def mrfs(c, addr="0x08010000", write=False):
+def mrfs(c, addr="0x08020000", write=False):
     """create Minimal Replaceable File Storage image [rom.mrfs]"""
     c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
     #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")

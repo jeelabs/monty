@@ -1,3 +1,5 @@
+import sys, machine
+
 evt = machine.ticker(10)
 
 def delay(n):

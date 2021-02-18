@@ -9,7 +9,11 @@
 #include <cassert>
 #include <unistd.h>
 
-const auto mrfsBase = (mrfs::Info*) 0x08010000;
+using namespace monty;
+
+//CG: module machine
+
+const auto mrfsBase = (mrfs::Info*) 0x08020000;
 const auto mrfsSize = 32*1024;
 
 #if STM32F103xB
@@ -55,8 +59,6 @@ extern "C" void __assert_func (char const* f, int l, char const* n, char const* 
 extern "C" void __assert (char const* f, int l, char const* e) {
     __assert_func(f, l, "-", e);
 }
-
-using namespace monty;
 
 void printBuildVer () {
     printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
@@ -522,25 +524,26 @@ namespace machine {
         return {};
     }
 
-    Function const fo_spi (f_spi);
-    Function const fo_rf69 (f_rf69);
     Function const fo_ticker (f_ticker);
     Function const fo_ticks (f_ticks);
+    Function const fo_spi (f_spi);
+    Function const fo_rf69 (f_rf69);
     Function const fo_dog (f_dog);
     Function const fo_kick (f_kick);
 
-    Lookup::Item const map [] = {
-        { Q(210,"pins"), pins },
-        { Q(211,"spi"), fo_spi },
-        { Q(212,"rf69"), fo_rf69 },
-        { Q(200,"ticker"), fo_ticker },
-        { Q(201,"ticks"), fo_ticks },
-        { Q(213,"dog"), fo_dog },
-        { Q(214,"kick"), fo_kick },
+    Lookup::Item const attrs [] = {
+        { Q(199,"ticker"), fo_ticker },
+        { Q(200,"ticks"), fo_ticks },
+        { Q(210,"spi"), fo_spi },
+        { Q(211,"rf69"), fo_rf69 },
+        { Q(212,"dog"), fo_dog },
+        { Q(213,"kick"), fo_kick },
+        { Q(214,"pins"), pins },
     };
 }
 
-extern Lookup const machine_attrs (machine::map, sizeof machine::map);
+static Lookup const machine_attrs (machine::attrs, sizeof machine::attrs);
+Module ext_machine (machine_attrs, Q(201,"machine"));
 
 #ifdef UNIT_TEST
 extern "C" {

@@ -7,6 +7,8 @@
 #   |   D4   | PB7   | MOSI  |
 #   |   D5   | PB6   | MISO  |
 
+import sys, machine
+
 machine.dog(200) # avoid hang in init if the RF69 is not present
 
 evt = machine.ticker(10)

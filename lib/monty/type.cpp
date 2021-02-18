@@ -8,7 +8,7 @@ using namespace monty;
 Tuple const Tuple::emptyObj;
 Value const monty::Empty {Tuple::emptyObj};
 
-Type const Inst::info (Q(180,"<instance>"));
+Type const Inst::info (Q(181,"<instance>"));
 
 void monty::markVec (Vector const& vec) {
     for (auto e : vec)
@@ -515,7 +515,7 @@ Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
         chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(181,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(182,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
 
     args[0].obj().call({args.vec, args.num - 2, args.off + 2});
 }
@@ -550,7 +550,9 @@ auto Inst::create (ArgVec const& args, Type const* t) -> Value {
     return new Inst (args, v.asType<Class>());
 }
 
-void Module::install (Value name) {
-    at(Q( 23,"__name__")) = name;
-    loaded.at(name) = this;
+void Module::install (Value arg) {
+    if (!arg.isNil())
+        modname = arg;
+    at(Q( 23,"__name__")) = modname;
+    loaded.at(modname) = this;
 }

@@ -19,6 +19,7 @@ int main (int argc, char const** argv) {
     printf("main\n");
 #endif
 
+#if 1
     gcSetup(memPool, sizeof memPool);
 //  libInstall();
 
@@ -37,6 +38,7 @@ int main (int argc, char const** argv) {
 
     while (Stacklet::runLoop())
         arch::idle();
+#endif
 
 #ifndef NDEBUG
     printf("done\n");

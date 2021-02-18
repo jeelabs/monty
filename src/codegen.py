@@ -8,26 +8,50 @@ class Flags: # make all missing attributes return ""
             return object.__getattribute__(self, name)
         except:
             return ""
-flags = Flags()
+
+flags = Flags() # this is cleared for each new source file
 
 verbose = 0
 
-arch = ""
-archs = {"": []}
+arch  = ""          # current architecture, "" is common to all
+archs = {"": []}    # list of qstrs per architecture
+mods  = {"": []}    # list of extension module names per architecture
+funs  = {"": []}    # list of bound functions per type/module
+meths = {"": []}    # list of bound methods per type/module
 
-funs = {"": []}
-meths = {"": []}
-
+# define the module name which applies to next bind/wrap/wrappers
 def MODULE(block, mod):
     flags.mod = mod
     funs[mod] = []
     meths[mod] = []
+    mods[arch].append(mod)
     return []
 
+# emit the definitions to find all known modules
+def MOD_LIST(block, sel):
+    out = []
+    names = list(mods.keys())
+    names.sort()
+    for n in names:
+        if mods[n]:
+            mods[n].sort()
+            if n:
+                out.append("#if %s" % n)
+            for m in mods[n]:
+                if sel == "d":
+                    out.append("extern Module ext_%s;" % m)
+                if sel == "a":
+                    out.append("{ %s, ext_%s }," % (q(m), m))
+            if n:
+                out.append("#endif")
+    return out
+
+# bind a function, i.e. define a callable function object wrapper
 def BIND(block, fun):
     funs[flags.mod].append(fun)
     return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
 
+# bind a method, i.e. define a callable method object wrapper
 def WRAP(block, typ, *methods):
     if typ not in funs:
         funs[typ] = []
@@ -36,6 +60,7 @@ def WRAP(block, typ, *methods):
         meths[typ].append(m)
     return block
 
+# emit the wrapper code, for one type/module, or for the builtins by default
 def WRAPPERS(block, typ=None):
     mod = typ or flags.mod
     out = []
@@ -85,6 +110,7 @@ excHier = []
 excFuns = []
 excDefs = []
 
+# parse the exception names and hierarchy, for generating code elsewhere
 def EXCEPTIONS(block):
     out = []
     for line in block:
@@ -102,6 +128,7 @@ def EXCEPTIONS(block):
         out.append("%-20s // %s" % (name + ",", base))
     return out
 
+# emit various parts of the exception glue code and data
 def EXCEPTION_EMIT(block, sel='h'):
     if sel == 'h':
         return excHier
@@ -110,6 +137,7 @@ def EXCEPTION_EMIT(block, sel='h'):
     if sel == 'd':
         return excDefs
 
+# define a git version (not used anymore, it messes up the commit hash)
 def VERSION(block):
     v = subprocess.getoutput('git describe --tags')
     return ['constexpr auto VERSION = "%s";' % v]
@@ -119,6 +147,7 @@ qstrIndex = []
 qstrLen = []
 qstrMap = {}
 
+# look up a qstr id, define a new one if needed
 def qid(s):
     if s in qstrMap:
         i = qstrMap[s]
@@ -129,15 +158,18 @@ def qid(s):
         archs[arch].append(s)
     return i
 
+# generate a qstr reference, with the proper ID filled in
 def q(s):
     return 'Q(%3d,"%s")' % (qid(s), s)
 
+# calculate the string hash, must produce the same result as the C++ version
 def hash(s):
     h = 5381
     for b in s.encode():
         h = (((h<<5) + h) ^ b) & 0xFFFFFFFF
     return h
 
+# emit all collected qstr information in varyvec-compatible format
 def QSTR_EMIT(block, sel='i'):
     if sel == 'i':
         return qstrIndex
@@ -494,6 +526,7 @@ if __name__ == '__main__':
         if arg[0] == "+":
             arch = arg[1:]
             archs[arch] = []
+            mods[arch] = []
             if verbose:
                 print(arg)
         elif not os.path.isdir(arg):

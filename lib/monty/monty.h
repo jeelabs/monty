@@ -893,16 +893,19 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
 
-        Module (Lookup const& lu =builtins) : Dict (&lu) {}
+        Module (Lookup const& lu =builtins, Value nm ={})
+            : Dict (&lu), modname (nm) {}
 
         auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
 
-        void install (Value name);
+        void install (Value ={});
 
         static Lookup const builtins;
         static Dict loaded;
+
+        Value modname;
     };
 
     //CG3 type <function>

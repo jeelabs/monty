@@ -5,12 +5,6 @@
 
 using namespace monty;
 
-extern Lookup const sys_attrs;
-static Module const m_sys (sys_attrs);
-
-extern Lookup const machine_attrs;
-static Module const m_machine (machine_attrs);
-
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
@@ -176,7 +170,7 @@ static Lookup::Item const exceptionMap [] = {
     { Q( 50,"RuntimeError"),         1 }, // 16 -> Exception
     { Q( 47,"NotImplementedError"), 16 }, // 17 -> RuntimeError
     { Q( 55,"ValueError"),           1 }, // 18 -> Exception
-    { Q(176,"UnicodeError"),        18 }, // 19 -> ValueError
+    { Q(177,"UnicodeError"),        18 }, // 19 -> ValueError
     //CG>
 };
 
@@ -218,7 +212,7 @@ static Method const mo_event_wait (m_event_wait);
 static Lookup::Item const event_map [] = {
     { Q( 70,"clear"), mo_event_clear },
     { Q(140,"set"), mo_event_set },
-    { Q(182,"wait"), mo_event_wait },
+    { Q(183,"wait"), mo_event_wait },
 };
 Lookup const Event::attrs (event_map, sizeof event_map);
 
@@ -261,20 +255,20 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 50,"RuntimeError"),        fo_RuntimeError },
     { Q( 47,"NotImplementedError"), fo_NotImplementedError },
     { Q( 55,"ValueError"),          fo_ValueError },
-    { Q(176,"UnicodeError"),        fo_UnicodeError },
+    { Q(177,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(183,"array"), Array::info },
+    { Q(184,"array"), Array::info },
     { Q( 62,"bool"),  Bool::info },
     { Q( 66,"bytes"), Bytes::info },
-    { Q(184,"class"), Class::info },
+    { Q(185,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
     { Q(167,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
     { Q(140,"set"),   Set::info },
-    { Q(185,"slice"), Slice::info },
+    { Q(186,"slice"), Slice::info },
     { Q(151,"str"),   Str::info },
     { Q(154,"super"), Super::info },
     { Q(157,"tuple"), Tuple::info },
@@ -286,10 +280,6 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   fo_len },
     { Q( 57,"abs"),   fo_abs },
     { Q( 90,"hash"),  fo_hash },
-    { Q(198,"sys"),   m_sys },
-#ifndef NOARCH
-    { Q(199,"machine"), m_machine },
-#endif
 };
 
 Lookup const Module::builtins (builtinsMap, sizeof builtinsMap);
@@ -333,31 +323,31 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
 }
 
 //CG< type-info
-Type    BoundMeth::info (Q(186,"<boundmeth>"));
-Type       Buffer::info (Q(187,"<buffer>"));
-Type         Cell::info (Q(188,"<cell>"));
-Type      Closure::info (Q(189,"<closure>"));
-Type     DictView::info (Q(190,"<dictview>"));
-Type    Exception::info (Q(191,"<exception>"));
-Type     Function::info (Q(192,"<function>"));
-Type     Iterator::info (Q(193,"<iterator>"));
-Type       Lookup::info (Q(194,"<lookup>"));
-Type       Method::info (Q(195,"<method>"));
+Type    BoundMeth::info (Q(187,"<boundmeth>"));
+Type       Buffer::info (Q(188,"<buffer>"));
+Type         Cell::info (Q(189,"<cell>"));
+Type      Closure::info (Q(190,"<closure>"));
+Type     DictView::info (Q(191,"<dictview>"));
+Type    Exception::info (Q(192,"<exception>"));
+Type     Function::info (Q(193,"<function>"));
+Type     Iterator::info (Q(194,"<iterator>"));
+Type       Lookup::info (Q(195,"<lookup>"));
+Type       Method::info (Q(196,"<method>"));
 Type       Module::info (Q(  7,"<module>"));
-Type         None::info (Q(196,"<none>"));
-Type     Stacklet::info (Q(197,"<stacklet>"));
+Type         None::info (Q(197,"<none>"));
+Type     Stacklet::info (Q(198,"<stacklet>"));
 
-Type    Array::info (Q(183,"array") ,  Array::create, &Array::attrs);
+Type    Array::info (Q(184,"array") ,  Array::create, &Array::attrs);
 Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(184,"class") ,  Class::create, &Class::attrs);
+Type    Class::info (Q(185,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
 Type    Event::info (Q(167,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
 Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type    Slice::info (Q(185,"slice") ,  Slice::create, &Slice::attrs);
+Type    Slice::info (Q(186,"slice") ,  Slice::create, &Slice::attrs);
 Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
 Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
 Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
