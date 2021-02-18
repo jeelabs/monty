@@ -899,6 +899,8 @@ namespace monty {
             return getAt(name);
         }
 
+        void install (Value name);
+
         static Lookup const builtins;
         static Dict loaded;
     };

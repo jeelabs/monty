@@ -6,10 +6,11 @@ from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
-@task
-def x_codegen(c):
-    """process sources with code generator"""
-    c.run("src/codegen.py qstr.h lib/monty/ builtin.cpp qstr.cpp")
+@task(help={"verbose": "produce some extra output for debugging"})
+def x_codegen(c, verbose=False):
+    """process source files with the code generator"""
+    opt = "-v" if verbose else ""
+    c.run("src/codegen.py %s qstr.h lib/monty/ builtin.cpp qstr.cpp" % opt)
 
 @task
 def x_examples(c):

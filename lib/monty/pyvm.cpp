@@ -134,6 +134,7 @@ auto Callable::funcAt (int n) const -> Bytecode const& {
     return bc[n].asType<Bytecode>();
 }
 
+
 struct PyVM : Stacklet {
     static Lookup const attrs;
     static Type info;
@@ -740,11 +741,9 @@ struct PyVM : Stacklet {
             assert(data != nullptr);
             auto init = Bytecode::load(data);
             assert(init != nullptr);
-            mod = init->mo;
-            init->mo.at(Q( 23,"__name__")) = arg;
-            Module::loaded.at(arg) = mod;
+            init->mo.install(arg);
             wrappedCall(init, {*this, 0});
-            frame().locals = mod;
+            frame().locals = init->mo;
         }
         *sp = mod;
     }
@@ -1258,6 +1257,7 @@ struct PyVM : Stacklet {
 
     auto next () -> Value override { return send(); }
 
+    //CG: wrap PyVM send
     auto send (Value arg =Null) -> Value {
         assert(fill > 0); // can only resume if not ended
         assert(current != nullptr);
@@ -1328,14 +1328,15 @@ auto Callable::call (ArgVec const& args) const -> Value {
 Type Bytecode::info (Q(177,"<bytecode>"));
 Type Callable::info (Q(178,"<callable>"));
 
-static auto d_pyvm_send = Method::wrap(&PyVM::send);
-static Method const m_pyvm_send (d_pyvm_send);
+//CG< wrappers PyVM
+static auto m_pyvm_send = Method::wrap(&PyVM::send);
+static Method const mo_pyvm_send (m_pyvm_send);
 
-static Lookup::Item const pyvmMap [] = {
-    { Q(138,"send"), m_pyvm_send },
+static Lookup::Item const pyvm_map [] = {
+    { Q(138,"send"), mo_pyvm_send },
 };
-
-Lookup const PyVM::attrs (pyvmMap, sizeof pyvmMap);
+Lookup const PyVM::attrs (pyvm_map, sizeof pyvm_map);
+//CG>
 
 Type PyVM::info (Q(179,"<pyvm>"), nullptr, &PyVM::attrs);
 
@@ -1347,9 +1348,9 @@ auto monty::vmLaunch (void const* data) -> Stacklet* {
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
             init = Bytecode::load(mpy);
+        if (init == nullptr)
+            return nullptr;
     }
-    if (init == nullptr)
-        return nullptr;
     auto vm = new PyVM;
     vm->enter(*init);
     vm->frame().locals = &init->mo;

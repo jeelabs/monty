@@ -26,8 +26,8 @@ def WRAP(block, typ, *methods):
         meths[typ].append(m)
     return block
 
-def WRAPPERS(block):
-    mod = flags["mod"]
+def WRAPPERS(block, typ=None):
+    mod = typ or flags["mod"]
     out = []
 
     funs[mod].sort()
@@ -35,14 +35,14 @@ def WRAPPERS(block):
         out.append("static Function const fo_%s (f_%s);" % (f, f))
 
     if mod:
-        types = [mod]
+        names = [mod]
     else:
-        types = list(meths.keys())
-        types.sort()
+        names = list(meths.keys())
+        names.sort()
 
     fmt1 = "static auto m_%s_%s = Method::wrap(&%s::%s);"
     fmt2 = "static Method const mo_%s_%s (m_%s_%s);"
-    for t in types:
+    for t in names:
         l = t.lower()
         meths[t].sort()
         for f in meths[t]:
@@ -60,12 +60,14 @@ def WRAPPERS(block):
                 out.append("    { %s, fo_%s_%s }," % (q(f), l, f))
         for f in meths[t]:
             out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
-        if mod == "":
+        if mod == "" or typ:
             out.append("};")
             out.append("Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l))
 
     del funs[mod]
     del meths[mod]
+    if out and not out[0]:
+        del out[0]
     return out
 
 excIds = {}
@@ -234,7 +236,7 @@ def TYPE_BUILTIN(block):
     out = []
     types[1].sort()
     for tag, name, base in types[1]:
-            out.append('{ %-15s %s::info },' % (q(tag) + ",", name))
+        out.append('{ %-15s %s::info },' % (q(tag) + ",", name))
     return out
 
 # enable/disable flags for current file
@@ -366,12 +368,14 @@ def parseArgs(params):
 # loop over all source lines and generate inline code at each //CG mark
 def processLines(lines):
     result = []
+    linenum = 0
     for line in lines:
+        linenum += 1
         if line.strip()[0:4] != '//CG':
             result.append(line)
         else:
             if verbose:
-                print(line) # TODO report line numbers
+                print("%6d: %s" % (linenum, line.strip()))
             request, *comment = line.split('#', 1)
             head, tag, *params = request.split()
             block = []
@@ -464,7 +468,9 @@ if __name__ == '__main__':
     # args should be: first-files* root-dir last-files*
     first, root, last = [], None, []
     for f in sys.argv[1:]:
-        if os.path.isdir(f):
+        if f == "-v":
+            verbose = 1
+        elif os.path.isdir(f):
             root = f
         elif not root:
             first.append(f)
