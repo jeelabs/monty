@@ -5,8 +5,11 @@
 
 using namespace monty;
 
-extern Module const m_sys;
-extern Module const m_machine;
+extern Lookup const sys_attrs;
+static Module const m_sys (sys_attrs);
+
+extern Lookup const machine_attrs;
+static Module const m_machine (machine_attrs);
 
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
@@ -266,7 +269,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 66,"bytes"), Bytes::info },
     { Q(184,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
-    { Q(169,"event"), Event::info },
+    { Q(167,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
@@ -349,7 +352,7 @@ Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
 Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
 Type    Class::info (Q(184,"class") ,  Class::create, &Class::attrs);
 Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type    Event::info (Q(169,"event") ,  Event::create, &Event::attrs);
+Type    Event::info (Q(167,"event") ,  Event::create, &Event::attrs);
 Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
 Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
 Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);

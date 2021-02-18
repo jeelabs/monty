@@ -4,45 +4,68 @@ import os, re, sys, subprocess
 
 verbose = 0
 
-funmeths = {}
+funs = {"": []}
+meths = {"": []}
+
+def MODULE(block, mod):
+    flags["mod"] = mod
+    funs[mod] = []
+    meths[mod] = []
+    return []
 
 def BIND(block, fun):
-    if "" not in funmeths:
-        funmeths[""] = []
-    funmeths[""].append(fun)
+    mod = flags["mod"]
+    funs[mod].append(fun)
     return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
 
-def WRAP(block, typ, *funs):
-    if typ not in funmeths:
-        funmeths[typ] = []
-    for f in funs:
-        funmeths[typ].append(f)
+def WRAP(block, typ, *methods):
+    if typ not in funs:
+        funs[typ] = []
+        meths[typ] = []
+    for m in methods:
+        meths[typ].append(m)
     return block
 
 def WRAPPERS(block):
+    mod = flags["mod"]
     out = []
-    types = list(funmeths.keys())
-    types.sort()
-    for t in types:
-        funmeths[t].sort()
 
-    for f in funmeths[""]:
+    funs[mod].sort()
+    for f in funs[mod]:
         out.append("static Function const fo_%s (f_%s);" % (f, f))
+
+    if mod:
+        types = [mod]
+    else:
+        types = list(meths.keys())
+        types.sort()
+
     fmt1 = "static auto m_%s_%s = Method::wrap(&%s::%s);"
     fmt2 = "static Method const mo_%s_%s (m_%s_%s);"
-    for t in types[1:]:
+    for t in types:
         l = t.lower()
-        for f in funmeths[t]:
+        meths[t].sort()
+        for f in meths[t]:
             out.append("")
             out.append(fmt1 % (l, f, t, f))
             out.append(fmt2 % (l, f, l, f))
+        if t == "":
+            continue
         out.append("")
         out.append("static Lookup::Item const %s_map [] = {" % l)
-        for f in funmeths[t]:
+        for f in funs[t]:
+            if mod:
+                out.append("    { %s, fo_%s }," % (q(f), f))
+            else:
+                out.append("    { %s, fo_%s_%s }," % (q(f), l, f))
+        for f in meths[t]:
             out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
-        out.append("};")
-        out.append("Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l))
+        if mod == "":
+            out.append("};")
+            out.append("Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l))
 
+    del funs[mod]
+    del meths[mod]
     return out
 
 excIds = {}
@@ -422,6 +445,7 @@ def processLines(lines):
 def processFile(d, f):
     path = os.path.join(d, f)
     flags.clear()
+    flags["mod"] = ""
     if '/x' in path: # new code style
         flags['x'] = True
     if verbose:

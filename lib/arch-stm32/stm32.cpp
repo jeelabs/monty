@@ -529,7 +529,7 @@ namespace machine {
     Function const fo_dog (f_dog);
     Function const fo_kick (f_kick);
 
-    Lookup::Item const attrs [] = {
+    Lookup::Item const map [] = {
         { "pins", pins },
         { "spi", fo_spi },
         { "rf69", fo_rf69 },
@@ -540,26 +540,13 @@ namespace machine {
     };
 }
 
-static Lookup const ma_machine (machine::attrs, sizeof machine::attrs);
-extern Module const m_machine (ma_machine);
+extern Lookup const machine_attrs (machine::map, sizeof machine::map);
 
 #ifdef UNIT_TEST
-
-extern "C" void unittest_uart_begin () {
-    arch::init();
-    wait_ms(100);
+extern "C" {
+    void unittest_uart_begin () { arch::init(); wait_ms(100); }
+    void unittest_uart_putchar (char c) { console.putc(c); }
+    void unittest_uart_flush () { while (!console.xmit.empty()) {} }
+    void unittest_uart_end () { while (true) {} }
 }
-
-extern "C" void unittest_uart_putchar (char c) {
-    console.putc(c);
-}
-
-extern "C" void unittest_uart_flush () {
-    while (!console.xmit.empty()) {}
-}
-
-extern "C" void unittest_uart_end () {
-    while (true) {}
-}
-
 #endif

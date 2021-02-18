@@ -104,5 +104,4 @@ namespace machine {
     };
 }
 
-static Lookup const ma_machine (machine::attrs, sizeof machine::attrs);
-extern Module const m_machine (ma_machine);
+extern Lookup const machine_attrs (machine::attrs, sizeof machine::attrs);
