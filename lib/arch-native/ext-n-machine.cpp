@@ -1,5 +1,5 @@
 #include <monty.h>
-// Q(201,"blah")
+
 #include <cassert>
 #include <ctime>
 
@@ -67,5 +67,6 @@ static Lookup::Item const machine_map [] = {
 //CG>
 };
 
+//CG2 module-end
 static Lookup const machine_attrs (machine_map, sizeof machine_map);
-Module ext_machine (machine_attrs, Q(202,"machine"));
+Module ext_machine (machine_attrs, Q(201,"machine"));

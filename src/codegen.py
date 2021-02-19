@@ -27,29 +27,38 @@ def MODULE(block, mod):
     mods[arch].append(mod)
     return []
 
+# generate the final code to define the current module
+def MODULE_END(block):
+    out = []
+    m = flags.mod
+    assert m != ""
+    out.append("static Lookup const %s_attrs (%s_map, sizeof %s_map);" % (m, m, m))
+    out.append("Module ext_%s (%s_attrs, %s);" % (m, m, q(m)))
+    flags.mod = ""
+    return out
+
 # emit the definitions to find all known modules
 def MOD_LIST(block, sel):
     out = []
     if sel == "d":
-        seen = {}
-        for _, mi in mods.items():
-            for m in mi:
+        seen = []
+        for v in mods.values():
+            for m in v:
                 if m not in seen:
-                    out.append("extern Module ext_%s;" % m)
-                    seen[m] = True
+                    seen.append(m)
+        seen.sort()
+        for m in seen:
+            out.append("extern Module ext_%s;" % m)
     if sel == "a":
-        names = list(mods.keys())
-        names.sort()
-        for qa in names:
-            if mods[qa]:
-                mods[qa].sort()
-                if qa:
-                    out.append("#if %s" % qa)
-                for m in mods[qa]:
+        for mArch, mNames in mods.items():
+            if mNames:
+                if mArch:
+                    out.append("#if %s" % mArch)
+                for m in mNames:
                     # lookup in arch-specific map, must already exist
-                    id = archs[qa][1][m]
+                    id = archs[mArch][1][m]
                     out.append('    { Q (%d,"%s"), ext_%s },' % (id, m, m))
-            if qa:
+            if mArch:
                 out.append("#endif")
     return out
 
@@ -157,10 +166,10 @@ qstrMap = {}
 def qarch(name):
     global qstrLen, qstrMap
     archs[arch] = (qstrLen, qstrMap)
-    l, m = archs[""]
-    qstrLen = l[:] # create a copy
+    qLen, qMap = archs[""]
+    qstrLen = qLen[:] # create a copy
     qstrMap = {} # also creates a copy
-    for k, v in m.items():
+    for k, v in qMap.items():
         qstrMap[k] = v
 
 # look up a qstr id, define a new one if needed
@@ -187,12 +196,11 @@ def hash(s):
 # emit all collected qstr information in varyvec-compatible format
 def QSTR_EMIT(block):
     out = []
-    for qa in archs:
-        qLen, qMap = archs[qa]
-        if qa == "":
+    for qArch, (qLen, qMap) in archs.items():
+        if qArch == "":
             offset = len(qLen)
             continue
-        out.append("#if %s" % qa)
+        out.append("#if %s" % qArch)
 
         num = len(qLen)
         qLen.insert(0, num)
@@ -209,16 +217,15 @@ def QSTR_EMIT(block):
                 s = ''
         if s:
             out.append('    "%s"' % s)
-        out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
+        out.append('    // offsets [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
                     (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
         out.append("#endif")
 
-    for qa in archs:
-        qLen, qMap = archs[qa]
+    for qArch, (qLen, qMap) in archs.items():
         hashes = map(hash, qMap)
-        if qa != "":
+        if qArch != "":
             hashes = list(hashes)[offset:]
-            out.append("#if %s" % qa)
+            out.append("#if %s" % qArch)
         i, s, h = 0, '', {}
         for x in hashes:
             s += '\\x%02X' % (x & 0xFF)
@@ -229,18 +236,18 @@ def QSTR_EMIT(block):
                 s = ''
         if s:
             out.append('    "%s"' % s)
-        if qa != "":
+        if qArch != "":
             out.append("#endif")
 
-    for qa in archs:
-        qLen, qMap = archs[qa]
+    out.append('    // end of 1-byte hashes, start of string data:')
+    for qArch, (qLen, qMap) in archs.items():
         pairs = qMap.items()
-        if qa != "":
+        if qArch != "":
             pairs = list(pairs)[offset:]
-            out.append("#if %s" % qa)
+            out.append("#if %s" % qArch)
         for k, v in pairs:
             out.append('    %-22s "\\0" // %d' % ('"%s"' % k, v))
-        if qa != "":
+        if qArch != "":
             out.append("#endif")
 
     return out
