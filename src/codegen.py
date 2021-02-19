@@ -14,7 +14,7 @@ flags = Flags() # this is cleared for each new source file
 verbose = 0
 
 arch  = ""          # current architecture, "" is common to all
-archs = {"": []}    # list of qstrs per architecture
+archs = {}          # list of qstr details per architecture
 mods  = {"": []}    # list of extension module names per architecture
 funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
@@ -32,17 +32,20 @@ def MOD_LIST(block, sel):
     out = []
     names = list(mods.keys())
     names.sort()
-    for n in names:
-        if mods[n]:
-            mods[n].sort()
-            if n:
-                out.append("#if %s" % n)
-            for m in mods[n]:
+    for qa in names:
+        if mods[qa]:
+            mods[qa].sort()
+            if qa:
+                out.append("#if %s" % qa)
+            for m in mods[qa]:
                 if sel == "d":
                     out.append("extern Module ext_%s;" % m)
                 if sel == "a":
-                    out.append("{ %s, ext_%s }," % (q(m), m))
-            if n:
+                    # lookup in arch-specific map, must already exist
+                    id = archs[qa][1][m]
+                    c = "" if qa == "" else "/*!*/"
+                    out.append('{ Q(%s%d,"%s"), ext_%s },' % (c, id, m, m))
+            if qa:
                 out.append("#endif")
     return out
 
@@ -146,6 +149,16 @@ def VERSION(block):
 qstrLen = []
 qstrMap = {}
 
+# deal with one qstr map per architecture, called on each switchover
+def qarch(name):
+    global qstrLen, qstrMap
+    archs[arch] = (qstrLen, qstrMap)
+    l, m = archs[""]
+    qstrLen = l[:] # create a copy
+    qstrMap = {} # also creates a copy
+    for k, v in m.items():
+        qstrMap[k] = v
+
 # look up a qstr id, define a new one if needed
 def qid(s):
     if s in qstrMap:
@@ -154,11 +167,10 @@ def qid(s):
         i = len(qstrMap) + 1
         qstrMap[s] = i
         qstrLen.append(len(s) + 1)
-        archs[arch].append(s)
     return i
 
 # generate a qstr reference, with the proper ID filled in
-def q(s):
+def q(s, a=None):
     return 'Q(%3d,"%s")' % (qid(s), s)
 
 # calculate the string hash, must produce the same result as the C++ version
@@ -171,38 +183,61 @@ def hash(s):
 # emit all collected qstr information in varyvec-compatible format
 def QSTR_EMIT(block):
     out = []
-    num = len(qstrLen)
-    qstrLen.insert(0, num)
-    qstrLen.append(0)
-    num += 2
+    for qa in archs:
+        qLen, qMap = archs[qa]
+        if qa == "":
+            offset = len(qLen)
+            continue
+        out.append("#if %s" % qa)
 
-    i, n, s = 0, 2 * num, ''
-    for x in qstrLen:
-        s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
-        i += 1
-        n += x
-        if i % 8 == 0:
-            out.append('"%s"' % s)
-            s = ''
-    if s:
-        out.append('"%s"' % s)
-    out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
-                (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
+        num = len(qLen)
+        qLen.insert(0, num)
+        qLen.append(0)
+        num += 2
 
-    i, s, h = 0, '', {}
-    for x in map(hash, qstrMap):
-        s += '\\x%02X' % (x & 0xFF)
-        i += 1
-        h[x & 0xFF] = True
-        if i % 16 == 0:
-            out.append('"%s"' % s)
-            s = ''
-    if s:
-        out.append('"%s"' % s)
-    out.append('// there are %d distinct hashes' % len(h))
+        i, n, s = 0, 2 * num, ''
+        for x in qLen:
+            s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
+            i += 1
+            n += x
+            if i % 8 == 0:
+                out.append('    "%s"' % s)
+                s = ''
+        if s:
+            out.append('    "%s"' % s)
+        out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
+                    (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
+        out.append("#endif")
 
-    for k, v in qstrMap.items():
-        out.append('%-22s "\\0" // %d' % ('"%s"' % k, v))
+    for qa in archs:
+        qLen, qMap = archs[qa]
+        hashes = map(hash, qMap)
+        if qa != "":
+            hashes = list(hashes)[offset:]
+            out.append("#if %s" % qa)
+        i, s, h = 0, '', {}
+        for x in hashes:
+            s += '\\x%02X' % (x & 0xFF)
+            i += 1
+            h[x & 0xFF] = True
+            if i % 16 == 0:
+                out.append('    "%s"' % s)
+                s = ''
+        if s:
+            out.append('    "%s"' % s)
+        if qa != "":
+            out.append("#endif")
+
+    for qa in archs:
+        qLen, qMap = archs[qa]
+        pairs = qMap.items()
+        if qa != "":
+            pairs = list(pairs)[offset:]
+            out.append("#if %s" % qa)
+        for k, v in pairs:
+            out.append('    %-22s "\\0" // %d' % ('"%s"' % k, v))
+        if qa != "":
+            out.append("#endif")
 
     return out
 
@@ -519,14 +554,16 @@ if __name__ == '__main__':
     # process all specified args in order
     for arg in sys.argv:
         if arg[0] == "+":
+            qarch(arg[1:])
             arch = arg[1:]
-            archs[arch] = []
             mods[arch] = []
             if verbose:
                 print(arg)
         elif not os.path.isdir(arg):
             if verbose and arch:
                 print("+")
+            if arch != "":
+                qarch("")
             arch = ""
             processFile(root, arg)
         else:
