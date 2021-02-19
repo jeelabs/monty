@@ -75,7 +75,7 @@ def WRAPPERS(block, typ=None):
         names = list(meths.keys())
         names.sort()
 
-    fmt1 = "static auto m_%s_%s = Method::wrap(&%s::%s);"
+    fmt1 = "static auto const m_%s_%s = Method::wrap(&%s::%s);"
     fmt2 = "static Method const mo_%s_%s (m_%s_%s);"
     for t in names:
         l = t.lower()

@@ -1330,7 +1330,7 @@ Type Bytecode::info (Q(178,"<bytecode>"));
 Type Callable::info (Q(179,"<callable>"));
 
 //CG< wrappers PyVM
-static auto m_pyvm_send = Method::wrap(&PyVM::send);
+static auto const m_pyvm_send = Method::wrap(&PyVM::send);
 static Method const mo_pyvm_send (m_pyvm_send);
 
 static Lookup::Item const pyvm_map [] = {

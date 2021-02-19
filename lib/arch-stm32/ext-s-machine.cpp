@@ -62,13 +62,13 @@ struct Spi : Object, jeeh::SpiGpio {
 };
 
 //CG< wrappers Spi
-static auto m_spi_disable = Method::wrap(&Spi::disable);
+static auto const m_spi_disable = Method::wrap(&Spi::disable);
 static Method const mo_spi_disable (m_spi_disable);
 
-static auto m_spi_enable = Method::wrap(&Spi::enable);
+static auto const m_spi_enable = Method::wrap(&Spi::enable);
 static Method const mo_spi_enable (m_spi_enable);
 
-static auto m_spi_xfer = Method::wrap(&Spi::xfer);
+static auto const m_spi_xfer = Method::wrap(&Spi::xfer);
 static Method const mo_spi_xfer (m_spi_xfer);
 
 static Lookup::Item const spi_map [] = {
@@ -109,13 +109,13 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
 };
 
 //CG< wrappers RF69
-static auto m_rf69_recv = Method::wrap(&RF69::recv);
+static auto const m_rf69_recv = Method::wrap(&RF69::recv);
 static Method const mo_rf69_recv (m_rf69_recv);
 
-static auto m_rf69_sleep = Method::wrap(&RF69::sleep);
+static auto const m_rf69_sleep = Method::wrap(&RF69::sleep);
 static Method const mo_rf69_sleep (m_rf69_sleep);
 
-static auto m_rf69_xmit = Method::wrap(&RF69::xmit);
+static auto const m_rf69_xmit = Method::wrap(&RF69::xmit);
 static Method const mo_rf69_xmit (m_rf69_xmit);
 
 static Lookup::Item const rf69_map [] = {

@@ -184,13 +184,13 @@ static Function const fo_len (f_len);
 static Function const fo_next (f_next);
 static Function const fo_print (f_print);
 
-static auto m_dict_items = Method::wrap(&Dict::items);
+static auto const m_dict_items = Method::wrap(&Dict::items);
 static Method const mo_dict_items (m_dict_items);
 
-static auto m_dict_keys = Method::wrap(&Dict::keys);
+static auto const m_dict_keys = Method::wrap(&Dict::keys);
 static Method const mo_dict_keys (m_dict_keys);
 
-static auto m_dict_values = Method::wrap(&Dict::values);
+static auto const m_dict_values = Method::wrap(&Dict::values);
 static Method const mo_dict_values (m_dict_values);
 
 static Lookup::Item const dict_map [] = {
@@ -200,13 +200,13 @@ static Lookup::Item const dict_map [] = {
 };
 Lookup const Dict::attrs (dict_map, sizeof dict_map);
 
-static auto m_event_clear = Method::wrap(&Event::clear);
+static auto const m_event_clear = Method::wrap(&Event::clear);
 static Method const mo_event_clear (m_event_clear);
 
-static auto m_event_set = Method::wrap(&Event::set);
+static auto const m_event_set = Method::wrap(&Event::set);
 static Method const mo_event_set (m_event_set);
 
-static auto m_event_wait = Method::wrap(&Event::wait);
+static auto const m_event_wait = Method::wrap(&Event::wait);
 static Method const mo_event_wait (m_event_wait);
 
 static Lookup::Item const event_map [] = {
@@ -216,13 +216,13 @@ static Lookup::Item const event_map [] = {
 };
 Lookup const Event::attrs (event_map, sizeof event_map);
 
-static auto m_list_append = Method::wrap(&List::append);
+static auto const m_list_append = Method::wrap(&List::append);
 static Method const mo_list_append (m_list_append);
 
-static auto m_list_clear = Method::wrap(&List::clear);
+static auto const m_list_clear = Method::wrap(&List::clear);
 static Method const mo_list_clear (m_list_clear);
 
-static auto m_list_pop = Method::wrap(&List::pop);
+static auto const m_list_pop = Method::wrap(&List::pop);
 static Method const mo_list_pop (m_list_pop);
 
 static Lookup::Item const list_map [] = {
