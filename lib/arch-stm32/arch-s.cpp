@@ -301,7 +301,7 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     return pos >= 0 ? (uint8_t const*) mrfsBase[pos].name : nullptr;
 }
 
-void arch::init (size_t size) {
+void arch::init (int size) {
     console.init();
 #if STM32F103xB
     enableSysTick(); // no HSE crystal
@@ -313,6 +313,14 @@ void arch::init (size_t size) {
 
     mrfs::init(mrfsBase, mrfsSize);
     //mrfs::dump();
+
+    // negative sizes indicate required amount to not allocate
+    if (size <= 0) {
+        uint8_t top;
+        int avail = &top - (uint8_t*) sbrk(0);
+        size = avail + (size < -1024 ? size : -1024);
+        assert(size > 1024); // there better be at least 1k for the pool
+    }
 
     gcSetup(sbrk(size), size);
     Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM

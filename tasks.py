@@ -34,13 +34,6 @@ def x_rsync(c, host, dest="monty-test"):
     c.run("rsync -av --exclude .git --exclude .pio . %s:%s/" % (host, dest))
 
 @task
-def x_sizes(c):
-    """show µC build sizes, w/ and w/o assertions or Python VM"""
-    c.run("pio run -t size | tail -8 | head -2")
-    c.run("pio run -e noassert | tail -7 | head -1")
-    c.run("pio run -e nopyvm | tail -7 | head -1")
-
-@task
 def x_tags(c):
     """update the (c)tags file"""
     c.run("ctags -R lib src test")
@@ -129,9 +122,21 @@ def runner(c, tests=""):
     match = "{%s}" % tests if "," in tests else (tests or "*")
     c.run("src/runner.py pytests/%s.py" % match, pty=True)
 
-@task(test, python, upload, flash, runner)
+@task
+def builds(c):
+    """show µC build sizes, w/ and w/o assertions or Python VM"""
+    c.run("pio run -t size | tail -8 | head -2")
+    c.run("pio run -e noassert | tail -7 | head -1")
+    c.run("pio run -e nopyvm | tail -7 | head -1")
+
+@task
+def clean(c):
+    """delete all build results"""
+    c.run("rm -rf .pio examples/*/.pio monty.bin")
+
+@task(clean, test, python, upload, flash, runner, builds)
 def all(c):
-    """shorthand for running test, python, upload, flash, and runner"""
+    """shorthand for: clean test python upload flash runner builds"""
 
 @task(help={"addr": "flash address (default: 0x08010000)",
             "write": "also write to flash using st-flash"})
@@ -147,11 +152,6 @@ def mrfs(c, addr="0x08020000", write=False):
         except Exception as e:
             r = e.result
         print(r.tail("stderr", 1).strip())
-
-@task
-def clean(c):
-    """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio monty.bin")
 
 @task
 def health(c):

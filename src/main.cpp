@@ -4,11 +4,7 @@
 using namespace monty;
 
 int main (int argc, char const** argv) {
-#if NATIVE
-    arch::init(20*1024);
-#else
-    arch::init(10*1024);
-#endif
+    arch::init(12*1024);
 #ifndef NDEBUG
     printf("main\n");
 #endif

@@ -31,8 +31,10 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     return data;
 }
 
-void arch::init (size_t size) {
+void arch::init (int size) {
     setbuf(stdout, nullptr);
+    if (size <= 0)
+        size = 1024*1024; // allocate a whopping 1 Mb
     monty::gcSetup(malloc(size), size);
     monty::Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
 }
