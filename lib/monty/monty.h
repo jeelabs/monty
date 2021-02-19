@@ -715,7 +715,7 @@ namespace monty {
     //CG>
         using Factory = auto (*)(ArgVec const&,Type const*) -> Value;
 
-        constexpr Type (Value s, Factory f =noFactory, Lookup const* a =nullptr)
+        constexpr Type (Value s, Lookup const* a =nullptr, Factory f =noFactory)
                         : Dict (a), _name (s), _factory (f) {}
 
         auto call (ArgVec const&) const -> Value override;

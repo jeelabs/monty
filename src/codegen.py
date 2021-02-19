@@ -310,9 +310,9 @@ def TYPE_INFO(block):
         out.append('Type %12s::info (%s);' % (name, q(tag)))
     out.append("")
     types[1].sort()
-    fmt = 'Type %8s::info (%-15s, %6s::create, &%s::attrs);'
+    fmt = 'Type %8s::info (%-15s %6s::attrs, %5s::create);'
     for tag, name, base in types[1]:
-        out.append(fmt % (name, q(tag), name, name))
+        out.append(fmt % (name, q(tag) + ",", "&" + name, name))
     return out
 
 # generate builtin function attributes

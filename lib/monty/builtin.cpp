@@ -337,21 +337,21 @@ Type       Module::info (Q(  7,"<module>"));
 Type         None::info (Q(197,"<none>"));
 Type     Stacklet::info (Q(198,"<stacklet>"));
 
-Type    Array::info (Q(184,"array") ,  Array::create, &Array::attrs);
-Type     Bool::info (Q( 62,"bool")  ,   Bool::create, &Bool::attrs);
-Type    Bytes::info (Q( 66,"bytes") ,  Bytes::create, &Bytes::attrs);
-Type    Class::info (Q(185,"class") ,  Class::create, &Class::attrs);
-Type     Dict::info (Q( 75,"dict")  ,   Dict::create, &Dict::attrs);
-Type    Event::info (Q(167,"event") ,  Event::create, &Event::attrs);
-Type      Int::info (Q( 94,"int")   ,    Int::create, &Int::attrs);
-Type     List::info (Q(108,"list")  ,   List::create, &List::attrs);
-Type    Range::info (Q(124,"range") ,  Range::create, &Range::attrs);
-Type      Set::info (Q(140,"set")   ,    Set::create, &Set::attrs);
-Type    Slice::info (Q(186,"slice") ,  Slice::create, &Slice::attrs);
-Type      Str::info (Q(151,"str")   ,    Str::create, &Str::attrs);
-Type    Super::info (Q(154,"super") ,  Super::create, &Super::attrs);
-Type    Tuple::info (Q(157,"tuple") ,  Tuple::create, &Tuple::attrs);
-Type     Type::info (Q(158,"type")  ,   Type::create, &Type::attrs);
+Type    Array::info (Q(184,"array"), &Array::attrs, Array::create);
+Type     Bool::info (Q( 62,"bool"),   &Bool::attrs,  Bool::create);
+Type    Bytes::info (Q( 66,"bytes"), &Bytes::attrs, Bytes::create);
+Type    Class::info (Q(185,"class"), &Class::attrs, Class::create);
+Type     Dict::info (Q( 75,"dict"),   &Dict::attrs,  Dict::create);
+Type    Event::info (Q(167,"event"), &Event::attrs, Event::create);
+Type      Int::info (Q( 94,"int"),     &Int::attrs,   Int::create);
+Type     List::info (Q(108,"list"),   &List::attrs,  List::create);
+Type    Range::info (Q(124,"range"), &Range::attrs, Range::create);
+Type      Set::info (Q(140,"set"),     &Set::attrs,   Set::create);
+Type    Slice::info (Q(186,"slice"), &Slice::attrs, Slice::create);
+Type      Str::info (Q(151,"str"),     &Str::attrs,   Str::create);
+Type    Super::info (Q(154,"super"), &Super::attrs, Super::create);
+Type    Tuple::info (Q(157,"tuple"), &Tuple::attrs, Tuple::create);
+Type     Type::info (Q(158,"type"),   &Type::attrs,  Type::create);
 //CG>
 
 // added to satisfy linker

@@ -1333,7 +1333,7 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map, sizeof pyvm_map);
 //CG>
 
-Type PyVM::info (Q(180,"<pyvm>"), nullptr, &PyVM::attrs);
+Type PyVM::info (Q(180,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)

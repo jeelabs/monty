@@ -509,7 +509,7 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
     return {};
 }
 
-Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
+Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
     assert(2 <= args._num && args._num <= 3); // no support for multiple inheritance
     if (args._num > 2)
         _chain = &args[2].asType<Class>();

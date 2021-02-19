@@ -79,7 +79,7 @@ static Lookup::Item const spi_map [] = {
 Lookup const Spi::attrs (spi_map, sizeof spi_map);
 //CG>
 
-Type Spi::info (Q(213,"<spi>"), nullptr, &Spi::attrs);
+Type Spi::info (Q(213,"<spi>"), &Spi::attrs);
 
 struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     static Lookup const attrs;
@@ -126,7 +126,7 @@ static Lookup::Item const rf69_map [] = {
 Lookup const RF69::attrs (rf69_map, sizeof rf69_map);
 //CG>
 
-Type RF69::info (Q(214,"<rf69>"), nullptr, &RF69::attrs);
+Type RF69::info (Q(214,"<rf69>"), &RF69::attrs);
 
 //CG1 bind spi
 static auto f_spi (ArgVec const& args) -> Value {
