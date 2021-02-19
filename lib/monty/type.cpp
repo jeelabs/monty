@@ -10,6 +10,17 @@ Value const monty::Empty {Tuple::emptyObj};
 
 Type const Inst::info (Q(181,"<instance>"));
 
+Lookup const Bytes::attrs;
+Lookup const Class::attrs;
+Lookup const Inst::attrs;
+Lookup const Range::attrs;
+Lookup const Set::attrs;
+Lookup const Slice::attrs;
+Lookup const Str::attrs;
+Lookup const Super::attrs;
+Lookup const Tuple::attrs;
+Lookup const Type::attrs;
+
 void monty::markVec (Vector const& vec) {
     for (auto e : vec)
         e.marker();

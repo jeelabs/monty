@@ -353,18 +353,3 @@ Type    Super::info (Q(154,"super"), &Super::attrs, Super::create);
 Type    Tuple::info (Q(157,"tuple"), &Tuple::attrs, Tuple::create);
 Type     Type::info (Q(158,"type"),   &Type::attrs,  Type::create);
 //CG>
-
-// added to satisfy linker
-Lookup const  Array::attrs;
-Lookup const  Bool::attrs;
-Lookup const  Bytes::attrs;
-Lookup const  Class::attrs;
-Lookup const  Inst::attrs;
-Lookup const  Int::attrs;
-Lookup const  Range::attrs;
-Lookup const  Set::attrs;
-Lookup const  Slice::attrs;
-Lookup const  Str::attrs;
-Lookup const  Super::attrs;
-Lookup const  Tuple::attrs;
-Lookup const  Type::attrs;

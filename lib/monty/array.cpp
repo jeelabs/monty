@@ -5,6 +5,8 @@
 
 using namespace monty;
 
+Lookup const Array::attrs;
+
 struct Accessor {
     virtual auto get (ByteVec&, uint32_t) const -> Value  = 0;
     virtual void set (ByteVec&, uint32_t, Value) const = 0;
@@ -242,4 +244,24 @@ auto Array::create (ArgVec const& args, Type const*) -> Value {
         len = args[1];
     }
     return new Array (type, len);
+}
+
+Value Array::repr (Buffer& buf) const {
+    auto m = mode();
+    auto n = len();
+    buf.print("%d%c", n, m);
+    switch (m) {
+        case 'q':                               n <<= 1; // fall through
+        case 'l': case 'L':                     n <<= 1; // fall through
+        case 'h': case 'H': case 'i': case 'I': n <<= 1; // fall through
+        case 'b': case 'B':                     break;
+        case 'P':                               n >>= 1; // fall through
+        case 'T':                               n >>= 1; // fall through
+        case 'N':                               n >>= 1; break;
+        case 'v': case 'V': n = ((uint16_t const*) begin())[len()]; break;
+    }
+    auto p = (uint8_t const*) begin();
+    for (uint32_t i = 0; i < n; ++i)
+        buf.print("%02x", p[i]);
+    return {};
 }
