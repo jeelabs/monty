@@ -4,26 +4,20 @@
 
 using namespace monty;
 
-//CG< mod-list d
+//CG2 mod-list d
 extern Module ext_sys;
-#if NATIVE
 extern Module ext_machine;
-#endif
-#if STM32
-extern Module ext_machine;
-#endif
-//CG>
 
 static Lookup::Item const mod_map [] = {
-    //CG< mod-list a
-    { Q(176,"sys"), ext_sys },
-    #if NATIVE
-    { Q(/*!*/202,"machine"), ext_machine },
-    #endif
-    #if STM32
-    { Q(/*!*/215,"machine"), ext_machine },
-    #endif
-    //CG>
+//CG< mod-list a
+    { Q (176,"sys"), ext_sys },
+#if NATIVE
+    { Q (202,"machine"), ext_machine },
+#endif
+#if STM32
+    { Q (215,"machine"), ext_machine },
+#endif
+//CG>
 };
 
 static Lookup const mod_attrs (mod_map, sizeof mod_map);

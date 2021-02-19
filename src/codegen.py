@@ -30,21 +30,25 @@ def MODULE(block, mod):
 # emit the definitions to find all known modules
 def MOD_LIST(block, sel):
     out = []
-    names = list(mods.keys())
-    names.sort()
-    for qa in names:
-        if mods[qa]:
-            mods[qa].sort()
-            if qa:
-                out.append("#if %s" % qa)
-            for m in mods[qa]:
-                if sel == "d":
+    if sel == "d":
+        seen = {}
+        for _, mi in mods.items():
+            for m in mi:
+                if m not in seen:
                     out.append("extern Module ext_%s;" % m)
-                if sel == "a":
+                    seen[m] = True
+    if sel == "a":
+        names = list(mods.keys())
+        names.sort()
+        for qa in names:
+            if mods[qa]:
+                mods[qa].sort()
+                if qa:
+                    out.append("#if %s" % qa)
+                for m in mods[qa]:
                     # lookup in arch-specific map, must already exist
                     id = archs[qa][1][m]
-                    c = "" if qa == "" else "/*!*/"
-                    out.append('{ Q(%s%d,"%s"), ext_%s },' % (c, id, m, m))
+                    out.append('    { Q (%d,"%s"), ext_%s },' % (id, m, m))
             if qa:
                 out.append("#endif")
     return out
