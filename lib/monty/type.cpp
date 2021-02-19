@@ -16,36 +16,36 @@ void monty::markVec (Vector const& vec) {
 }
 
 auto Iterator::next() -> Value {
-    if (ipos >= (int) iobj.len())
+    if (_ipos >= (int) iobj.len())
         return E::StopIteration;
     // TODO duplicate code, see opForIter in pyvm.h
     if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
-        return ((List&) iobj)[ipos++]; // avoid keyed access
-    return iobj.getAt(ipos++);
+        return ((List&) iobj)[_ipos++]; // avoid keyed access
+    return iobj.getAt(_ipos++);
 }
 
 auto Range::len () const -> uint32_t {
-    assert(by != 0);
-    auto n = (to - from + by + (by > 0 ? -1 : 1)) / by;
+    assert(_by != 0);
+    auto n = (_to - _from + _by + (_by > 0 ? -1 : 1)) / _by;
     return n < 0 ? 0 : n;
 }
 
 auto Range::getAt (Value k) const -> Value {
-    return from + k * by;
+    return _from + k * _by;
 }
 
 auto Range::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args.num && args.num <= 3);
-    int a = args.num > 1 ? (int) args[0] : 0;
-    int b = args.num == 1 ? args[0] : args[1];
-    int c = args.num > 2 ? (int) args[2] : 1;
+    assert(1 <= args._num && args._num <= 3);
+    int a = args._num > 1 ? (int) args[0] : 0;
+    int b = args._num == 1 ? args[0] : args[1];
+    int c = args._num > 2 ? (int) args[2] : 1;
     return new Range (a, b, c);
 }
 
 auto Slice::asRange (int sz) const -> Range {
-    int from = off.isInt() ? (int) off : 0;
-    int to = num.isInt() ? (int) num : sz;
-    int by = step.isInt() ? (int) step : 1;
+    int from = _off.isInt() ? (int) _off : 0;
+    int to = _num.isInt() ? (int) _num : sz;
+    int by = _step.isInt() ? (int) _step : 1;
     if (from < 0)
         from += sz;
     if (to < 0)
@@ -59,10 +59,10 @@ auto Slice::asRange (int sz) const -> Range {
 }
 
 auto Slice::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args.num && args.num <= 3);
-    Value a = args.num > 1 ? args[0] : Null;
-    Value b = args.num == 1 ? args[0] : args[1];
-    Value c = args.num > 2 ? args[2] : Null;
+    assert(1 <= args._num && args._num <= 3);
+    Value a = args._num > 1 ? args[0] : Null;
+    Value b = args._num == 1 ? args[0] : args[1];
+    Value c = args._num > 2 ? args[2] : Null;
     return new Slice (a, b, c);
 }
 
@@ -111,7 +111,7 @@ auto Bytes::copy (Range const& r) const -> Value {
 }
 
 auto Bytes::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     Value v = args[0];
     if (v.isInt()) {
         auto o = new Bytes ();
@@ -197,24 +197,24 @@ auto Str::getAt (Value k) const -> Value {
 }
 
 auto Str::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1 && args[0].isStr());
+    assert(args._num == 1 && args[0].isStr());
     return new Str (args[0]);
 }
 
 void VaryVec::atAdj (uint32_t idx, uint32_t len) {
-    assert(idx < fill);
+    assert(idx < _fill);
     auto olen = atLen(idx);
     if (len == olen)
         return;
-    auto ofill = fill;
-    fill = pos(fill);
+    auto ofill = _fill;
+    _fill = pos(_fill);
     if (len > olen)
         ByteVec::insert(pos(idx+1), len - olen);
     else
         ByteVec::remove(pos(idx) + len, olen - len);
-    fill = ofill;
+    _fill = ofill;
 
-    for (uint32_t i = idx + 1; i <= fill; ++i)
+    for (uint32_t i = idx + 1; i <= _fill; ++i)
         pos(i) += len - olen;
 }
 
@@ -224,44 +224,44 @@ void VaryVec::atSet (uint32_t idx, void const* ptr, uint32_t len) {
 }
 
 void VaryVec::insert (uint32_t idx, uint32_t num) {
-    assert(idx <= fill);
+    assert(idx <= _fill);
     if (cap() == 0) {
         ByteVec::insert(0, 2);
         pos(0) = 2;
-        fill = 0;
+        _fill = 0;
     }
 
-    auto ofill = fill;
-    fill = pos(fill);
+    auto ofill = _fill;
+    _fill = pos(_fill);
     ByteVec::insert(2 * idx, 2 * num);
-    fill = ofill + num;
+    _fill = ofill + num;
 
-    for (uint32_t i = 0; i <= fill; ++i)
+    for (uint32_t i = 0; i <= _fill; ++i)
         pos(i) += 2 * num;
     for (uint32_t i = 0; i < num; ++i)
         pos(idx+i) = pos(idx+num);
 }
 
 void VaryVec::remove (uint32_t idx, uint32_t num) {
-    assert(idx + num <= fill);
+    assert(idx + num <= _fill);
     auto diff = pos(idx+num) - pos(idx);
 
-    auto ofill = fill;
-    fill = pos(fill);
+    auto ofill = _fill;
+    _fill = pos(_fill);
     ByteVec::remove(pos(idx), diff);
     ByteVec::remove(2 * idx, 2 * num);
-    fill = ofill - num;
+    _fill = ofill - num;
 
-    for (uint32_t i = 0; i <= fill; ++i)
+    for (uint32_t i = 0; i <= _fill; ++i)
         pos(i) -= 2 * num;
-    for (uint32_t i = idx; i <= fill; ++i)
+    for (uint32_t i = idx; i <= _fill; ++i)
         pos(i) -= diff;
 }
 
 auto Lookup::operator[] (char const* key) const -> Value {
-    for (uint32_t i = 0; i < count; ++i)
-        if (strcmp(key, items[i].k) == 0)
-            return items[i].v;
+    for (uint32_t i = 0; i < _count; ++i)
+        if (strcmp(key, _items[i].k) == 0)
+            return _items[i].v;
     return {};
 }
 
@@ -271,12 +271,12 @@ auto Lookup::getAt (Value k) const -> Value {
 }
 
 void Lookup::marker () const {
-    for (uint32_t i = 0; i < count; ++i)
-        items[i].v.marker();
+    for (uint32_t i = 0; i < _count; ++i)
+        _items[i].v.marker();
 }
 
-Tuple::Tuple (ArgVec const& args) : fill (args.num) {
-    memcpy((Value*) data(), args.begin(), args.num * sizeof (Value));
+Tuple::Tuple (ArgVec const& args) : _fill (args._num) {
+    memcpy((Value*) data(), args.begin(), args._num * sizeof (Value));
 }
 
 auto Tuple::getAt (Value k) const -> Value {
@@ -297,19 +297,19 @@ auto Tuple::copy (Range const& r) const -> Value {
 }
 
 void Tuple::marker () const {
-    for (uint32_t i = 0; i < fill; ++i)
+    for (uint32_t i = 0; i < _fill; ++i)
         data()[i].marker();
 }
 
 auto Tuple::create (ArgVec const& args, Type const*) -> Value {
-    if (args.num == 0)
+    if (args._num == 0)
         return Empty; // there's one unique empty tuple
-    return new (args.num * sizeof (Value)) Tuple (args);
+    return new (args._num * sizeof (Value)) Tuple (args);
 }
 
 List::List (ArgVec const& args) {
-    insert(0, args.num);
-    for (int i = 0; i < args.num; ++i)
+    insert(0, args._num);
+    for (int i = 0; i < args._num; ++i)
         (*this)[i] = args[i];
 }
 
@@ -355,13 +355,13 @@ auto List::copy (Range const& r) const -> Value {
 }
 
 auto List::store (Range const& r, Object const& v) -> Value {
-    assert(r.by == 1);
+    assert(r._by == 1);
     int olen = r.len();
     int nlen = v.len();
     if (nlen < olen)
-        remove(r.from + nlen, olen - nlen);
+        remove(r._from + nlen, olen - nlen);
     else if (nlen > olen)
-        insert(r.from + olen, nlen - olen);
+        insert(r._from + olen, nlen - olen);
     for (int i = 0; i < nlen; ++i)
         (*this)[r.getAt(i)] = v.getAt(i);
     return {};
@@ -410,8 +410,8 @@ auto Set::setAt (Value k, Value v) -> Value {
 
 auto Set::create (ArgVec const& args, Type const*) -> Value {
     auto p = new Set (args);
-    p->adj(args.num);
-    for (int i = 0; i < args.num; ++i)
+    p->adj(args._num);
+    for (int i = 0; i < args._num; ++i)
         p->has(args[i]) = true; // TODO append, no need to lookup
     return p;
 }
@@ -423,17 +423,17 @@ auto Dict::Proxy::operator= (Value v) -> Value {
     auto pos = d.find(k);
     if (v.isNil()) {
         if (pos < n) {
-            d.fill = 2*n;     // don't wipe existing vals
+            d._fill = 2*n;    // don't wipe existing vals
             d.remove(n+pos);  // remove value
             d.remove(pos);    // remove key
-            d.fill = --n;     // set length to new key count
+            d._fill = --n;    // set length to new key count
         }
     } else {
         if (pos == n) { // move all values up and create new gaps
-            d.fill = 2*n;     // don't wipe existing vals
+            d._fill = 2*n;    // don't wipe existing vals
             d.insert(2*n);    // create slot for new value
             d.insert(n);      // same for key, moves all vals one up
-            d.fill = ++n;     // set length to new key count
+            d._fill = ++n;    // set length to new key count
             d[pos] = k;       // store the key
         } else
             w = d[n+pos];
@@ -447,7 +447,7 @@ auto Dict::at (Value k) const -> Value {
     auto n = size();
     auto pos = find(k);
     return pos < n ? (*this)[n+pos] :
-            chain != nullptr ? chain->getAt(k) : Value {};
+            _chain != nullptr ? _chain->getAt(k) : Value {};
 }
 
 auto Dict::keys () -> Value {
@@ -464,9 +464,9 @@ auto Dict::items () -> Value {
 
 void Dict::marker () const {
     auto& v = (Vector const&) *this;
-    for (uint32_t i = 0; i < 2 * fill; ++i) // note: twice the fill
+    for (uint32_t i = 0; i < 2 * _fill; ++i) // note: twice the fill
         v[i].marker();
-    mark(chain);
+    mark(_chain);
 }
 
 auto Dict::create (ArgVec const&, Type const*) -> Value {
@@ -477,19 +477,19 @@ auto Dict::create (ArgVec const&, Type const*) -> Value {
 auto DictView::getAt (Value k) const -> Value {
     assert(k.isInt());
     int n = k;
-    if (vtype == 1)
-        n += dict.fill;
-    if (vtype <= 1)
-        return dict[n];
+    if (_vtype == 1)
+        n += _dict._fill;
+    if (_vtype <= 1)
+        return _dict[n];
     Vector avec;
     avec.insert(0, 2);
-    avec[0] = dict[n];
-    avec[1] = dict[n+dict.fill];
+    avec[0] = _dict[n];
+    avec[1] = _dict[n+_dict._fill];
     return Tuple::create({avec, 2, 0});
 }
 
 auto Type::call (ArgVec const& args) const -> Value {
-    return factory(args, this);
+    return _factory(args, this);
 }
 
 auto Type::noFactory (ArgVec const&, const Type*) -> Value {
@@ -498,37 +498,37 @@ auto Type::noFactory (ArgVec const&, const Type*) -> Value {
 }
 
 auto Type::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     Value v = args[0];
     switch (v.tag()) {
         case Value::Nil: break;
         case Value::Int: return "int";
         case Value::Str: return "str";
-        case Value::Obj: return v.obj().type().name;
+        case Value::Obj: return v.obj().type()._name;
     }
     return {};
 }
 
 Class::Class (ArgVec const& args) : Type (args[1], Inst::create) {
-    assert(2 <= args.num && args.num <= 3); // no support for multiple inheritance
-    if (args.num > 2)
-        chain = &args[2].asType<Class>();
+    assert(2 <= args._num && args._num <= 3); // no support for multiple inheritance
+    if (args._num > 2)
+        _chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(182,"__bases__")) = Tuple::create({args.vec, args.num-2, args.off+2});
+    at(Q(182,"__bases__")) = Tuple::create({args._vec, args._num-2, args._off+2});
 
-    args[0].obj().call({args.vec, args.num - 2, args.off + 2});
+    args[0].obj().call({args._vec, args._num - 2, args._off + 2});
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num >= 2 && args[0].isObj() && args[1].isStr());
+    assert(args._num >= 2 && args[0].isObj() && args[1].isStr());
     return new Class (args);
 }
 
 Super::Super (ArgVec const& args) {
-    assert(args.num == 2);
-    sclass = args[0];
-    sinst = args[1];
+    assert(args._num == 2);
+    _sclass = args[0];
+    _sinst = args[1];
 }
 
 auto Super::create (ArgVec const& args, Type const*) -> Value {
@@ -541,7 +541,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;
-        init.obj().call({args.vec, args.num + 1, args.off - 1});
+        init.obj().call({args._vec, args._num + 1, args._off - 1});
     }
 }
 

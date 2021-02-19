@@ -316,14 +316,14 @@ def OP(block, typ='', multi=0):
     elif 's' in typ:
         fmt, arg, decl = ' %d', 'fetchO()-0x8000', 'int arg'
     elif 'm' in typ:
-        fmt, arg, decl = ' %d', 'ip[-1]', 'uint32_t arg'
+        fmt, arg, decl = ' %d', '_ip[-1]', 'uint32_t arg'
     else:
         fmt, arg, decl = '', '', ''
     name = 'op' + op
 
     if 'm' in typ:
-        opmulti.append('if ((uint32_t) (ip[-1] - Op::%s) < %d) {' % (op, multi))
-        opmulti.append('    %s = ip[-1] - Op::%s;' % (decl, op))
+        opmulti.append('if ((uint32_t) (_ip[-1] - Op::%s) < %d) {' % (op, multi))
+        opmulti.append('    %s = _ip[-1] - Op::%s;' % (decl, op))
         if flags.op_print:
             opmulti.append('    printf("%s%s\\n", (int) arg);' % (op, fmt))
         opmulti.append('    %s(arg);' % name)

@@ -9,20 +9,20 @@ using namespace monty;
 
 //CG1 bind event
 static auto f_event (ArgVec const& args) -> Value {
-    assert(args.num == 0);
+    assert(args._num == 0);
     return new Event;
 }
 
 //CG1 bind gc
 static auto f_gc (ArgVec const& args) -> Value {
-    assert(args.num == 0);
+    assert(args._num == 0);
     Stacklet::gcAll();
     return {};
 }
 
 //CG1 bind gcmax
 static auto f_gcmax (ArgVec const& args) -> Value {
-    assert(args.num == 0);
+    assert(args._num == 0);
     return gcMax();
 }
 
@@ -30,7 +30,7 @@ static List gcdata; // keep this around to avoid reallocating on each call
 
 //CG1 bind gcstats
 static auto f_gcstats (ArgVec const& args) -> Value {
-    assert(args.num == 0);
+    assert(args._num == 0);
     constexpr auto NSTATS = sizeof gcStats / sizeof (uint32_t);
     if (gcdata.size() == 0)
         gcdata.insert(0, NSTATS);

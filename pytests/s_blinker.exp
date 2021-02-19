@@ -1,6 +1,6 @@
 / at [0-9A-Z]{8}>/ at {ADDR}>/
 main
-<<machine.pins> at {ADDR}>
+<<pins> at {ADDR}>
 0 1 90
 1 0 180
 2 0 270

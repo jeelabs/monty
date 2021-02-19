@@ -55,33 +55,33 @@ static void duff (void* dst, void const* src, size_t len) {
 }
 
 void Event::deregHandler () {
-    if (id >= 0) {
-        assert(&triggers[id].obj() == this);
-        triggers[id] = {};
+    if (_id >= 0) {
+        assert(&triggers[_id].obj() == this);
+        triggers[_id] = {};
         set(); // release queued tasks
-        id = -1;
+        _id = -1;
     }
 }
 
 void Event::set () {
-    value = true;
-    auto n = queue.size();
+    _value = true;
+    auto n = _queue.size();
     if (n > 0) {
         // insert all entries at head of tasks and remove them from this event
         Stacklet::tasks.insert(0, n);
-        memcpy(Stacklet::tasks.begin(), queue.begin(), n * sizeof (Value));
-        if (id >= 0)
+        memcpy(Stacklet::tasks.begin(), _queue.begin(), n * sizeof (Value));
+        if (_id >= 0)
             queued -= n;
         assert(queued >= 0);
-        queue.remove(0, n);
+        _queue.remove(0, n);
     }
 }
 
 void Event::wait () {
-    if (!value) {
-        if (id >= 0)
+    if (!_value) {
+        if (_id >= 0)
             ++queued;
-        Stacklet::suspend(queue);
+        Stacklet::suspend(_queue);
     }
 }
 
@@ -96,7 +96,7 @@ auto Event::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Event::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 0);
+    assert(args._num == 0);
     return new Event;
 }
 
@@ -142,7 +142,7 @@ void Stacklet::suspend (Vector& queue) {
     assert(need % sizeof (Value) == 0);
     assert(need > sizeof (jmp_buf));
 
-    current->adj(current->fill + need / sizeof (Value));
+    current->adj(current->_fill + need / sizeof (Value));
     if (setjmp(top) == 0) {
         // suspending: copy stack out and jump to caller
         duff(current->end(), &top, need);
@@ -178,14 +178,14 @@ auto Stacklet::runLoop () -> bool {
         current = (Stacklet*) &tasks.pull().obj();
         assert(current != nullptr);
 
-        if (current->cap() > current->fill + sizeof (jmp_buf) / sizeof (Value))
+        if (current->cap() > current->_fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 
         // FIXME careful, this won't pick up pending events while looping
         while (current->run()) {}
 
         if (current != nullptr) {
-            current->adj(current->fill);
+            current->adj(current->_fill);
             assert(tasks.find(current) >= tasks.size());
             tasks.push(current);
         }
@@ -195,23 +195,23 @@ auto Stacklet::runLoop () -> bool {
 }
 
 auto Event::regHandler () -> uint32_t {
-    id = triggers.find({});
-    if (id >= (int) triggers.size())
-        triggers.insert(id);
-    triggers[id] = this;
-    return id;
+    _id = triggers.find({});
+    if (_id >= (int) triggers.size())
+        triggers.insert(_id);
+    triggers[_id] = this;
+    return _id;
 }
 
 auto BoundMeth::call (ArgVec const& args) const -> Value {
-    assert(args.num > 0 && this == &args[-1].obj());
-    args[-1] = self; // overwrites the entry before first arg
-    return meth.call({args.vec, (int) args.num + 1, (int) args.off - 1});
+    assert(args._num > 0 && this == &args[-1].obj());
+    args[-1] = _self; // overwrites the entry before first arg
+    return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
 }
 
 Closure::Closure (Object const& f, ArgVec const& args)
-        : func (f) {
-    insert(0, args.num);
-    for (int i = 0; i < args.num; ++i)
+        : _func (f) {
+    insert(0, args._num);
+    for (int i = 0; i < args._num; ++i)
         begin()[i] = args[i];
 }
 
@@ -219,10 +219,10 @@ auto Closure::call (ArgVec const& args) const -> Value {
     int n = size();
     assert(n > 0);
     Vector v;
-    v.insert(0, n + args.num);
+    v.insert(0, n + args._num);
     for (int i = 0; i < n; ++i)
         v[i] = begin()[i];
-    for (int i = 0; i < args.num; ++i)
+    for (int i = 0; i < args._num; ++i)
         v[n+i] = args[i];
-    return func.call({v, n + args.num});
+    return _func.call({v, n + args._num});
 }

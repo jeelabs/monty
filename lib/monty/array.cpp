@@ -56,15 +56,15 @@ struct AccessAsBits : Accessor {                    // P T N
     }
     void ins (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         assert((pos & rest) == 0 && (num & rest) == 0);
-        vec.fill >>= shft;
+        vec._fill >>= shft;
         vec.insert(pos >> shft, num >> shft);
-        vec.fill <<= shft;
+        vec._fill <<= shft;
     }
     void del (ByteVec& vec, uint32_t pos, uint32_t num) const override {
         assert((pos & rest) == 0 && (num & rest) == 0);
-        vec.fill >>= shft;
+        vec._fill >>= shft;
         vec.remove(pos >> shft, num >> shft);
-        vec.fill <<= shft;
+        vec._fill <<= shft;
     }
 };
 
@@ -169,11 +169,11 @@ Array::Array (char type, uint32_t len) {
     auto p = strchr(arrayModes, type);
     auto s = p != nullptr ? p - arrayModes : 0; // use Value if unknown type
     accessors[s]->ins(*this, 0, len);
-    fill |= s << LEN_BITS;
+    _fill |= s << LEN_BITS;
 }
 
 auto Array::mode () const -> char {
-    return arrayModes[fill >> LEN_BITS];
+    return arrayModes[_fill >> LEN_BITS];
 }
 
 auto Array::len () const -> uint32_t {
@@ -192,24 +192,24 @@ auto Array::setAt (Value k, Value v) -> Value {
         return sliceSetter(k, v);
     auto n = k; // TODO relPos(k);
     auto s = sel();
-    fill &= 0x07FFFFFF;
+    _fill &= 0x07FFFFFF;
     accessors[s]->set(*this, n, v);
-    fill |= s << LEN_BITS;
+    _fill |= s << LEN_BITS;
     return {};
 }
 
 void Array::insert (uint32_t idx, uint32_t num) {
     auto s = sel();
-    fill &= 0x07FFFFFF;
+    _fill &= 0x07FFFFFF;
     accessors[s]->ins(*this, idx, num);
-    fill = fill + (s << LEN_BITS);
+    _fill = _fill + (s << LEN_BITS);
 }
 
 void Array::remove (uint32_t idx, uint32_t num) {
     auto s = sel();
-    fill &= 0x07FFFFFF;
+    _fill &= 0x07FFFFFF;
     accessors[s]->del(*this, idx, num);
-    fill = fill + (s << LEN_BITS);
+    _fill += s << LEN_BITS;
 }
 
 auto Array::copy (Range const& r) const -> Value {
@@ -221,23 +221,23 @@ auto Array::copy (Range const& r) const -> Value {
 }
 
 auto Array::store (Range const& r, Object const& v) -> Value {
-    assert(r.by == 1);
+    assert(r._by == 1);
     int olen = r.len();
     int nlen = v.len();
     if (nlen < olen)
-        remove(r.from + nlen, olen - nlen);
+        remove(r._from + nlen, olen - nlen);
     else if (nlen > olen)
-        insert(r.from + olen, nlen - olen);
+        insert(r._from + olen, nlen - olen);
     for (int i = 0; i < nlen; ++i)
         setAt(r.getAt(i), v.getAt(i));
     return {};
 }
 
 auto Array::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num >= 1 && args[0].isStr());
+    assert(args._num >= 1 && args[0].isStr());
     char type = *((char const*) args[0]);
     uint32_t len = 0;
-    if (args.num == 2) {
+    if (args._num == 2) {
         assert(args[1].isInt());
         len = args[1];
     }

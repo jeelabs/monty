@@ -212,7 +212,7 @@ struct Loader {
             n += 0x100;
         }
 
-        qWin.remove(qWin.fill-1);
+        qWin.remove(qWin._fill-1);
         qWin.insert(0);
         qWin[0] = n;
         return n;

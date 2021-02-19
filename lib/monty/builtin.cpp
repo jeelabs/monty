@@ -8,7 +8,7 @@ using namespace monty;
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
-    for (int i = 0; i < args.num; ++i) {
+    for (int i = 0; i < args._num; ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
         //  this only applies to the top level, not inside lists, etc.
         char const* s = nullptr;
@@ -34,7 +34,7 @@ static auto f_print (ArgVec const& args) -> Value {
 
 //CG1 bind iter
 static auto f_iter (ArgVec const& args) -> Value {
-    assert(args.num == 1 && args[0].isObj());
+    assert(args._num == 1 && args[0].isObj());
     auto& o = args[0].obj();
     auto v = o.iter();
     if (v.isInt())
@@ -44,25 +44,25 @@ static auto f_iter (ArgVec const& args) -> Value {
 
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
-    assert(args.num == 1 && args[0].isObj());
+    assert(args._num == 1 && args[0].isObj());
     return args[0].obj().next();
 }
 
 //CG1 bind len
 static auto f_len (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     return args[0].asObj().len();
 }
 
 //CG1 bind abs
 static auto f_abs (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     return args[0].unOp(UnOp::Abs);
 }
 
 //CG1 bind hash
 static auto f_hash (ArgVec const& args) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     return args[0].unOp(UnOp::Hash);
 }
 
@@ -317,8 +317,8 @@ void Exception::marker () const {
 }
 
 auto Exception::create (E exc, ArgVec const& args) -> Value {
-    // single alloc: first a tuple with args.num values, then exception info
-    auto sz = args.num * sizeof (Value) + sizeof (Extra);
+    // single alloc: first a tuple with args._num values, then exception info
+    auto sz = args._num * sizeof (Value) + sizeof (Extra);
     return new (sz) Exception (exc, args);
 }
 

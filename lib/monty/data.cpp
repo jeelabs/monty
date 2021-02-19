@@ -79,10 +79,10 @@ auto Q::make (char const* s) -> uint16_t {
     return i + QID_RAM_BASE;
 }
 
-Value::Value (char const* arg) : v ((uintptr_t) arg * 4 + 2) {
+Value::Value (char const* arg) : _v ((uintptr_t) arg * 4 + 2) {
     auto id = Q::find(arg);
     if (id > 0)
-        v = id * 4 + 2;
+        _v = id * 4 + 2;
     else if (Vec::inPool(arg)) // don't store ptrs into movable vector space
         *this = new struct Str (arg);
     else
@@ -102,7 +102,7 @@ Value::Value (E exc, Value arg1, Value arg2) {
 Value::operator char const* () const {
     if (!isStr())
         return asType<struct Str>();
-    auto p = v >> 2;
+    auto p = _v >> 2;
     if (p < QID_RAM_LAST)
         return Q::str(p);
     return (char const*) p;
@@ -135,7 +135,7 @@ bool Value::truthy () const {
 }
 
 auto Value::operator== (Value rhs) const -> bool {
-    if (v == rhs.v)
+    if (_v == rhs._v)
         return true;
     if (tag() == rhs.tag())
         switch (tag()) {
@@ -261,7 +261,7 @@ void Value::verify (Type const& t) const {
     if (!f) {
         dump("verify?");
         Value v = t;
-        v.dump(t.name);
+        v.dump(t._name);
     }
     assert(f);
 }
@@ -335,7 +335,7 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
     if (ks == nullptr)
         return {E::TypeError, "index not int or slice", k};
     auto r = ks->asRange(len());
-    if (r.by != 1)
+    if (r._by != 1)
         return {E::NotImplementedError, "assign to extended slice", k};
     return store(r, v.asObj());
 }
@@ -352,9 +352,9 @@ auto Bool::unop (UnOp op) const -> Value {
 }
 
 auto Bool::create (ArgVec const& args, Type const*) -> Value {
-    if (args.num == 1)
+    if (args._num == 1)
         return args[0].unOp(UnOp::Boln);
-    assert(args.num == 0);
+    assert(args._num == 0);
     return False;
 }
 
@@ -374,12 +374,12 @@ auto Int::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Intg: // fall through
         case UnOp::Pos:  return *this;
-        case UnOp::Hash: return Q::hash(&i64, sizeof i64);
-        case UnOp::Abs:  if (i64 > 0) return *this; // else fall through
-        case UnOp::Neg:  return make(-i64);
-        case UnOp::Inv:  return make(~i64);
-        case UnOp::Not:  return Value::asBool(i64 == 0);
-        case UnOp::Boln: return Value::asBool(i64 != 0);
+        case UnOp::Hash: return Q::hash(&_i64, sizeof _i64);
+        case UnOp::Abs:  if (_i64 > 0) return *this; // else fall through
+        case UnOp::Neg:  return make(-_i64);
+        case UnOp::Inv:  return make(~_i64);
+        case UnOp::Not:  return Value::asBool(_i64 == 0);
+        case UnOp::Boln: return Value::asBool(_i64 != 0);
     }
     assert(false);
     return {};
@@ -390,35 +390,35 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
     auto r64 = rhs.asInt();
     switch (op) {
         case BinOp::Less:
-            return Value::asBool(i64 < r64);
+            return Value::asBool(_i64 < r64);
         case BinOp::Equal:
-            return Value::asBool(i64 == r64);
+            return Value::asBool(_i64 == r64);
         case BinOp::Or: case BinOp::InplaceOr:
-            return make(i64 | r64);
+            return make(_i64 | r64);
         case BinOp::Xor: case BinOp::InplaceXor:
-            return make(i64 ^ r64);
+            return make(_i64 ^ r64);
         case BinOp::And: case BinOp::InplaceAnd:
-            return make(i64 & r64);
+            return make(_i64 & r64);
         case BinOp::Lshift: case BinOp::InplaceLshift:
-            return make(i64 << r64);
+            return make(_i64 << r64);
         case BinOp::Rshift: case BinOp::InplaceRshift:
-            return make(i64 >> r64);
+            return make(_i64 >> r64);
         case BinOp::Add: case BinOp::InplaceAdd:
-            return make(i64 + r64);
+            return make(_i64 + r64);
         case BinOp::Subtract: case BinOp::InplaceSubtract:
-            return make(i64 - r64);
+            return make(_i64 - r64);
         case BinOp::Multiply: case BinOp::InplaceMultiply:
-            return make(i64 * r64);
+            return make(_i64 * r64);
         case BinOp::TrueDivide: case BinOp::InplaceTrueDivide:
             // TODO needs floats, fall through
         case BinOp::InplaceFloorDivide: case BinOp::FloorDivide:
             if (r64 == 0)
                 return E::ZeroDivisionError;
-            return i64 / r64;
+            return _i64 / r64;
         case BinOp::InplaceModulo: case BinOp::Modulo:
             if (r64 == 0)
                 return E::ZeroDivisionError;
-            return i64 % r64;
+            return _i64 % r64;
         default:
             break;
     }
@@ -427,7 +427,7 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Int::create (ArgVec const& args, Type const*) -> Value {
-    assert(args.num == 1);
+    assert(args._num == 1);
     auto v = args[0];
     switch (v.tag()) {
         case Value::Nil: // fall through

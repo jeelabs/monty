@@ -15,7 +15,7 @@ void Value::dump (char const* msg) const {
         case Value::Int: printf("<I %d>", (int) *this); break;
         case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
         case Value::Obj: printf("<O %s at %p>",
-                                 (char const*) obj().type().name, &obj());
+                                 (char const*) obj().type()._name, &obj());
                          break;
     }
     if (msg != 0)
@@ -46,15 +46,15 @@ static void putsEsc (Buffer& buf, Value s) {
 }
 
 Buffer::~Buffer () {
-    for (uint32_t i = 0; i < fill; ++i)
+    for (uint32_t i = 0; i < _fill; ++i)
         printf("%c", begin()[i]); // TODO yuck
 }
 
 void Buffer::write (uint8_t const* ptr, uint32_t len) {
-    if (fill + len > cap())
-        adj(fill + len + 50);
+    if (_fill + len > cap())
+        adj(_fill + len + 50);
     memcpy(end(), ptr, len);
-    fill += len;
+    _fill += len;
 }
 
 auto Buffer::operator<< (Value v) -> Buffer& {
@@ -194,30 +194,30 @@ auto Closure::repr (Buffer& buf) const -> Value {
 
 Value Dict::repr (Buffer& buf) const {
     buf << '{';
-    for (uint32_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
             buf << ',';
-        buf << (*this)[i] << ':' << (*this)[fill+i];
+        buf << (*this)[i] << ':' << (*this)[_fill+i];
     }
     buf << '}';
     return {};
 }
 
 Value Exception::repr (Buffer& buf) const {
-    buf.puts(bases.items[(int) extra().code].k);
+    buf.puts(bases._items[(int) extra().code].k);
     return Tuple::repr(buf);
 }
 
 Value Inst::repr (Buffer& buf) const {
-    buf.print("<%s object at %p>", (char const*) type().name, this);
+    buf.print("<%s object at %p>", (char const*) type()._name, this);
     return {};
 }
 
 Value Int::repr (Buffer& buf) const {
-    uint64_t val = i64;
-    if (i64 < 0) {
+    uint64_t val = _i64;
+    if (_i64 < 0) {
         buf.putc('-');
-        val = -i64;
+        val = -_i64;
     }
 
     // need to print in pieces which fit into a std int
@@ -236,7 +236,7 @@ Value Int::repr (Buffer& buf) const {
 
 Value List::repr (Buffer& buf) const {
     buf << '[';
-    for (uint32_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
             buf << ',';
         buf << (*this)[i];
@@ -266,7 +266,7 @@ Value Array::repr (Buffer& buf) const {
 }
 
 Value Module::repr (Buffer& buf) const {
-    buf.print("<module '%s'>", (char const*) name);
+    buf.print("<module '%s'>", (char const*) _name);
     return {};
 }
 
@@ -276,18 +276,18 @@ Value None::repr (Buffer& buf) const {
 }
 
 auto Object::repr (Buffer& buf) const -> Value {
-    buf.print("<%s at %p>", (char const*) type().name, this);
+    buf.print("<%s at %p>", (char const*) type()._name, this);
     return {};
 }
 
 Value Range::repr (Buffer& buf) const {
-    buf.print("range(%d,%d,%d)", from, to, by);
+    buf.print("range(%d,%d,%d)", _from, _to, _by);
     return {};
 }
 
 Value Set::repr (Buffer& buf) const {
     buf << '{';
-    for (uint32_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
             buf << ',';
         buf << (*this)[i];
@@ -297,7 +297,7 @@ Value Set::repr (Buffer& buf) const {
 }
 
 Value Slice::repr (Buffer& buf) const {
-    buf << "slice(" << off << ',' << num << ',' << step << ')';
+    buf << "slice(" << _off << ',' << _num << ',' << _step << ')';
     return {};
 }
 
@@ -313,7 +313,7 @@ Value Super::repr (Buffer& buf) const {
 
 Value Tuple::repr (Buffer& buf) const {
     buf << '(';
-    for (uint32_t i = 0; i < fill; ++i) {
+    for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
             buf << ',';
         buf << (*this)[i];
@@ -323,7 +323,7 @@ Value Tuple::repr (Buffer& buf) const {
 }
 
 Value Type::repr (Buffer& buf) const {
-    buf.print("<type %s>", (char const*) name);
+    buf.print("<type %s>", (char const*) _name);
     return {};
 }
 

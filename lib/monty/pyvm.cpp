@@ -115,23 +115,23 @@ struct Callable : Object {
 
     auto funcAt (int) const -> Bytecode const&;
 
-    Module& mo;
-    Bytecode const& bc;
-    Tuple* pos;
-    Dict* kw;
+    Module& _mo;
+    Bytecode const& _bc;
+    Tuple* _pos;
+    Dict* _kw;
 };
 
 #include "loader.h"
 
 void Callable::marker () const {
-    mo.marker();
-    mark(bc);
-    mark(pos);
-    mark(kw);
+    _mo.marker();
+    mark(_bc);
+    mark(_pos);
+    mark(_kw);
 }
 
 auto Callable::funcAt (int n) const -> Bytecode const& {
-    return bc[n].asType<Bytecode>();
+    return _bc[n].asType<Bytecode>();
 }
 
 struct PyVM : Stacklet {
@@ -145,63 +145,63 @@ struct PyVM : Stacklet {
         // result must be just below stack for proper module/class init
     };
 
-    auto frame () const -> Frame& { return *(Frame*) (begin() + base); }
+    auto frame () const -> Frame& { return *(Frame*) (begin() + _base); }
 
     auto spBase () const -> Value* { return frame().stack; }
-    auto ipBase () const -> uint8_t const* { return callee->bc.start(); }
+    auto ipBase () const -> uint8_t const* { return _callee->_bc.start(); }
 
     auto fastSlot (uint32_t i) const -> Value& {
-        return spBase()[callee->bc.fastSlotTop() + ~i];
+        return spBase()[_callee->_bc.fastSlotTop() + ~i];
     }
     auto derefSlot (uint32_t i) const -> Value& {
-        return fastSlot(i).asType<Cell>().val;
+        return fastSlot(i).asType<Cell>()._val;
     }
 
     static constexpr int EXC_STEP = 3; // use 3 entries per exception
     static constexpr auto FinallyTag = 1<<20;
 
-    auto globals () const -> Module& { return callee->mo; }
+    auto globals () const -> Module& { return _callee->_mo; }
 
     void marker () const override {
         Stacklet::marker();
-        mark(callee);
-        mark(caller);
-        signal.marker();
+        mark(_callee);
+        mark(_caller);
+        _signal.marker();
     }
 
     // previous values are saved in current stack frame
-    uint16_t base = 0;
-    uint16_t spOff = 0;
-    uint16_t ipOff = 0;
-    Callable const* callee = nullptr;
-    Stacklet* caller = nullptr;
-    Value signal = {};
+    uint16_t _base = 0;
+    uint16_t _spOff = 0;
+    uint16_t _ipOff = 0;
+    Callable const* _callee = nullptr;
 
-    Value* sp = nullptr;
-    uint8_t const* ip = nullptr;
+    Stacklet* _caller = nullptr;
+    Value _signal = {};
+    Value* _sp = nullptr;
+    uint8_t const* _ip = nullptr;
 
     auto fetchV (uint32_t v =0) -> uint32_t {
         uint8_t b = 0x80;
         while (b & 0x80) {
-            b = *ip++;
+            b = *_ip++;
             v = (v << 7) | (b & 0x7F);
         }
         return v;
     }
 
     auto fetchV64 () -> uint64_t {
-        uint64_t v = *ip & 0x40 ? -1 : 0;
+        uint64_t v = *_ip & 0x40 ? -1 : 0;
         uint8_t b = 0x80;
         while (b & 0x80) {
-            b = *ip++;
+            b = *_ip++;
             v = (v << 7) | (b & 0x7F);
         }
         return v;
     }
 
     auto fetchO () -> int {
-        int n = *ip++;
-        return n | (*ip++ << 8);
+        int n = *_ip++;
+        return n | (*_ip++ << 8);
     }
 
     auto fetchQ () -> Q {
@@ -218,11 +218,11 @@ struct PyVM : Stacklet {
     // special wrapper to deal with context changes vs cached sp/ip values
     template< typename T >
     auto contextAdjuster (T fun) -> Value {
-        spOff = sp - begin();
-        ipOff = ip - ipBase();
+        _spOff = _sp - begin();
+        _ipOff = _ip - ipBase();
         Value v = fun();
-        sp = begin() + spOff;
-        ip = ipBase() + ipOff;
+        _sp = begin() + _spOff;
+        _ip = ipBase() + _ipOff;
         return v;
     }
 
@@ -231,7 +231,7 @@ struct PyVM : Stacklet {
         auto v = contextAdjuster([=]() -> Value {
             return callee.obj().call(args);
         });
-        *sp = v;
+        *_sp = v;
     }
 
     void instructionTrace () {
@@ -239,25 +239,25 @@ struct PyVM : Stacklet {
         static PyVM* prevCtx;
         if (prevCtx != this) {
             if (prevCtx != nullptr) {
-                printf("\tip %04d sp %2d e ? ", prevCtx->ipOff,
-                                                prevCtx->spOff - 9);
-                printf("op 0x%02x : ", *(prevCtx->ipOff + prevCtx->ipBase()));
-                if (prevCtx->spOff >= 9)
-                    (prevCtx->spOff + prevCtx->spBase())->dump();
+                printf("\tip %04d sp %2d e ? ", prevCtx->_ipOff,
+                                                prevCtx->_spOff - 9);
+                printf("op 0x%02x : ", *(prevCtx->_ipOff + prevCtx->ipBase()));
+                if (prevCtx->_spOff >= 9)
+                    (prevCtx->_spOff + prevCtx->spBase())->dump();
                 printf("\n");
             }
             printf("### context changed from %p to %p ###\n", prevCtx, this);
             prevCtx = this;
         }
-        printf("\tip %04d sp %2d e %d ", (int) (ip - ipBase()),
-                                         (int) (sp - spBase()),
+        printf("\tip %04d sp %2d e %d ", (int) (_ip - ipBase()),
+                                         (int) (_sp - spBase()),
                                          (int) frame().ep);
-        printf("op 0x%02x : ", *ip);
-        if (sp >= spBase())
-            sp->dump();
+        printf("op 0x%02x : ", *_ip);
+        if (_sp >= spBase())
+            _sp->dump();
         printf("\n");
 #endif
-        assert(ip >= ipBase() && sp >= spBase() - 1);
+        assert(_ip >= ipBase() && _sp >= spBase() - 1);
     }
 
     // check and trigger gc on backwards jumps, i.e. inside all loops
@@ -270,39 +270,39 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opLoadNull () {
-        *++sp = {};
+        *++_sp = {};
     }
     //CG1 op
     void opLoadConstNone () {
-        *++sp = Null;
+        *++_sp = Null;
     }
     //CG1 op
     void opLoadConstFalse () {
-        *++sp = False;
+        *++_sp = False;
     }
     //CG1 op
     void opLoadConstTrue () {
-        *++sp = True;
+        *++_sp = True;
     }
     //CG1 op q
     void opLoadConstString (Q arg) {
-        *++sp = arg;
+        *++_sp = arg;
     }
     //CG1 op
     void opLoadConstSmallInt () {
-        *++sp = Int::make(fetchV64());
+        *++_sp = Int::make(fetchV64());
     }
     //CG1 op v
     void opLoadConstObj (int arg) {
-        *++sp = callee->bc[arg];
+        *++_sp = _callee->_bc[arg];
     }
     //CG1 op v
     void opLoadFastN (int arg) {
-        *++sp = fastSlot(arg);
+        *++_sp = fastSlot(arg);
     }
     //CG1 op v
     void opStoreFastN (int arg) {
-        fastSlot(arg) = *sp--;
+        fastSlot(arg) = *_sp--;
     }
     //CG1 op v
     void opDeleteFast (int arg) {
@@ -311,69 +311,69 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opDupTop () {
-        ++sp; sp[0] = sp[-1];
+        ++_sp; _sp[0] = _sp[-1];
     }
     //CG1 op
     void opDupTopTwo () {
-        sp += 2; sp[0] = sp[-2]; sp[-1] = sp[-3];
+        _sp += 2; _sp[0] = _sp[-2]; _sp[-1] = _sp[-3];
     }
     //CG1 op
     void opPopTop () {
-        --sp;
+        --_sp;
     }
     //CG1 op
     void opRotTwo () {
-        auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = v;
+        auto v = _sp[0]; _sp[0] = _sp[-1]; _sp[-1] = v;
     }
     //CG1 op
     void opRotThree () {
-        auto v = sp[0]; sp[0] = sp[-1]; sp[-1] = sp[-2]; sp[-2] = v;
+        auto v = _sp[0]; _sp[0] = _sp[-1]; _sp[-1] = _sp[-2]; _sp[-2] = v;
     }
 
     //CG1 op s
     void opJump (int arg) {
-        ip += arg;
+        _ip += arg;
     }
     //CG1 op s
     void opPopJumpIfFalse (int arg) {
-        if (!sp->truthy())
-            ip += arg;
-        --sp;
+        if (!_sp->truthy())
+            _ip += arg;
+        --_sp;
     }
     //CG1 op s
     void opJumpIfFalseOrPop (int arg) {
-        if (!sp->truthy())
-            ip += arg;
+        if (!_sp->truthy())
+            _ip += arg;
         else
-            --sp;
+            --_sp;
     }
     //CG1 op s
     void opPopJumpIfTrue (int arg) {
-        if (sp->truthy())
-            ip += arg;
-        --sp;
+        if (_sp->truthy())
+            _ip += arg;
+        --_sp;
     }
     //CG1 op s
     void opJumpIfTrueOrPop (int arg) {
-        if (sp->truthy())
-            ip += arg;
+        if (_sp->truthy())
+            _ip += arg;
         else
-            --sp;
+            --_sp;
     }
 
     //CG1 op q
     void opLoadName (Q arg) {
         assert(frame().locals.isObj());
-        *++sp = frame().locals.obj().getAt(arg);
-        if (sp->isNil())
-            *sp = {E::NameError, arg};
+        *++_sp = frame().locals.obj().getAt(arg);
+        if (_sp->isNil())
+            *_sp = {E::NameError, arg};
     }
     //CG1 op q
     void opStoreName (Q arg) {
         auto& l = frame().locals;
         if (!l.isObj())
             l = new Dict (&globals());
-        l.obj().setAt(arg, *sp--);
+        l.obj().setAt(arg, *_sp--);
     }
     //CG1 op q
     void opDeleteName (Q arg) {
@@ -382,12 +382,12 @@ struct PyVM : Stacklet {
     }
     //CG1 op q
     void opLoadGlobal (Q arg) {
-        *++sp = globals().at(arg);
-        assert(!sp->isNil());
+        *++_sp = globals().at(arg);
+        assert(!_sp->isNil());
     }
     //CG1 op q
     void opStoreGlobal (Q arg) {
-        globals().at(arg) = *sp--;
+        globals().at(arg) = *_sp--;
     }
     //CG1 op q
     void opDeleteGlobal (Q arg) {
@@ -396,65 +396,65 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opLoadAttr (Q arg) {
         Value self;
-        Value v = sp->obj().attr(arg, self);
+        Value v = _sp->obj().attr(arg, self);
         if (v.isNil())
-            *sp = {E::AttributeError, arg, sp->asObj().type().name};
+            *_sp = {E::AttributeError, arg, _sp->asObj().type()._name};
         else {
-            *sp = v;
+            *_sp = v;
             // TODO should this be moved into Inst::attr ???
-            auto f = sp->ifType<Callable>();
+            auto f = _sp->ifType<Callable>();
             if (!self.isNil() && f != 0)
-                *sp = new BoundMeth (*f, self);
+                *_sp = new BoundMeth (*f, self);
         }
     }
     //CG1 op q
     void opStoreAttr (Q arg) {
-        sp->obj().setAt(arg, sp[-1]);
-        sp -= 2;
+        _sp->obj().setAt(arg, _sp[-1]);
+        _sp -= 2;
     }
     //CG1 op
     void opLoadSubscr () {
-        --sp;
-        *sp = sp->asObj().getAt(sp[1]);
-        if (sp->isNil())
-            *sp = {E::KeyError, sp[1]};
+        --_sp;
+        *_sp = _sp->asObj().getAt(_sp[1]);
+        if (_sp->isNil())
+            *_sp = {E::KeyError, _sp[1]};
     }
     //CG1 op
     void opStoreSubscr () {
-        --sp; // val [obj] key
-        assert(sp->isObj());
-        sp->obj().setAt(sp[1], sp[-1]);
-        sp -= 2;
+        --_sp; // val [obj] key
+        assert(_sp->isObj());
+        _sp->obj().setAt(_sp[1], _sp[-1]);
+        _sp -= 2;
     }
 
     //CG1 op v
     void opBuildSlice (int arg) {
-        sp -= arg - 1;
-        *sp = Slice::create({*this, arg, (int) (sp - begin())});
+        _sp -= arg - 1;
+        *_sp = Slice::create({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildTuple (int arg) {
-        sp -= arg - 1;
-        *sp = Tuple::create({*this, arg, (int) (sp - begin())});
+        _sp -= arg - 1;
+        *_sp = Tuple::create({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildList (int arg) {
-        sp -= arg - 1;
-        *sp = List::create({*this, arg, (int) (sp - begin())});
+        _sp -= arg - 1;
+        *_sp = List::create({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildSet (int arg) {
-        sp -= arg - 1;
-        *sp = Set::create({*this, arg, (int) (sp - begin())});
+        _sp -= arg - 1;
+        *_sp = Set::create({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildMap (int arg) {
-        *++sp = Dict::create({*this, arg});
+        *++_sp = Dict::create({*this, arg});
     }
     //CG1 op
     void opStoreMap () {
-        sp -= 2;
-        sp->obj().setAt(sp[2], sp[1]); // TODO optimise later: no key check
+        _sp -= 2;
+        _sp->obj().setAt(_sp[2], _sp[1]); // TODO optimise later: no key check
     }
     //CG1 op v
     void opStoreComp (int arg) {
@@ -462,37 +462,37 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opUnpackSequence (int arg) {
-        auto& seq = sp->asObj(); // TODO iterators
+        auto& seq = _sp->asObj(); // TODO iterators
         if ((int) seq.len() != arg)
-            *sp = {E::ValueError, "unpack count mismatch", (int) seq.len()};
+            *_sp = {E::ValueError, "unpack count mismatch", (int) seq.len()};
         else {
             for (int i = 0; i < arg; ++i)
-                sp[arg-i-1] = seq.getAt(i);
-            sp += arg - 1;
+                _sp[arg-i-1] = seq.getAt(i);
+            _sp += arg - 1;
         }
     }
     //CG1 op v
     void opUnpackEx (int arg) {
-        auto& seq = sp->asType<List>(); // TODO tuples and iterators
+        auto& seq = _sp->asType<List>(); // TODO tuples and iterators
         uint8_t left = arg, right = arg >> 8;
         int got = seq.len();
         if (got < left + right)
-            *sp = {E::ValueError, "unpack needs more items", got};
+            *_sp = {E::ValueError, "unpack needs more items", got};
         else {
             for (int i = 0; i < right; ++i)
-                sp[i] = seq.getAt(got-i-1);
-            sp[right] = List::create({seq, got - left - right, left});
+                _sp[i] = seq.getAt(got-i-1);
+            _sp[right] = List::create({seq, got - left - right, left});
             for (int i = 0; i < left; ++i)
-                sp[right+1+i] = seq.getAt(left-i-1);
-            sp += left + right;
+                _sp[right+1+i] = seq.getAt(left-i-1);
+            _sp += left + right;
         }
     }
 
     //CG1 op o
     void opSetupExcept (int arg) {
         auto exc = excBase(1);
-        exc[0] = ip - ipBase() + arg;
-        exc[1] = sp - begin();
+        exc[0] = _ip - ipBase() + arg;
+        exc[1] = _sp - begin();
         exc[2] = {};
     }
     //CG1 op o
@@ -502,12 +502,12 @@ struct PyVM : Stacklet {
     //CG1 op
     void opEndFinally () {
         excBase(-1);
-        if (sp->isNone())
-            --sp;
-        else if (!sp->isInt())
+        if (_sp->isNone())
+            --_sp;
+        else if (!_sp->isInt())
             opRaiseObj();
-        else if (*sp < 0) {
-            --sp;
+        else if (*_sp < 0) {
+            --_sp;
             opReturnValue();
         } else
             assert(false); // TODO unwind jump
@@ -515,39 +515,39 @@ struct PyVM : Stacklet {
     //CG1 op o
     void opSetupWith (int arg) {
         auto exit = Q( 13,"__exit__");
-        sp[1] = {};
-        *sp = sp->asObj().attr(exit, sp[1]);
-        if (sp->isNil()) {
-            *sp = {E::AttributeError, exit};
+        _sp[1] = {};
+        *_sp = _sp->asObj().attr(exit, _sp[1]);
+        if (_sp->isNil()) {
+            *_sp = {E::AttributeError, exit};
             return;
         }
 
         auto entry = Q( 12,"__enter__");
-        sp[2] = sp[1].asObj().attr(entry, sp[3]);
-        if (sp->isNil()) {
-            sp[2] = {E::AttributeError, entry};
+        _sp[2] = _sp[1].asObj().attr(entry, _sp[3]);
+        if (_sp->isNil()) {
+            _sp[2] = {E::AttributeError, entry};
             return;
         }
 
-        ++sp;
+        ++_sp;
         opSetupExcept(arg);
-        ++sp;
+        ++_sp;
 
-        wrappedCall(*sp, {*this, 1, sp});
+        wrappedCall(*_sp, {*this, 1, _sp});
     }
     //CG1 op
     void opWithCleanup () {
-        assert(sp->isNone()); // TODO other cases
-        sp[1] = Null;
-        sp[2] = Null;
-        sp -= 2;
+        assert(_sp->isNone()); // TODO other cases
+        _sp[1] = Null;
+        _sp[2] = Null;
+        _sp -= 2;
 
-        wrappedCall(*sp, {*this, 4, sp + 1});
+        wrappedCall(*_sp, {*this, 4, _sp + 1});
     }
     //CG1 op o
     void opPopExceptJump (int arg) {
         excBase(-1);
-        ip += arg;
+        _ip += arg;
     }
     //CG1 op
     void opRaiseLast () {
@@ -556,45 +556,45 @@ struct PyVM : Stacklet {
     }
     //CG1 op
     void opRaiseObj () {
-        raise(*sp);
+        raise(*_sp);
     }
     //CG1 op
     void opRaiseFrom () {
-        raise(*--sp); // exception chaining is not supported
+        raise(*--_sp); // exception chaining is not supported
     }
     //CG1 op s
     void opUnwindJump (int arg) {
         int ep = frame().ep;
-        frame().ep = ep - *ip; // TODO hardwired for simplest case
-        ip += arg;
+        frame().ep = ep - *_ip; // TODO hardwired for simplest case
+        _ip += arg;
     }
 
     //CG1 op
     void opLoadBuildClass () {
-        *++sp = Class::info;
+        *++_sp = Class::info;
     }
     //CG1 op q
     void opLoadMethod (Q arg) {
-        sp[1] = {};
-        auto v = sp->asObj().attr(arg, sp[1]);
+        _sp[1] = {};
+        auto v = _sp->asObj().attr(arg, _sp[1]);
         if (v.isNil()) // TODO duplicate code, move test & exception into attr?
-            *sp = {E::AttributeError, arg, sp->asObj().type().name};
+            *_sp = {E::AttributeError, arg, _sp->asObj().type()._name};
         else
-            *sp = v;
-        ++sp;
+            *_sp = v;
+        ++_sp;
     }
     //CG1 op q
     void opLoadSuperMethod (Q arg) {
-        --sp;
-        sp[-1] = sp->obj().getAt(arg);
-        *sp = sp[1];
+        --_sp;
+        _sp[-1] = _sp->obj().getAt(arg);
+        *_sp = _sp[1];
     }
     //CG1 op v
     void opCallMethod (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
-        sp -= npos + 2 * nkw + 1;
-        auto skip = sp[1].isNil();
-        wrappedCall(*sp, {*this, arg + 1 - skip, sp + 1 + skip});
+        _sp -= npos + 2 * nkw + 1;
+        auto skip = _sp[1].isNil();
+        wrappedCall(*_sp, {*this, arg + 1 - skip, _sp + 1 + skip});
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
@@ -602,24 +602,22 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opMakeFunction (int arg) {
-        auto& bc = callee->funcAt(arg);
-        *++sp = new Callable (bc);
+        *++_sp = new Callable (_callee->funcAt(arg));
     }
     //CG1 op v
     void opMakeFunctionDefargs (int arg) {
-        --sp;
-        auto& bc = callee->funcAt(arg);
-        *sp = new Callable (bc, sp[0], sp[1]);
+        --_sp;
+        *_sp = new Callable (_callee->funcAt(arg), _sp[0], _sp[1]);
     }
     //CG1 op v
     void opCallFunction (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
-        sp -= npos + 2 * nkw;
-        auto& fun = sp->obj();
-        wrappedCall(*sp, {*this, arg, sp + 1});
+        _sp -= npos + 2 * nkw;
+        auto& fun = _sp->obj();
+        wrappedCall(*_sp, {*this, arg, _sp + 1});
         // TODO yuck, special cased because Class doesn't have access to PyVM
         if (&fun == &Class::info)
-            frame().locals = *sp;
+            frame().locals = *_sp;
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
@@ -628,28 +626,26 @@ struct PyVM : Stacklet {
 
     //CG1 op v
     void opMakeClosure (int arg) {
-        int num = *ip++;
-        sp -= num - 1;
-        auto& bc = callee->funcAt(arg);
-        auto f = new Callable (bc);
-        *sp = new Closure (*f, {*this, num, sp});
+        int num = *_ip++;
+        _sp -= num - 1;
+        auto f = new Callable (_callee->funcAt(arg));
+        *_sp = new Closure (*f, {*this, num, _sp});
     }
     //CG1 op v
     void opMakeClosureDefargs (int arg) {
-        int num = *ip++;
-        sp -= 2 + num - 1;
-        auto& bc = callee->funcAt(arg);
-        auto f = new Callable (bc, sp[0], sp[1]);
-        *sp = new Closure (*f, {*this, num, sp + 2});
+        int num = *_ip++;
+        _sp -= 2 + num - 1;
+        auto f = new Callable (_callee->funcAt(arg), _sp[0], _sp[1]);
+        *_sp = new Closure (*f, {*this, num, _sp + 2});
     }
     //CG1 op v
     void opLoadDeref (int arg) {
-        *++sp = derefSlot(arg);
-        assert(!sp->isNil());
+        *++_sp = derefSlot(arg);
+        assert(!_sp->isNil());
     }
     //CG1 op v
     void opStoreDeref (int arg) {
-        derefSlot(arg) = *sp--;
+        derefSlot(arg) = *_sp--;
     }
     //CG1 op v
     void opDeleteDeref (int arg) {
@@ -658,62 +654,62 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opYieldValue () {
-        assert(caller != nullptr);
-        assert(caller != this);
-        auto& myCaller = Value(caller).asType<PyVM>(); // TODO non-PyVM caller ?
-        caller = nullptr;
+        assert(_caller != nullptr);
+        assert(_caller != this);
+        auto& myCaller = Value(_caller).asType<PyVM>(); // TODO non-PyVM caller ?
+        _caller = nullptr;
         // TODO messy: result needs to be stored in another PyVM instance
         //  might be better to store it its signal slot, then pick up on resume
-        myCaller[myCaller.spOff] = *sp;
+        myCaller[myCaller._spOff] = *_sp;
         switchTo(&myCaller);
     }
     //CG1 op
     void opYieldFrom () {
-        --sp;
-        auto& child = sp->asType<PyVM>();
-        assert(child.caller == nullptr);
+        --_sp;
+        auto& child = _sp->asType<PyVM>();
+        assert(child._caller == nullptr);
 #if 1
         // FIXME not sure, shouldn't "yield from" pull out of the call chain?
-        child.caller = this;
+        child._caller = this;
 #else
-        assert(caller != nullptr);
-        child.caller = caller;
-        caller = nullptr;
+        assert(_caller != nullptr);
+        child._caller = _caller;
+        _caller = nullptr;
 #endif
         switchTo(nullptr);
     }
     //CG1 op
     void opReturnValue () {
         auto v = contextAdjuster([=]() -> Value {
-            return leave(*sp);
+            return leave(*_sp);
         });
-        *sp = v;
+        *_sp = v;
     }
 
     //CG1 op
     void opGetIter () {
-        auto v = sp->asObj().iter();
+        auto v = _sp->asObj().iter();
         if (v.isInt())
-            v = new Iterator (sp->asObj(), v);
-        *sp = v;
+            v = new Iterator (_sp->asObj(), v);
+        *_sp = v;
     }
     //CG1 op
     void opGetIterStack () {
         // TODO the compiler assumes 4 stack entries are used!
         //  layout [seq,(idx|iter),nil,nil]
-        *sp = sp->asObj(); // for qstrs, etc
-        auto v = sp->obj().iter(); // will be 0 for indexed iteration
-        *++sp = v;
-        *++sp = {};
-        *++sp = {};
+        *_sp = _sp->asObj(); // for qstrs, etc
+        auto v = _sp->obj().iter(); // will be 0 for indexed iteration
+        *++_sp = v;
+        *++_sp = {};
+        *++_sp = {};
     }
     //CG1 op o
     void opForIter (int arg) {
         Value v;
-        auto& pos = sp[-2];
+        auto& pos = _sp[-2];
         if (pos.isInt()) {
-            assert(sp[-3].isObj());
-            auto& seq = sp[-3].obj();
+            assert(_sp[-3].isObj());
+            auto& seq = _sp[-3].obj();
             int n = pos;
             if (n < (int) seq.len()) {
                 if (&seq.type() == &Dict::info || &seq.type() == &Set::info)
@@ -725,15 +721,15 @@ struct PyVM : Stacklet {
         } else
             v = pos.obj().next();
         if (v.isNil()) {
-            sp -= 4;
-            ip += arg;
+            _sp -= 4;
+            _ip += arg;
         } else
-            *++sp = v;
+            *++_sp = v;
     }
 
     //CG1 op q
     void opImportName (Q arg) {
-        --sp; // TODO ignore fromlist for now, *sp level also ignored
+        --_sp; // TODO ignore fromlist for now, *_sp level also ignored
         Value mod = Module::loaded.at(arg);
         if (mod.isNil()) { // TODO this code should be placed elsewhere
             auto data = vmImport(arg);
@@ -741,60 +737,60 @@ struct PyVM : Stacklet {
             auto init = Bytecode::load(data, arg);
             assert(init != nullptr);
             wrappedCall(init, {*this, 0});
-            frame().locals = mod = init->mo;
-            Module::loaded.at(arg) = &init->mo;
+            frame().locals = mod = init->_mo;
+            Module::loaded.at(arg) = &init->_mo;
         }
-        *sp = mod;
+        *_sp = mod;
     }
     //CG1 op q
     void opImportFrom (Q arg) {
-        Value v = sp->obj().getAt(arg);
-        *++sp = v;
+        Value v = _sp->obj().getAt(arg);
+        *++_sp = v;
     }
     //CG1 op
     void opImportStar () {
         auto& dest = globals();
-        auto& from = sp->asType<Module>();
+        auto& from = _sp->asType<Module>();
         for (uint8_t i = 0; i < from.len(); ++i) {
             auto k = from[i];
             assert(k.isStr());
             if (*((char const*) k) != '_')
                 dest.setAt(k, from.at(k));
         }
-        --sp;
+        --_sp;
     }
 
     //CG1 op m 64
     void opLoadConstSmallIntMulti (uint32_t arg) {
-        *++sp = arg - 16;
+        *++_sp = arg - 16;
     }
     //CG1 op m 16
     void opLoadFastMulti (uint32_t arg) {
-        *++sp = fastSlot(arg);
-        assert(!sp->isNil());
+        *++_sp = fastSlot(arg);
+        assert(!_sp->isNil());
     }
     //CG1 op m 16
     void opStoreFastMulti (uint32_t arg) {
-        fastSlot(arg) = *sp--;
+        fastSlot(arg) = *_sp--;
     }
     //CG1 op m 7
     void opUnaryOpMulti (uint32_t arg) {
-        *sp = sp->unOp((UnOp) arg);
+        *_sp = _sp->unOp((UnOp) arg);
     }
     //CG1 op m 35
     void opBinaryOpMulti (uint32_t arg) {
-        --sp;
-        *sp = sp->binOp((BinOp) arg, sp[1]);
+        --_sp;
+        *_sp = _sp->binOp((BinOp) arg, _sp[1]);
     }
 
     void inner () {
-        sp = begin() + spOff;
-        ip = ipBase() + ipOff;
+        _sp = begin() + _spOff;
+        _ip = ipBase() + _ipOff;
 
         do {
             INNER_HOOK  // used for simulated time in native builds
             instructionTrace();
-            switch ((Op) *ip++) {
+            switch ((Op) *_ip++) {
 
                 //CG< op-emit d
                 case Op::LoadNull:
@@ -1117,28 +1113,28 @@ struct PyVM : Stacklet {
 
                 default: {
                     //CG< op-emit m
-                    if ((uint32_t) (ip[-1] - Op::LoadConstSmallIntMulti) < 64) {
-                        uint32_t arg = ip[-1] - Op::LoadConstSmallIntMulti;
+                    if ((uint32_t) (_ip[-1] - Op::LoadConstSmallIntMulti) < 64) {
+                        uint32_t arg = _ip[-1] - Op::LoadConstSmallIntMulti;
                         opLoadConstSmallIntMulti(arg);
                         break;
                     }
-                    if ((uint32_t) (ip[-1] - Op::LoadFastMulti) < 16) {
-                        uint32_t arg = ip[-1] - Op::LoadFastMulti;
+                    if ((uint32_t) (_ip[-1] - Op::LoadFastMulti) < 16) {
+                        uint32_t arg = _ip[-1] - Op::LoadFastMulti;
                         opLoadFastMulti(arg);
                         break;
                     }
-                    if ((uint32_t) (ip[-1] - Op::StoreFastMulti) < 16) {
-                        uint32_t arg = ip[-1] - Op::StoreFastMulti;
+                    if ((uint32_t) (_ip[-1] - Op::StoreFastMulti) < 16) {
+                        uint32_t arg = _ip[-1] - Op::StoreFastMulti;
                         opStoreFastMulti(arg);
                         break;
                     }
-                    if ((uint32_t) (ip[-1] - Op::UnaryOpMulti) < 7) {
-                        uint32_t arg = ip[-1] - Op::UnaryOpMulti;
+                    if ((uint32_t) (_ip[-1] - Op::UnaryOpMulti) < 7) {
+                        uint32_t arg = _ip[-1] - Op::UnaryOpMulti;
                         opUnaryOpMulti(arg);
                         break;
                     }
-                    if ((uint32_t) (ip[-1] - Op::BinaryOpMulti) < 35) {
-                        uint32_t arg = ip[-1] - Op::BinaryOpMulti;
+                    if ((uint32_t) (_ip[-1] - Op::BinaryOpMulti) < 35) {
+                        uint32_t arg = _ip[-1] - Op::BinaryOpMulti;
                         opBinaryOpMulti(arg);
                         break;
                     }
@@ -1149,8 +1145,8 @@ struct PyVM : Stacklet {
 
         } while (pending == 0);
 
-        spOff = sp - begin();
-        ipOff = ip - ipBase();
+        _spOff = _sp - begin();
+        _ipOff = _ip - ipBase();
 
         if (pending & (1<<0))
             caught();
@@ -1160,22 +1156,22 @@ struct PyVM : Stacklet {
     }
 
     void enter (Callable const& func) {
-        auto frameSize = func.bc.fastSlotTop() + EXC_STEP * func.bc.excLevel();
-        int need = (frame().stack + frameSize) - (begin() + base);
+        auto frameSize = func._bc.fastSlotTop() + EXC_STEP * func._bc.excLevel();
+        int need = (frame().stack + frameSize) - (begin() + _base);
 
-        auto curr = base;           // current frame offset
-        base = fill;                // new frame offset
-        insert(fill, need);         // make room
+        auto curr = _base;          // current frame offset
+        _base = _fill;              // new frame offset
+        insert(_fill, need);        // make room
 
         auto& f = frame();          // new frame
         f.base = curr;              // index of (now previous) frame
-        f.spOff = spOff;            // previous stack index
-        f.ipOff = ipOff;            // previous instruction index
-        f.callee = callee;          // previous callable
+        f.spOff = _spOff;           // previous stack index
+        f.ipOff = _ipOff;           // previous instruction index
+        f.callee = _callee;         // previous callable
 
-        spOff = f.stack-begin()-1;  // stack starts out empty
-        ipOff = 0;                  // code starts at first opcode
-        callee = &func;             // new callable context
+        _spOff = f.stack-begin()-1; // stack starts out empty
+        _ipOff = 0;                 // code starts at first opcode
+        _callee = &func;            // new callable context
         f.ep = 0;                   // no exceptions pending
     }
 
@@ -1185,22 +1181,22 @@ struct PyVM : Stacklet {
         if (r.isNil())              // use return result if set
             r = v;                  // ... else arg
 
-        if (base > 0) {
+        if (_base > 0) {
             int prev = f.base;      // previous frame offset
-            spOff = f.spOff;        // restore stack index
-            ipOff = f.ipOff;        // restore instruction index
-            callee = &f.callee.asType<Callable>(); // restore callee
+            _spOff = f.spOff;       // restore stack index
+            _ipOff = f.ipOff;       // restore instruction index
+            _callee = &f.callee.asType<Callable>(); // restore callee
 
-            assert(fill > base);
-            remove(base, fill - base); // delete current frame
+            assert(_fill > _base);
+            remove(_base, _fill - _base); // delete current frame
 
             assert(prev >= 0);
-            base = prev;            // new lower frame offset
+            _base = prev;            // new lower frame offset
         } else {
             // last frame, drop context, restore caller
-            fill = 0; // delete stack entries
+            _fill = 0; // delete stack entries
             adj(1); // release vector FIXME crashes when set to 0 (???)
-            switchTo(caller);
+            switchTo(_caller);
             set(); // resume any stacklets waiting for this one to end
         }
 
@@ -1212,24 +1208,24 @@ struct PyVM : Stacklet {
         frame().ep = ep + incr;
         if (incr <= 0)
             --ep;
-        return frame().stack + callee->bc.fastSlotTop() + EXC_STEP * ep;
+        return frame().stack + _callee->_bc.fastSlotTop() + EXC_STEP * ep;
     }
 
     void caught () {
-        auto e = signal;
+        auto e = _signal;
         if (e.isNil())
             return; // there was no exception, just an inner loop exit
-        signal = {};
+        _signal = {};
 
         auto& einfo = e.asType<Exception>().extra();
-        einfo.ipOff = ipOff;
-        einfo.callee = callee;
+        einfo.ipOff = _ipOff;
+        einfo.callee = _callee;
 
         if (frame().ep > 0) { // simple exception, no stack unwind
             auto ep = excBase(0);
-            ipOff = ep[0] & (FinallyTag - 1);
-            spOff = ep[1];
-            begin()[++spOff] = e.isNil() ? ep[2] : e;
+            _ipOff = ep[0] & (FinallyTag - 1);
+            _spOff = ep[1];
+            begin()[++_spOff] = e.isNil() ? ep[2] : e;
         } else {
             leave();
             if (current != nullptr)
@@ -1258,16 +1254,16 @@ struct PyVM : Stacklet {
 
     //CG: wrap PyVM send
     auto send (Value arg =Null) -> Value {
-        assert(fill > 0); // can only resume if not ended
+        assert(_fill > 0); // can only resume if not ended
         assert(current != nullptr);
         assert(current != this);
-        assert(caller == nullptr);
-        caller = current;
+        assert(_caller == nullptr);
+        _caller = current;
         current = this;
         setPending(0);
         // TODO messy: arg needs to be stored at the top of the stack
         //  see also YieldValue
-        (*this)[spOff] = arg;
+        (*this)[_spOff] = arg;
         return {}; // no result yet
     }
 
@@ -1276,7 +1272,7 @@ struct PyVM : Stacklet {
         if (exc.isInt())
             num = exc;      // trigger soft-irq 1..31 (interrupt-safe)
         else
-            signal = exc;   // trigger exception or other outer-loop req
+            _signal = exc;  // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
 };
@@ -1287,35 +1283,35 @@ static auto currentVM () -> PyVM& {
 }
 
 Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
-        : mo (mod != nullptr ? *mod : currentVM().globals()),
-          bc (callee), pos (t), kw (d) {
+        : _mo (mod != nullptr ? *mod : currentVM().globals()),
+          _bc (callee), _pos (t), _kw (d) {
 }
 
 auto Callable::call (ArgVec const& args) const -> Value {
     auto ctx = &currentVM();
-    auto coro = bc.isGenerator();
+    auto coro = _bc.isGenerator();
     if (coro)
         ctx = new PyVM;
     ctx->enter(*this);
     if (coro)
-        ctx->frame().locals = &mo;
+        ctx->frame().locals = &_mo;
 
-    int nPos = bc.numArgs(0);
-    int nDef = bc.numArgs(1);
-    int nKwo = bc.numArgs(2);
-    int nc = bc.numCells();
+    int nPos = _bc.numArgs(0);
+    int nDef = _bc.numArgs(1);
+    int nKwo = _bc.numArgs(2);
+    int nc = _bc.numCells();
 
     for (int i = 0; i < nPos + nc; ++i)
-        if (i < args.num)
+        if (i < args._num)
             ctx->fastSlot(i) = args[i];
-        else if (pos != nullptr && (uint32_t) i < nDef + pos->fill)
-            ctx->fastSlot(i) = (*pos)[i+nDef-nPos];
+        else if (_pos != nullptr && (uint32_t) i < nDef + _pos->_fill)
+            ctx->fastSlot(i) = (*_pos)[i+nDef-nPos];
 
-    if (bc.hasVarArgs())
+    if (_bc.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) =
-            Tuple::create({args.vec, args.num-nPos, args.off+nPos});
+            Tuple::create({args._vec, args._num-nPos, args._off+nPos});
 
-    uint8_t const* cellMap = bc.start() - nc;
+    uint8_t const* cellMap = _bc.start() - nc;
     for (int i = 0; i < nc; ++i) {
         auto slot = cellMap[i];
         ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
@@ -1352,7 +1348,7 @@ auto monty::vmLaunch (void const* data) -> Stacklet* {
     }
     auto vm = new PyVM;
     vm->enter(*init);
-    vm->frame().locals = &init->mo;
+    vm->frame().locals = &init->_mo;
     return vm;
 }
 
