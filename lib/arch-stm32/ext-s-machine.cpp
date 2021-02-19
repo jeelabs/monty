@@ -152,11 +152,11 @@ static auto f_rf69 (ArgVec const& args) -> Value {
     return rf69;
 }
 
-Event tickEvent;
-int ms, tickerId;
-uint32_t start, last;
+static Event tickEvent;
+static int ms, tickerId;
+static uint32_t start, last;
 
-auto msNow () -> Value {
+static auto msNow () -> Value {
     uint32_t t = ticks;
     static uint32_t begin;
     if (begin == 0)
