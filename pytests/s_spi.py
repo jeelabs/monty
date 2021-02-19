@@ -4,9 +4,9 @@ spi = machine.spi("B7,B6,B0,A12")
 print(type(spi))
 spi.enable()
 machine.pins.B6 = "D" # pull-down
-x = spi.transfer(0x12)
+x = spi.xfer(0x12)
 machine.pins.B6 = "U" # pull-up
-y = spi.transfer(0x34)
+y = spi.xfer(0x34)
 spi.disable()
 print(x, y)
 

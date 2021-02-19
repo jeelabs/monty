@@ -21,7 +21,7 @@ async def loop():
     for _ in range(20):
         evt.wait()
         evt.clear()
-        n = rf69.receive(buf)
+        n = rf69.recv(buf)
         print(machine.ticks(), buf[:n])
     machine.ticker()
 

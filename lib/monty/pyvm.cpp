@@ -9,8 +9,8 @@
 //CG: off op_print # set to "on" to enable per-opcode debug output
 
 #if NATIVE
-namespace machine { void timerHook (); }
-#define INNER_HOOK  { machine::timerHook(); }
+extern void timerHook ();
+#define INNER_HOOK  { timerHook(); }
 #else
 #define INNER_HOOK
 #endif
@@ -133,7 +133,6 @@ void Callable::marker () const {
 auto Callable::funcAt (int n) const -> Bytecode const& {
     return bc[n].asType<Bytecode>();
 }
-
 
 struct PyVM : Stacklet {
     static Lookup const attrs;

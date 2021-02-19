@@ -5,8 +5,8 @@
 #include <csetjmp>
 
 #if NATIVE
-namespace machine { void timerHook (); }
-#define INNER_HOOK  { machine::timerHook(); }
+extern void timerHook ();
+#define INNER_HOOK  { timerHook(); }
 #else
 #define INNER_HOOK
 #endif
