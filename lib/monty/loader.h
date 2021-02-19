@@ -27,7 +27,7 @@ struct Bytecode : List {
         return (uint8_t const*) (this + 1) + code;
     }
 
-    static auto load (void const*) -> Callable*;
+    static auto load (void const*, Value) -> Callable*;
 private:
     Bytecode () {}
 
@@ -121,7 +121,7 @@ struct Loader {
 
     Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
-    Callable* load (const uint8_t* data) {
+    Callable* load (const uint8_t* data, Value nm) {
         assert(data != nullptr);
         dp  = data;
         if (*dp++ != 'M')
@@ -148,7 +148,7 @@ struct Loader {
 
         debugf("qLast %d %s\n", Q::last(), Q::str(Q::last()));
 
-        auto mod = new Module;
+        auto mod = new Module (Module::builtins, nm);
         return new Callable (bc, mod);
     }
 
@@ -412,7 +412,7 @@ struct Loader {
     }
 };
 
-auto Bytecode::load (void const* p) -> Callable* {
+auto Bytecode::load (void const* p, Value name) -> Callable* {
     Loader loader;
-    return loader.load((uint8_t const*) p);
+    return loader.load((uint8_t const*) p, name);
 }

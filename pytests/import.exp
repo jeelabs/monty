@@ -5,7 +5,7 @@ hello monty {VERS}
 456
 <module>
 hello
-{"sys":<module 'sys'>,"hello":<module 'hello'>}
+{"hello":<module 'hello'>}
 f 123 ()
 f 123 (1)
 f 123 (2,3)
@@ -20,7 +20,7 @@ h 5 6 7 8 9 10
 f 123 (9,8,7)
 g 987 9
 NameError("h")
-{"sys":<module 'sys'>,"hello":<module 'hello'>,"args":<module 'args'>}
+{"hello":<module 'hello'>,"args":<module 'args'>}
 NameError("f")
 f 123 (99,88,77)
 g 998877 9

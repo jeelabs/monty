@@ -738,14 +738,12 @@ struct PyVM : Stacklet {
         if (mod.isNil()) { // TODO this code should be placed elsewhere
             auto data = vmImport(arg);
             assert(data != nullptr);
-            auto init = Bytecode::load(data);
+            auto init = Bytecode::load(data, arg);
             assert(init != nullptr);
             wrappedCall(init, {*this, 0});
             frame().locals = mod = init->mo;
+            Module::loaded.at(arg) = &init->mo;
         }
-        auto m = mod.ifType<Module>();
-        if (m != nullptr)
-            m->install(arg); // TODO or m-> name ???
         *sp = mod;
     }
     //CG1 op q
@@ -1344,11 +1342,11 @@ Type PyVM::info (Q(180,"<pyvm>"), nullptr, &PyVM::attrs);
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
         return nullptr;
-    auto init = Bytecode::load(data);
+    auto init = Bytecode::load(data, Q( 21,"__main__"));
     if (init == nullptr) { // try doing an MRFS lookup if it's a name
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
-            init = Bytecode::load(mpy);
+            init = Bytecode::load(mpy, Q( 21,"__main__"));
         if (init == nullptr)
             return nullptr;
     }

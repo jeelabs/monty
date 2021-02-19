@@ -60,4 +60,4 @@ static Lookup::Item const sys_map [] = {
 };
 
 static Lookup const sys_attrs (sys_map, sizeof sys_map);
-extern Module const ext_sys (sys_attrs, Q(176,"sys"));
+Module ext_sys (sys_attrs, Q(176,"sys"));

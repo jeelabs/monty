@@ -41,7 +41,7 @@ def MOD_LIST(block, sel):
                 if sel == "d":
                     out.append("extern Module ext_%s;" % m)
                 if sel == "a":
-                    out.append("{ %s, ext_%s }," % (q(m), m))
+                    out.append("{ ext_%s.name, ext_%s }," % (m, m))
             if n:
                 out.append("#endif")
     return out

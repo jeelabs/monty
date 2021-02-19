@@ -549,10 +549,3 @@ auto Inst::create (ArgVec const& args, Type const* t) -> Value {
     Value v = t;
     return new Inst (args, v.asType<Class>());
 }
-
-void Module::install (Value arg) {
-    if (!arg.isNil())
-        modname = arg;
-    at(Q( 23,"__name__")) = modname;
-    loaded.at(modname) = this;
-}
