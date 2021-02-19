@@ -230,10 +230,10 @@ char* HexSerial::persist;
 
 struct Command {
     char const* desc;
-    void (*proc)(char*);
+    void (*proc)(char const*);
 };
 
-void bc_cmd (char* cmd) {
+void bc_cmd (char const* cmd) {
     if (strlen(cmd) > 3) {
         HexSerial::magic() = HexSerial::MagicValid;
         strcpy(HexSerial::persist + 4, cmd + 3);
@@ -241,7 +241,7 @@ void bc_cmd (char* cmd) {
         HexSerial::magic() = 0;
 }
 
-void wd_cmd (char* cmd) {
+void wd_cmd (char const* cmd) {
     int count = 4095;
     if (strlen(cmd) > 3)
         count = atoi(cmd+3);
@@ -253,15 +253,15 @@ void wd_cmd (char* cmd) {
 
 Command const commands [] = {
     { "bc *  set boot command [cmd ...]"  , bc_cmd },
-    { "bv    show build version"          , [](char*) { printBuildVer(); }},
-    { "di    show device info"            , [](char*) { printDevInfo(); }},
-    { "gc    trigger garbage collection"  , [](char*) { Stacklet::gcAll(); }},
-    { "gr    generate a GC report"        , [](char*) { gcReport(); }},
-    { "ls    list files in MRFS"          , [](char*) { mrfs::dump(); }},
-    { "od    object dump"                 , [](char*) { gcObjDump(); }},
-    { "pd    power down"                  , [](char*) { powerDown(); }},
-    { "sr    system reset"                , [](char*) { systemReset(); }},
-    { "vd    vector dump"                 , [](char*) { gcVecDump(); }},
+    { "bv    show build version"          , [](char const*) { printBuildVer(); }},
+    { "di    show device info"            , [](char const*) { printDevInfo(); }},
+    { "gc    trigger garbage collection"  , [](char const*) { Stacklet::gcAll(); }},
+    { "gr    generate a GC report"        , [](char const*) { gcReport(); }},
+    { "ls    list files in MRFS"          , [](char const*) { mrfs::dump(); }},
+    { "od    object dump"                 , [](char const*) { gcObjDump(); }},
+    { "pd    power down"                  , [](char const*) { powerDown(); }},
+    { "sr    system reset"                , [](char const*) { systemReset(); }},
+    { "vd    vector dump"                 , [](char const*) { gcVecDump(); }},
     { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
     { "?     this help"                   , nullptr },
 };
@@ -274,7 +274,7 @@ auto execCmd (char const* buf) -> bool {
     }
     for (auto& cmd : commands)
         if (memcmp(buf, cmd.desc, 2) == 0) {
-            cmd.proc((char*) buf); // TODO get rid of const in caller
+            cmd.proc(buf);
             return true;
         }
     auto data = vmImport(buf);
