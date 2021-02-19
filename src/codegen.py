@@ -143,7 +143,6 @@ def VERSION(block):
     return ['constexpr auto VERSION = "%s";' % v]
 
 # generate qstr definition
-qstrIndex = []
 qstrLen = []
 qstrMap = {}
 
@@ -170,48 +169,45 @@ def hash(s):
     return h
 
 # emit all collected qstr information in varyvec-compatible format
-def QSTR_EMIT(block, sel='i'):
-    if sel == 'i':
-        return qstrIndex
+def QSTR_EMIT(block):
     out = []
     num = len(qstrLen)
     qstrLen.insert(0, num)
     qstrLen.append(0)
     num += 2
-    if sel in 'xv':
-        i, n, s = 0, 2 * num, ''
-        for x in qstrLen:
-            s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
-            i += 1
-            n += x
-            if i % 8 == 0:
-                out.append('"%s"' % s)
-                s = ''
-        if s:
+
+    i, n, s = 0, 2 * num, ''
+    for x in qstrLen:
+        s += '\\x%02X\\x%02X' % (n & 0xFF, n >> 8)
+        i += 1
+        n += x
+        if i % 8 == 0:
             out.append('"%s"' % s)
-        out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
-                   (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
-    if sel in 'hv':
-        i, s, h = 0, '', {}
-        for x in map(hash, qstrMap):
-            s += '\\x%02X' % (x & 0xFF)
-            i += 1
-            h[x & 0xFF] = True
-            if i % 16 == 0:
-                out.append('"%s"' % s)
-                s = ''
-        if s:
+            s = ''
+    if s:
+        out.append('"%s"' % s)
+    out.append('// index [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
+                (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
+
+    i, s, h = 0, '', {}
+    for x in map(hash, qstrMap):
+        s += '\\x%02X' % (x & 0xFF)
+        i += 1
+        h[x & 0xFF] = True
+        if i % 16 == 0:
             out.append('"%s"' % s)
-        out.append('// found %d distinct hashes' % len(h))
-    if sel in 'sv':
-        e = ['%-22s "\\0" // %d' % ('"%s"' % k, v) for k, v in qstrMap.items()]
-        out.extend(e)
+            s = ''
+    if s:
+        out.append('"%s"' % s)
+    out.append('// there are %d distinct hashes' % len(h))
+
+    for k, v in qstrMap.items():
+        out.append('%-22s "\\0" // %d' % ('"%s"' % k, v))
+
     return out
 
 def QSTR(block, off=0):
     out = []
-    qstrIndex.clear()
-    qstrIndex.append("   0, // %d" % off)
     sep='"\\0"'
     pos = 0
     for s in block:
@@ -222,7 +218,6 @@ def QSTR(block, off=0):
         out.append('%-21s %s // %d' % (s, sep, off))
         n = pos + len(eval(s)) + 1 # deal with backslashes
         off += 1
-        qstrIndex.append("%4d, // %d" % (n, off))
         qstrLen.append(n-pos)
         pos = n
     return out
