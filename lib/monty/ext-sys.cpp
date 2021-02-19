@@ -31,11 +31,9 @@ static List gcdata; // keep this around to avoid reallocating on each call
 //CG1 bind gcstats
 static auto f_gcstats (ArgVec const& args) -> Value {
     assert(args._num == 0);
-    constexpr auto NSTATS = sizeof gcStats / sizeof (uint32_t);
-    if (gcdata.size() == 0)
-        gcdata.insert(0, NSTATS);
-    for (uint32_t i = 0; i < NSTATS; ++i)
-        gcdata[i] = gcStats.v[i];
+    gcdata._fill = 0;
+    for (auto e : gcStats.v)
+        gcdata.append(e);
     return gcdata;
 }
 
