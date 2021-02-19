@@ -277,7 +277,7 @@ auto execCmd (char const* buf) -> bool {
             cmd.proc((char*) buf); // TODO get rid of const in caller
             return true;
         }
-    auto data = arch::importer(buf);
+    auto data = vmImport(buf);
     if (data != nullptr) {
         auto p = vmLaunch(data);
         assert(p != nullptr);
@@ -287,8 +287,8 @@ auto execCmd (char const* buf) -> bool {
     return true;
 }
 
-auto arch::cliTask(Loader loader) -> Stacklet* {
-    auto task = loader((uint8_t const*) HexSerial::bootCmd());
+auto arch::cliTask() -> Stacklet* {
+    auto task = vmLaunch((uint8_t const*) HexSerial::bootCmd());
     if (task != nullptr) {
         HexSerial::magic() = 0; // only load saved data once
         return task;
@@ -296,12 +296,12 @@ auto arch::cliTask(Loader loader) -> Stacklet* {
     return new HexSerial (execCmd);
 }
 
-auto arch::importer (char const* name) -> uint8_t const* {
+auto monty::vmImport (char const* name) -> uint8_t const* {
     auto pos = mrfs::find(name);
     return pos >= 0 ? (uint8_t const*) mrfsBase[pos].name : nullptr;
 }
 
-void arch::init () {
+void arch::init (size_t size) {
     console.init();
 #if STM32F103xB
     enableSysTick(); // no HSE crystal
@@ -313,6 +313,9 @@ void arch::init () {
 
     mrfs::init(mrfsBase, mrfsSize);
     //mrfs::dump();
+
+    gcSetup(sbrk(size), size);
+    Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
 }
 
 void arch::idle () {
@@ -328,7 +331,7 @@ auto arch::done () -> int {
 
 #ifdef UNIT_TEST
 extern "C" {
-    void unittest_uart_begin () { arch::init(); wait_ms(100); }
+    void unittest_uart_begin () { arch::init(1024); wait_ms(100); }
     void unittest_uart_putchar (char c) { console.putc(c); }
     void unittest_uart_flush () { while (!console.xmit.empty()) {} }
     void unittest_uart_end () { while (true) {} }

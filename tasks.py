@@ -166,4 +166,4 @@ def health(c):
 @task
 def serial(c):
     """serial terminal session, use in separate window"""
-    c.run("pio device monitor -b115200", pty=True)
+    c.run("pio device monitor -b115200 --echo", pty=True)

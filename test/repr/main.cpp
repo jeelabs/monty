@@ -12,9 +12,9 @@ static char* bufEnd;
 struct TestBuffer : Buffer {
     TestBuffer () { bufEnd = buf; }
     ~TestBuffer () override {
-        for (uint32_t i = 0; i < fill && bufEnd < buf + sizeof buf - 1; ++i)
+        for (uint32_t i = 0; i < _fill && bufEnd < buf + sizeof buf - 1; ++i)
             *bufEnd++ = begin()[i];
-        fill = 0;
+        _fill = 0;
         *bufEnd = 0;
     }
 };

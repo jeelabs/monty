@@ -6,7 +6,7 @@ using namespace monty;
 #define SIZEOF(name) printf("%5d b  %s\n", (int) sizeof (name), #name);
 
 int main () {
-    arch::init();
+    arch::init(1024);
 #if !NATIVE
     for (int i = 0; i < 10000000; ++i) asm (""); // brief delay
 #endif

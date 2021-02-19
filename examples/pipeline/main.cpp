@@ -5,10 +5,6 @@
 
 using namespace monty;
 
-auto monty::vmImport (char const* name) -> uint8_t const* {
-    return arch::loadFile(name);
-}
-
 struct Pipeline : Stacklet {
     Value feed;
 
@@ -65,7 +61,7 @@ static auto fileRunner (Runner* feed) -> Value {
     assert(feed != nullptr);
     Value v = feed->next();
     if (v.isStr()) {
-        auto data = arch::loadFile(v);
+        auto data = vmImport(v);
         if (data != nullptr)
             v = new Bytes (data, 2000); // FIXME, length is wrong
     }
@@ -126,10 +122,7 @@ static auto cmdRunner (Runner* feed) -> Value {
 }
 
 int main (int argc, char const** argv) {
-    static uint8_t memPool [10*1024];
-    gcSetup(memPool, sizeof memPool);
-
-    Event::triggers.append(0); // TODO get rid of this
+    arch::init(10*1024);
 
     auto args = new ArgRunner (argc-1, argv+1);
     auto file = new Runner (fileRunner, args);

@@ -5,9 +5,7 @@
 #include <cstdio>
 #include <ctime>
 
-using namespace monty;
-
-auto arch::loadFile (char const* name) -> uint8_t const* {
+static auto loadFile (char const* name) -> uint8_t const* {
     auto fp = fopen(name, "rb");
     if (fp == nullptr)
         return nullptr;
@@ -20,7 +18,7 @@ auto arch::loadFile (char const* name) -> uint8_t const* {
     return data;
 }
 
-auto arch::importer (char const* name) -> uint8_t const* {
+auto monty::vmImport (char const* name) -> uint8_t const* {
     auto data = loadFile(name);
     if (data != nullptr)
         return data;
@@ -33,8 +31,10 @@ auto arch::importer (char const* name) -> uint8_t const* {
     return data;
 }
 
-void arch::init () {
+void arch::init (size_t size) {
     setbuf(stdout, nullptr);
+    monty::gcSetup(malloc(size), size);
+    monty::Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
 }
 
 void arch::idle () {
