@@ -1,31 +1,18 @@
 # see https://www.pyinvoke.org
 from invoke import task
 
-import io, os, subprocess, sys
+import configparser, io, os, subprocess, sys
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
-@task(help={"verbose": "produce some extra output for debugging"})
-def x_codegen(c, verbose=False):
-    """process source files with the code generator"""
-    c.run("src/codegen.py" + (" -v" if verbose else "") +
-          " qstr.h"
-          " lib/monty/"
-          " builtin.cpp"
-          " +NATIVE lib/arch-native/"
-          " +STM32 lib/arch-stm32/"
-          " qstr.cpp")
-
-@task
-def x_examples(c):
-    """build each of the example projects"""
-    examples = os.listdir("examples")
-    examples.sort()
-    for ex in examples:
-        if os.path.isdir("examples/" + ex):
-            print(ex)
-            c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
+# parse the platformio.ini file and any extra_configs it mentions
+config = configparser.ConfigParser()
+config.read('platformio.ini')
+if "platformio" in config:
+    if "extra_configs" in config["platformio"]:
+        for f in config["platformio"]["extra_configs"].split():
+            config.read(f)
 
 @task(help={"host": "hostname for rsync (required)",
             "dest": "destination directory (default: monty-test)"})
@@ -43,7 +30,22 @@ def x_version(c):
     """show git repository version"""
     print(os.environ["MONTY_VERSION"])
 
-@task(x_codegen, help={"file": "name of the .py or .mpy file to run"})
+@task(help={"verbose": "produce some extra output for debugging"})
+def generate(c, verbose=False):
+    """pass source files through the code generator"""
+    # construct codegen args from the [codegen] section in platformio.ini
+    cmd = ["src/codegen.py"]
+    if verbose:
+        cmd.append("-v")
+    cmd += ["qstr.h", "lib/monty/", "builtin.cpp"]
+    for k, v in config["codegen"].items():
+        if v:
+            cmd.append("+%s" % k.upper())
+            cmd += v.split()
+    cmd.append("qstr.cpp")
+    c.run(" ".join(cmd))
+
+@task(generate, help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="pytests/hello.py"):
     """run script using the native build  [pytests/hello.py]"""
     c.run("pio run -e native -s", pty=True)
@@ -57,7 +59,7 @@ def test(c):
     """run C++ tests natively"""
     c.run("pio test -e native", pty=True)
 
-@task(x_codegen,help={"tests": "specific tests to run, comma-separated"})
+@task(generate,help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
@@ -99,13 +101,15 @@ def python(c, tests=""):
 
     print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
 
-@task(x_codegen)
+@task(generate)
 def flash(c):
     """build embedded and re-flash attached µC"""
     try:
         # only show output if there is a problem, not the std openocd chatter
         r = c.run("pio run", hide=True, pty=True)
-        print(r.stdout.split("\n", 1)[0]) # ... but do show the target info
+        out = r.stdout.split("\n", 1)[0]
+        if out:
+            print(out) # ... but do show the target info
     except Exception as e:
         # captured as stdout due to pty, which allows pio to colourise
         print(e.result.stdout, end="", file=sys.stderr)
@@ -134,9 +138,16 @@ def clean(c):
     """delete all build results"""
     c.run("rm -rf .pio examples/*/.pio monty.bin")
 
-@task(clean, test, python, upload, flash, runner, builds)
-def all(c):
-    """shorthand for: clean test python upload flash runner builds"""
+@task
+def examples(c):
+    """build each of the example projects"""
+    examples = os.listdir("examples")
+    examples.sort()
+    for ex in examples:
+        if os.path.isdir("examples/%s" % ex):
+            if os.path.isfile("examples/%s/platformio.ini" % ex):
+                print(ex)
+                c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
 
 @task(help={"addr": "flash address (default: 0x08010000)",
             "write": "also write to flash using st-flash"})
@@ -167,3 +178,7 @@ def health(c):
 def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo", pty=True)
+
+@task(clean, test, python, upload, flash, runner, builds)
+def all(c):
+    """shorthand for: clean test python upload flash runner builds"""

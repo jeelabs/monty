@@ -35,5 +35,5 @@ script:
   - inv python
 
   # embedded builds
-  - inv x-sizes
-  - inv x-examples
+  - inv builds
+  - inv examples
