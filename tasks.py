@@ -4,6 +4,8 @@ from invoke import task
 import configparser, io, os, subprocess, sys
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
+dry = "-R" in sys.argv or "--dry" in sys.argv
+
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
 # parse the platformio.ini file and any extra_configs it mentions
@@ -63,6 +65,11 @@ def test(c):
 def python(c, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
+    if dry:
+        msg = tests or "pytests/*.py"
+        print("# tasks.py: run and compare each test (%s)" % msg)
+        return
+
     num, match, fail, skip = 0, 0, 0, 0
 
     if tests:
@@ -99,7 +106,8 @@ def python(c, tests=""):
                     if compareWithExpected(py, r.stdout):
                         match += 1
 
-    print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
+    if not dry:
+        print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
 
 @task(generate)
 def flash(c):
