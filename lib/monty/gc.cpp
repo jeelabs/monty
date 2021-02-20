@@ -26,15 +26,12 @@ struct ObjSlot {
     void setMark ()                { flag |= 1; }
     void clearMark ()              { flag &= ~1; }
 
-    // field order is essential, obj must be last
+    // field order is essential, vt must be last
     union {
         ObjSlot* chain;
         uintptr_t flag; // bit 0 set for marked objects
     };
-    union {
-        Obj obj;
-        void* vt; // null for deleted objects
-    };
+    void* vt; // null for deleted objects
 };
 
 struct VecSlot {
@@ -146,7 +143,7 @@ namespace monty {
                         slot += slack;
                         slot->chain = slot + needs;
                     }
-                    return &slot->obj;
+                    return &slot->vt;
                 }
             }
 
@@ -157,8 +154,8 @@ namespace monty {
         objLow->chain = objLow + needs;
 
         // new objects are always at least ObjSlot-aligned, i.e. 8-/16-byte
-        assert((uintptr_t) &objLow->obj % OS_SZ == 0);
-        return &objLow->obj;
+        assert((uintptr_t) &objLow->vt % OS_SZ == 0);
+        return &objLow->vt;
     }
 
     void Obj::operator delete (void* p) {
@@ -296,7 +293,7 @@ namespace monty {
         objLow->vt = nullptr;
 
         assert((uintptr_t) &vecHigh->next % VS_SZ == 0);
-        assert((uintptr_t) &objLow->obj % OS_SZ == 0);
+        assert((uintptr_t) &objLow->vt % OS_SZ == 0);
     }
 
     auto gcMax () -> uint32_t {
@@ -319,7 +316,7 @@ namespace monty {
             if (slot->isFree())
                 printf(" free\n");
             else {
-                Value x {(Object const&) slot->obj};
+                Value x {(Object const&) slot->vt};
                 x.dump("");
             }
         }
@@ -361,9 +358,9 @@ namespace monty {
             if (slot->isMarked())
                 slot->clearMark();
             else if (!slot->isFree()) {
-                auto q = &slot->obj;
-                V(*q, "\t delete");
-                delete q; // weird: must be a ptr *variable* for stm32 builds
+                auto q = &slot->vt;
+                V(*(Obj*) q, "\t delete");
+                delete (Obj*) q; // weird: must be a ptr *variable* for stm32 builds
                 assert(slot->isFree());
             }
     }

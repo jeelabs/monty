@@ -475,7 +475,7 @@ auto Dict::items () -> Value {
 
 void Dict::marker () const {
     auto& v = (Vector const&) *this;
-    for (uint32_t i = 0; i < 2 * _fill; ++i) // note: twice the fill
+    for (uint32_t i = 0; i < 2*_fill; ++i) // note: twice the fill
         v[i].marker();
     mark(_chain);
 }
