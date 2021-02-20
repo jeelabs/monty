@@ -183,6 +183,6 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo", pty=True)
 
-@task(clean, test, python, upload, flash, mrfs, runner, builds)
+@task(clean, test, python, upload, flash, mrfs, runner, builds, examples)
 def all(c):
-    """short for: clean test python upload flash mrfs runner builds"""
+    """i.e. clean test python upload flash mrfs runner builds examples"""
