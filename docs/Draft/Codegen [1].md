@@ -18,7 +18,7 @@
 ## design
 * the code generator "owns" the lines it inserts/replaces
 * it does this by marking the area it claims:
-	* `//CG ...' and `//CG: ...` do not insert anything
+	* `//CG ...` and `//CG: ...` do not insert anything
 	* `//CG1 ...` to `//CG3 ...` own the next 1 to 3 lines of text
 	* longer sections are delimited with `//CG< ...` and `//CG>`
 * apart from `//CG` scanning, it also scans for `Q(<num>,"str")`

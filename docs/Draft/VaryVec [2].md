@@ -1,12 +1,12 @@
-# Compact vector for variable-sized entries
+# Vector of variable-sized entries
 
 * a "VaryVec" is a simple indexed collection
 * the entries are byte chunks
 * most efficient for reading, writing will move data
-* an insert, delete, and replace any entry
+* can insert, delete, and replace any entry
 
 ## design
-* the start of the data is a index of 16-bit offsets into the file
+* the start of the data is an index of 16-bit offsets into the file
 * after that comes each entry, one after the other in the same order
 * no gaps, i.e. the size of entry N is "index[N+1]-index[N]"
 * there is one more index slot that than that there are entries
