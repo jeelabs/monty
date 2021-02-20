@@ -12,16 +12,22 @@
 #
 #   input files with extension ".mrfs" are listed instead of wrapped
 
-import os, sys, subprocess
-from binascii import crc32, hexlify
+import io, os, sys
+from binascii import crc32
 from datetime import datetime
 from struct import pack, unpack
+from runner import compileIfOutdated, openSerialPort, genHex
 
 ofile = None
+upload = None
 args = iter(sys.argv[1:])
 for fn in args:
     if fn == '-o':
         ofile = open(next(args), 'wb')
+        continue
+    if fn == '-u':
+        upload = int(next(args), 0)
+        ofile = io.BytesIO()
         continue
 
     if not os.path.isfile(fn):
@@ -34,9 +40,8 @@ for fn in args:
     date = int(datetime.fromtimestamp(info.st_mtime).strftime('%y%m%d%H%M'))
 
     if ext == '.py':
-        subprocess.run(['mpy-cross', '-s', '', fn], check=True)
+        fn = compileIfOutdated(fn)
         ext = '.mpy'
-        fn = base + ext
 
     info = os.stat(fn)
     size = info.st_size
@@ -88,3 +93,20 @@ for fn in args:
             close(fd)
 
         # CRC32 of each file entry, incl. its final CRC, is always 0x2144DF1C
+
+if upload is not None:
+    ser = openSerialPort()
+    for off in range(0, ofile.tell(), 2048):
+        addr = off + upload
+        print("\rupload 0x%05X ... " % addr, end="")
+        ofile.seek(off)
+        for line in genHex(ofile.read(2048), addr):
+            #print(line, end="")
+            ser.write(line.encode())
+            ser.flush()
+        line = ser.readline()
+        if b'offset' not in line:
+            print("upload?", line)
+            sys.exit(1)
+    n = ofile.tell()
+    print("\rupload 0x%05X done, %d bytes sent" % (n+upload, n))

@@ -37,10 +37,13 @@ def openSerialPort():
 #   :0C002000776F726C643402595163000069
 #   :00000001FF
 
-def genHex(data):
+def genHex(data, off=None):
+    if off is not None:
+        csum = -(2 + 2 + (off>>12) + (off>>4)) & 0xFF
+        yield f":02000002{off>>4:04X}{csum:02X}\n"
     for i in range(0, len(data), 32):
         chunk = data[i:i+32]
-        csum = -(len(chunk) + (i>>8) + (i&0xFF) + sum(chunk)) & 0xFF
+        csum = -(len(chunk) + (i>>8) + i + sum(chunk)) & 0xFF
         line = f":{len(chunk):02X}{i:04X}00{chunk.hex().upper()}{csum:02X}\n"
         for i in range(0, len(line), 40):
             yield line[i:i+40] # send in pieces < 64 chars (for MacOS ???)

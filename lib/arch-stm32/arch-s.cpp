@@ -204,16 +204,32 @@ struct HexSerial : LineSerial {
         // Intel hex: store valid data in persist buf, sys reset when done
         ihex.init();
         while (!ihex.parse(*++cmd)) {}
-        if (ihex.check == 0 && ihex.type <= 1 &&
+        if (ihex.check == 0 && ihex.type <= 2 &&
                                 ihex.addr + ihex.len <= PERSIST_SIZE) {
-            if (ihex.type == 0) {
-                if (ihex.addr == 0)
-                    magic() = MagicStart;
-                memcpy(persist + 4 + ihex.addr, ihex.data, ihex.len);
-            } else {
-                if (magic() == MagicStart)
-                    magic() = MagicValid;
-                systemReset();
+            switch (ihex.type) {
+                case 0: // data bytes
+                        if (ihex.addr == 0)
+                            magic() = MagicStart;
+                        memcpy(persist + 4 + ihex.addr, ihex.data, ihex.len);
+                        last = ihex.addr + ihex.len;
+                        break;
+                case 2: // flash offset
+                        offset = (uint32_t) mrfsBase +
+                                    (ihex.data[0]<<12) + (ihex.data[1]<<4);
+                        break;
+                case 1: // end of hex input
+                        if (magic() == MagicStart) {
+                            if (offset != 0) {
+                                saveToFlash(offset, persist+4, last);
+                                printf("offset %x last %d\n", offset, last);
+                                *persist = 0;
+                                offset = 0;
+                                break;
+                            }
+                            magic() = MagicValid;
+                        }
+                        // fall through
+                default: systemReset();
             }
         } else {
             printf("ihex? %d t%d @%04x #%d\n",
@@ -223,6 +239,16 @@ struct HexSerial : LineSerial {
         return true;
     }
 
+    void saveToFlash (uint32_t off, void const* buf, int len) {
+        if (off % 2048 == 0) // TODO STM32L4-specific
+            Flash::erasePage((void*) off);
+        auto words = (uint32_t const*) buf;
+        for (int i = 0; i < len; i += 8)
+            Flash::write64((void const*) (off+i), words[i/4], words[i/4+1]);
+        Flash::finish();
+    }
+
+    uint32_t offset = 0, last = 0;
     static char* persist; // pointer to a buffer which persists across resets
 };
 

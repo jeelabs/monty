@@ -149,20 +149,16 @@ def examples(c):
                 print(ex)
                 c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
 
-@task(help={"addr": "flash address (default: 0x08010000)",
-            "write": "also write to flash using st-flash"})
-def mrfs(c, addr="0x08020000", write=False):
+@task(help={"offset": "flash offset (default: 0x0)",
+            "upload": "upload to flash i.s.o. saving to file"})
+def mrfs(c, offset=0, upload=False):
     """create Minimal Replaceable File Storage image [rom.mrfs]"""
-    c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
     #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
     #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
-    if write:
-        try:
-            r = c.run(f"st-flash write rom.mrfs {addr}", hide="both")
-            print(r.tail("stdout", 1).strip())
-        except Exception as e:
-            r = e.result
-        print(r.tail("stderr", 1).strip())
+    if upload:
+        c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
+    else:
+        c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
 
 @task
 def health(c):
