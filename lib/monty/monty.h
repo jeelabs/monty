@@ -890,14 +890,15 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
 
-        constexpr Module (Lookup const& lu, Value nm) : Dict (&lu), _name (nm) {}
+        constexpr Module (Value nm, Object const& lu =builtins)
+            : Dict (&lu), _name (nm) {}
 
         auto attr (char const* s, Value&) const -> Value override {
             Value v = getAt(s);
             return v.isNil() && strcmp(s, "__name__") == 0 ? _name : v;
         }
 
-        static Lookup const builtins;
+        static Dict builtins;
         static Dict loaded;
 
         Value _name;

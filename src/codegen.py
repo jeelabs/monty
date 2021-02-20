@@ -33,7 +33,7 @@ def MODULE_END(block):
     m = flags.mod
     assert m != ""
     out.append("static Lookup const %s_attrs (%s_map, sizeof %s_map);" % (m, m, m))
-    out.append("Module ext_%s (%s_attrs, %s);" % (m, m, q(m)))
+    out.append("Module ext_%s (%s, %s_attrs);" % (m, q(m), m))
     flags.mod = ""
     return out
 

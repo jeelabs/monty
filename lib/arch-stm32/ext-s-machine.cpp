@@ -237,4 +237,4 @@ static Lookup::Item const machine_map [] = {
 
 //CG2 module-end
 static Lookup const machine_attrs (machine_map, sizeof machine_map);
-Module ext_machine (machine_attrs, Q(211,"machine"));
+Module ext_machine (Q(211,"machine"), machine_attrs);

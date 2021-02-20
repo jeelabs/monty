@@ -51,6 +51,7 @@ static Lookup::Item const sys_map [] = {
 //CG>
     { Q(172,"tasks"), Stacklet::tasks },
     { Q(173,"modules"), Module::loaded },
+    { Q( 63,"builtins"), Module::builtins },
     { Q(174,"implementation"), Q(175,"monty") },
 #ifdef VERSION
     { Q(176,"version"), VERSION },
@@ -59,4 +60,4 @@ static Lookup::Item const sys_map [] = {
 
 //CG2 module-end
 static Lookup const sys_attrs (sys_map, sizeof sys_map);
-Module ext_sys (sys_attrs, Q(171,"sys"));
+Module ext_sys (Q(171,"sys"), sys_attrs);

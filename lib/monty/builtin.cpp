@@ -282,7 +282,8 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 90,"hash"),  fo_hash },
 };
 
-Lookup const Module::builtins (builtinsMap, sizeof builtinsMap);
+static Lookup const builtins_attrs (builtinsMap, sizeof builtinsMap);
+Dict Module::builtins (&builtins_attrs);
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
     extra() = { .code=exc, .ipOff=0, .callee=nullptr };
