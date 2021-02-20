@@ -2,10 +2,13 @@
 
 # Minimal Replaceable File Storage
 #
-# Usage: mrfs.py [-o outfile] infile...
+# Usage: mrfs.py [-o outfile] [-u 0x0] infile...
 #
 #   if -o is specified all files are combined to that single output
 #   else each "abc.def" file is wrapped up and written to "abc.mrfs"
+#
+#   if -u is specified, then the result is not saved to file but uploaded
+#   over serial (using the same mechanism as "runner.py", i.e. Intel HEX)
 #
 #   files with a ".py" extensions are compiled to ".mpy" and then wrapped
 #   (the ".mpy" extension is always omitted from names stored internally)

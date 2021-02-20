@@ -220,6 +220,7 @@ struct HexSerial : LineSerial {
                 case 1: // end of hex input
                         if (magic() == MagicStart) {
                             if (offset != 0) {
+                                // TODO verify proper flashing
                                 saveToFlash(offset, persist+4, last);
                                 printf("offset %x last %d\n", offset, last);
                                 *persist = 0;
