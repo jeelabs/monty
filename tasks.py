@@ -150,15 +150,15 @@ def examples(c):
                 c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
 
 @task(help={"offset": "flash offset (default: 0x0)",
-            "upload": "upload to flash i.s.o. saving to file"})
-def mrfs(c, offset=0, upload=False):
-    """create Minimal Replaceable File Storage image [rom.mrfs]"""
+            "file": "save to file instead of uploading to flash"})
+def mrfs(c, offset=0, file=""):
+    """upload tests as Minimal Replaceable File Storage image"""
     #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
     #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
-    if upload:
-        c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
+    if file:
+        c.run(f"src/mrfs.py -o %s pytests/*.py" % file)
     else:
-        c.run(f"src/mrfs.py -o rom.mrfs pytests/*.py")
+        c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
 
 @task
 def health(c):
@@ -175,6 +175,6 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo", pty=True)
 
-@task(clean, test, python, upload, flash, runner, builds)
+@task(clean, test, python, upload, flash, mrfs, runner, builds)
 def all(c):
-    """shorthand for: clean test python upload flash runner builds"""
+    """short for: clean test python upload flash mrfs runner builds"""
