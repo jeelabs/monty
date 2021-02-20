@@ -56,42 +56,6 @@ extern "C" void __assert (char const* f, int l, char const* e) {
     __assert_func(f, l, "-", e);
 }
 
-void printBuildVer () {
-    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
-}
-
-void printDevInfo () {
-    extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
-    printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
-            g_pfnVectors, _sidata, _sdata, _ebss, _estack);
-
-#if STM32F1
-    // the 0x1F... addresses are cpu-family specific
-    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
-            MMIO32(0xE000ED00),
-            MMIO16(0x1FFFF7E0),
-            (_estack - _sdata) >> 8,
-            MMIO32(0x1FFFF700) & 0x1F); // FIXME wrong!
-    printf("clock %d kHz, devid %p-%p-%p\n",
-            MMIO32(0xE000E014) + 1,
-            MMIO32(0x1FFFF7E8),
-            MMIO32(0x1FFFF7EC),
-            MMIO32(0x1FFFF7F0));
-#elif STM32L4
-    // the 0x1F... addresses are cpu-family specific
-    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
-            MMIO32(0xE000ED00),
-            MMIO16(0x1FFF75E0),
-            (_estack - _sdata) >> 8,
-            MMIO32(0x1FFF7500) & 0x1F);
-    printf("clock %d kHz, devid %p-%p-%p\n",
-            MMIO32(0xE000E014) + 1,
-            MMIO32(0x1FFF7590),
-            MMIO32(0x1FFF7594),
-            MMIO32(0x1FFF7598));
-#endif
-}
-
 struct LineSerial : Stacklet {
     Event incoming;
     //Event outgoing;
@@ -257,10 +221,13 @@ char* HexSerial::persist;
 
 struct Command {
     char const* desc;
-    void (*proc)(char const*);
+    union {
+        void (*f0)();
+        void (*f1)(char const*);
+    };
 };
 
-void bc_cmd (char const* cmd) {
+static void bc_cmd (char const* cmd) {
     if (strlen(cmd) > 3) {
         HexSerial::magic() = HexSerial::MagicValid;
         strcpy(HexSerial::persist + 4, cmd + 3);
@@ -268,7 +235,45 @@ void bc_cmd (char const* cmd) {
         HexSerial::magic() = 0;
 }
 
-void wd_cmd (char const* cmd) {
+static void bv_cmd () {
+    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
+}
+
+static void di_cmd () {
+    extern int g_pfnVectors [], _sidata [], _sdata [], _ebss [], _estack [];
+    printf("flash 0x%p..0x%p, ram 0x%p..0x%p, stack top 0x%p\n",
+            g_pfnVectors, _sidata, _sdata, _ebss, _estack);
+    // the 0x1F... addresses are cpu-family specific
+#if STM32F1
+    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
+            MMIO32(0xE000ED00),
+            MMIO16(0x1FFFF7E0),
+            (_estack - _sdata) >> 8,
+            MMIO32(0x1FFFF700) & 0x1F); // FIXME wrong!
+    printf("clock %d kHz, devid %p-%p-%p\n",
+            MMIO32(0xE000E014) + 1,
+            MMIO32(0x1FFFF7E8),
+            MMIO32(0x1FFFF7EC),
+            MMIO32(0x1FFFF7F0));
+#elif STM32L4
+    printf("cpuid 0x%p, %d kB flash, %d kB ram, package type %d\n",
+            MMIO32(0xE000ED00),
+            MMIO16(0x1FFF75E0),
+            (_estack - _sdata) >> 8,
+            MMIO32(0x1FFF7500) & 0x1F);
+    printf("clock %d kHz, devid %p-%p-%p\n",
+            MMIO32(0xE000E014) + 1,
+            MMIO32(0x1FFF7590),
+            MMIO32(0x1FFF7594),
+            MMIO32(0x1FFF7598));
+#endif
+}
+
+static void pd_cmd () {
+    powerDown();
+}
+
+static void wd_cmd (char const* cmd) {
     int count = 4095;
     if (strlen(cmd) > 3)
         count = atoi(cmd+3);
@@ -279,29 +284,23 @@ void wd_cmd (char const* cmd) {
 }
 
 Command const commands [] = {
-    { "bc *  set boot command [cmd ...]"  , bc_cmd },
-    { "bv    show build version"          , [](char const*) { printBuildVer(); }},
-    { "di    show device info"            , [](char const*) { printDevInfo(); }},
-    { "gc    trigger garbage collection"  , [](char const*) { Stacklet::gcAll(); }},
-    { "gr    generate a GC report"        , [](char const*) { gcReport(); }},
-    { "ls    list files in MRFS"          , [](char const*) { mrfs::dump(); }},
-    { "od    object dump"                 , [](char const*) { gcObjDump(); }},
-    { "pd    power down"                  , [](char const*) { powerDown(); }},
-    { "sr    system reset"                , [](char const*) { systemReset(); }},
-    { "vd    vector dump"                 , [](char const*) { gcVecDump(); }},
-    { "wd N  set watchdog [0..4095] x8 ms", wd_cmd },
-    { "?     this help"                   , nullptr },
+    { "bc *  set boot command [cmd ...]"   , (void(*)()) bc_cmd },
+    { "bv    show build version"           , bv_cmd },
+    { "di    show device info"             , di_cmd },
+    { "gc    trigger garbage collection"   , Stacklet::gcAll },
+    { "gr    generate a GC report"         , gcReport },
+    { "ls    list files in MRFS"           , mrfs::dump },
+    { "od    object dump"                  , gcObjDump },
+    { "pd    power down"                   , pd_cmd },
+    { "sr    system reset"                 , systemReset },
+    { "vd    vector dump"                  , gcVecDump },
+    { "wd N  set watchdog [0..4095] x8 ms" , (void(*)()) wd_cmd },
 };
 
-auto execCmd (char const* buf) -> bool {
-    if (buf[0] == '?') {
-        for (auto& cmd : commands)
-            printf("  %s\n", cmd.desc);
-        return true;
-    }
+static auto execCmd (char const* buf) -> bool {
     for (auto& cmd : commands)
         if (memcmp(buf, cmd.desc, 2) == 0) {
-            cmd.proc(buf);
+            cmd.f1(buf);
             return true;
         }
     auto data = vmImport(buf);
@@ -310,7 +309,8 @@ auto execCmd (char const* buf) -> bool {
         assert(p != nullptr);
         Stacklet::tasks.append(p);
     } else
-        printf("<%s> ?\n", buf);
+        for (auto& cmd : commands)
+            printf("  %s\n", cmd.desc);
     return true;
 }
 
