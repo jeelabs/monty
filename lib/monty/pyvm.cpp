@@ -731,9 +731,12 @@ struct PyVM : Stacklet {
     void opImportName (Q arg) {
         --_sp; // TODO ignore fromlist for now, *_sp level also ignored
         Value mod = Module::loaded.at(arg);
-        if (mod.isNil()) { // TODO this code should be placed elsewhere
+        if (mod.isNil()) {
             auto data = vmImport(arg);
-            assert(data != nullptr);
+            if (data == nullptr) {
+                *_sp = {E::ImportError, arg};
+                return;
+            }
             auto init = Bytecode::load(data, arg);
             assert(init != nullptr);
             wrappedCall(init, {*this, 0});
@@ -744,8 +747,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op q
     void opImportFrom (Q arg) {
-        Value v = _sp->obj().getAt(arg);
-        *++_sp = v;
+        *++_sp = _sp->obj().getAt(arg);
     }
     //CG1 op
     void opImportStar () {

@@ -27,10 +27,7 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     assert(strlen(name) < 25);
     char buf [40];
     sprintf(buf, "pytests/%s.mpy", name);
-    data = loadFile(buf);
-    if (data == nullptr)
-        perror(name);
-    return data;
+    return loadFile(buf);
 }
 
 void arch::init (int size) {
