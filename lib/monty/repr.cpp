@@ -164,9 +164,8 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
-auto Bool::repr (Buffer& buf) const -> Value {
-    buf << (this == &falseObj ? "false" : "true");
-    return {};
+auto Buffer::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as bytes
 }
 
 auto Bytes::repr (Buffer& buf) const -> Value {
@@ -183,138 +182,7 @@ auto Bytes::repr (Buffer& buf) const -> Value {
     return {};
 }
 
-auto Class::repr (Buffer& buf) const -> Value {
-    buf.print("<class %s>", (char const*) at("__name__"));
-    return {};
-}
-
-auto Closure::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
-}
-
-auto Dict::repr (Buffer& buf) const -> Value {
-    buf << '{';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i] << ':' << (*this)[_fill+i];
-    }
-    buf << '}';
-    return {};
-}
-
-auto Exception::repr (Buffer& buf) const -> Value {
-    buf.puts(bases._items[(int) extra().code].k);
-    return Tuple::repr(buf);
-}
-
-auto Inst::repr (Buffer& buf) const -> Value {
-    buf.print("<%s object at %p>", (char const*) type()._name, this);
-    return {};
-}
-
-auto Int::repr (Buffer& buf) const -> Value {
-    uint64_t val = _i64;
-    if (_i64 < 0) {
-        buf.putc('-');
-        val = -_i64;
-    }
-
-    // need to print in pieces which fit into a std int
-    int v1 = val / 1000000000000;
-    int v2 = (val / 1000000) % 1000000;
-    int v3 = val % 1000000;
-
-    if (v1 > 0)
-        buf.print("%d%06d%06d", v1, v2, v3);
-    else if (v2 > 0)
-        buf.print("%d%06d", v2, v3);
-    else
-        buf.print("%d", v3);
-    return {};
-}
-
-auto List::repr (Buffer& buf) const -> Value {
-    buf << '[';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i];
-    }
-    buf << ']';
-    return {};
-}
-
-auto Module::repr (Buffer& buf) const -> Value {
-    buf.print("<module '%s'>", (char const*) _name);
-    return {};
-}
-
-auto None::repr (Buffer& buf) const -> Value {
-    buf << "null";
-    return {};
-}
-
-auto Object::repr (Buffer& buf) const -> Value {
-    buf.print("<%s at %p>", (char const*) type()._name, this);
-    return {};
-}
-
-auto Range::repr (Buffer& buf) const -> Value {
-    buf.print("range(%d,%d,%d)", _from, _to, _by);
-    return {};
-}
-
-auto Set::repr (Buffer& buf) const -> Value {
-    buf << '{';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i];
-    }
-    buf << '}';
-    return {};
-}
-
-auto Slice::repr (Buffer& buf) const -> Value {
-    buf << "slice(" << _off << ',' << _num << ',' << _step << ')';
-    return {};
-}
-
 auto Str::repr (Buffer& buf) const -> Value {
     putsEsc(buf, (char const*) begin());
     return {};
-}
-
-auto Super::repr (Buffer& buf) const -> Value {
-    buf << "<super: ...>";
-    return {};
-}
-
-auto Tuple::repr (Buffer& buf) const -> Value {
-    buf << '(';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i];
-    }
-    buf << ')';
-    return {};
-}
-
-auto Type::repr (Buffer& buf) const -> Value {
-    buf.print("<type %s>", (char const*) _name);
-    return {};
-}
-
-auto Event::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
-}
-
-auto Stacklet::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
-}
-
-auto Buffer::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as bytes
 }

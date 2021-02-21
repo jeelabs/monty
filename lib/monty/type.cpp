@@ -13,9 +13,7 @@ Type const Inst::info (Q(181,"<instance>"));
 Lookup const Bytes::attrs;
 Lookup const Class::attrs;
 Lookup const Inst::attrs;
-Lookup const Range::attrs;
 Lookup const Set::attrs;
-Lookup const Slice::attrs;
 Lookup const Str::attrs;
 Lookup const Super::attrs;
 Lookup const Tuple::attrs;
@@ -24,57 +22,6 @@ Lookup const Type::attrs;
 void monty::markVec (Vector const& vec) {
     for (auto e : vec)
         e.marker();
-}
-
-auto Iterator::next() -> Value {
-    if (_ipos >= (int) iobj.len())
-        return E::StopIteration;
-    // TODO duplicate code, see opForIter in pyvm.h
-    if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
-        return ((List&) iobj)[_ipos++]; // avoid keyed access
-    return iobj.getAt(_ipos++);
-}
-
-auto Range::len () const -> uint32_t {
-    assert(_by != 0);
-    auto n = (_to - _from + _by + (_by > 0 ? -1 : 1)) / _by;
-    return n < 0 ? 0 : n;
-}
-
-auto Range::getAt (Value k) const -> Value {
-    return _from + k * _by;
-}
-
-auto Range::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args._num && args._num <= 3);
-    int a = args._num > 1 ? (int) args[0] : 0;
-    int b = args._num == 1 ? args[0] : args[1];
-    int c = args._num > 2 ? (int) args[2] : 1;
-    return new Range (a, b, c);
-}
-
-auto Slice::asRange (int sz) const -> Range {
-    int from = _off.isInt() ? (int) _off : 0;
-    int to = _num.isInt() ? (int) _num : sz;
-    int by = _step.isInt() ? (int) _step : 1;
-    if (from < 0)
-        from += sz;
-    if (to < 0)
-        to += sz;
-    if (by < 0) {
-        auto t = from - 1;
-        from = to - 1;
-        to = t;
-    }
-    return {from, to, by};
-}
-
-auto Slice::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args._num && args._num <= 3);
-    Value a = args._num > 1 ? args[0] : Null;
-    Value b = args._num == 1 ? args[0] : args[1];
-    Value c = args._num > 2 ? args[2] : Null;
-    return new Slice (a, b, c);
 }
 
 Bytes::Bytes (void const* ptr, uint32_t len) {
@@ -318,6 +265,17 @@ auto Tuple::create (ArgVec const& args, Type const*) -> Value {
     return new (args._num * sizeof (Value)) Tuple (args);
 }
 
+auto Tuple::repr (Buffer& buf) const -> Value {
+    buf << '(';
+    for (uint32_t i = 0; i < _fill; ++i) {
+        if (i > 0)
+            buf << ',';
+        buf << (*this)[i];
+    }
+    buf << ')';
+    return {};
+}
+
 List::List (ArgVec const& args) {
     insert(0, args._num);
     for (int i = 0; i < args._num; ++i)
@@ -382,6 +340,17 @@ auto List::create (ArgVec const& args, Type const*) -> Value {
     return new List (args);
 }
 
+auto List::repr (Buffer& buf) const -> Value {
+    buf << '[';
+    for (uint32_t i = 0; i < _fill; ++i) {
+        if (i > 0)
+            buf << ',';
+        buf << (*this)[i];
+    }
+    buf << ']';
+    return {};
+}
+
 auto Set::find (Value v) const -> uint32_t {
     for (auto& e : *this)
         if (v == e)
@@ -425,6 +394,17 @@ auto Set::create (ArgVec const& args, Type const*) -> Value {
     for (int i = 0; i < args._num; ++i)
         p->has(args[i]) = true; // TODO append, no need to lookup
     return p;
+}
+
+auto Set::repr (Buffer& buf) const -> Value {
+    buf << '{';
+    for (uint32_t i = 0; i < _fill; ++i) {
+        if (i > 0)
+            buf << ',';
+        buf << (*this)[i];
+    }
+    buf << '}';
+    return {};
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()
@@ -485,6 +465,17 @@ auto Dict::create (ArgVec const&, Type const*) -> Value {
     return new Dict;
 }
 
+auto Dict::repr (Buffer& buf) const -> Value {
+    buf << '{';
+    for (uint32_t i = 0; i < _fill; ++i) {
+        if (i > 0)
+            buf << ',';
+        buf << (*this)[i] << ':' << (*this)[_fill+i];
+    }
+    buf << '}';
+    return {};
+}
+
 auto DictView::getAt (Value k) const -> Value {
     assert(k.isInt());
     int n = k;
@@ -520,6 +511,11 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
     return {};
 }
 
+auto Type::repr (Buffer& buf) const -> Value {
+    buf.print("<type %s>", (char const*) _name);
+    return {};
+}
+
 Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
     assert(2 <= args._num && args._num <= 3); // no support for multiple inheritance
     if (args._num > 2)
@@ -536,6 +532,11 @@ auto Class::create (ArgVec const& args, Type const*) -> Value {
     return new Class (args);
 }
 
+auto Class::repr (Buffer& buf) const -> Value {
+    buf.print("<class %s>", (char const*) at("__name__"));
+    return {};
+}
+
 Super::Super (ArgVec const& args) {
     assert(args._num == 2);
     _sclass = args[0];
@@ -544,6 +545,11 @@ Super::Super (ArgVec const& args) {
 
 auto Super::create (ArgVec const& args, Type const*) -> Value {
     return new Super (args);
+}
+
+auto Super::repr (Buffer& buf) const -> Value {
+    buf << "<super: ...>";
+    return {};
 }
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
@@ -559,4 +565,9 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
 auto Inst::create (ArgVec const& args, Type const* t) -> Value {
     Value v = t;
     return new Inst (args, v.asType<Class>());
+}
+
+auto Inst::repr (Buffer& buf) const -> Value {
+    buf.print("<%s object at %p>", (char const*) type()._name, this);
+    return {};
 }

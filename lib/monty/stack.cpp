@@ -85,6 +85,14 @@ void Event::wait () {
     }
 }
 
+auto Event::regHandler () -> uint32_t {
+    _id = triggers.find({});
+    if (_id >= (int) triggers.size())
+        triggers.insert(_id);
+    triggers[_id] = this;
+    return _id;
+}
+
 auto Event::unop (UnOp op) const -> Value {
     assert(op == UnOp::Boln);
     return Value::asBool(*this);
@@ -98,6 +106,10 @@ auto Event::binop (BinOp op, Value rhs) const -> Value {
 auto Event::create (ArgVec const& args, Type const*) -> Value {
     assert(args._num == 0);
     return new Event;
+}
+
+auto Event::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
 }
 
 Stacklet::~Stacklet () {}
@@ -194,12 +206,8 @@ auto Stacklet::runLoop () -> bool {
     return Event::queued > 0 || tasks.size() > 0;
 }
 
-auto Event::regHandler () -> uint32_t {
-    _id = triggers.find({});
-    if (_id >= (int) triggers.size())
-        triggers.insert(_id);
-    triggers[_id] = this;
-    return _id;
+auto Stacklet::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
 }
 
 auto BoundMeth::call (ArgVec const& args) const -> Value {
@@ -225,4 +233,13 @@ auto Closure::call (ArgVec const& args) const -> Value {
     for (int i = 0; i < args._num; ++i)
         v[n+i] = args[i];
     return _func.call({v, n + args._num});
+}
+
+auto Closure::repr (Buffer& buf) const -> Value {
+    return Object::repr(buf); // don't print as a list
+}
+
+auto Module::repr (Buffer& buf) const -> Value {
+    buf.print("<module '%s'>", (char const*) _name);
+    return {};
 }

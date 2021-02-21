@@ -323,6 +323,11 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
     return new (sz) Exception (exc, args);
 }
 
+auto Exception::repr (Buffer& buf) const -> Value {
+    buf.puts(bases._items[(int) extra().code].k);
+    return Tuple::repr(buf);
+}
+
 //CG< type-info
 Type    BoundMeth::info (Q(187,"<boundmeth>"));
 Type       Buffer::info (Q(188,"<buffer>"));

@@ -18,6 +18,8 @@ Type const Object::info (Q(166,"<object>"));
 
 Lookup const Bool::attrs;
 Lookup const Int::attrs;
+Lookup const Range::attrs;
+Lookup const Slice::attrs;
 
 constexpr int QID_RAM_BASE = 32*1024;
 constexpr int QID_RAM_LAST = 48*1024;
@@ -343,6 +345,16 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
     return store(r, v.asObj());
 }
 
+auto Object::repr (Buffer& buf) const -> Value {
+    buf.print("<%s at %p>", (char const*) type()._name, this);
+    return {};
+}
+
+auto None::repr (Buffer& buf) const -> Value {
+    buf << "null";
+    return {};
+}
+
 auto Bool::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Not:  return Value::asBool(this != &trueObj);
@@ -359,6 +371,11 @@ auto Bool::create (ArgVec const& args, Type const*) -> Value {
         return args[0].unOp(UnOp::Boln);
     assert(args._num == 0);
     return False;
+}
+
+auto Bool::repr (Buffer& buf) const -> Value {
+    buf << (this == &falseObj ? "false" : "true");
+    return {};
 }
 
 auto Int::make (int64_t i) -> Value {
@@ -438,5 +455,87 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
         case Value::Str: return Int::conv(v);
         case Value::Obj: return v.unOp(UnOp::Intg);
     }
+    return {};
+}
+
+auto Int::repr (Buffer& buf) const -> Value {
+    uint64_t val = _i64;
+    if (_i64 < 0) {
+        buf.putc('-');
+        val = -_i64;
+    }
+
+    // need to print in pieces which fit into a std int
+    int v1 = val / 1000000000000;
+    int v2 = (val / 1000000) % 1000000;
+    int v3 = val % 1000000;
+
+    if (v1 > 0)
+        buf.print("%d%06d%06d", v1, v2, v3);
+    else if (v2 > 0)
+        buf.print("%d%06d", v2, v3);
+    else
+        buf.print("%d", v3);
+    return {};
+}
+
+auto Iterator::next() -> Value {
+    if (_ipos >= (int) iobj.len())
+        return E::StopIteration;
+    // TODO duplicate code, see opForIter in pyvm.h
+    if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
+        return ((List&) iobj)[_ipos++]; // avoid keyed access
+    return iobj.getAt(_ipos++);
+}
+
+auto Range::len () const -> uint32_t {
+    assert(_by != 0);
+    auto n = (_to - _from + _by + (_by > 0 ? -1 : 1)) / _by;
+    return n < 0 ? 0 : n;
+}
+
+auto Range::getAt (Value k) const -> Value {
+    return _from + k * _by;
+}
+
+auto Range::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args._num && args._num <= 3);
+    int a = args._num > 1 ? (int) args[0] : 0;
+    int b = args._num == 1 ? args[0] : args[1];
+    int c = args._num > 2 ? (int) args[2] : 1;
+    return new Range (a, b, c);
+}
+
+auto Range::repr (Buffer& buf) const -> Value {
+    buf.print("range(%d,%d,%d)", _from, _to, _by);
+    return {};
+}
+
+auto Slice::asRange (int sz) const -> Range {
+    int from = _off.isInt() ? (int) _off : 0;
+    int to = _num.isInt() ? (int) _num : sz;
+    int by = _step.isInt() ? (int) _step : 1;
+    if (from < 0)
+        from += sz;
+    if (to < 0)
+        to += sz;
+    if (by < 0) {
+        auto t = from - 1;
+        from = to - 1;
+        to = t;
+    }
+    return {from, to, by};
+}
+
+auto Slice::create (ArgVec const& args, Type const*) -> Value {
+    assert(1 <= args._num && args._num <= 3);
+    Value a = args._num > 1 ? args[0] : Null;
+    Value b = args._num == 1 ? args[0] : args[1];
+    Value c = args._num > 2 ? args[2] : Null;
+    return new Slice (a, b, c);
+}
+
+auto Slice::repr (Buffer& buf) const -> Value {
+    buf << "slice(" << _off << ',' << _num << ',' << _step << ')';
     return {};
 }
