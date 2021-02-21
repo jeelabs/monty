@@ -271,6 +271,22 @@ void Value::verify (Type const& t) const {
     assert(f);
 }
 
+// non-recursive version for debugging, does not affect the VM state
+void Value::dump (char const* msg) const {
+    if (msg != 0)
+        printf("%s ", msg);
+    switch (tag()) {
+        case Value::Nil: printf("<N>"); break;
+        case Value::Int: printf("<I %d>", (int) *this); break;
+        case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
+        case Value::Obj: printf("<O %s at %p>",
+                                 (char const*) obj().type()._name, &obj());
+                         break;
+    }
+    if (msg != 0)
+        printf("\n");
+}
+
 auto Object::call (ArgVec const&) const -> Value {
     Value v = this; v.dump("call?"); assert(false);
     return {};

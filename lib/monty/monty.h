@@ -521,6 +521,31 @@ namespace monty {
         auto getAt (Value k) const -> Value override;
     };
 
+    //CG3 type <buffer>
+    struct Buffer : Bytes {
+        static Type info;
+        auto type () const -> Type const& override { return info; }
+        auto repr (Buffer& buf) const -> Value override;
+
+        Buffer () {}
+        ~Buffer () override;
+
+        void write (uint8_t const* ptr, uint32_t num);
+        void putc (char v) { write((uint8_t const*) &v, 1); }
+        void puts (char const* s) { while (*s != 0) putc(*s++); }
+        void print (char const* fmt, ...);
+
+        auto operator<< (Value v) -> Buffer&;
+        auto operator<< (char c) -> Buffer& { putc(c); return *this; }
+        auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
+        auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
+
+    private:
+        int splitInt (uint32_t val, int base, uint8_t* buf);
+        void putFiller (int n, char fill);
+        void putInt (int val, int base, int width, char fill);
+    };
+
     struct VaryVec : private ByteVec {
         constexpr VaryVec (void const* ptr =nullptr, uint32_t num =0)
                     : ByteVec ((uint8_t const*) ptr, num) {}
@@ -1036,33 +1061,6 @@ namespace monty {
         void marker () const override { List::marker(); mark(_func); }
     private:
         Object const& _func;
-    };
-
-// see repr.cpp - repr, printing, and buffering
-
-    //CG3 type <buffer>
-    struct Buffer : Bytes {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-        auto repr (Buffer& buf) const -> Value override;
-
-        Buffer () {}
-        ~Buffer () override;
-
-        void write (uint8_t const* ptr, uint32_t num);
-        void putc (char v) { write((uint8_t const*) &v, 1); }
-        void puts (char const* s) { while (*s != 0) putc(*s++); }
-        void print (char const* fmt, ...);
-
-        auto operator<< (Value v) -> Buffer&;
-        auto operator<< (char c) -> Buffer& { putc(c); return *this; }
-        auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
-        auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
-
-    private:
-        int splitInt (uint32_t val, int base, uint8_t* buf);
-        void putFiller (int n, char fill);
-        void putInt (int val, int base, int width, char fill);
     };
 
 // see builtin.cpp - exceptions and auto-generated built-in tables
