@@ -229,7 +229,7 @@ struct PyVM : Stacklet {
     // most common use of contextAdjuster, wraps call and saves result (or nil)
     void wrappedCall (Value callee, ArgVec const& args) {
         auto v = contextAdjuster([=]() -> Value {
-            return callee.obj().call(args);
+            return callee->call(args);
         });
         *_sp = v;
     }
@@ -363,8 +363,7 @@ struct PyVM : Stacklet {
 
     //CG1 op q
     void opLoadName (Q arg) {
-        assert(frame().locals.isObj());
-        *++_sp = frame().locals.obj().getAt(arg);
+        *++_sp = frame().locals->getAt(arg);
         if (_sp->isNil())
             *_sp = {E::NameError, arg};
     }
@@ -373,12 +372,11 @@ struct PyVM : Stacklet {
         auto& l = frame().locals;
         if (!l.isObj())
             l = new Dict (&globals());
-        l.obj().setAt(arg, *_sp--);
+        l->setAt(arg, *_sp--);
     }
     //CG1 op q
     void opDeleteName (Q arg) {
-        assert(frame().locals.isObj());
-        frame().locals.obj().setAt(arg, {});
+        frame().locals->setAt(arg, {});
     }
     //CG1 op q
     void opLoadGlobal (Q arg) {
@@ -398,7 +396,7 @@ struct PyVM : Stacklet {
         Value self;
         Value v = _sp->obj().attr(arg, self);
         if (v.isNil())
-            *_sp = {E::AttributeError, arg, _sp->asObj().type()._name};
+            *_sp = {E::AttributeError, arg, _sp->obj().type()._name};
         else {
             *_sp = v;
             // TODO should this be moved into Inst::attr ???
@@ -462,7 +460,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opUnpackSequence (int arg) {
-        auto& seq = _sp->asObj(); // TODO iterators
+        auto& seq = _sp->obj(); // TODO iterators
         if ((int) seq.len() != arg)
             *_sp = {E::ValueError, "unpack count mismatch", (int) seq.len()};
         else {
@@ -516,14 +514,14 @@ struct PyVM : Stacklet {
     void opSetupWith (int arg) {
         auto exit = Q( 13,"__exit__");
         _sp[1] = {};
-        *_sp = _sp->asObj().attr(exit, _sp[1]);
+        *_sp = _sp->obj().attr(exit, _sp[1]);
         if (_sp->isNil()) {
             *_sp = {E::AttributeError, exit};
             return;
         }
 
         auto entry = Q( 12,"__enter__");
-        _sp[2] = _sp[1].asObj().attr(entry, _sp[3]);
+        _sp[2] = _sp[1]->attr(entry, _sp[3]);
         if (_sp->isNil()) {
             _sp[2] = {E::AttributeError, entry};
             return;
@@ -688,9 +686,9 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opGetIter () {
-        auto v = _sp->asObj().iter();
+        auto v = _sp->obj().iter();
         if (v.isInt())
-            v = new Iterator (_sp->asObj(), v);
+            v = new Iterator (_sp->obj(), v);
         *_sp = v;
     }
     //CG1 op
@@ -719,7 +717,7 @@ struct PyVM : Stacklet {
                 pos = n + 1;
             }
         } else
-            v = pos.obj().next();
+            v = pos->next();
         if (v.isNil()) {
             _sp -= 4;
             _ip += arg;
@@ -747,7 +745,8 @@ struct PyVM : Stacklet {
     }
     //CG1 op q
     void opImportFrom (Q arg) {
-        *++_sp = _sp->obj().getAt(arg);
+        Value v = _sp->obj().getAt(arg);
+        *++_sp = v;
     }
     //CG1 op
     void opImportStar () {
@@ -1235,7 +1234,7 @@ struct PyVM : Stacklet {
             else {
                 Buffer buf;
                 buf.print("uncaught exception: ");
-                e.obj().repr(buf);
+                e->repr(buf);
                 buf.putc('\n');
             }
         }

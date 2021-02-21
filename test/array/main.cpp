@@ -1,4 +1,4 @@
-#include "monty.h"
+#include <monty.h>
 #include <unity.h>
 
 #ifndef UNITY_SUPPORT_64

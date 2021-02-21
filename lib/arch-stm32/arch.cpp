@@ -1,4 +1,4 @@
-#include "monty.h"
+#include <monty.h>
 #include "arch.h"
 
 #include <extend.h>

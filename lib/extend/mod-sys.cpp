@@ -1,6 +1,6 @@
 // sys.cpp - the sys module
 
-#include "monty.h"
+#include <monty.h>
 #include <cassert>
 
 using namespace monty;

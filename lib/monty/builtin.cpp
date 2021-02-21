@@ -44,14 +44,16 @@ static auto f_iter (ArgVec const& args) -> Value {
 
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
-    assert(args._num == 1 && args[0].isObj());
-    return args[0].obj().next();
+    assert(args._num == 1);
+    return args[0]->next();
 }
 
 //CG1 bind len
 static auto f_len (ArgVec const& args) -> Value {
     assert(args._num == 1);
-    return args[0].asObj().len();
+    if (args[0].isStr())
+        return strlen(args[0]);
+    return args[0]->len();
 }
 
 //CG1 bind abs

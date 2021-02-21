@@ -1,5 +1,5 @@
-#include "monty.h"
-#include "arch.h"
+#include <monty.h>
+#include <arch.h>
 
 #include <cassert>
 

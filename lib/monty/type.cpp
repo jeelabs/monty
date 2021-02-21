@@ -65,7 +65,7 @@ auto Buffer::operator<< (Value v) -> Buffer& {
         case Value::Nil: print("_"); break;
         case Value::Int: print("%d", (int) v); break;
         case Value::Str: putsEsc(*this, v); break;
-        case Value::Obj: v.obj().repr(*this); break;
+        case Value::Obj: v->repr(*this); break;
     }
     return *this;
 }
@@ -672,7 +672,7 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
         case Value::Nil: break;
         case Value::Int: return "int";
         case Value::Str: return "str";
-        case Value::Obj: return v.obj().type()._name;
+        case Value::Obj: return v->type()._name;
     }
     return {};
 }
@@ -690,7 +690,7 @@ Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
     at(Q( 23,"__name__")) = args[1];
     at(Q(172,"__bases__")) = Tuple::create({args._vec, args._num-2, args._off+2});
 
-    args[0].obj().call({args._vec, args._num - 2, args._off + 2});
+    args[0]->call({args._vec, args._num - 2, args._off + 2});
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
@@ -724,7 +724,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     if (!init.isNil()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;
-        init.obj().call({args._vec, args._num + 1, args._off - 1});
+        init->call({args._vec, args._num + 1, args._off - 1});
     }
 }
 

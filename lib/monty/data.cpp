@@ -94,6 +94,11 @@ Value::Value (char const* arg) : _v ((uintptr_t) arg * 4 + 2) {
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
+auto Value::operator ->() const -> Object* {
+    assert(isObj());
+    return _o;
+}
+
 Value::Value (E exc, Value arg1, Value arg2) {
     Vector v;
     v.insert(0, 2);
@@ -181,7 +186,7 @@ auto Value::unOp (UnOp op) const -> Value {
         default: break;
     }
 
-    return asObj().unop(op);
+    return obj().unop(op);
 }
 
 auto Value::binOp (BinOp op, Value rhs) const -> Value {
@@ -358,7 +363,7 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
     auto r = ks->asRange(len());
     if (r._by != 1)
         return {E::NotImplementedError, "assign to extended slice", k};
-    return store(r, v.asObj());
+    return store(r, v.obj());
 }
 
 auto Object::repr (Buffer& buf) const -> Value {

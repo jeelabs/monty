@@ -192,7 +192,8 @@ namespace monty {
 
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;
-        auto obj () const -> Object& { return *(Object*) _v; }
+        auto operator ->() const -> Object*;
+        auto obj () const -> Object& { return *_o; }
         auto asObj () const -> Object&; // create int/str object if needed
         auto asInt () const -> int64_t;
 
@@ -240,7 +241,8 @@ namespace monty {
 
         union {
             uintptr_t _v;
-            const void* _p;
+            void const* _p;
+            Object* _o;
         };
     };
 
