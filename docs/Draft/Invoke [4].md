@@ -35,4 +35,8 @@ Available tasks:
   x-rsync     copy this entire area to the specified host
   x-tags      update the (c)tags file
   x-version   show git repository version
+
+Default task: native
+
+$
 ```

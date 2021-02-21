@@ -9,12 +9,11 @@ dry = "-R" in sys.argv or "--dry" in sys.argv
 os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
 
 # parse the platformio.ini file and any extra_configs it mentions
-config = configparser.ConfigParser()
-config.read('platformio.ini')
-if "platformio" in config:
-    if "extra_configs" in config["platformio"]:
-        for f in config["platformio"]["extra_configs"].split():
-            config.read(f)
+cfg = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
+cfg.read('platformio.ini')
+if "platformio" in cfg and "extra_configs" in cfg["platformio"]:
+    for f in cfg["platformio"]["extra_configs"].split():
+        cfg.read(f)
 
 @task(help={"host": "hostname for rsync (required)",
             "dest": "destination directory (default: monty-test)"})
@@ -39,15 +38,19 @@ def generate(c, verbose=False):
     cmd = ["src/codegen.py"]
     if verbose:
         cmd.append("-v")
-    cmd += ["qstr.h", "lib/monty/", "builtin.cpp"]
-    for k, v in config["codegen"].items():
-        if v:
-            cmd.append("+%s" % k.upper())
+    cmd += ["qstr.h", "lib/monty/"]
+    if "all" in cfg["codegen"]:
+        cmd += cfg["codegen"]["all"].split()
+    cmd.append("builtin.cpp")
+    for k, v in cfg["codegen"].items():
+        if k != "all" and v:
+            cmd.append("+" + k.upper())
             cmd += v.split()
     cmd.append("qstr.cpp")
     c.run(" ".join(cmd))
 
-@task(generate, help={"file": "name of the .py or .mpy file to run"})
+@task(generate, default=True,
+      help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="pytests/hello.py"):
     """run script using the native build  [pytests/hello.py]"""
     c.run("pio run -e native -s", pty=True)
@@ -61,7 +64,7 @@ def test(c):
     """run C++ tests natively"""
     c.run("pio test -e native", pty=True)
 
-@task(generate,help={"tests": "specific tests to run, comma-separated"})
+@task(generate, help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)

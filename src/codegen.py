@@ -528,23 +528,23 @@ def processLines(lines):
     return [p.sub(qfix, line) for line in result]
 
 # process one source file, replace it only if the new contents is different
-def processFile(d, f):
+def processFile(path):
     global flags
-    path = os.path.join(d, f)
+
     flags = Flags()
     if '/x' in path: # new code style
         flags.x = True
     if verbose:
         print(path)
     # TODO only process files if they have changed
-    with open(path, 'r') as f:
-        lines = [s.rstrip('\r\n') for s in f]
+    with open(path, 'r') as fd:
+        lines = [s.rstrip('\r\n') for s in fd]
     result = processLines(iter(lines))
     if result and result != lines:
         print('rewriting:', path)
-        with open(path, 'w') as f: # FIXME not safe
+        with open(path, 'w') as fd: # FIXME not safe
             for s in result:
-                f.write(s+'\n')
+                fd.write(s+'\n')
 
 if __name__ == '__main__':
     # args should be: [-v] first* dirs* middle* [+ARCH dirs+]* last*
@@ -570,17 +570,19 @@ if __name__ == '__main__':
             mods[arch] = []
             if verbose:
                 print(arg)
-        elif not os.path.isdir(arg):
+            continue
+        path = os.path.join(root, arg)
+        if os.path.isfile(path):
             if verbose and arch:
                 print("+")
             if arch != "":
                 qarch("")
             arch = ""
-            processFile(root, arg)
+            processFile(path)
         else:
             files = os.listdir(arg)
             files.sort();
             for f in files:
                 if not f in separate:
                     if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
-                        processFile(arg, f)
+                        processFile(os.path.join(arg, f))
