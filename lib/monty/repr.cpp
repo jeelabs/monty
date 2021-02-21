@@ -69,7 +69,7 @@ auto Buffer::operator<< (Value v) -> Buffer& {
 
 // formatted output, adapted from JeeH
 
-int Buffer::splitInt (uint32_t val, int base, uint8_t* buf) {
+auto Buffer::splitInt (uint32_t val, int base, uint8_t* buf) -> int {
     int i = 0;
     do {
         buf[i++] = val % base;
@@ -164,12 +164,12 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
-Value Bool::repr (Buffer& buf) const {
+auto Bool::repr (Buffer& buf) const -> Value {
     buf << (this == &falseObj ? "false" : "true");
     return {};
 }
 
-Value Bytes::repr (Buffer& buf) const {
+auto Bytes::repr (Buffer& buf) const -> Value {
     buf << '\'';
     for (auto b : *this) {
         if (b == '\\' || b == '\'')
@@ -183,7 +183,7 @@ Value Bytes::repr (Buffer& buf) const {
     return {};
 }
 
-Value Class::repr (Buffer& buf) const {
+auto Class::repr (Buffer& buf) const -> Value {
     buf.print("<class %s>", (char const*) at("__name__"));
     return {};
 }
@@ -192,7 +192,7 @@ auto Closure::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
-Value Dict::repr (Buffer& buf) const {
+auto Dict::repr (Buffer& buf) const -> Value {
     buf << '{';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -203,17 +203,17 @@ Value Dict::repr (Buffer& buf) const {
     return {};
 }
 
-Value Exception::repr (Buffer& buf) const {
+auto Exception::repr (Buffer& buf) const -> Value {
     buf.puts(bases._items[(int) extra().code].k);
     return Tuple::repr(buf);
 }
 
-Value Inst::repr (Buffer& buf) const {
+auto Inst::repr (Buffer& buf) const -> Value {
     buf.print("<%s object at %p>", (char const*) type()._name, this);
     return {};
 }
 
-Value Int::repr (Buffer& buf) const {
+auto Int::repr (Buffer& buf) const -> Value {
     uint64_t val = _i64;
     if (_i64 < 0) {
         buf.putc('-');
@@ -234,7 +234,7 @@ Value Int::repr (Buffer& buf) const {
     return {};
 }
 
-Value List::repr (Buffer& buf) const {
+auto List::repr (Buffer& buf) const -> Value {
     buf << '[';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -245,12 +245,12 @@ Value List::repr (Buffer& buf) const {
     return {};
 }
 
-Value Module::repr (Buffer& buf) const {
+auto Module::repr (Buffer& buf) const -> Value {
     buf.print("<module '%s'>", (char const*) _name);
     return {};
 }
 
-Value None::repr (Buffer& buf) const {
+auto None::repr (Buffer& buf) const -> Value {
     buf << "null";
     return {};
 }
@@ -260,12 +260,12 @@ auto Object::repr (Buffer& buf) const -> Value {
     return {};
 }
 
-Value Range::repr (Buffer& buf) const {
+auto Range::repr (Buffer& buf) const -> Value {
     buf.print("range(%d,%d,%d)", _from, _to, _by);
     return {};
 }
 
-Value Set::repr (Buffer& buf) const {
+auto Set::repr (Buffer& buf) const -> Value {
     buf << '{';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -276,22 +276,22 @@ Value Set::repr (Buffer& buf) const {
     return {};
 }
 
-Value Slice::repr (Buffer& buf) const {
+auto Slice::repr (Buffer& buf) const -> Value {
     buf << "slice(" << _off << ',' << _num << ',' << _step << ')';
     return {};
 }
 
-Value Str::repr (Buffer& buf) const {
+auto Str::repr (Buffer& buf) const -> Value {
     putsEsc(buf, (char const*) begin());
     return {};
 }
 
-Value Super::repr (Buffer& buf) const {
+auto Super::repr (Buffer& buf) const -> Value {
     buf << "<super: ...>";
     return {};
 }
 
-Value Tuple::repr (Buffer& buf) const {
+auto Tuple::repr (Buffer& buf) const -> Value {
     buf << '(';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -302,12 +302,12 @@ Value Tuple::repr (Buffer& buf) const {
     return {};
 }
 
-Value Type::repr (Buffer& buf) const {
+auto Type::repr (Buffer& buf) const -> Value {
     buf.print("<type %s>", (char const*) _name);
     return {};
 }
 
-Value Event::repr (Buffer& buf) const {
+auto Event::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
@@ -315,6 +315,6 @@ auto Stacklet::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
-Value Buffer::repr (Buffer& buf) const {
+auto Buffer::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as bytes
 }
