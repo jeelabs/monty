@@ -9,10 +9,9 @@ class Flags: # make all missing attributes return ""
         except:
             return ""
 
-flags = Flags() # this is cleared for each new source file
-
-verbose = 0
-
+flags = Flags()     # this is cleared for each new source file
+cgCounts = 0        # number of CG directives seen in this file
+verbose = 0         # 0=quiet, 1=stats, 2=full
 arch  = ""          # current architecture, "" is common to all
 archs = {}          # list of qstr details per architecture
 mods  = {"": []}    # list of extension module names per architecture
@@ -29,13 +28,11 @@ def MODULE(block, mod):
 
 # generate the final code to define the current module
 def MODULE_END(block):
-    out = []
     m = flags.mod
     assert m != ""
-    out.append("static Lookup const %s_attrs (%s_map, sizeof %s_map);" % (m, m, m))
-    out.append("Module ext_%s (%s, %s_attrs);" % (m, q(m), m))
     flags.mod = ""
-    return out
+    return ["static Lookup const %s_attrs (%s_map, sizeof %s_map);" % (m, m, m),
+            "Module ext_%s (%s, %s_attrs);" % (m, q(m), m)]
 
 # emit the definitions to find all known modules
 def MOD_LIST(block, sel):
@@ -97,13 +94,13 @@ def WRAPPERS(block, typ=None):
         l = t.lower()
         meths[t].sort()
         for f in meths[t]:
-            out.append("")
-            out.append(fmt1 % (l, f, t, f))
-            out.append(fmt2 % (l, f, l, f))
+            out += ["",
+                    fmt1 % (l, f, t, f),
+                    fmt2 % (l, f, l, f)]
         if t == "":
             continue
-        out.append("")
-        out.append("static Lookup::Item const %s_map [] = {" % l)
+        out += ["",
+                "static Lookup::Item const %s_map [] = {" % l]
         for f in funs[t]:
             if mod:
                 out.append("    { %s, fo_%s }," % (q(f), f))
@@ -112,8 +109,8 @@ def WRAPPERS(block, typ=None):
         for f in meths[t]:
             out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
         if mod == "" or typ:
-            out.append("};")
-            out.append("Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l))
+            out += ["};",
+                    "Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l)]
 
     del funs[mod]
     del meths[mod]
@@ -121,13 +118,14 @@ def WRAPPERS(block, typ=None):
         del out[0]
     return out
 
-excIds = {}
-excHier = []
-excFuns = []
-excDefs = []
+excIds = {}     # map exception name -> id
+excHier = []    # per id, code to emit, w/ parent reference
+excFuns = []    # per id, code defining an exception as callable function
+excDefs = []    # per id, attribute table definition
 
 # parse the exception names and hierarchy, for generating code elsewhere
 def EXCEPTIONS(block):
+    global excFuns
     out = []
     for line in block:
         id = len(excHier)
@@ -136,10 +134,10 @@ def EXCEPTIONS(block):
         baseId = -1 if base == '-' else excIds[base]
         excIds[name] = id
         excHier.append('{ %-29s %2d }, // %2d -> %s' % (q(name) + ",", baseId, id, base))
-        excFuns.append('static auto e_%s (ArgVec const& args) -> Value {' % name)
-        excFuns.append('    return Exception::create(E::%s, args);' % name)
-        excFuns.append('}')
-        excFuns.append('static Function const fo_%s (e_%s);' % (name, name))
+        excFuns += ['static auto e_%s (ArgVec const& args) -> Value {' % name,
+                    '    return Exception::create(E::%s, args);' % name,
+                    '}',
+                    'static Function const fo_%s (e_%s);' % (name, name)]
         excDefs.append('{ %-29s fo_%s },' % (q(name) + ",", name))
         out.append("%-20s // %s" % (name + ",", base))
     return out
@@ -159,18 +157,16 @@ def VERSION(block):
     return ['constexpr auto VERSION = "%s";' % v]
 
 # generate qstr definition
-qstrLen = []
-qstrMap = {}
+qstrMap = {}    # map string to id
+qstrLen = []    # per id, the symbol length + 1
 
 # deal with one qstr map per architecture, called on each switchover
 def qarch(name):
     global qstrLen, qstrMap
     archs[arch] = (qstrLen, qstrMap)
     qLen, qMap = archs[""]
-    qstrLen = qLen[:] # create a copy
-    qstrMap = {} # also creates a copy
-    for k, v in qMap.items():
-        qstrMap[k] = v
+    qstrLen = qLen.copy()
+    qstrMap = qMap.copy()
 
 # look up a qstr id, define a new one if needed
 def qid(s):
@@ -217,9 +213,11 @@ def QSTR_EMIT(block):
                 s = ''
         if s:
             out.append('    "%s"' % s)
-        out.append('    // offsets [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
-                    (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1))
-        out.append("#endif")
+        if verbose:
+            print("\t%s: %d qstrs, %s bytes" % (qArch, i-1, n))
+        out += ['    // offsets [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
+                                (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1),
+                "#endif"]
 
     for qArch, (qLen, qMap) in archs.items():
         hashes = map(hash, qMap)
@@ -268,18 +266,14 @@ def QSTR(block, off=0):
         pos = n
     return out
 
-# generate size printers
-def SIZES(block, *args):
-    fmt = 'printf("%%4d = sizeof %s\\n", (int) sizeof (%s));'
-    return [fmt % (t, t) for t in args]
-
 # generate a right-side comment tag
 def TAG(block, *args):
     text = ' '.join(args)
     return [(76-len(text)) * ' ' + '// ' + text]
 
 # generate builtin function table
-types = [[], []]
+publicTypes = []
+hiddenTypes = []
 
 # generate the header of an exposed type
 def TYPE(block, tag, *_):
@@ -295,31 +289,31 @@ def TYPE(block, tag, *_):
         '    auto repr (Buffer&) const -> Value override;',
     ]
     if tag.startswith('<'):
-        types[0].append([tag,name,base])
+        hiddenTypes.append([tag,name,base])
         del out[1:3] # can't construct from the VM
         del out[-1]  # no need for default repr override
     else:
-        types[1].append([tag,name,base])
+        publicTypes.append([tag,name,base])
     return out
 
 # emit the info definitions
 def TYPE_INFO(block):
     out = []
-    types[0].sort()
-    for tag, name, base in types[0]:
+    hiddenTypes.sort()
+    for tag, name, base in hiddenTypes:
         out.append('Type %12s::info (%s);' % (name, q(tag)))
     out.append("")
-    types[1].sort()
+    publicTypes.sort()
     fmt = 'Type %8s::info (%-15s %6s::attrs, %5s::create);'
-    for tag, name, base in types[1]:
+    for tag, name, base in publicTypes:
         out.append(fmt % (name, q(tag) + ",", "&" + name, name))
     return out
 
 # generate builtin function attributes
 def TYPE_BUILTIN(block):
     out = []
-    types[1].sort()
-    for tag, name, base in types[1]:
+    publicTypes.sort()
+    for tag, name, base in publicTypes:
         out.append('{ %-15s %s::info },' % (q(tag) + ",", name))
     return out
 
@@ -334,19 +328,21 @@ def OFF(block, *args):
         setattr(flags, f, "")
 
 # generate opcode switch entries
-opdefs = []
-opmulti = []
+opDefs = []     # opcodes of type q)str, v)arint, o)ffset, and s)igned
+opMulti = []    # opcodes of type m)ulti are emitted separately
 
 def OP_INIT(block):
-    opdefs.clear()
-    opmulti.clear()
+    opDefs.clear()
+    opMulti.clear()
+
 def OP_EMIT(block, sel=0):
     if sel == 'd':
-        return opdefs
+        return opDefs
     if sel == 'm':
-        return opmulti
+        return opMulti
 
 def OP(block, typ='', multi=0):
+    global opMulti
     op = block[0].split()[1][2:]
     if 'q' in typ:
         fmt, arg, decl = ' %s', 'fetchQ()', 'Q arg'
@@ -363,28 +359,28 @@ def OP(block, typ='', multi=0):
     name = 'op' + op
 
     if 'm' in typ:
-        opmulti.append('if ((uint32_t) (_ip[-1] - Op::%s) < %d) {' % (op, multi))
-        opmulti.append('    %s = _ip[-1] - Op::%s;' % (decl, op))
+        opMulti += ['if ((uint32_t) (_ip[-1] - Op::%s) < %d) {' % (op, multi),
+                    '    %s = _ip[-1] - Op::%s;' % (decl, op)]
         if flags.op_print:
-            opmulti.append('    printf("%s%s\\n", (int) arg);' % (op, fmt))
-        opmulti.append('    %s(arg);' % name)
-        opmulti.append('    break;')
-        opmulti.append('}')
+            opMulti.append('    printf("%s%s\\n", (int) arg);' % (op, fmt))
+        opMulti += ['    %s(arg);' % name,
+                    '    break;',
+                    '}']
     else:
-        opdefs.append('case Op::%s:%s' % (op, ' {' if arg else ''))
+        opDefs.append('case Op::%s:%s' % (op, ' {' if arg else ''))
         if arg:
-            opdefs.append('    %s = %s;' % (decl, arg))
+            opDefs.append('    %s = %s;' % (decl, arg))
         info = ', arg' if arg else ''
         if flags.op_print:
             if fmt == ' %s': info = ', (char const*) arg' # convert from qstr
             if fmt == ' %u': info = ', (unsigned) arg' # fix 32b vs 64b
-            opdefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
-        opdefs.append('    %s(%s);' % (name, 'arg' if arg else ''))
+            opDefs.append('    printf("%s%s\\n"%s);' % (op, fmt, info))
+        opDefs.append('    %s(%s);' % (name, 'arg' if arg else ''))
         if 's' in typ:
-            opdefs.append('    loopCheck(arg);')
-        opdefs.append('    break;')
+            opDefs.append('    loopCheck(arg);')
+        opDefs.append('    break;')
         if arg:
-            opdefs.append('}')
+            opDefs.append('}')
 
     out = ['void %s (%s) {' % (name, decl)]
 
@@ -449,6 +445,7 @@ def parseArgs(params):
 
 # loop over all source lines and generate inline code at each //CG mark
 def processLines(lines):
+    global cgCounts
     result = []
     linenum = 0
     for line in lines:
@@ -456,7 +453,8 @@ def processLines(lines):
         if line.strip()[0:4] != '//CG':
             result.append(line)
         else:
-            if verbose:
+            cgCounts += 1
+            if verbose > 1:
                 print("%6d: %s" % (linenum, line.strip()))
             request, *comment = line.split('#', 1)
             head, tag, *params = request.split()
@@ -482,8 +480,6 @@ def processLines(lines):
                     block.append(s)
 
             name = tag.replace('-','_').upper()
-            if flags.x and 'x'+name in globals():
-                name = 'x'+name
             try:
                 handler = globals()[name]
             except:
@@ -529,16 +525,16 @@ def processLines(lines):
 
 # process one source file, replace it only if the new contents is different
 def processFile(path):
-    global flags
-
+    global flags, cgCounts
     flags = Flags()
-    if '/x' in path: # new code style
-        flags.x = True
+    cgCounts = 0
     if verbose:
-        print(path)
+        print(path + ":")
     with open(path, 'r') as fd:
         lines = [s.rstrip('\r\n') for s in fd]
     result = processLines(iter(lines))
+    if verbose and cgCounts > 0:
+        print("%8d CG directives" % cgCounts)
     if result and result != lines:
         print('rewriting:', path)
         with open(path, 'w') as fd: # FIXME not safe
@@ -548,17 +544,17 @@ def processFile(path):
 if __name__ == '__main__':
     # args should be: [-v] first* dirs* middle* [+ARCH dirs+]* last*
     del sys.argv[0]
-    if sys.argv and sys.argv[0] == "-v":
+    while sys.argv and sys.argv[0] == "-v":
         del sys.argv[0]
-        verbose = 1
+        verbose += 1
 
     # identify the separately-processed files
-    separate, root = [], None
+    sepFiles, root = [], None
     for arg in sys.argv:
-        if os.path.isdir(arg):
-            root = root or arg # remember first one
+        if not root and os.path.isdir(arg):
+            root = arg # remember first one
         if arg[0] != "+":
-            separate.append(arg)
+            sepFiles.append(arg)
     assert root, "no directory arg found"
 
     # process all specified args in order
@@ -568,12 +564,12 @@ if __name__ == '__main__':
             arch = arg[1:]
             mods[arch] = []
             if verbose:
-                print(arg)
+                print("<GROUP %s>" % arch)
             continue
         path = os.path.join(root, arg)
         if os.path.isfile(path):
             if verbose and arch:
-                print("+")
+                print("<GROUP>")
             if arch != "":
                 qarch("")
             arch = ""
@@ -582,6 +578,6 @@ if __name__ == '__main__':
             files = os.listdir(arg)
             files.sort();
             for f in files:
-                if not f in separate:
+                if not f in sepFiles:
                     if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
                         processFile(os.path.join(arg, f))

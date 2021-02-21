@@ -31,14 +31,12 @@ def x_version(c):
     """show git repository version"""
     print(os.environ["MONTY_VERSION"])
 
-@task(help={"verbose": "produce some extra output for debugging"})
+@task(incrementable=["verbose"],
+      help={"verbose": "print some extra debugging output (repeat for more)"})
 def generate(c, verbose=False):
     """pass source files through the code generator"""
     # construct codegen args from the [codegen] section in platformio.ini
-    cmd = ["src/codegen.py"]
-    if verbose:
-        cmd.append("-v")
-    cmd += ["qstr.h", "lib/monty/"]
+    cmd = ["src/codegen.py"] + verbose*["-v"] + ["qstr.h", "lib/monty/"]
     if "all" in cfg["codegen"]:
         cmd += cfg["codegen"]["all"].split()
     cmd.append("builtin.cpp")
@@ -59,10 +57,10 @@ def native(c, file="pytests/hello.py"):
         cmd += " " + compileIfOutdated(file)
     c.run(cmd)
 
-@task
-def test(c):
+@task(help={"filter": 'filter tests by name (default: "*")'})
+def test(c, filter='*'):
     """run C++ tests natively"""
-    c.run("pio test -e native", pty=True)
+    c.run('pio test -e native -f "%s"' % filter, pty=True)
 
 @task(generate, help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
@@ -126,10 +124,10 @@ def flash(c):
         print(e.result.stdout, end="", file=sys.stderr)
         sys.exit(1)
 
-@task
-def upload(c):
+@task(help={"filter": 'filter tests by name (default: "*")'})
+def upload(c, filter="*"):
     """run C++ tests, uploaded to µC"""
-    c.run("pio test", pty=True)
+    c.run('pio test -f "%s"' % filter, pty=True)
 
 @task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
