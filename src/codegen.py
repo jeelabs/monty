@@ -536,7 +536,6 @@ def processFile(path):
         flags.x = True
     if verbose:
         print(path)
-    # TODO only process files if they have changed
     with open(path, 'r') as fd:
         lines = [s.rstrip('\r\n') for s in fd]
     result = processLines(iter(lines))
