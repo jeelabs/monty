@@ -1,4 +1,4 @@
-// qstr.h - fixed set of "quick strings" in MicroPython 1.13
+// qstr.h - fixed set of "quick strings" in MicroPython 1.14
 
 namespace monty {
     char const qstrData [] =

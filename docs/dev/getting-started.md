@@ -9,10 +9,10 @@ Use `inv health` to verify that everything is found and working:
 ```
 $ inv health
 Darwin x86_64
-Python 3.8.7
+Python 3.9.2
 Invoke 1.5.0
-PlatformIO Core, version 5.1.0rc1
-MicroPython v1.13-221-gc8b055717 on 2020-12-05; mpy-cross emitting mpy v5
+PlatformIO Core, version 5.1.0
+MicroPython v1.14-dirty on 2021-02-02; mpy-cross emitting mpy v5
 ```
 
 ## Development

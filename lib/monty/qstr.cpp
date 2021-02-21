@@ -1,4 +1,4 @@
-// qstr.cpp - set of "quick strings" from MicroPython 1.13 plus own entries
+// qstr.cpp - set of "quick strings" from MicroPython 1.14 plus own entries
 
 #include "monty.h"
 

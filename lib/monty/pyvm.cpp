@@ -1,4 +1,4 @@
-// pyvm.cpp - virtual machine for bytecodes emitted by MicroPython 1.13
+// pyvm.cpp - virtual machine for bytecodes emitted by MicroPython 1.14
 
 #include "monty.h"
 #include <cassert>
