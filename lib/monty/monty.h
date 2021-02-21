@@ -38,12 +38,12 @@ namespace monty {
         auto operator= (Vec const&) -> Vec& = delete;
 
         static auto inPool (void const* p) -> bool;
-        auto isResizable () const -> bool {
+        auto isResizable () const {
             return _data == nullptr || inPool(_data);
         }
 
-        auto ptr () const -> uint8_t* { return _data; }
-        auto cap () const -> uint32_t { return _capa; }
+        auto ptr () const { return _data; }
+        auto cap () const { return _capa; }
         auto adj (uint32_t bytes) -> bool;
 
     private:
@@ -198,29 +198,29 @@ namespace monty {
         auto asInt () const -> int64_t;
 
         template< typename T > // return null pointer if not of required type
-        auto ifType () const -> T* { return check(T::info) ? (T*) &obj() : 0; }
+        auto ifType () const { return check(T::info) ? (T*) &obj() : nullptr; }
 
         template< typename T > // type-asserted safe cast via Object::type()
         auto asType () const -> T& { verify(T::info); return *(T*) &obj(); }
 
-        auto tag () const -> Tag {
+        auto tag () const {
             return (_v&1) != 0 ? Int : // bit 0 set
                        _v == 0 ? Nil : // all bits 0
                    (_v&2) != 0 ? Str : // bit 1 set, ptr shifted 2 up
                                  Obj;  // bits 0 and 1 clear, ptr stored as is
         }
 
-        auto id () const -> uintptr_t { return _v; }
+        auto id () const { return _v; }
 
-        auto isNil () const -> bool { return _v == 0; }
-        auto isInt () const -> bool { return (_v&1) == Int; }
-        auto isStr () const -> bool { return (_v&3) == Str; }
-        auto isObj () const -> bool { return (_v&3) == 0 && _v != 0; }
+        auto isNil () const { return _v == 0; }
+        auto isInt () const { return (_v&1) == Int; }
+        auto isStr () const { return (_v&3) == Str; }
+        auto isObj () const { return (_v&3) == 0 && _v != 0; }
 
         inline auto isNone  () const -> bool;
         inline auto isFalse () const -> bool;
         inline auto isTrue  () const -> bool;
-               auto isBool  () const -> bool { return isFalse() || isTrue(); }
+               auto isBool  () const { return isFalse() || isTrue(); }
 
         auto truthy () const -> bool;
 
@@ -233,7 +233,7 @@ namespace monty {
         void dump (char const* msg =nullptr) const;
 
         static inline auto asBool (bool f) -> Value;
-        auto invert () const -> Value { return asBool(!truthy()); }
+        auto invert () const { return asBool(!truthy()); }
 
     private:
         auto check (Type const& t) const -> bool;
@@ -264,15 +264,15 @@ namespace monty {
         constexpr VecOf (T const* ptr, uint32_t num)
                     : Vec (ptr, num * sizeof (T)), _fill (num) {}
 
-        auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
-        auto adj (uint32_t num) -> bool { return Vec::adj(num * sizeof (T)); }
+        auto cap () const { return Vec::cap() / sizeof (T); }
+        auto adj (uint32_t num) { return Vec::adj(num * sizeof (T)); }
 
-        constexpr auto size () const -> uint32_t { return _fill; }
-        constexpr auto begin () const -> T* { return (T*) Vec::ptr(); }
-        constexpr auto end () const -> T* { return begin() + _fill; }
+        constexpr auto size () const { return _fill; }
+        constexpr auto begin () const { return (T*) Vec::ptr(); }
+        constexpr auto end () const { return begin() + _fill; }
         auto operator[] (uint32_t idx) const -> T& { return begin()[idx]; }
 
-        auto relPos (int i) const -> uint32_t { return i < 0 ? i + _fill : i; }
+        auto relPos (int i) const { return i < 0 ? i + _fill : i; }
 
         void move (uint32_t pos, uint32_t num, int off) {
             memmove((void*) (begin() + pos + off),
@@ -330,7 +330,7 @@ namespace monty {
             return v;
         }
 
-        auto pop () -> T { return pull(_fill-1); } // pull from end
+        auto pop () { return pull(_fill-1); } // pull from end
 
     };
 
@@ -347,8 +347,8 @@ namespace monty {
             : _vec (v), _num (n), _off (o) {}
 
         auto size () const -> uint32_t { return _num; }
-        auto begin () const -> Value const* { return _vec.begin() + _off; }
-        auto end () const -> Value const* { return begin() + _num; }
+        auto begin () const { return _vec.begin() + _off; }
+        auto end () const { return begin() + _num; }
         auto operator[] (uint32_t idx) const -> Value& { return _vec[_off+idx]; }
 
         Vector const& _vec;
@@ -554,12 +554,10 @@ namespace monty {
 
         using ByteVec::size;
 
-        auto first () const -> uint8_t const* { return begin(); }
-        auto limit () const -> uint8_t const* { return begin() + pos(_fill); }
+        auto first () const { return begin(); }
+        auto limit () const { return begin() + pos(_fill); }
 
-        auto atGet (uint32_t i) const -> uint8_t* {
-            return begin() + pos(i);
-        }
+        auto atGet (uint32_t i) const { return begin() + pos(i); }
         auto atLen (uint32_t i) const -> uint32_t {
             return pos(i+1) - pos(i);
         }
@@ -605,10 +603,10 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
     //CG>
-        auto size () const -> uint32_t { return _fill; }
-        auto begin () const -> Value const* { return data(); }
-        auto end () const -> Value const* { return begin() + size(); }
-        auto operator[] (uint32_t idx) const -> Value { return begin()[idx]; }
+        auto size () const { return _fill; }
+        auto begin () const { return data(); }
+        auto end () const { return begin() + size(); }
+        auto operator[] (uint32_t idx) const { return begin()[idx]; }
 
         auto len () const -> uint32_t override { return _fill; }
         auto getAt (Value k) const -> Value override;
@@ -830,7 +828,7 @@ namespace monty {
         auto store (Range const&, Object const&) -> Value override;
 
     private:
-        auto sel () const -> uint8_t { return _fill >> LEN_BITS; }
+        auto sel () const { return _fill >> LEN_BITS; }
     };
 
 // see stack.cpp - events, stacklets, and various call mechanisms
@@ -902,7 +900,7 @@ namespace monty {
             auto prev = __atomic_fetch_and(&pending, ~(1<<n), __ATOMIC_RELAXED);
             return (prev >> n) & 1;
         }
-        static auto allPending () -> uint32_t {
+        static auto allPending () {
             return __atomic_fetch_and(&pending, 0, __ATOMIC_RELAXED); // clears
         }
 
@@ -966,7 +964,7 @@ namespace monty {
     }
     // obj.meth() -> Value
     template< typename T, typename V >
-    auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
+    auto argConv (V (T::*m)(), Object& o, ArgVec const&) {
         return (((T&) o).*m)();
     }
     // obj.meth(arg) -> void
@@ -977,12 +975,12 @@ namespace monty {
     }
     // obj.meth(arg) -> Value
     template< typename T, typename U, typename V >
-    auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> V {
+    auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) {
         return (((T&) o).*m)(a[1]);
     }
     // obj.meth(argvec) -> Value
     template< typename T, typename V >
-    auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> V {
+    auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) {
         return (((T&) o).*m)(a);
     }
 
