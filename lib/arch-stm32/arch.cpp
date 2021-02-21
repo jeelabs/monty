@@ -1,6 +1,9 @@
 #include "monty.h"
 #include "arch.h"
 
+#include <extend.h>
+#include <mrfs.h>
+
 #include <jee.h>
 #include <jee/text-ihex.h>
 

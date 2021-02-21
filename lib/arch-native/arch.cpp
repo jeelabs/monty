@@ -1,6 +1,8 @@
 #include <monty.h>
 #include "arch.h"
 
+#include <extend.h>
+
 #include <cassert>
 #include <cstdio>
 #include <ctime>

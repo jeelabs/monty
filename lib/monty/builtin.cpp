@@ -170,7 +170,7 @@ static Lookup::Item const exceptionMap [] = {
     { Q( 50,"RuntimeError"),         1 }, // 16 -> Exception
     { Q( 47,"NotImplementedError"), 16 }, // 17 -> RuntimeError
     { Q( 55,"ValueError"),           1 }, // 18 -> Exception
-    { Q(177,"UnicodeError"),        18 }, // 19 -> ValueError
+    { Q(167,"UnicodeError"),        18 }, // 19 -> ValueError
     //CG>
 };
 
@@ -255,7 +255,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 50,"RuntimeError"),        fo_RuntimeError },
     { Q( 47,"NotImplementedError"), fo_NotImplementedError },
     { Q( 55,"ValueError"),          fo_ValueError },
-    { Q(177,"UnicodeError"),        fo_UnicodeError },
+    { Q(167,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
     { Q(184,"array"), Array::info },
@@ -263,7 +263,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 66,"bytes"), Bytes::info },
     { Q(185,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
-    { Q(167,"event"), Event::info },
+    { Q(173,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
@@ -348,7 +348,7 @@ Type     Bool::info (Q( 62,"bool"),   &Bool::attrs,  Bool::create);
 Type    Bytes::info (Q( 66,"bytes"), &Bytes::attrs, Bytes::create);
 Type    Class::info (Q(185,"class"), &Class::attrs, Class::create);
 Type     Dict::info (Q( 75,"dict"),   &Dict::attrs,  Dict::create);
-Type    Event::info (Q(167,"event"), &Event::attrs, Event::create);
+Type    Event::info (Q(173,"event"), &Event::attrs, Event::create);
 Type      Int::info (Q( 94,"int"),     &Int::attrs,   Int::create);
 Type     List::info (Q(108,"list"),   &List::attrs,  List::create);
 Type    Range::info (Q(124,"range"), &Range::attrs, Range::create);
