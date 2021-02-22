@@ -130,7 +130,8 @@ def python(c, ignore, tests=""):
                         match += 1
 
     if not dry:
-        print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
+        print(f"{num} tests, {match} matches, "
+              f"{fail} failures, {skip} skipped, {len(ignore)} ignored")
     if num != match:
         c.run("exit 1") # yuck, force an error ...
 

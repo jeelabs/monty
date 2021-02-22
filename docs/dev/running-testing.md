@@ -248,7 +248,7 @@ data    native         PASSED    00:00:00.565
 gc      native         PASSED    00:00:00.577
 repr    native         PASSED    00:00:00.559
 ============================ 4 succeeded in 00:00:02.450 ============================
-35 tests, 35 matches, 0 failures, 5 skipped
+35 tests, 35 matches, 0 failures, 5 skipped, 1 ignored
 Test    Environment    Status    Duration
 ------  -------------  --------  ------------
 array   nucleo-l432    PASSED    00:00:04.222
@@ -260,7 +260,7 @@ Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsi
 STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
 upload 0x040E0 done, 16608 bytes sent
 STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
-37 tests, 37 matches, 0 failures, 3 skipped
+37 tests, 37 matches, 0 failures, 3 skipped, 1 ignored
    text	   data	    bss	    dec	    hex	filename
   55760	   2496	   2472	  60728	   ed38	.pio/build/nucleo-l432/firmware.elf
   43128	   2496	   2472	  48096	   bbe0	.pio/build/noassert/firmware.elf

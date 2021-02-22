@@ -210,6 +210,7 @@ if __name__ == "__main__":
         if compareWithExpected(fn, ''.join(results)):
             match += 1
 
-    print(f"{tests} tests, {match} matches, {fail} failures, {skip} skipped")
+    print(f"{tests} tests, {match} matches, "
+          f"{fail} failures, {skip} skipped, {len(ignores)} ignored")
     if match != tests:
         sys.exit(1)
