@@ -21,13 +21,13 @@ namespace jeeh {
             MMIO32(Periph::rcc+0x18) |= (1 << _port) | (1<<0);
 
             if (mval == 0b1000 || mval == 0b1100) {
-                uint16_t mask = 1 << pin;
+                uint16_t mask = 1 << _pin;
                 gpio32(bsrr) = mval & 0b0100 ? mask : mask << 16;
                 mval = 0b1000;
             }
 
-            uint32_t cr = pin & 8 ? crh : crl;
-            int shift = 4 * (pin & 7);
+            uint32_t cr = _pin & 8 ? crh : crl;
+            int shift = 4 * (_pin & 7);
             gpio32(cr) = (gpio32(cr) & ~(0xF << shift)) | (mval << shift);
         }
 #else

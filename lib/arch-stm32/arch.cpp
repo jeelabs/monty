@@ -208,12 +208,14 @@ struct HexSerial : LineSerial {
     }
 
     void saveToFlash (uint32_t off, void const* buf, int len) {
+#if STM32L4
         if (off % 2048 == 0) // TODO STM32L4-specific
             Flash::erasePage((void*) off);
         auto words = (uint32_t const*) buf;
         for (int i = 0; i < len; i += 8)
             Flash::write64((void const*) (off+i), words[i/4], words[i/4+1]);
         Flash::finish();
+#endif
     }
 
     uint32_t offset = 0, last = 0;
