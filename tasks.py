@@ -57,10 +57,24 @@ def native(c, file="pytests/hello.py"):
         cmd += " " + compileIfOutdated(file)
     c.run(cmd)
 
+def shortTestOutput(r):
+    gen = (s for s in r.tail('stdout', 10).split("\n"))
+    for line in gen:
+        if line.startswith("==="):
+            break
+    for line in gen:
+        if line:
+            print(line)
+
 @task(help={"filter": 'filter tests by name (default: "*")'})
 def test(c, filter='*'):
     """run C++ tests natively"""
-    c.run('pio test -e native -f "%s"' % filter, pty=True)
+    try:
+        r = c.run('pio test -e native -f "%s"' % filter, hide='stdout', pty=True)
+    except Exception as e:
+        print(e.result.stdout)
+    else:
+        shortTestOutput(r)
 
 @task(generate, help={"tests": "specific tests to run, comma-separated"})
 def python(c, tests=""):
@@ -127,7 +141,12 @@ def flash(c):
 @task(help={"filter": 'filter tests by name (default: "*")'})
 def upload(c, filter="*"):
     """run C++ tests, uploaded to µC"""
-    c.run('pio test -f "%s"' % filter, pty=True)
+    try:
+        r = c.run('pio test -f "%s"' % filter, hide='stdout', pty=True)
+    except Exception as e:
+        print(e.result.stdout)
+    else:
+        shortTestOutput(r)
 
 @task(help={"tests": "specific tests to run, comma-separated"})
 def runner(c, tests=""):
