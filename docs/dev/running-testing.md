@@ -51,7 +51,7 @@ Tests named `n_*` are included, others starting with `<letter>_` will be skipped
 unless mentioned by name.
 
 The above commands work on MacOS (verified on 11.2) and on Linux (verified on
-Ubuntu 20.04), and run in a matter of seconds. Here is some sample output:
+Ubuntu 20.04):
 
 ```
 $ inv
@@ -71,9 +71,9 @@ repr    native         PASSED    00:00:00.341
 $ 
 ```
 
-Note that "inv" will run the Monty code generator and compile any changes
+Without args, "inv" will run the Monty code generator and compile any changes
 in the code - "inv python" will also do this, to make sure the build is up to
-date. Output will only be shown in the case of warnings or errors.
+date. Output is only shown in the case of warnings or errors.
 
 For all Monty development which can be done natively, by far the quickest
 edit-run cycle is to edit the source as needed and run `inv`, which compiles and
@@ -84,14 +84,14 @@ Python test, run `inv test python` (takes under 10s).
 
 The default µC board for Monty is STMicro's
 [Nucleo-L432RC](https://www.st.com/en/evaluation-tools/nucleo-l432kc.html), a
-small low-cost board containing an STM32 Cortex M4 µC with 256 kB flash
-and 64 kB RAM, an on-board LED, and their ST-Link programmer to
-upload/debug/connect over USB.
+small board containing an ARM Cortex M4 µC with 256 kB flash and 64 kB RAM, an
+on-board LED, and the ST-Link programmer to upload, debug, and communicate over
+USB.
 
-There is no "big" reason to use this board, but it's a convenient and
-self-contained default for now.  PIO supports [numerous
-boards](https://platformio.org/boards), although some work may be needed to
-adapt the machine-dependent code in Monty, see `lib/arch-*/`.
+There is no "big" reason to use this board, but it's a convenient self-contained
+default for now.  PIO supports [numerous boards](https://platformio.org/boards),
+although some work may be needed to adapt the machine-dependent aspects for
+Monty, see the [Platform support](platform-support) section for more details.
 
 Here's how to build and upload the µC firmware and run Python scripts:
 
@@ -111,10 +111,12 @@ will be skipped.
 These commands look very similar to the native versions, but the process is
 quite different as the firmware has to be uploaded before running any Python
 tests.  The C++ tests are self contained, PIO will then build and upload them,
-read back their output, and report the test results.
+read back their output, and report the test results. The `inv flash` command is
+needed to re-build and re-upload whenever the C++ code has changed, or after
+using `inv upload`, which uploads other test firmware.
 
 A convenient workflow is to re-build & re-upload the firmware and run Python
-tests, all in one step, e.g. `inv flash python` or `inv flash python -t hello`.
+tests, all in one step, e.g. `inv flash runner` or `inv flash runner -t hello`.
 
 These "remote" tests take a little more time, due to the uploading and serial
 communication involved (the console runs at 115200 baud). There is also the
@@ -128,7 +130,7 @@ The most complete build and test is `inv all`, which is shorthand for:
 inv clean test python upload flash mrfs runner builds examples
 ```
 
-As of end February 2021, this still runs in under a minute.
+As of end February 2021, this full set runs in under a minute.
 
 ## C++ test details
 
@@ -194,8 +196,8 @@ All tests in `pytests/` consist of up to 4 files, e.g. in the case of `hello`:
 * **hello.exp** - this is the _expected_ output, i.e. what `.out` _should_
   contain
 
-Note that the `.out` files are only created and kept if the the received and
-expected output do _not_ match.
+The `.out` files are only created and kept if the the received and expected
+output do _not_ match.
 
 #### Output matching
 
