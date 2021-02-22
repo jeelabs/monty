@@ -49,11 +49,6 @@ $ inv python flash runner
 Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsis)
 STM32 STLink: /dev/cu.usbmodem143202 ser# 066BFF555052836687031442
 33 tests, 33 matches, 0 failures, 3 skipped
-$ inv builds
-   text	   data	    bss	    dec	    hex	filename
-  50780	   2400	  12712	  65892	  10164	.pio/build/nucleo-l432/firmware.elf
-  39136	   2400	  12712	  54248	   d3e8	.pio/build/noassert/firmware.elf
-  29976	   2280	  12712	  44968	   afa8	.pio/build/nopyvm/firmware.elf
 $
 ```
 
