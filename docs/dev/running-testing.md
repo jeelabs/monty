@@ -3,7 +3,7 @@
 The main target for Monty is _embedded microcontrollers_ ("µCs"), but it also
 runs _natively_ on MacOS and Linux, at least w.r.t. the core functionality.
 Native mode is much faster to develop in, as it avoids the upload cycle,
-benefits from more "direct" development tools, and can run at least an order of
+benefits from more "direct" development tools, and will run at least an order of
 magnitude faster.
 
 Embedded software development tends to cover a lot of ground: cross-compilation
@@ -38,12 +38,13 @@ Here's how to build the native executable and run Python scripts:
 
 | Command | Description |
 |---|---|
+| `inv` | same as `inv native`, used for quick compile checks |
 | `inv native` | this is the simplest test, it runs a minimal "hello" Python script |
 | `inv native -f hello` | the same test, with script from `pytests/` |
 | `inv native -f pytests/hello.py` | again the same, this time spelled out in full detail |
 | `inv native -f pytests/hello.mpy` | refers to the bytecode file, `inv` will not launch `mpy-cross` |
 | `inv python` | run the full Python test suite, reporting only differences and failures |
-| `inv python -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
+| `inv python -t hello,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv test` | run the C++ test suite, with results summarised at the end |
 
 Tests named `n_*` are included, others starting with `<letter>_` will be skipped
@@ -53,7 +54,7 @@ The above commands work on MacOS (verified on 11.2) and on Linux (verified on
 Ubuntu 20.04), and run in a matter of seconds. Here is some sample output:
 
 ```
-$ inv native
+$ inv
 main
 hello monty cdd7e0d
 done
@@ -71,7 +72,7 @@ repr    native         PASSED    00:00:00.341
 $ 
 ```
 
-Note that "inv native" runs the Monty code generator and compiles any changes
+Note that "inv" will run the Monty code generator and compile any changes
 in the code - "inv python" will also do this, to make sure the build is up to
 date. Output will only be shown in the case of warnings or errors.
 
@@ -97,10 +98,12 @@ Here's how to build and upload the µC firmware and run Python scripts:
 | Command | Description |
 |---|---|
 | `inv flash` | build and upload the firmware to the attached µC board |
+| `inv mrfs` | wrap all test scripts as MRFS and upload to a separate flash area |
 | `inv runner` | run the full Python test suite, reporting only differences and failures |
-| `inv runner -t hello,iter,mem` | run only the specified tests (can also be a glob pattern) |
+| `inv runner -t hello,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv upload` | run the C++ test suite, with results summarised at the end |
-| `inv all` | run **all** C++ and Python tests, on native and embedded |
+| `inv builds` | show firmware image sizes of a few embedded build variations |
+| `inv all` | run all C++ and Python tests, native and embedded, and more ... |
 
 Tests named `s_*` are included on STM32, all others starting with `<letter>_`
 will be skipped.
@@ -155,7 +158,7 @@ With both native and embedded Python tests, the main program starts by sending a
 single line with the text "main" and when it ends normally, it sends the text
 "done". This is why a simple "inv native" run produces the following output:
 
-```
+```text
 main
 monty hello [etc...]
 done

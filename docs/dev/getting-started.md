@@ -24,9 +24,9 @@ via the command line:
 
 | Type | Command | Notes |
 |------|---------|-------|
-| single | `inv native` | use `-f` flag to specify which file |
-| C++ test | `inv test` | based on Unity, see `test/*/main.cpp` |
+| quick check | `inv` | compile, then run `pytests/hello.py` |
 | Python test | `inv python` | runs all the code from `pytests/` |
+| C++ test | `inv test` | based on Unity, see `test/*/main.cpp` |
 
 **Embedded µC**
 
@@ -34,8 +34,8 @@ via the command line:
 |------|---------|-------|
 | console | `inv serial` | keep this open in a separate window |
 | flash | `inv flash` | build & upload, same as `pio run -s` |
-| C++ test | `inv upload` | uploads and runs each Unity test |
 | Python test | `inv runner` | uploads and runs each test (needs `flash`) |
+| C++ test | `inv upload` | uploads and runs each Unity test |
 
 ?> The C++ and Python tests need access to the console, it should not be kept
 open during those tasks.
