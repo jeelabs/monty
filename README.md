@@ -44,13 +44,12 @@ $ inv native -f pytests/hello.mpy
 main
 hello monty f3745d5
 done
-$ time inv python flash runner
+$ inv python flash runner
 34 tests, 34 matches, 0 failures, 2 skipped
 Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsis)
 STM32 STLink: /dev/cu.usbmodem143202 ser# 066BFF555052836687031442
 33 tests, 33 matches, 0 failures, 3 skipped
-       11.84 real         1.92 user         0.89 sys
-$ inv x-sizes
+$ inv builds
    text	   data	    bss	    dec	    hex	filename
   50780	   2400	  12712	  65892	  10164	.pio/build/nucleo-l432/firmware.elf
   39136	   2400	  12712	  54248	   d3e8	.pio/build/noassert/firmware.elf
