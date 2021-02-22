@@ -2,7 +2,7 @@
 
 # Monty test runner
 #
-# Usage: runner.py file...
+# Usage: runner.py [-v] [-i ignore,...] file...
 #
 #   files with a .py extension are first compiled to .mpy using mpy-cross,
 #   but only if the .mpy does not exist or is older than the .py source
@@ -127,14 +127,24 @@ def printSeparator(fn, e=None):
 
 if __name__ == "__main__":
     ser = openSerialPort()
-    tests, match, fail, skip = len(sys.argv)-1, 0, 0, 0
+    verbose, tests, match, fail, skip, ignores = 0, 0, 0, 0, 0, []
 
-    for fn in sys.argv[1:]:
+    args = iter(sys.argv[1:])
+    for fn in args:
+        if fn == "-v":
+            verbose += 1
+            continue
+        if fn == "-i":
+            iargs = next(args).split(",")
+            ignores += iargs
+            continue
         bn = os.path.basename(fn)
+        if os.path.splitext(bn)[0] in ignores:
+            continue
         if bn[1:2] == "_" and bn[0] != 's':
-            tests -= 1
             skip += 1
             continue # skip non-stm32 tests
+        tests += 1
 
         try:
             mpy = compileIfOutdated(fn)

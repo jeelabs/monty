@@ -76,8 +76,10 @@ def test(c, filter='*'):
     else:
         shortTestOutput(r)
 
-@task(generate, help={"tests": "specific tests to run, comma-separated"})
-def python(c, tests=""):
+@task(generate, iterable=["ignore"],
+      help={"tests": "specific tests to run, comma-separated",
+            "ignore": "one specific test to ignore"})
+def python(c, ignore, tests=""):
     """run Python tests natively          [in pytests/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
     if dry:
@@ -93,7 +95,7 @@ def python(c, tests=""):
         files = os.listdir("pytests")
         files.sort()
     for fn in files:
-        if fn.endswith(".py"):
+        if fn.endswith(".py") and fn[:-3] not in ignore:
             if not tests and fn[1:2] == "_" and fn[0] != 'n':
                 skip += 1
                 continue # skip non-native tests
@@ -123,6 +125,8 @@ def python(c, tests=""):
 
     if not dry:
         print(f"{num} tests, {match} matches, {fail} failures, {skip} skipped")
+    if num != match:
+        c.run("exit 1") # yuck, force an error ...
 
 @task(generate)
 def flash(c):
@@ -148,11 +152,16 @@ def upload(c, filter="*"):
     else:
         shortTestOutput(r)
 
-@task(help={"tests": "specific tests to run, comma-separated"})
-def runner(c, tests=""):
+@task(iterable=["ignore"],
+      help={"tests": "specific tests to run, comma-separated",
+            "ignore": "one specific test to ignore"})
+def runner(c, ignore, tests=""):
     """run Python tests, sent to µC       [in pytests/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
-    c.run("src/runner.py pytests/%s.py" % match, pty=True)
+    iflag = ""
+    if ignore:
+        iflag = "-i " + ",".join(ignore)
+    c.run("src/runner.py %s pytests/%s.py" % (iflag, match), pty=True)
 
 @task
 def builds(c):
