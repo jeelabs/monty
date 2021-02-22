@@ -61,7 +61,6 @@ done
 $ inv python
 34 tests, 34 matches, 0 failures, 2 skipped
 $ inv test
-[...]
 Test    Environment    Status    Duration
 ------  -------------  --------  ------------
 array   native         PASSED    00:00:00.504
@@ -77,8 +76,9 @@ in the code - "inv python" will also do this, to make sure the build is up to
 date. Output will only be shown in the case of warnings or errors.
 
 For all Monty development which can be done natively, by far the quickest
-edit-run cycle is to edit the source as needed, and then run either `inv python`
-or `inv test`, or possibly both: `inv native test`.
+edit-run cycle is to edit the source as needed and run `inv`, which compiles and
+shows the output from `hello.py` in under a second.  For a more complete C++ and
+Python test, run `inv test python` (takes under 10s).
 
 ## Embedded development
 
@@ -114,14 +114,21 @@ tests.  The C++ tests are self contained, PIO will then build and upload them,
 read back their output, and report the test results.
 
 A convenient workflow is to re-build & re-upload the firmware and run Python
-tests, all in one step, e.g. `inv flash python` or `inv flash python -t hello`,
-or even the ultimate "do everything": `inv all`.
+tests, all in one step, e.g. `inv flash python` or `inv flash python -t hello`.
 
 These "remote" tests take a little more time, due to the uploading and serial
 communication involved (the console runs at 115200 baud). There is also the
 possibility that the board will "hang" during the Python tests. The test runner
 uses timeouts to detect and report this, but a reset (or re-upload) will be
 needed to get the board out of this state.
+
+The most complete build and test is `inv all`, which is shorthand for:
+
+```text
+inv clean test python upload flash mrfs runner builds examples
+```
+
+As of end February 2021, this still runs in under a minute.
 
 ## C++ test details
 
