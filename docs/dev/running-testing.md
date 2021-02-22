@@ -124,14 +124,6 @@ possibility that the board will "hang" during the Python tests. The test runner
 uses timeouts to detect and report this, but a reset (or re-upload) will be
 needed to get the board out of this state.
 
-The most complete build and test is `inv all`, which is shorthand for:
-
-```text
-inv clean test python upload flash mrfs runner builds examples
-```
-
-As of end February 2021, this full set runs in under a minute.
-
 ## C++ test details
 
 All C++ tests use PIO's
@@ -235,3 +227,50 @@ done
 Which - after performing the specified replacement(s) - will indeed match the
 expected output. Only a few tests rely on this feature, but it can be really
 effective to keep test output limited to "real" differences.
+
+## Running a full test
+
+The most complete build and test is `inv all`, which is shorthand for:
+
+```text
+inv clean test python upload flash mrfs runner builds examples
+```
+
+By default, this assumes that a Nucleo-L432 has been plugged into USB.  
+As of end February 2021, this full test will complete in under a minute:
+
+```text
+$ inv all
+Test    Environment    Status    Duration
+------  -------------  --------  ------------
+array   native         PASSED    00:00:00.750
+data    native         PASSED    00:00:00.565
+gc      native         PASSED    00:00:00.577
+repr    native         PASSED    00:00:00.559
+============================ 4 succeeded in 00:00:02.450 ============================
+35 tests, 35 matches, 0 failures, 5 skipped
+Test    Environment    Status    Duration
+------  -------------  --------  ------------
+array   nucleo-l432    PASSED    00:00:04.222
+data    nucleo-l432    PASSED    00:00:03.072
+gc      nucleo-l432    PASSED    00:00:03.243
+repr    nucleo-l432    PASSED    00:00:03.041
+============================ 4 succeeded in 00:00:13.578 ============================
+Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsis)
+STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
+upload 0x040E0 done, 16608 bytes sent
+STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
+37 tests, 37 matches, 0 failures, 3 skipped
+   text	   data	    bss	    dec	    hex	filename
+  55760	   2496	   2472	  60728	   ed38	.pio/build/nucleo-l432/firmware.elf
+  43128	   2496	   2472	  48096	   bbe0	.pio/build/noassert/firmware.elf
+  33932	   2388	   2472	  38792	   9788	.pio/build/nopyvm/firmware.elf
+blinker
+minimal
+pipeline
+structs
+switcher
+$
+```
+
+The examples listed at the end are only verified to compile, not actually run.

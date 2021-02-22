@@ -1,5 +1,5 @@
 # see https://www.pyinvoke.org
-from invoke import task
+from invoke import task, call
 
 import configparser, io, os, subprocess, sys
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
@@ -14,6 +14,12 @@ cfg.read('platformio.ini')
 if "platformio" in cfg and "extra_configs" in cfg["platformio"]:
     for f in cfg["platformio"]["extra_configs"].split():
         cfg.read(f)
+if "invoke" in cfg:
+    python_skip, runner_skip = [], []
+    if "python_skip" in cfg["invoke"]:
+        python_skip = cfg["invoke"]["python_skip"].split()
+    if "runner_skip" in cfg["invoke"]:
+        runner_skip = cfg["invoke"]["runner_skip"].split()
 
 @task(help={"host": "hostname for rsync (required)",
             "dest": "destination directory (default: monty-test)"})
@@ -212,6 +218,8 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo", pty=True)
 
-@task(clean, test, python, upload, flash, mrfs, runner, builds, examples)
+@task(clean, test, call(python, python_skip),
+      upload, flash, mrfs, call(runner, runner_skip),
+      builds, examples)
 def all(c):
     """i.e. clean test python upload flash mrfs runner builds examples"""
