@@ -39,6 +39,7 @@ This is a test run on native + embedded, as of mid-Feb 2021:
 
 ```text
 $ cat pytests/hello.py
+import sys
 print('hello', sys.implementation, sys.version)
 $ inv native -f pytests/hello.mpy
 main
