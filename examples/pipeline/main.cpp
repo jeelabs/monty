@@ -94,12 +94,12 @@ static void printBuildVer () {
 static void helpCmd ();
 
 static Command const commands [] = {
-    { "bv    show build version"          , printBuildVer },
-    { "gc    trigger garbage collection"  , Stacklet::gcAll },
-    { "gr    generate a GC report"        , gcReport },
-    { "od    object dump"                 , gcObjDump },
-    { "vd    vector dump"                 , gcVecDump },
-    { "-h    this help"                   , helpCmd },
+    { "bv    show build version"         , printBuildVer },
+    { "gc    trigger garbage collection" , Stacklet::gcAll },
+    { "gr    generate a GC report"       , gcReport },
+    { "od    object dump"                , Obj::dump },
+    { "vd    vector dump"                , Vec::dump },
+    { "-h    this help"                  , helpCmd },
 };
 
 void helpCmd () {

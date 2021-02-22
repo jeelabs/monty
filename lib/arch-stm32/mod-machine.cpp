@@ -195,6 +195,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
 
 //CG1 bind ticks
 static auto f_ticks (ArgVec const& args) -> Value {
+    assert(args._num == 0);
     return msNow();
 }
 

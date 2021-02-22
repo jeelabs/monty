@@ -14,6 +14,7 @@ int main (int argc, char const** argv) {
 #if NATIVE
     auto task = argc > 1 ? vmLaunch(argv[1]) : nullptr;
 #else
+    (void) argc; (void) argv;
     auto task = arch::cliTask();
 #endif
     if (task != nullptr)
