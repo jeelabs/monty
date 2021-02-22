@@ -112,8 +112,6 @@ auto Event::repr (Buffer& buf) const -> Value {
     return Object::repr(buf); // don't print as a list
 }
 
-Stacklet::~Stacklet () {}
-
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
     assert(op == BinOp::Equal);
     return Value::asBool(rhs.isObj() && this == &rhs.obj());

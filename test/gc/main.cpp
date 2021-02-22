@@ -25,9 +25,9 @@ void setUp () {
 }
 
 void tearDown () {
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(created, destroyed);
-    compact();
+    Vec::compact();
     TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
@@ -94,15 +94,15 @@ void markObj () {
     mark(p2);
     TEST_ASSERT_EQUAL(2, marked);
 
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
 
     mark(p2);
     TEST_ASSERT_EQUAL(4, marked); // now everything is marked again
 
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
@@ -118,9 +118,9 @@ void markThrough () {
     mark(p2);
     TEST_ASSERT_EQUAL(3, marked);
 
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
-    sweep();
+    Obj::sweep();
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
@@ -138,7 +138,7 @@ void reuseObjs () {
     auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
-    sweep();                   // [ ]
+    Obj::sweep();                   // [ ]
     TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
@@ -317,20 +317,20 @@ void compactVecs () {
     auto c = gcMax();
     TEST_ASSERT_LESS_THAN(b, c);
 
-    compact();                      // [ v1 v2 v3 v4 v5 ]
+    Vec::compact();                      // [ v1 v2 v3 v4 v5 ]
     TEST_ASSERT_EQUAL(c, gcMax());
 
     v2.adj(0);                      // [ v1 gap v3 v4 v5 ]
     v4.adj(0);                      // [ v1 gap v3 gap v5 ]
     TEST_ASSERT_EQUAL(c, gcMax());
 
-    compact();                      // [ v1 v3 v5 ]
+    Vec::compact();                      // [ v1 v3 v5 ]
     TEST_ASSERT_EQUAL(b, gcMax());
 
     v1.adj(0);                      // [ gap v3 v5 ]
     TEST_ASSERT_EQUAL(b, gcMax());
 
-    compact();                      // [ v3 v5 ]
+    Vec::compact();                      // [ v3 v5 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 }
 
@@ -400,7 +400,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(44, v3.ptr()[v3.cap()-1]);
 
     auto a = gcMax();
-    compact();                      // [ v2 v4 v3 ]
+    Vec::compact();                      // [ v2 v4 v3 ]
     TEST_ASSERT_GREATER_THAN(a, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v2.ptr());
@@ -419,7 +419,7 @@ void vecData () {
     v2.adj(0);                      // [ gap v4 v3 ]
     v4.adj(0);                      // [ gap gap v3 ]
 
-    compact();                      // [ v3 ]
+    Vec::compact();                      // [ v3 ]
     TEST_ASSERT_LESS_THAN(memAvail, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v3.ptr());

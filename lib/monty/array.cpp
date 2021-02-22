@@ -132,10 +132,10 @@ static AccessAs<int64_t,1>  const accessor_q;
 static AccessAsVaryBytes    const accessor_v;
 static AccessAsVaryStr      const accessor_V;
 #if USE_FLOAT
-static AccessAs<float>    const accessor_f;
+static AccessAs<float>      const accessor_f;
 #endif
 #if USE_DOUBLE
-static AccessAs<double>   const accessor_d;
+static AccessAs<double>     const accessor_d;
 #endif
 
 // must be in same order as arrayModes

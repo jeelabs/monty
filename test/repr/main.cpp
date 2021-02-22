@@ -25,8 +25,8 @@ void setUp () {
 }
 
 void tearDown () {
-    sweep();
-    compact();
+    Obj::sweep();
+    Vec::compact();
     TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 

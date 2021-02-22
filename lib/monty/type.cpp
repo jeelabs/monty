@@ -176,8 +176,6 @@ Bytes::Bytes (void const* ptr, uint32_t len) {
     memcpy(begin(), ptr, len);
 }
 
-Bytes::~Bytes () {}
-
 auto Bytes::unop (UnOp op) const -> Value {
     switch (op) {
         case UnOp::Boln: return Value::asBool(size());
@@ -447,8 +445,6 @@ List::List (ArgVec const& args) {
     for (int i = 0; i < args._num; ++i)
         (*this)[i] = args[i];
 }
-
-List::~List () {}
 
 auto List::pop (int idx) -> Value {
     auto n = relPos(idx);

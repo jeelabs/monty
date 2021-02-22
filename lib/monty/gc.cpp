@@ -306,7 +306,7 @@ namespace monty {
         return gcMax() < total / 4; // TODO crude
     }
 
-    void gcObjDump () {
+    void Obj::dump () {
         printf("objects: %p .. %p\n", objLow, limit);
         for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
             if (slot->chain == 0)
@@ -322,7 +322,7 @@ namespace monty {
         }
     }
 
-    void gcVecDump () {
+    void Vec::dump () {
         printf("vectors: %p .. %p\n", start, vecHigh);
         uint32_t n;
         for (auto slot = (VecSlot*) start; slot < vecHigh; slot += n) {
@@ -351,7 +351,7 @@ namespace monty {
         obj.marker();
     }
 
-    void sweep () {
+    void Obj::sweep () {
         D( printf("\tsweeping ...\n"); )
         ++gcStats.sweeps;
         for (auto slot = objLow; slot != nullptr; slot = slot->chain)
@@ -365,7 +365,7 @@ namespace monty {
             }
     }
 
-    void compact () {
+    void Vec::compact () {
         D( printf("\tcompacting ...\n"); )
         ++gcStats.compacts;
         auto newHigh = (VecSlot*) start;

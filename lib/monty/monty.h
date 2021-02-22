@@ -11,7 +11,9 @@ namespace monty {
 // see gc.cpp - objects and vectors with garbage collection
 
     struct Obj {
-        virtual ~Obj () {}
+        virtual ~Obj () =default;
+
+        virtual void marker () const {} // called to mark all ref'd objects
 
         static auto inPool (void const* p) -> bool;
         auto isCollectable () const -> bool { return inPool(this); }
@@ -21,15 +23,15 @@ namespace monty {
             return operator new (bytes + extra);
         }
         void operator delete (void*);
-    protected:
-        constexpr Obj () {} // only derived objects can be instantiated
 
-        virtual void marker () const {} // called to mark all ref'd objects
-        friend void mark (Obj const&);
+        static void sweep ();  // reclaim all unmarked objects
+        static void dump ();   // like sweep, but only to print all obj+free
+    protected:
+        constexpr Obj () =default; // only derived objects can be instantiated
     };
 
     struct Vec {
-        constexpr Vec () {}
+        constexpr Vec () =default;
         constexpr Vec (void const* ptr, uint32_t num =0)
                     : _data ((uint8_t*) ptr), _capa (num) {}
         ~Vec () { (void) adj(0); }
@@ -46,21 +48,19 @@ namespace monty {
         auto cap () const -> uint32_t { return _capa; }
         auto adj (uint32_t bytes) -> bool;
 
+        static void compact (); // reclaim and compact unused vector space
+        static void dump ();    // like compact, but only to print all vec+free
     private:
         uint8_t* _data = nullptr; // pointer to vector when capa > 0
         uint32_t _capa = 0; // capacity in bytes
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
-        friend void compact ();
-        friend void gcVecDump ();
     };
 
     void gcSetup (void* base, uint32_t size); // configure the memory pool
     auto gcMax () -> uint32_t; // return free space between objects & vectors
     auto gcCheck () -> bool;   // true when it's time to collect the garbage
-    void gcObjDump ();         // like sweep, but only to print all obj+free
-    void gcVecDump ();         // like compact, but only to print all vec+free
     void gcReport ();          // print a brief gc summary with statistics
 
     union GCStats {
@@ -75,10 +75,8 @@ namespace monty {
     };
     extern GCStats gcStats;
 
-    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
     void mark (Obj const&);
-    void sweep ();   // reclaim all unmarked objects
-    void compact (); // reclaim and compact unused vector space
+    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
 
     extern void* (*panicOutOfMemory)(); // triggers an assertion by default
 
@@ -257,7 +255,7 @@ namespace monty {
     struct VecOf : private Vec {
         uint32_t _fill = 0;
 
-        constexpr VecOf () {}
+        constexpr VecOf () =default;
         template< size_t N >
         constexpr VecOf (T const (&ary)[N])
                     : Vec (&ary, N * sizeof (T)), _fill (N) {}
@@ -332,6 +330,7 @@ namespace monty {
 
         auto pop () -> T { return pull(_fill-1); } // pull from end
 
+        using Vec::compact; // allow public access
     };
 
     using Vector = VecOf<Value>;
@@ -389,7 +388,7 @@ namespace monty {
 
         static None const nullObj;
     private:
-        constexpr None () {} // can't construct more instances
+        constexpr None () =default; // can't construct more instances
     };
 
     //CG< type bool
@@ -405,7 +404,7 @@ namespace monty {
         static Bool const trueObj;
         static Bool const falseObj;
     private:
-        constexpr Bool () {} // can't construct more instances
+        constexpr Bool () =default; // can't construct more instances
     };
 
     auto Value::isNone  () const -> bool { return &obj() == &None::nullObj; }
@@ -494,9 +493,8 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
     //CG>
-        constexpr Bytes () {}
+        constexpr Bytes () =default;
         Bytes (void const*, uint32_t =0);
-        ~Bytes () override;
 
         auto unop (UnOp) const -> Value override;
         auto binop (BinOp, Value) const -> Value override;
@@ -529,7 +527,6 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer& buf) const -> Value override;
 
-        Buffer () {}
         ~Buffer () override;
 
         void write (uint8_t const* ptr, uint32_t num);
@@ -635,8 +632,7 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
     //CG>
-        constexpr List () {}
-        ~List () override;
+        constexpr List () =default;
 
         //CG: wrap List pop append clear
         auto pop (int idx) -> Value;
@@ -815,7 +811,7 @@ namespace monty {
     //CG>
         constexpr static auto LEN_BITS = 27;
 
-        //constexpr Array () {} // default is array of Value items
+        //constexpr Array () =default; // default is array of Value items
         Array (char type, uint32_t num =0);
 
         auto mode () const -> char;
@@ -874,9 +870,6 @@ namespace monty {
         static Type info;
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
-
-        Stacklet () {}
-        ~Stacklet () override;
 
         auto binop (BinOp, Value) const -> Value override;
 
