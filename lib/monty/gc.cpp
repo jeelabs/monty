@@ -20,6 +20,7 @@ static void V (Object const& o, char const* s) {
 template auto Obj<Object>::operator new (size_t bytes) -> void*;
 template void Obj<Object>::operator delete (void*);
 
+template auto Obj<Object>::isInPool (void const* p) -> bool;
 template void Obj<Object>::sweep ();
 template void Obj<Object>::dumpAll ();
 
@@ -192,7 +193,7 @@ namespace monty {
                 slot->clearMark();
             else if (!slot->isFree()) {
                 auto q = (Object*) &slot->vt;
-                V(q, "\t delete");
+                V(*q, "\t delete");
                 delete q;
                 assert(slot->isFree());
             }
@@ -369,6 +370,8 @@ namespace monty {
 
         assert((uintptr_t) &vecHigh->next % VS_SZ == 0);
         assert((uintptr_t) &objLow->vt % OS_SZ == 0);
+
+        D( printf("setup: start %p limit %p\n", start, limit); )
     }
 
     auto gcMax () -> uint32_t {

@@ -23,10 +23,25 @@ Vector Event::triggers;
 static jmp_buf* resumer;
 
 void Stacklet::gcAll () {
+    // careful to avoid infinite recursion: the "sys" module has "modules" as
+    // one of its attributes, which is "Module::loaded", i.e. a dict which
+    // chains to the built-in modules (see "qstr.cpp"), which includes "sys",
+    // which has "modules" as one of its attributes, and on, and on, and on ...
+
+    // this turns into infinite recursion because all these objects are static,
+    // so there is no mark bit to tell the marker "been here before, skip me",
+    // and the solution is simple: break this specific chain while marking
+    auto save = Module::loaded._chain;
+    Module::loaded._chain = nullptr;
+
     markVec(Event::triggers);
     mark(current);
     tasks.marker();
     tasks.marker();
+
+    // restore the broken chain, now that marking is complete
+    Module::loaded._chain = save;
+
     sweep();
     compact();
 }
