@@ -58,10 +58,7 @@ def generate(c, verbose=False):
 def native(c, file="pytests/hello.py"):
     """run script using the native build  [pytests/hello.py]"""
     c.run("pio run -e native -s", pty=True)
-    cmd = ".pio/build/native/program"
-    if file:
-        cmd += " " + compileIfOutdated(file)
-    c.run(cmd)
+    c.run(".pio/build/native/program " + compileIfOutdated(file))
 
 def shortTestOutput(r):
     gen = (s for s in r.tail('stdout', 10).split("\n"))

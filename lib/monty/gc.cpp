@@ -1,6 +1,6 @@
 // gc.cpp - objects and vectors with garbage collection
 
-#define VERBOSE_GC 0 // show garbage collector activity
+#define VERBOSE_GC 1 // show garbage collector activity
 
 #include "monty.h"
 #include <cassert>
@@ -101,6 +101,7 @@ static auto mergeVecs (VecSlot& slot) -> bool {
         tail = tail->next;
     if (tail < vecHigh)
         return false;
+    assert((uintptr_t) &slot < (uintptr_t) objLow);
     vecHigh = &slot;
     return true;
 }
@@ -310,22 +311,35 @@ namespace monty {
     }
 
     void Vec::compact () {
+printf("compact! %p %p %lx\n", start, vecHigh, vecHigh - (VecSlot*) start);
+assert((uintptr_t) vecHigh < (uintptr_t) objLow);
         D( printf("\tcompacting ...\n"); )
         ++gcStats.compacts;
         auto newHigh = (VecSlot*) start;
         uint32_t n;
         for (auto slot = newHigh; slot < vecHigh; slot += n)
+{ printf("com %p %p\n", slot, vecHigh);
+assert(slot < vecHigh);
+printf(" free %d\n", slot->isFree());
             if (slot->isFree())
+{ 
                 n = slot->next - slot;
+printf(" n1 %d\n", n);
+}
             else {
                 n = slot->vec->slots();
+printf(" n2 %d\n", n);
                 if (newHigh < slot) {
                     slot->vec->_data = newHigh->buf;
                     memmove(newHigh, slot, n * VS_SZ);
                 }
                 newHigh += n;
             }
+printf("n %d %p %p\n", n, slot, vecHigh);
+assert((uintptr_t) vecHigh < (uintptr_t) objLow);
+}
         vecHigh = newHigh;
+        assert((uintptr_t) vecHigh < (uintptr_t) objLow);
     }
 
     void Vec::dumpAll () {
@@ -392,6 +406,7 @@ namespace monty {
                     return;
                 V(obj, "\t mark");
                 p->setMark();
+assert((uintptr_t) vecHigh < (uintptr_t) objLow);
             }
         }
         obj.marker();

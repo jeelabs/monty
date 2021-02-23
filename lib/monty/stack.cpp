@@ -44,6 +44,9 @@ void Stacklet::gcAll () {
     Module::loaded._chain = save;
 
     sweep();
+    gcReport();
+    Object::dumpAll();
+    monty::Vec::dumpAll();
     compact();
 }
 

@@ -22,9 +22,27 @@ int main (int argc, char const** argv) {
     else
         printf("no task\n");
 
+static int blah;
+printf("11 %p %p\n", &task, &blah);
+Object::dumpAll();
+Vec::dumpAll();
+//Vec::compact();
+//Vec::dumpAll();
+printf("22\n");
     while (Stacklet::runLoop())
+{
+printf("12 %p %p\n", &task, &blah);
+Vec::compact();
+printf("23\n");
         arch::idle();
+}
 
+    gcReport();
+    printf("111\n");
+    //Stacklet::gcAll();
+    Vec::compact();
+    printf("222\n");
+    gcReport();
 #ifndef NDEBUG
     printf("done\n");
 #endif

@@ -18,7 +18,7 @@ const auto mrfsSize = 32*1024;
 #if STM32F103xB
 UartBufDev< PinA<2>, PinA<3>, 100 > console;
 #elif STM32L432xx
-UartBufDev< PinA<2>, PinA<15>, 100 > console;
+UartBufDev< PinA<2>, PinA<15>, 3 > console;
 #else
 UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
