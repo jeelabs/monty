@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <ctime>
 
+static void* pool;
+
 static auto loadFile (char const* name) -> uint8_t const* {
     auto fp = fopen(name, "rb");
     if (fp == nullptr)
@@ -34,7 +36,8 @@ void arch::init (int size) {
     setbuf(stdout, nullptr);
     if (size <= 0)
         size = 1024*1024; // allocate a whopping 1 Mb
-    monty::gcSetup(malloc(size), size);
+    pool = malloc(size);
+    monty::gcSetup(pool, size);
     monty::Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
 }
 
@@ -44,5 +47,6 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
+    free(pool);
     return 0;
 }
