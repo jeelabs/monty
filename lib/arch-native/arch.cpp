@@ -47,6 +47,6 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
-    free(pool);
+    //free(pool);
     return 0;
 }
