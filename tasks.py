@@ -189,9 +189,10 @@ def examples(c):
     examples.sort()
     for ex in examples:
         if os.path.isdir("examples/%s" % ex):
-            if os.path.isfile("examples/%s/platformio.ini" % ex):
+            if os.path.isfile("examples/%s/README.md" % ex):
                 print(ex)
-                c.run("pio run -d examples/%s -t size -s" % ex, warn=True)
+                c.run("pio run -c examples/pio-examples.ini "
+                      "-d examples/%s -t size -s" % ex, warn=True)
 
 @task(help={"offset": "flash offset (default: 0x0)",
             "file": "save to file instead of uploading to flash"})
