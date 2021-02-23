@@ -295,10 +295,10 @@ Command const commands [] = {
     { "gc    trigger garbage collection"   , Stacklet::gcAll },
     { "gr    generate a GC report"         , gcReport },
     { "ls    list files in MRFS"           , mrfs::dump },
-    { "od    object dump"                  , Obj::dump },
+    { "od    object dump"                  , Object::dumpAll },
     { "pd    power down"                   , pd_cmd },
     { "sr    system reset"                 , systemReset },
-    { "vd    vector dump"                  , Vec::dump },
+    { "vd    vector dump"                  , Vec::dumpAll },
     { "wd N  set watchdog [0..4095] x8 ms" , (void(*)()) wd_cmd },
 };
 

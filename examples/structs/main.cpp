@@ -31,7 +31,6 @@ int main () {
     SIZEOF(MethodBase)
     SIZEOF(Module)
     SIZEOF(None)
-    SIZEOF(Obj)
     SIZEOF(Object)
     SIZEOF(Range)
     SIZEOF(Set)

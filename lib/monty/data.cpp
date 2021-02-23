@@ -88,7 +88,7 @@ Value::Value (char const* arg) : _v ((uintptr_t) arg * 4 + 2) {
     auto id = Q::find(arg);
     if (id > 0)
         _v = id * 4 + 2;
-    else if (Vec::inPool(arg)) // don't store ptrs into movable vector space
+    else if (Vec::isInPool(arg)) // don't store ptrs into movable vector space
         *this = new struct Str (arg);
     else
         assert((char const*) *this == arg); // watch out for address truncation

@@ -32,7 +32,7 @@ void tearDown () {
     v.adj(0);
     TEST_ASSERT_EQUAL(0, v.cap());
 
-    Obj::sweep();
+    Object::sweep();
     Vec::compact();
     TEST_ASSERT_EQUAL(memAvail, gcMax());
 }

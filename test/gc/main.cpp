@@ -7,14 +7,14 @@ uint8_t memory [3*1024];
 int created, destroyed, marked, failed;
 uint32_t memAvail;
 
-struct MarkObj : Obj {
-    MarkObj (Obj* o =0) : other (o) { ++created; }
-    ~MarkObj () override            { ++destroyed; }
+struct MarkObj : Object {
+    MarkObj (Object* o =0) : other (o) { ++created; }
+    ~MarkObj () override               { ++destroyed; }
 
 private:
-    void marker () const override   { ++marked; mark(other); }
+    void marker () const override      { ++marked; mark(other); }
 
-    Obj* other;
+    Object* other;
 };
 
 void setUp () {
@@ -25,7 +25,7 @@ void setUp () {
 }
 
 void tearDown () {
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(created, destroyed);
     Vec::compact();
     TEST_ASSERT_EQUAL(memAvail, gcMax());
@@ -36,7 +36,7 @@ void smokeTest () {
 }
 
 void gcTypeSizes () {
-    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Obj));
+    TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Object));
     TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof (Vec));
 }
 
@@ -94,15 +94,15 @@ void markObj () {
     mark(p2);
     TEST_ASSERT_EQUAL(2, marked);
 
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
 
     mark(p2);
     TEST_ASSERT_EQUAL(4, marked); // now everything is marked again
 
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
@@ -118,9 +118,9 @@ void markThrough () {
     mark(p2);
     TEST_ASSERT_EQUAL(3, marked);
 
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(0, destroyed);
-    Obj::sweep();
+    Object::sweep();
     TEST_ASSERT_EQUAL(2, destroyed);
 }
 
@@ -138,7 +138,7 @@ void reuseObjs () {
     auto p4 = new MarkObj;          // [ p3 p4 ]
     TEST_ASSERT_EQUAL_PTR(p1, p4);
 
-    Obj::sweep();                   // [ ]
+    Object::sweep();                // [ ]
     TEST_ASSERT_EQUAL(memAvail, gcMax());
 }
 
@@ -488,7 +488,6 @@ void gcRomOrRam () {
 #endif
 
     // work around the fact that Obj::Obj() is protected
-    struct Object : Obj { Object () {}; };
     Object stackObj;
     auto heapObj = new Object;
 

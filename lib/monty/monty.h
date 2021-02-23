@@ -10,13 +10,10 @@ namespace monty {
 
 // see gc.cpp - objects and vectors with garbage collection
 
+    template< typename T >
     struct Obj {
-        virtual ~Obj () =default;
-
-        virtual void marker () const {} // called to mark all ref'd objects
-
-        static auto inPool (void const* p) -> bool;
-        auto isCollectable () const -> bool { return inPool(this); }
+        static auto isInPool (void const* p) -> bool;
+        auto isCollectable () const -> bool { return isInPool(this); }
 
         auto operator new (size_t bytes) -> void*;
         auto operator new (size_t bytes, uint32_t extra) -> void* {
@@ -25,9 +22,7 @@ namespace monty {
         void operator delete (void*);
 
         static void sweep ();  // reclaim all unmarked objects
-        static void dump ();   // like sweep, but only to print all obj+free
-    protected:
-        constexpr Obj () =default; // only derived objects can be instantiated
+        static void dumpAll ();   // like sweep, but only to print all obj+free
     };
 
     struct Vec {
@@ -39,17 +34,18 @@ namespace monty {
         Vec (Vec const&) = delete;
         auto operator= (Vec const&) -> Vec& = delete;
 
-        static auto inPool (void const* p) -> bool;
+        static auto isInPool (void const* p) -> bool;
         auto isResizable () const -> bool {
-            return _data == nullptr || inPool(_data);
+            return _data == nullptr || isInPool(_data);
         }
 
+        static void compact (); // reclaim and compact unused vector space
+        static void dumpAll (); // like compact, but only to print all vec+free
+
+    // protected: TODO test/*/main.cpp need access
         auto ptr () const -> uint8_t* { return _data; }
         auto cap () const -> uint32_t { return _capa; }
         auto adj (uint32_t bytes) -> bool;
-
-        static void compact (); // reclaim and compact unused vector space
-        static void dump ();    // like compact, but only to print all vec+free
     private:
         uint8_t* _data = nullptr; // pointer to vector when capa > 0
         uint32_t _capa = 0; // capacity in bytes
@@ -74,9 +70,6 @@ namespace monty {
         uint32_t v [15];
     };
     extern GCStats gcStats;
-
-    void mark (Obj const&);
-    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
 
     extern void* (*panicOutOfMemory)(); // triggers an assertion by default
 
@@ -355,8 +348,14 @@ namespace monty {
         int _off;
     };
 
-    // can't use "CG type <object>", as type/repr are virtual iso override
-    struct Object : Obj {
+    // see https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
+    // explained by Jason Turner: https://www.youtube.com/watch?v=ZQ-8laAr9Dg
+    // it doesn't do much here, just avoids an extra layer of class derivation
+
+    // can't use "CG type <object>", this is the start of the type hierarchy
+    struct Object : Obj<Object> {
+        virtual ~Object () =default;
+
         static const Type info;
         virtual auto type () const -> Type const& { return info; }
         virtual auto repr  (Buffer&) const -> Value;
@@ -373,9 +372,14 @@ namespace monty {
         virtual auto copy  (Range const&) const -> Value;
         virtual auto store (Range const&, Object const&) -> Value;
 
+        virtual void marker () const {} // called to mark all ref'd objects
+
         auto sliceGetter (Value k) const -> Value;
         auto sliceSetter (Value k, Value v) -> Value;
     };
+
+    void mark (Object const&);
+    inline void mark (Object const* p) { if (p != nullptr) mark(*p); }
 
     void Value::marker () const { if (isObj()) mark(obj()); }
 
