@@ -30,6 +30,7 @@ def openSerialPort():
         print(f"{prod}: {dev} ser# {serid}")
         port = serial.Serial(dev, 115200, timeout=0.1)
     assert len(serials) == 1, f"{len(serials)} serial ports found"
+    port.readlines() # clear out any old pending input
     return port
 
 # convert bytes to intel hex, lines are generated per 32 bytes, e.g.
