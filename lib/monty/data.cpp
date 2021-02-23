@@ -360,7 +360,7 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
     auto ks = k.ifType<Slice>();
     if (ks == nullptr)
         return {E::TypeError, "index not int or slice", k};
-    auto r = ks->asRange(len());
+    auto const& r = ks->asRange(len());
     if (r._by != 1)
         return {E::NotImplementedError, "assign to extended slice", k};
     return store(r, v.obj());
@@ -401,9 +401,7 @@ auto Bool::repr (Buffer& buf) const -> Value {
 
 auto Int::make (int64_t i) -> Value {
     Value v = (int) i;
-    if ((int) v != i)
-        return new Int (i);
-    return v;
+    return i == (int) v ? v : new Int (i);
 }
 
 auto Int::conv (char const* s) -> Value {

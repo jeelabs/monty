@@ -23,6 +23,7 @@ Vector Event::triggers;
 static jmp_buf* resumer;
 
 void Stacklet::gcAll () {
+
     // careful to avoid infinite recursion: the "sys" module has "modules" as
     // one of its attributes, which is "Module::loaded", i.e. a dict which
     // chains to the built-in modules (see "qstr.cpp"), which includes "sys",
@@ -37,7 +38,7 @@ void Stacklet::gcAll () {
     markVec(Event::triggers);
     mark(current);
     tasks.marker();
-    tasks.marker();
+    save->marker();
 
     // restore the broken chain, now that marking is complete
     Module::loaded._chain = save;

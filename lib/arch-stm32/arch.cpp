@@ -60,12 +60,11 @@ extern "C" void __assert (char const* f, int l, char const* e) {
 }
 
 struct LineSerial : Stacklet {
-    Event incoming;
-    //Event outgoing;
+    Event& incoming;
     char buf [100]; // TODO avoid hard limit for input line length
     uint32_t fill = 0;
 
-    LineSerial () {
+    LineSerial () : incoming (*new Event) {
         rxId = incoming.regHandler();
         txId = outQueue.regHandler();
         prevIsr = console.handler();
@@ -82,7 +81,7 @@ struct LineSerial : Stacklet {
         outFun = writer;
     }
 
-    ~LineSerial () {
+    ~LineSerial () override {
         outFun = outch; // restore non-stacklet-aware version
         console.handler() = prevIsr;
         incoming.deregHandler();
@@ -128,7 +127,10 @@ struct LineSerial : Stacklet {
     }
 
     static void writer (int c) {
-        writeAll((uint8_t const*) &c, 1);
+        if (current != nullptr)
+            writeAll((uint8_t const*) &c, 1);
+        else // can only use events when in stacklet context
+            outch(c);
     }
 
     // TODO messy use of static scope
@@ -304,7 +306,7 @@ Command const commands [] = {
 
 static auto execCmd (char const* buf) -> bool {
     for (auto& cmd : commands)
-        if (memcmp(buf, cmd.desc, 2) == 0) {
+        if (memcmp(buf, cmd.desc, 2) == 0 && (buf[2] == 0 || buf[2] == ' ')) {
             cmd.f1(buf);
             return true;
         }

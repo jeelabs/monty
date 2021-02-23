@@ -23,6 +23,13 @@ namespace monty {
 
         static void sweep ();  // reclaim all unmarked objects
         static void dumpAll ();   // like sweep, but only to print all obj+free
+
+        // JT's "Rule of 5"
+        Obj () =default;
+        Obj (Obj&&) =delete;
+        Obj (Obj const&) =delete;
+        auto operator= (Obj&&) -> Obj& =delete;
+        auto operator= (Obj const&) -> Obj& =delete;
     };
 
     struct Vec {
@@ -30,9 +37,6 @@ namespace monty {
         constexpr Vec (void const* ptr, uint32_t num =0)
                     : _data ((uint8_t*) ptr), _capa (num) {}
         ~Vec () { (void) adj(0); }
-
-        Vec (Vec const&) = delete;
-        auto operator= (Vec const&) -> Vec& = delete;
 
         static auto isInPool (void const* p) -> bool;
         auto isResizable () const -> bool {
@@ -52,6 +56,12 @@ namespace monty {
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
+
+        // JT's "Rule of 5"
+        Vec (Vec&&) =delete;
+        Vec (Vec const&) =delete;
+        auto operator= (Vec&&) -> Vec& =delete;
+        auto operator= (Vec const&) -> Vec& =delete;
     };
 
     void gcSetup (void* base, uint32_t size); // configure the memory pool
@@ -349,7 +359,7 @@ namespace monty {
     };
 
     // see https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
-    // explained by Jason Turner: https://www.youtube.com/watch?v=ZQ-8laAr9Dg
+    // see JT's 10 minute video: https://www.youtube.com/watch?v=ZQ-8laAr9Dg
     // it doesn't do much here, just avoids an extra layer of class derivation
 
     // can't use "CG type <object>", this is the start of the type hierarchy
