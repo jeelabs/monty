@@ -1,4 +1,4 @@
-/monty .+/monty {VERS}/
+/monty .*/monty {VERS}/
 main
 123
 hello monty {VERS}
