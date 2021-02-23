@@ -45,5 +45,5 @@ int main () {
     SIZEOF(Vec)
     SIZEOF(Vector)
 
-    return 0;
+    return arch::done();
 }

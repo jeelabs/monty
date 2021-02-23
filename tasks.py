@@ -14,8 +14,8 @@ cfg.read('platformio.ini')
 if "platformio" in cfg and "extra_configs" in cfg["platformio"]:
     for f in cfg["platformio"]["extra_configs"].split():
         cfg.read(f)
+python_skip, runner_skip = [], []
 if "invoke" in cfg:
-    python_skip, runner_skip = [], []
     if "python_skip" in cfg["invoke"]:
         python_skip = cfg["invoke"]["python_skip"].split()
     if "runner_skip" in cfg["invoke"]:

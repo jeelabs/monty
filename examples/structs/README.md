@@ -1,9 +1,9 @@
 Dump the struct sizes of most datatypes in Monty.
 
-To build and run on native (64b), i.e. MacOS or Linux:
+To build and run on MacOS or Linux (64b):
 
 ```text
-$ inv native
+$ inv
    24 b  Array
     8 b  Bool
    24 b  BoundMeth
@@ -29,4 +29,4 @@ $ inv stm32
 $
 ```
 
-The STM32 build expects a Nucleo-L432KC board.
+The STM32 build expects a Nucleo-L432KC board to be connected.

@@ -1,7 +1,7 @@
 # see https://www.pyinvoke.org
 from invoke import task
 
-@task
+@task(default=True)
 def native(c):
     """show struct sizes on native"""
     c.run("pio run -e native -s", pty=True)

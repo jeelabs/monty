@@ -1,4 +1,5 @@
 #include <monty.h>
+#include <arch.h>
 #include <jee.h>
 
 using namespace monty;

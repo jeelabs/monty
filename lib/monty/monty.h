@@ -21,8 +21,8 @@ namespace monty {
         }
         void operator delete (void*);
 
-        static void sweep ();  // reclaim all unmarked objects
-        static void dumpAll ();   // like sweep, but only to print all obj+free
+        static void sweep ();   // reclaim all unmarked objects
+        static void dumpAll (); // like sweep, but only to print all obj+free
 
         // JT's "Rule of 5"
         Obj () =default;

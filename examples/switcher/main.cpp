@@ -1,4 +1,5 @@
 #include <monty.h>
+#include <arch.h>
 #include <jee.h>
 
 using namespace monty;
@@ -23,4 +24,6 @@ int main () {
     Stacklet::tasks.append(new Switcher);
 
     while (Stacklet::runLoop()) {}
+
+    return 0;
 }

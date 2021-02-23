@@ -134,5 +134,5 @@ int main (int argc, char const** argv) {
 
     while (Stacklet::runLoop()) {}
 
-    return 0;
+    return arch::done();
 }
