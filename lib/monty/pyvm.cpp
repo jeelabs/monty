@@ -1321,8 +1321,8 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return coro ? ctx : Value {};
 }
 
-Type Bytecode::info (Q(168,"<bytecode>"));
-Type Callable::info (Q(169,"<callable>"));
+Type Bytecode::info (Q(167,"<bytecode>"));
+Type Callable::info (Q(168,"<callable>"));
 
 //CG< wrappers PyVM
 static auto const m_pyvm_send = Method::wrap(&PyVM::send);
@@ -1334,7 +1334,7 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map, sizeof pyvm_map);
 //CG>
 
-Type PyVM::info (Q(170,"<pyvm>"), &PyVM::attrs);
+Type PyVM::info (Q(169,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
