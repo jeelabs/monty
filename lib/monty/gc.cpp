@@ -175,6 +175,36 @@ namespace monty {
             objLow = objLow->chain;
     }
 
+    void Obj::sweep () {
+        D( printf("\tsweeping ...\n"); )
+        ++gcStats.sweeps;
+        for (auto slot = objLow; slot != nullptr; slot = slot->chain)
+            if (slot->isMarked())
+                slot->clearMark();
+            else if (!slot->isFree()) {
+                auto q = &slot->vt;
+                V(*(Obj*) q, "\t delete");
+                delete (Obj*) q; // weird: must be a ptr *variable* for stm32 builds
+                assert(slot->isFree());
+            }
+    }
+
+    void Obj::dump () {
+        printf("objects: %p .. %p\n", objLow, limit);
+        for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
+            if (slot->chain == 0)
+                break;
+            int bytes = (slot->chain - slot) * sizeof *slot;
+            printf("od: %p %6d b :", slot, bytes);
+            if (slot->isFree())
+                printf(" free\n");
+            else {
+                Value x {(Object const&) slot->vt};
+                x.dump("");
+            }
+        }
+    }
+
     auto Vec::inPool (void const* p) -> bool {
         return start < p && p < vecHigh;
     }
@@ -268,6 +298,41 @@ namespace monty {
         return true;
     }
 
+    void Vec::compact () {
+        D( printf("\tcompacting ...\n"); )
+        ++gcStats.compacts;
+        auto newHigh = (VecSlot*) start;
+        uint32_t n;
+        for (auto slot = newHigh; slot < vecHigh; slot += n)
+            if (slot->isFree())
+                n = slot->next - slot;
+            else {
+                n = slot->vec->slots();
+                if (newHigh < slot) {
+                    slot->vec->_data = newHigh->buf;
+                    memmove(newHigh, slot, n * VS_SZ);
+                }
+                newHigh += n;
+            }
+        vecHigh = newHigh;
+    }
+
+    void Vec::dump () {
+        printf("vectors: %p .. %p\n", start, vecHigh);
+        uint32_t n;
+        for (auto slot = (VecSlot*) start; slot < vecHigh; slot += n) {
+            if (slot->isFree())
+                n = slot->next - slot;
+            else
+                n = slot->vec->slots();
+            printf("vd: %p %6d b :", slot, (int) (n * sizeof *slot));
+            if (slot->isFree())
+                printf(" free\n");
+            else
+                printf(" at %p\n", slot->vec);
+        }
+    }
+
     void gcSetup (void* base, uint32_t size) {
         assert(size > 2 * VS_SZ);
 
@@ -306,38 +371,6 @@ namespace monty {
         return gcMax() < total / 4; // TODO crude
     }
 
-    void Obj::dump () {
-        printf("objects: %p .. %p\n", objLow, limit);
-        for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
-            if (slot->chain == 0)
-                break;
-            int bytes = (slot->chain - slot) * sizeof *slot;
-            printf("od: %p %6d b :", slot, bytes);
-            if (slot->isFree())
-                printf(" free\n");
-            else {
-                Value x {(Object const&) slot->vt};
-                x.dump("");
-            }
-        }
-    }
-
-    void Vec::dump () {
-        printf("vectors: %p .. %p\n", start, vecHigh);
-        uint32_t n;
-        for (auto slot = (VecSlot*) start; slot < vecHigh; slot += n) {
-            if (slot->isFree())
-                n = slot->next - slot;
-            else
-                n = slot->vec->slots();
-            printf("vd: %p %6d b :", slot, (int) (n * sizeof *slot));
-            if (slot->isFree())
-                printf(" free\n");
-            else
-                printf(" at %p\n", slot->vec);
-        }
-    }
-
     void mark (Obj const& obj) {
         if (obj.isCollectable()) {
             auto p = obj2slot(obj);
@@ -349,39 +382,6 @@ namespace monty {
             }
         }
         obj.marker();
-    }
-
-    void Obj::sweep () {
-        D( printf("\tsweeping ...\n"); )
-        ++gcStats.sweeps;
-        for (auto slot = objLow; slot != nullptr; slot = slot->chain)
-            if (slot->isMarked())
-                slot->clearMark();
-            else if (!slot->isFree()) {
-                auto q = &slot->vt;
-                V(*(Obj*) q, "\t delete");
-                delete (Obj*) q; // weird: must be a ptr *variable* for stm32 builds
-                assert(slot->isFree());
-            }
-    }
-
-    void Vec::compact () {
-        D( printf("\tcompacting ...\n"); )
-        ++gcStats.compacts;
-        auto newHigh = (VecSlot*) start;
-        uint32_t n;
-        for (auto slot = newHigh; slot < vecHigh; slot += n)
-            if (slot->isFree())
-                n = slot->next - slot;
-            else {
-                n = slot->vec->slots();
-                if (newHigh < slot) {
-                    slot->vec->_data = newHigh->buf;
-                    memmove(newHigh, slot, n * VS_SZ);
-                }
-                newHigh += n;
-            }
-        vecHigh = newHigh;
     }
 
     void gcReport () {
