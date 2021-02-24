@@ -10,5 +10,5 @@ def native(c):
 @task
 def stm32(c):
     """show struct sizes on stm32"""
-    c.run("pio run -c ../pio-examples.ini -e nucleo-l432 -s", hide=True)
-    c.run("pio device monitor -e nucleo-l432 --quiet", pty=True)
+    c.run("pio run -c ../pio-examples.ini -s", hide=True)
+    c.run("pio device monitor -b115200 --quiet", pty=True)
