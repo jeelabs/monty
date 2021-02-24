@@ -73,15 +73,15 @@ Calling a function or method is done by reserving a "call frame" section on the
 current VM stack context (the interpreter stack that is, _not_ the C stack!).
 These VM stacks are implemented on top of Monty's `Vector` type, and can be
 expanded as needed.  Many VM opcodes are stack-based, performing various
-operations on a small stack within each frame, and they never need to grow the
+operations on a small area within each frame, and they never need to grow the
 VM stack since the proper amount of space has been pre-calculated by the
 bytecode compiler.
 
 The inner loop ends with a check of a _volatile_ global variable, called
 `Stacklet::pending`. If zero, it loops, else it exits. This is the _only_ way in
 which Monty's VM can stop interpreting bytecodes - there are no returns or other
-exists, and there are no non-local jumps (other than "stacklets", which are
-described elsewhere).
+exits, and there are no non-local jumps (other than "stacklets", as described
+elsewhere).
 
 The `pending` variable is used as a set of 32 flag bits, and because they are
 volatile, they can also be set from hardware interrupt handlers. This is how h/w
@@ -91,12 +91,12 @@ a point where such "soft interrupts" are dealt with.
 ## Garbage collection
 
 The garbage collector does two things in Monty: it finds and releases
-unreachable object memory for re-use, and it will compact vector space to make
-optimal use of RAM when vectors are resized.
+unreachable object memory for re-use, and it compacts vector space to make
+optimal use of RAM with resizable vectors.
 
-Vector compaction is driven by some heuristices and automatic, but it requires
-great care, since it can move vector data around and invalidate all pointers
-(in)to these vectors.
+Vector compaction is driven by some heuristices and essentially automatic, but
+it requires great care, since it can move vector data around and invalidate all
+pointers (in)to these vectors.
 
 Since the VM uses vectors for its interpreter stack state and for bytecode,
 these too could move when compaction is triggered. This is avoided by adhering
@@ -106,10 +106,10 @@ to a strict - _and fairly severe_ - rule:
 
 Instead, when space runs low, one of the bits in `pending` is set, which forces
 the VM out of its inner loop as soon as possible. Once ouf of this loop, all
-pointers into the stack (and into the bytecode, which is also a vector) are
-saved as _offsets_ instead of pointers, and then the GC is free to do its thing.
+pointers into the stack and bytecode are saved as _offsets_ instead of pointers,
+and then the GC is free to do its thing.
 
-!> Pointers **into** vector data can (and usually will) become invalid after a
+!> Pointers **into** vector data can (read: will) become invalid after a
 GC cycle.
 
 ## Coroutine switching
@@ -118,26 +118,30 @@ There is a second loop in the VM, called ... very predictably: the "outer loop".
 it handles everything that could not be done inside the inner loop: run the GC
 if requested, decide how to deal with other pending-bit requests, and - if no
 other action is needed - re-enter the inner loop again, to keep bytecode
-execution running as much as possible.
+execution running as long as possible.
 
 This is also where coroutine switching takes place. In Monty, each coroutine has
-its own growable stack (i.e. `Vector`). Or more accurately: each coroutine is a
+its own growable stack (i.e. `Vector`). Or, more accurately: each coroutine is a
 `Stacklet`, which is derived from `Vector`. Stacklets are special in that they
 can be suspended at the C++ level. This allows the VM to suspend in a very
 fundamental way (waiting for I/O, for example), while allowing another coroutine
 to resume execution.
 
-Switching stacklet contexts is done at yet another level, _outside_ the Python
-VM, in the stacklet `runLoop()` code. To make this happen, the VM saves and
-adjusts all relevant data structures and _returns_ to its caller. This is why
-Monty's VM is called "stackless": it does not nest at the C level, it returns to
-its caller to perform context switching, by resuming a different stacklet. That
-stacklet may well be a Python coroutine, in which case the VM will be entered
-afresh.
+Switching stacklet contexts happens at another level, _outside_ the Python VM,
+in the stacklet `runLoop()` code.  That stacklet may well be running a Python
+VM, in which case it will resume where it was suspended.  Stacklets can also be
+used outside of the VM, i.e. for C++ code.
 
-To clarify the distinction: "stacklets" in Monty are a mechanism implemented in
-C++, with the Python VM called inside if this context is about running bytecode.
-The Python VM is not really aware of running as a stacklet. It just gets called
-to execute some bytecode, and returns when that bytecode has finished.
+But Python's _coroutine switching_ is a VM thing.  To make this happen, the VM
+saves and adjusts all relevant data structures and _returns_ to its outer loop.
+This is why Monty's VM is called "stackless": it does not nest at the C level,
+it _returns_ to perform coro switching, by resuming a different coro with its
+own VM stack. This technique is also known as a
+[trampoline](https://en.wikipedia.org/wiki/Trampoline_%28computing%29)
 
-Stacklets can also be used outside of the VM, in pure C++ code.
+To clarify: "stacklets" in Monty are a mechanism implemented in C++, with the
+Python VM called inside if this context is about running bytecode.  The Python
+VM is not really aware of running as a stacklet. It just gets called to execute
+some bytecode, and returns when that bytecode has finished. Coroutine context
+switching is done by returning from the VM, then calling it again with a
+different VM stack.
