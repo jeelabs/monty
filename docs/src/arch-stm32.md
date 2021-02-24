@@ -1,3 +1,3 @@
-# arch-stm32/
+# arch-stm32/\*
 
 Hello STM32.

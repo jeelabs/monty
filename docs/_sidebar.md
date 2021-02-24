@@ -11,8 +11,8 @@
 - **[Source code](src/README.md)**
   - [Conventions](src/conventions.md)
   - [monty/gc.cpp](src/monty-gc.md)
-  - [monty/pyvm.cpp](src/monty-pyvm.md)
-  - [arch-stm32/](src/arch-stm32.md)
+  - [arch-stm32/\*](src/arch-stm32.md)
+  - [extend/\*](src/extend.md)
 - **Links**
   - [Git repository](https://github.com/jeelabs/monty)
   - [Discussions](https://github.com/jeelabs/monty/discussions)
