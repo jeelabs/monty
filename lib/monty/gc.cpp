@@ -1,6 +1,6 @@
 // gc.cpp - objects and vectors with garbage collection
 
-#define VERBOSE_GC 1 // show garbage collector activity
+#define VERBOSE_GC 0 // show garbage collector activity
 
 #include "monty.h"
 #include <cassert>
@@ -252,7 +252,7 @@ namespace monty {
         if (!isResizable())
             return false;
         auto capas = slots();
-        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
+        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0U;
         if (capas != needs) {
             if (needs > capas)
                 gcStats.tvb += (needs - capas) * VS_SZ;
@@ -285,7 +285,7 @@ namespace monty {
                 if (tail == vecHigh) {              // easy resize
                     if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
-                    vecHigh += needs - capas;
+                    vecHigh += (int) (needs - capas);
                 } else if (needs < capas)           // split, free at end
                     splitFreeVec(slot[needs], slot + capas);
                 else if (!tail->isFree() || slot + needs > tail->next) {
@@ -311,33 +311,21 @@ namespace monty {
     }
 
     void Vec::compact () {
-printf("compact! %p %p %lx\n", start, vecHigh, vecHigh - (VecSlot*) start);
-assert((uintptr_t) vecHigh < (uintptr_t) objLow);
         D( printf("\tcompacting ...\n"); )
         ++gcStats.compacts;
         auto newHigh = (VecSlot*) start;
         uint32_t n;
         for (auto slot = newHigh; slot < vecHigh; slot += n)
-{ printf("com %p %p\n", slot, vecHigh);
-assert(slot < vecHigh);
-printf(" free %d\n", slot->isFree());
             if (slot->isFree())
-{ 
                 n = slot->next - slot;
-printf(" n1 %d\n", n);
-}
             else {
                 n = slot->vec->slots();
-printf(" n2 %d\n", n);
                 if (newHigh < slot) {
                     slot->vec->_data = newHigh->buf;
                     memmove(newHigh, slot, n * VS_SZ);
                 }
                 newHigh += n;
             }
-printf("n %d %p %p\n", n, slot, vecHigh);
-assert((uintptr_t) vecHigh < (uintptr_t) objLow);
-}
         vecHigh = newHigh;
         assert((uintptr_t) vecHigh < (uintptr_t) objLow);
     }

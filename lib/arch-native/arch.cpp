@@ -47,6 +47,7 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
-    //free(pool);
+    monty::Stacklet::gcAll();
+    free(pool);
     return 0;
 }
