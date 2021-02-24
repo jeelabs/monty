@@ -637,7 +637,7 @@ namespace monty {
         Tuple (ArgVec const&);
 
         auto data () const -> Value const* {
-            return static_cast<Value const*> ((void const*) (this+1));
+            return reinterpret_cast<Value const*> (this+1);
         }
     };
 
@@ -1085,7 +1085,7 @@ namespace monty {
 
         struct Extra { E code; uint16_t ipOff; Object const* callee; };
         auto extra () const -> Extra& {
-            return *static_cast<Extra*> ((void*) end());
+            return *static_cast<Extra*> ((void*) end()); // TODO yuck!
         }
 
         static auto create (E, ArgVec const&) -> Value; // diff API
