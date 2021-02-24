@@ -194,6 +194,7 @@ namespace monty {
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;
         auto operator ->() const -> Object*;
+
         auto obj () const -> Object& { return *_o; }
         auto asObj () const -> Object&; // create int/str object if needed
         auto asInt () const -> int64_t;
@@ -635,7 +636,9 @@ namespace monty {
         constexpr Tuple () : _fill (0) {}
         Tuple (ArgVec const&);
 
-        auto data () const -> Value const* { return (Value const*) (this + 1); }
+        auto data () const -> Value const* {
+            return static_cast<Value const*> ((void const*) (this+1));
+        }
     };
 
     //CG< type list
@@ -1081,7 +1084,9 @@ namespace monty {
         auto repr (Buffer&) const -> Value override;
 
         struct Extra { E code; uint16_t ipOff; Object const* callee; };
-        auto extra () const -> Extra& { return *(Extra*) end(); }
+        auto extra () const -> Extra& {
+            return *static_cast<Extra*> ((void*) end());
+        }
 
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
