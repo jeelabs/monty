@@ -77,6 +77,39 @@ See Invoke's `tasks.py` for details about how and when code generation is
 triggered. Do not run `codegen.py` manually, as it wants its arguments in a
 specific order - use `inv gen` for this instead.
 
+#### Configuration
+
+The code generator is configured from the `[codegen]` section in the
+`platformio.ini` file:
+
+```
+[codegen]
+all = lib/extend/
+native = lib/arch-native/
+stm32 = lib/arch-stm32/
+```
+
+This section is ignored by PIO itself. It specifies which platform groups
+there are as well as which directories with source should be included in each
+(multiple directories can be listed). The above are the default settings, and
+they specify that:
+
+* the source code in `lib/extend/` should be included in all the builds
+* there is a NATIVE build which includes all the code in `lib/arch-native/`
+* there is an STM32 build which includes all the code in `lib/arch-stm32/`
+
+A convenient way to overrule these settings, is to create a file named
+`platformio-local.ini`:
+
+```
+[codegen]
+all =
+esp32 = lib/arch-esp32/
+```
+
+This "override" example drops the `lib/extend/` sources and adds a third build
+for what is presumably going to contain the code for the ESP32 platform.
+
 ## Git and GitHub
 
 Some quick notes about the workflow used for collaboration and new features:
