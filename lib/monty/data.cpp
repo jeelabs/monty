@@ -27,6 +27,10 @@ constexpr int QID_RAM_LAST = 48*1024;
 static VaryVec qstrBaseMap (qstrBase, qstrBaseLen);
 static VaryVec qstrRamMap;
 
+void monty::qstrCleanup () {
+    qstrRamMap.clear();
+}
+
 auto Q::hash (void const* p, uint32_t n) -> uint32_t {
     // see http://www.cse.yorku.ca/~oz/hash.html
     uint32_t h = 5381;

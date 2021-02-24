@@ -101,6 +101,7 @@ static auto mergeVecs (VecSlot& slot) -> bool {
         tail = tail->next;
     if (tail < vecHigh)
         return false;
+    assert((uintptr_t) &slot < (uintptr_t) objLow);
     vecHigh = &slot;
     return true;
 }
@@ -251,7 +252,7 @@ namespace monty {
         if (!isResizable())
             return false;
         auto capas = slots();
-        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0;
+        auto needs = sz > 0 ? multipleOf<VecSlot>(sz + PTR_SZ) : 0U;
         if (capas != needs) {
             if (needs > capas)
                 gcStats.tvb += (needs - capas) * VS_SZ;
@@ -284,7 +285,7 @@ namespace monty {
                 if (tail == vecHigh) {              // easy resize
                     if ((uintptr_t) (slot + needs) > (uintptr_t) objLow)
                         return panicOutOfMemory(), false;
-                    vecHigh += needs - capas;
+                    vecHigh += (int) (needs - capas);
                 } else if (needs < capas)           // split, free at end
                     splitFreeVec(slot[needs], slot + capas);
                 else if (!tail->isFree() || slot + needs > tail->next) {
@@ -326,6 +327,7 @@ namespace monty {
                 newHigh += n;
             }
         vecHigh = newHigh;
+        assert((uintptr_t) vecHigh < (uintptr_t) objLow);
     }
 
     void Vec::dumpAll () {
@@ -392,6 +394,7 @@ namespace monty {
                     return;
                 V(obj, "\t mark");
                 p->setMark();
+assert((uintptr_t) vecHigh < (uintptr_t) objLow);
             }
         }
         obj.marker();

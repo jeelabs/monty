@@ -46,6 +46,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
         assert(tickerId > 0);
     } else {
         tickEvent.deregHandler();
+        tickEvent.clear();
         tickerId = 0;
     }
     return tickEvent;

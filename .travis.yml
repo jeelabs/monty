@@ -32,7 +32,7 @@ script:
 
   # native invoke tasks
   - inv test
-  - inv python
+  - inv python -i gcoll
 
   # embedded builds
   - inv builds

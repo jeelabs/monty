@@ -89,7 +89,7 @@ void Event::set () {
         if (_id >= 0)
             queued -= n;
         assert(queued >= 0);
-        _queue.remove(0, n);
+        _queue.clear();
     }
 }
 
