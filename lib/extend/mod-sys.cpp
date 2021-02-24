@@ -26,15 +26,13 @@ static auto f_gcmax (ArgVec const& args) -> Value {
     return gcMax();
 }
 
-static List gcdata; // keep this around to avoid reallocating on each call
-
 //CG1 bind gcstats
 static auto f_gcstats (ArgVec const& args) -> Value {
     assert(args._num == 0);
-    gcdata._fill = 0;
+    auto data = new List;
     for (auto e : gcStats.v)
-        gcdata.append(e);
-    return gcdata;
+        data->append(e);
+    return data;
 }
 
 //CG< wrappers

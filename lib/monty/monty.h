@@ -94,6 +94,7 @@ namespace monty {
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
+    void qstrCleanup ();
 
     struct Q {
         constexpr Q (uint16_t i, char const* =nullptr) : _id (i) {}
@@ -334,6 +335,8 @@ namespace monty {
 
         auto pop () -> T { return pull(_fill-1); } // pull from end
 
+        void clear () { _fill = 0; adj(0); }
+
         using Vec::compact; // allow public access
     };
 
@@ -565,6 +568,7 @@ namespace monty {
                     : ByteVec ((uint8_t const*) ptr, num) {}
 
         using ByteVec::size;
+        using ByteVec::clear;
 
         auto first () const -> uint8_t const* { return begin(); }
         auto limit () const -> uint8_t const* { return begin() + pos(_fill); }
@@ -654,7 +658,6 @@ namespace monty {
         //CG: wrap List pop append clear
         auto pop (int idx) -> Value;
         void append (Value v);
-        Value clear () { remove(0, size()); return {}; }
 
         auto len () const -> uint32_t override { return _fill; }
         auto getAt (Value k) const -> Value override;
@@ -803,7 +806,7 @@ namespace monty {
     struct Inst : Dict {
         static auto create (ArgVec const&, Type const*) -> Value;
         static Lookup const attrs;
-        static Type const info;
+        static Type info;
         auto repr (Buffer&) const -> Value override;
 
         auto type () const -> Type const& override { return *(Type*) _chain; }

@@ -9,7 +9,7 @@ using namespace monty;
 Tuple const Tuple::emptyObj;
 Value const monty::Empty {Tuple::emptyObj};
 
-Type const Inst::info (Q(171,"<instance>"));
+Type Inst::info (Q(171,"<instance>"));
 
 Lookup const Bytes::attrs;
 Lookup const Class::attrs;

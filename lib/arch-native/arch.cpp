@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <ctime>
 
+using namespace monty;
+
 static void* pool;
 
 static auto loadFile (char const* name) -> uint8_t const* {
@@ -37,8 +39,8 @@ void arch::init (int size) {
     if (size <= 0)
         size = 1024*1024; // allocate a whopping 1 Mb
     pool = malloc(size);
-    monty::gcSetup(pool, size);
-    monty::Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
+    gcSetup(pool, size);
+    Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
 }
 
 void arch::idle () {
@@ -46,8 +48,26 @@ void arch::idle () {
     nanosleep(&ts, &ts); // 100 µs, i.e. 10% of ticks' 1 ms resolution
 }
 
+static void cleanup () {
+    Event::triggers.clear();
+    Stacklet::tasks.clear();
+    Module::builtins.clear();
+    Module::loaded.clear();
+    qstrCleanup();
+}
+
 auto arch::done () -> int {
-    monty::Stacklet::gcAll();
-    free(pool);
+    cleanup();
+    Stacklet::gcAll();
+    //gcReport();
+    //Object::dumpAll();
+    //Vec::dumpAll();
+
+    // TODO
+    // unfortunately, free() will fail if *any* vector still has non-zero size,
+    // because then its destructor will try to clean up - there is one unsolved
+    // riddle as of 2021-02-24, which exits -9 on scripts mod_machine.cpp
+    //free(pool);
+
     return 0;
 }
