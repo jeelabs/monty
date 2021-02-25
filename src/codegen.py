@@ -278,10 +278,10 @@ hiddenTypes = []
 # generate the header of an exposed type
 def TYPE(block, tag, *_):
     line = block[0].split()
-    name, base = line[1], line[3:-1]
+    name, base = line[1], line[line.index(":")+1:-1]
     base = ' '.join(base) # accept multi-word, e.g. protected
     out = [
-        'struct %s : %s {' % (name, base),
+        block[0].strip(),
         '    static auto create (ArgVec const&,Type const* =nullptr) -> Value;',
         '    static Lookup const attrs;',
         '    static Type info;',
