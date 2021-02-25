@@ -394,7 +394,6 @@ namespace monty {
                     return;
                 V(obj, "\t mark");
                 p->setMark();
-assert((uintptr_t) vecHigh < (uintptr_t) objLow);
             }
         }
         obj.marker();
