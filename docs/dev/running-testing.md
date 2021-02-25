@@ -237,7 +237,7 @@ inv clean test python upload flash mrfs runner builds examples
 ```
 
 By default, this assumes that a Nucleo-L432 has been plugged into USB.  
-As of end February 2021, this full test will complete in under a minute:
+The full test will complete in under a minute:
 
 ```text
 $ inv all

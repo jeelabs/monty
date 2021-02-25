@@ -4,7 +4,7 @@ A **stacklet** is a freshly-baked term used in Monty to describe "a concurrent
 C++ task", similar to a [green
 thread](https://en.wikipedia.org/wiki/Green_threads) or a
 [goroutine](https://golangr.com/goroutines/) in Go. Stacklets enable
-_collaborative_ multi-tasking, i.e. switching contexts _voluntarily_.
+_cooperative_ multi-tasking, i.e. switching contexts _voluntarily_.
 
 The underlying mechanism uses `setjmp` & `longjmp` from the standard C library
 and is - in principle - completely portable (all the hard works is done in those
@@ -69,7 +69,7 @@ only thing left to do is to power-down (or exit).
 
 ## Hardware interrupts
 
-Stacklets are collaborative, which means they don't really care about hardware
+Stacklets are cooperative, which means they don't really care about hardware
 interrupts, they just pass control between them as they wish.  Still, in
 embedded context, hardware interrupts are a key feature.
 

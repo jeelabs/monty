@@ -16,7 +16,7 @@ There are currently two different extension categories in here:
 This module can hardly be called "optional", as it provides functionality which
 is essential for certain tasks in Python (and `sys.tasks` is one of them ...).
 
-As of end Feb 2021, the `sys` module has the following attributes:
+The `sys` module has the following attributes:
 
 * `sys.event` - create a new event object, for coro/task synchronisation
 * `sys.gc` - trigger an object garbage collection and vector compaction
@@ -78,7 +78,7 @@ The "V" type is unusual in that each entry is variable-sized. Each of the
 entries is a `bytes` object (i.e. `struct Bytes` in C++).
 
 This array type is called a "VaryVec" in Monty. Internally, it's all based on a
-a byte array, with an "index" (i.e. table of offsets) at the start, followed by
+byte array, with an "index" (i.e. table of offsets) at the start, followed by
 all the array entries. This too is a very compact representation, as it's all
 fitted into a single `ByteVec` in memory, but there are several trade-offs:
 

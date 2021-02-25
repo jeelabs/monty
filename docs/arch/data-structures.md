@@ -97,9 +97,9 @@ The "dict" is another important data structure, used as base class for a few
 other types. It builds on `Set` (and `List`) in that it too contains a number of
 elements, but in this case the elements are keys and associated values.
 
-?> Right now (early 2021), key lookup in Monty is very inefficient for
-non-trivial sets and dicts, as it uses _linear search_. This is clearly an example where
-hashing could greatly improve performance.
+?> Key lookup in Monty is currently very inefficient for non-trivial sets and
+dicts, as it uses _linear search_. This is a case where hashing could greatly
+improve performance.
 
 Like lists, dicts have a size, but this size is no longer related to the length
 of the underlying vector. Instead, "size" now means "number of keys" (or values,

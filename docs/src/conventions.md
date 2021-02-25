@@ -23,20 +23,21 @@
 
 * no braces around single statements
 * opening brace at end of previous line
-* space after if, while, etc keywords
+* space after if, while, for, switch keywords
 * empty body in for/while is written as {}, not ; and placed on same line
 * space after comma, not after ( or before )
 * space after name in **declarations** of functions and arrays
 * no space after name in their **actual use**, i.e. in calls and indexing
-* `template` is placed on a separate line, before the class/function
+* names of member variables which imply `this` start with an underscore
+* a `struct` is a class with public visibility, no need for "class ... public:"
+* `template` is placed on a separate line, before the struct / function
 * only "auto" or "void" in front of function decl, return type placed after `->`
 * `const` comes after the type, aka the "east const" convention
 * pointer declarations are written as `int* v` iso `int *v`
 * short methods are defined inline, without adding "inline" keyword
-* local functions defined as static, this helps the compiler optimise
-* a `struct` is a class with public visibility, no need for "class ... public:"
-* hard tabs set to 8, indents set to 4
-* line lengths limited to 80 where possible
+* file-local functions defined as static, this helps the compiler optimise
+* hard tabs are set to 8, indents are set to 4
+* line lengths limited to 80 as much as possible
 * comments use `// ...`, preferred over /\*...\*/
 
 ## Code generation
@@ -75,7 +76,7 @@ Then, in `qstr.cpp`, all these ids and strings are dumped in `VaryVec` format.
 
 See Invoke's `tasks.py` for details about how and when code generation is
 triggered. Do not run `codegen.py` manually, as it wants its arguments in a
-specific order - use `inv gen` for this instead.
+specific order - use `inv generate` for this.
 
 #### Configuration
 
@@ -84,9 +85,9 @@ The code generator is configured from the `[codegen]` section in the
 
 ```
 [codegen]
-all = lib/extend/
+all = lib/extend/ lib/pyvm/
 native = lib/arch-native/
-stm32 = lib/arch-stm32/
+stm32 = lib/arch-stm32/ lib/mrfs
 ```
 
 This section is ignored by PIO itself. It specifies which platform groups
@@ -94,21 +95,21 @@ there are as well as which directories with source should be included in each
 (multiple directories can be listed). The above are the default settings, and
 they specify that:
 
-* the source code in `lib/extend/` should be included in all the builds
+* the source code in `lib/extend/` and `lib/pyvm/` is included in all the builds
 * there is a NATIVE build which includes all the code in `lib/arch-native/`
-* there is an STM32 build which includes all the code in `lib/arch-stm32/`
+* there is an STM32 build with code from `lib/arch-stm32/` and `lib/mrfs/`
 
 A convenient way to overrule these settings, is to create a file named
 `platformio-local.ini`:
 
 ```
 [codegen]
-all =
+all = lib/pyvm/
 esp32 = lib/arch-esp32/
 ```
 
 This "override" example drops the `lib/extend/` sources and adds a third build
-for what is presumably going to contain the code for the ESP32 platform.
+for what is presumably going to contain the platform-specific code for ESP32.
 
 ## Library dependencies
 
@@ -148,8 +149,7 @@ specify precisely which sources will be included in each platform build.
 [LDF]: https://docs.platformio.org/en/latest/librarymanager/ldf.html
 [OLR]: https://platformio.org/lib
 
-As of end Feb 2021, the dependency graph reported by PIO for an STM32 build is
-as follows:
+The dependency graph reported by PIO for an STM32 build is as follows:
 
 ```text
 Dependency Graph
