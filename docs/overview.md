@@ -1,8 +1,7 @@
 # Monty - a stackless VM for µCs
 
 !> **Feb 2021** - This project is in its early stages and has limited
-documentation.  
-The sidebar is gradually being filled in, though many aspects are still in flux.
+documentation.
 
 **Monty** is a Virtual Machine which runs bytecode produced by [MicroPython][MPY].  
 It's grossly incomplete and totally unfit for general use, but ... it _does_ work.  
