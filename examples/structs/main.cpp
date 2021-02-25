@@ -1,6 +1,8 @@
 #include <monty.h>
 #include <arch.h>
 
+#include <extend.h> // TODO this dependency should be automated!
+
 using namespace monty;
 
 #define SIZEOF(name) printf("%5d b  %s\n", (int) sizeof (name), #name);

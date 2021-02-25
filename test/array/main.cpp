@@ -1,6 +1,8 @@
 #include <monty.h>
 #include <unity.h>
 
+#include <extend.h> // TODO this dependency should be automated!
+
 #ifndef UNITY_SUPPORT_64
 #undef TEST_ASSERT_EQUAL_INT64
 #define TEST_ASSERT_EQUAL_INT64(x,y) TEST_ASSERT((int64_t) (x) == (int64_t) (y))

@@ -167,7 +167,7 @@ def runner(c, ignore, tests=""):
         iflag = "-i " + ",".join(ignore)
     c.run("src/runner.py %s pytests/%s.py" % (iflag, match), pty=True)
 
-@task
+@task(generate)
 def builds(c):
     """show µC build sizes, w/ and w/o assertions or Python VM"""
     c.run("pio run -t size | tail -8 | head -2")
