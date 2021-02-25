@@ -365,7 +365,7 @@ void arch::idle () {
 }
 
 auto arch::done () -> int {
-    monty::Stacklet::gcAll();
+    //monty::Stacklet::gcAll();
     HexSerial::magic() = 0; // clear boot command buffer
     wait_ms(10);
     systemReset(); // will resume the cli task with a clean slate
