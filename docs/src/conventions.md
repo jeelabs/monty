@@ -114,7 +114,7 @@ for what is presumably going to contain the code for the ESP32 platform.
 
 PlatformIO has a sophisticated (complex?) [Library Dependency Finder][LDF]
 mechanism built-in. In theory, it'll automagically figure out all the code
-dependencies and even download any libraries from its ever-growing [online
+dependencies and even downloads any libraries from its ever-growing [online
 library registry][OLR], but in practice this doesn't always work as expected.
 
 The good news is that by adhering to a few conventions, things do tend to work
@@ -138,7 +138,7 @@ in a build:
 * each such include file is searched in `lib/*/` (with the above filtering
   applied)
 * then, if `bar.h` is found in `lib/foo/bar.h`, both `lib/foo/bar.h` and
-  `lib/foo/bar.cpp` (if present) are scanned for additional `#include`
+  `lib/foo/bar.cpp` (if present) will be scanned for additional `#include`
   directives
 * lastly, PIO will recursively repeat the search for those headers as well
 
@@ -166,7 +166,19 @@ Dependency Graph
 |-- <monty>
 ```
 
-These dependencies are de-duplicated so that each library is only built once,
+Whereas the default native build pulls in less code:
+
+```text
+Dependency Graph
+|-- <arch-native>
+|   |-- <extend>
+|   |   |-- <monty>
+|   |-- <monty>
+|   |-- <pyvm>
+|   |   |-- <monty>
+```
+
+All these dependencies are de-duplicated, i.e. each library is only built once
 and then re-used.
 
 ## Git and GitHub
