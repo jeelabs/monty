@@ -175,11 +175,13 @@ void Stacklet::suspend (Vector& queue) {
         longjmp(*resumer, 1);
     }
 
-    // resuming: copy stack back in
-    assert(resumer != nullptr);
-    assert(current != nullptr);
-    need = (uint8_t*) resumer - (uint8_t*) &top;
-    duff(&top, current->end(), need);
+    // resuming: copy stack back in - this code runs after setjmp returns, and
+    // must be very careful to NOT re-use information still saved in registers!
+    volatile auto c = current; // let's not make current volatile everywhere
+    auto n = (uint8_t*) resumer - (uint8_t*) &top;
+
+    assert(c != nullptr);
+    duff(&top, c->end(), n);
 }
 
 auto Stacklet::runLoop () -> bool {
