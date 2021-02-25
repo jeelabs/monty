@@ -1,5 +1,7 @@
 #include <monty.h>
 
+#include <extend.h> // TODO this dependency is awkward, see "Array" below
+
 #include <jee.h>
 #include "jee-stm32.h"
 #include "jee-rf69.h"
@@ -88,6 +90,8 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
 
     auto recv (ArgVec const& args) -> Value {
         assert(args._num == 2);
+        // TODO Array is in lib/extend/ - one idea is to add a "CG if Array"
+        //  so that this could be switched over to use Bytes if not available
         auto& a = args[1].asType<Array>();
         assert(a.size() >= 4);
         auto r = receive(a.begin()+4, a.size()-4);
@@ -100,7 +104,7 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
 
     auto xmit (ArgVec const& args) -> Value {
         assert(args._num == 2 && args[0].isInt());
-        auto& a = args[1].asType<Array>();
+        auto& a = args[1].asType<Array>(); // TODO in lib/extend/ - see above
         send(args[0], a.begin(), a.size());
         return {};
     }

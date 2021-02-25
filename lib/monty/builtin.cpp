@@ -3,6 +3,8 @@
 #include "monty.h"
 #include <cassert>
 
+#include <extend.h> // TODO this dependency should be automated!
+
 using namespace monty;
 
 //CG1 bind print

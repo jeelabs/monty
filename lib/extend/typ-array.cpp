@@ -1,6 +1,7 @@
 // array.cpp - arrays, dicts, and other derived types
 
 #include "monty.h"
+#include "typ-array.h"
 #include <cassert>
 
 using namespace monty;
