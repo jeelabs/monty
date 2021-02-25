@@ -21,7 +21,7 @@ The `arch.h` file is included from `main()`. This tells PIO to include all the
 sources in this directory in the build. The idea is simple: put definitions in
 `arch.h` and their implementation in, say, `arch.cpp`.
 
-## Namespace "arch"
+## namespace arch
 
 By placing all the definitions in a namespace, the function names can be kept
 short and to the point:
@@ -38,7 +38,7 @@ short and to the point:
 Additional code can be added if more functionality is needed which is either not
 available on other platforms, or requires a (very) different implementation.
 
-## Console and commands
+## console commands
 
 The Nucleo includes an on-board "ST-Link" which is used to upload new code to
 the µC, to provide a JTAG debugger interface, and as a virtual serial USB port
@@ -97,7 +97,7 @@ The Intel HEX upload facility is used by the Python test "runner" (`runner.py`)
 to send bytecode to the µC and then execute it. It's also used by `mrfs.py` to
 re-flash the stored MRFS data files.
 
-## Module "machine"
+## module machine
 
 The `machine` module is for use from Python. It currently defines the following:
 
