@@ -1,5 +1,6 @@
 // Monty, a stackless VM - main header
 
+#pragma once
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>

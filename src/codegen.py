@@ -17,6 +17,18 @@ archs = {}          # list of qstr details per architecture
 mods  = {"": []}    # list of extension module names per architecture
 funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
+dirs  = {}          # map of scanned dirnames to path, see IF
+
+# comment lines in or out, depending on a condition
+def IF(block, typ, arg):
+    include = typ == "dir" and arg in dirs
+    out = []
+    for line in block:
+        line = line.lstrip(" /")
+        if not include:
+            line = "//" + line
+        out.append(line)
+    return out
 
 # define the module name which applies to next bind/wrap/wrappers
 def MODULE(block, mod):
@@ -551,8 +563,11 @@ if __name__ == '__main__':
     # identify the separately-processed files
     sepFiles, root = [], None
     for arg in sys.argv:
-        if not root and os.path.isdir(arg):
-            root = arg # remember first one
+        if os.path.isdir(arg):
+            bn = os.path.basename(arg.rstrip("/"))
+            dirs[bn] = arg
+            if not root:
+                root = arg # remember first one
         if arg[0] != "+":
             sepFiles.append(arg)
     assert root, "no directory arg found"

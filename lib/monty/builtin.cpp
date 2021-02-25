@@ -3,7 +3,8 @@
 #include "monty.h"
 #include <cassert>
 
-#include <extend.h> // TODO this dependency should be automated!
+//CG1 if dir extend
+#include <extend.h>
 
 using namespace monty;
 

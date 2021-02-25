@@ -1,19 +1,23 @@
 #include <monty.h>
 #include "arch.h"
 
-#include <extend.h>
-#include <mrfs.h>
-
 #include <jee.h>
 #include <jee/text-ihex.h>
 
 #include <cassert>
 #include <unistd.h>
 
-using namespace monty;
+//CG1 if dir extend
+#include <extend.h> // this triggers PIO to include lib/extend/
 
+//CG< if dir mrfs
+#define HAS_MRFS 1
+#include <mrfs.h>
 const auto mrfsBase = (mrfs::Info*) 0x08020000;
 const auto mrfsSize = 32*1024;
+//CG>
+
+using namespace monty;
 
 #if STM32F103xB
 UartBufDev< PinA<2>, PinA<3>, 100 > console;
@@ -182,10 +186,12 @@ struct HexSerial : LineSerial {
                         memcpy(persist + 4 + ihex.addr, ihex.data, ihex.len);
                         last = ihex.addr + ihex.len;
                         break;
+#if HAS_MRFS
                 case 2: // flash offset
                         offset = (uint32_t) mrfsBase +
                                     (ihex.data[0]<<12) + (ihex.data[1]<<4);
                         break;
+#endif
                 case 1: // end of hex input
                         if (magic() == MagicStart) {
                             if (offset != 0) {
@@ -296,7 +302,9 @@ Command const commands [] = {
     { "di    show device info"             , di_cmd },
     { "gc    trigger garbage collection"   , Stacklet::gcAll },
     { "gr    generate a GC report"         , gcReport },
+#if HAS_MRFS
     { "ls    list files in MRFS"           , mrfs::dump },
+#endif
     { "od    object dump"                  , Object::dumpAll },
     { "pd    power down"                   , pd_cmd },
     { "sr    system reset"                 , systemReset },
@@ -331,8 +339,13 @@ auto arch::cliTask() -> Stacklet* {
 }
 
 auto monty::vmImport (char const* name) -> uint8_t const* {
+#if HAS_MRFS
     auto pos = mrfs::find(name);
     return pos >= 0 ? (uint8_t const*) mrfsBase[pos].name : nullptr;
+#else
+    (void) name;
+    return nullptr;
+#endif
 }
 
 void arch::init (int size) {
@@ -345,8 +358,10 @@ void arch::init (int size) {
 
     printf("\n"); // TODO yuck, the uart TX sends a 0xFF junk char after reset
 
+#if HAS_MRFS
     mrfs::init(mrfsBase, mrfsSize);
     //mrfs::dump();
+#endif
 
     // negative sizes indicate required amount to not allocate
     if (size <= 0) {
