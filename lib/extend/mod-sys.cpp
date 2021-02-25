@@ -42,20 +42,20 @@ static Function const fo_gcmax (f_gcmax);
 static Function const fo_gcstats (f_gcstats);
 
 static Lookup::Item const sys_map [] = {
-    { Q(173,"event"), fo_event },
-    { Q(174,"gc"), fo_gc },
-    { Q(175,"gcmax"), fo_gcmax },
-    { Q(176,"gcstats"), fo_gcstats },
+    { Q(170,"event"), fo_event },
+    { Q(171,"gc"), fo_gc },
+    { Q(172,"gcmax"), fo_gcmax },
+    { Q(173,"gcstats"), fo_gcstats },
 //CG>
-    { Q(178,"tasks"), Stacklet::tasks },
-    { Q(179,"modules"), Module::loaded },
+    { Q(175,"tasks"), Stacklet::tasks },
+    { Q(176,"modules"), Module::loaded },
     { Q( 63,"builtins"), Module::builtins },
-    { Q(180,"implementation"), Q(181,"monty") },
+    { Q(177,"implementation"), Q(178,"monty") },
 #ifdef VERSION
-    { Q(182,"version"), VERSION },
+    { Q(179,"version"), VERSION },
 #endif
 };
 
 //CG2 module-end
 static Lookup const sys_attrs (sys_map, sizeof sys_map);
-Module ext_sys (Q(177,"sys"), sys_attrs);
+Module ext_sys (Q(174,"sys"), sys_attrs);

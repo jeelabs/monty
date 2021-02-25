@@ -1,14 +1,12 @@
 #include <monty.h>
 #include "arch.h"
 
-#include <jee.h>
-#include <jee/text-ihex.h>
-
-#include <cassert>
-#include <unistd.h>
-
 //CG1 if dir extend
-#include <extend.h> // this triggers PIO to include lib/extend/
+#include <extend.h>
+
+//CG2 if dir pyvm
+#define HAS_PYVM 1
+#include <pyvm.h>
 
 //CG< if dir mrfs
 #define HAS_MRFS 1
@@ -16,6 +14,12 @@
 const auto mrfsBase = (mrfs::Info*) 0x08020000;
 const auto mrfsSize = 32*1024;
 //CG>
+
+#include <cassert>
+#include <unistd.h>
+
+#include <jee.h>
+#include <jee/text-ihex.h>
 
 using namespace monty;
 
@@ -318,26 +322,32 @@ static auto execCmd (char const* buf) -> bool {
             cmd.f1(buf);
             return true;
         }
+#if HAS_PYVM
     auto data = vmImport(buf);
     if (data != nullptr) {
         auto p = vmLaunch(data);
         assert(p != nullptr);
         Stacklet::tasks.append(p);
-    } else
-        for (auto& cmd : commands)
-            printf("  %s\n", cmd.desc);
+        return true;
+    }
+#endif
+    for (auto& cmd : commands)
+        printf("  %s\n", cmd.desc);
     return true;
 }
 
 auto arch::cliTask() -> Stacklet* {
+#if HAS_PYVM
     auto task = vmLaunch((uint8_t const*) HexSerial::bootCmd());
     if (task != nullptr) {
         HexSerial::magic() = 0; // only load saved data once
         return task;
     }
+#endif
     return new HexSerial (execCmd);
 }
 
+#if HAS_PYVM
 auto monty::vmImport (char const* name) -> uint8_t const* {
 #if HAS_MRFS
     auto pos = mrfs::find(name);
@@ -347,6 +357,7 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     return nullptr;
 #endif
 }
+#endif
 
 void arch::init (int size) {
     console.init();

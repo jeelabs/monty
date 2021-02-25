@@ -4,6 +4,10 @@
 //CG1 if dir extend
 #include <extend.h>
 
+//CG2 if dir pyvm
+#define HAS_PYVM 1
+#include <pyvm.h>
+
 #include <cassert>
 #include <cstdio>
 #include <ctime>
@@ -11,6 +15,8 @@
 using namespace monty;
 
 static void* pool;
+
+#if HAS_PYVM
 
 static auto loadFile (char const* name) -> uint8_t const* {
     auto fp = fopen(name, "rb");
@@ -35,13 +41,21 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
     return loadFile(buf);
 }
 
+#else
+auto monty::vmLaunch (void const*) -> Stacklet* {
+    return nullptr;
+}
+#endif
+
 void arch::init (int size) {
     setbuf(stdout, nullptr);
     if (size <= 0)
         size = 1024*1024; // allocate a whopping 1 Mb
     pool = malloc(size);
     gcSetup(pool, size);
+#if HAS_PYVM
     Event::triggers.append(0); // TODO yuck, reserve 1st entry for VM
+#endif
 }
 
 void arch::idle () {
@@ -64,10 +78,8 @@ auto arch::done () -> int {
     //Object::dumpAll();
     //Vec::dumpAll();
 
-    // TODO
-    // unfortunately, free() will fail if *any* vector still has non-zero size,
-    // because then its destructor will try to clean up - there is one unsolved
-    // riddle as of 2021-02-24, which exits -9 on scripts mod_machine.cpp
+    // TODO unfortunately, free() will fail if *any* vector still has non-zero
+    // size, because then its destructor will try to clean up free'd memory
     //free(pool);
 
     return 0;
