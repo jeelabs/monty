@@ -1,7 +1,7 @@
 # Conventions
 
 ## Directory layout
-```
+```text
 ├── docs/               # this documentation
 ├── examples/
 │   ├── blinker/        # minimal stacklet demo, see the README
@@ -109,6 +109,65 @@ esp32 = lib/arch-esp32/
 
 This "override" example drops the `lib/extend/` sources and adds a third build
 for what is presumably going to contain the code for the ESP32 platform.
+
+## Library dependencies
+
+PlatformIO has a sophisticated (complex?) [Library Dependency Finder][LDF]
+mechanism built-in. In theory, it'll automagically figure out all the code
+dependencies and even download any libraries from its ever-growing [online
+library registry][OLR], but in practice this doesn't always work as expected.
+
+The good news is that by adhering to a few conventions, things do tend to work
+out quite well:
+
+* list all _external_ libraries in `platformio.ini` as `lib_deps = ...`
+  dependencies
+* group all other sources in subdirectories of `lib/`, next to `lib/monty/`
+* make sure `lib_compat_mode = strict` is set, for proper platform-specific
+  filtering
+* add `library.json` to tag platform-specific code (e.g.
+  `lib/arch-stm32/library.json`)
+* precisely *one* header file called `arch.h` should be applicable after
+  applying these rules
+* the main application code must have an `#include <arch.h>` line in it
+
+This _appears to be_ how PIO decides which libraries are included
+in a build:
+
+* all source files in the `src/` directory are scanned for `#include` directives
+* each such include file is searched in `lib/*/` (with the above filtering
+  applied)
+* then, if `bar.h` is found in `lib/foo/bar.h`, both `lib/foo/bar.h` and
+  `lib/foo/bar.cpp` (if present) are scanned for additional `#include`
+  directives
+* lastly, PIO will recursively repeat the search for those headers as well
+
+In Monty, these rules work together with the code generator's configuration to
+specify precisely which sources will be included in each platform build.
+
+[LDF]: https://docs.platformio.org/en/latest/librarymanager/ldf.html
+[OLR]: https://platformio.org/lib
+
+As of end Feb 2021, the dependency graph reported by PIO for an STM32 build is
+as follows:
+
+```text
+Dependency Graph
+|-- <JeeH> 1.19.0
+|-- <arch-stm32>
+|   |-- <JeeH> 1.19.0
+|   |-- <extend>
+|   |   |-- <monty>
+|   |-- <monty>
+|   |-- <mrfs>
+|   |   |-- <JeeH> 1.19.0
+|   |-- <pyvm>
+|   |   |-- <monty>
+|-- <monty>
+```
+
+These dependencies are de-duplicated so that each library is only built once,
+and then re-used.
 
 ## Git and GitHub
 
