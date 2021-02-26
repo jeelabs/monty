@@ -44,7 +44,7 @@ remain the same for the copy-out/-in to work. This is easily enforced by making
 sure that `Stacklet::runLoop()` only appears _once_ in the entire C++
 application.
 
-Since stacklets are a concerrency mechanism, they need a way to synchronise in a
+Since stacklets are a concurrency mechanism, they need a way to synchronise in a
 robust way. This is accomplished with `Event` objects (as in Python's `asyncio`).
 A stacklet can "wait" on an event, "set" it, or "clear" it. When waiting on an
 event which is not currently set, the stacklet is placed on the event's queue,
@@ -89,6 +89,12 @@ triggers their associated events (i.e. "sets" them). This in turn will make all
 waiting stacklets runnable again, so when the run loop continue, it will start
 each of these stacklets in sequence. If new pending bits are set, the process
 repeats itself, always causing the triggered stacklets to run first.
+
+?> Hardware interrupts are never disabled in Monty (except if the µC does not
+support atomic bit setting and clearing, as on ARM Cortex-M0). This avoids any
+interrupt latency, but it also means that C++ interrupt code cannot access data
+stored in vectors (which can move). The way C++ interrupt code synchronises with
+stacklet / VM code is through the pending bits.
 
 Due to the delay between a hardware interrupt routine _asking_ for attention,
 and the actual stacklet dealing with the request, there are clearly limits on

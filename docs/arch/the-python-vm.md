@@ -39,12 +39,12 @@ suitable for execution by the Monty VM.
 ## Quick strings
 
 Another aspect of the bytecode, is that it works with [string
-interning](String_interning) as a way to avoid duplication of strings and to
-speed up lookups: when you know that a string can only exist in a single copy in
-the entire system, then string equality is a matter of simplify comparing
-pointers (or a table index).
+interning](https://en.wikipedia.org/wiki/String_interning) as a way to avoid
+duplication of strings and to speed up lookups: when you know that a string can
+only exist in a single copy in the entire system, then string equality is a
+matter of simplify comparing pointers (or a table index).
 
-As part of the build of Monty itself, a code generator will scan through all the
+As part of the build of Monty itself, a code generator scans through all the
 strings in the source code, assign an ID to each unique string, and build a
 table which is used at runtime to support this quick lookup and matching. Like
 MicroPython, Monty calls them _quick strings_ or "qstrs".
@@ -81,7 +81,7 @@ The inner loop ends with a check of a _volatile_ global variable, called
 `Stacklet::pending`. If zero, it loops, else it exits. This is the _only_ way in
 which Monty's VM can stop interpreting bytecodes - there are no returns or other
 exits, and there are no non-local jumps (other than "stacklets", as described
-elsewhere).
+elsewhere). The VM code also never recurses, i.e. it never calls itself.
 
 The `pending` variable is used as a set of 32 flag bits, and because they are
 volatile, they can also be set from hardware interrupt handlers. This is how h/w
@@ -94,7 +94,7 @@ The garbage collector does two things in Monty: it finds and releases
 unreachable object memory for re-use, and it compacts vector space to make
 optimal use of RAM with resizable vectors.
 
-Vector compaction is driven by some heuristices and essentially automatic, but
+Vector compaction is driven by some heuristics and essentially automatic, but
 it requires great care, since it can move vector data around and invalidate all
 pointers (in)to these vectors.
 
@@ -113,6 +113,9 @@ and then the GC is free to do its thing.
 GC cycle.
 
 ## Coroutine switching
+
+?> To understand the following paragraphs, it may help to note that stacklets
+are a C++ mechanism, while coroutines are a Python VM concept.
 
 There is a second loop in the VM, called ... very predictably: the "outer loop".
 it handles everything that could not be done inside the inner loop: run the GC
