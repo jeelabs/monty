@@ -29,7 +29,7 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 » This is experimental code: some things work, many don't, asserts will fail  
 
 **Requirements**  
-» [MP cross compiler][MPX] for bytecode generation  
+» [MPy cross compiler][MPX] for bytecode generation  
 » [PlatformIO][PIO] for native and embedded builds  
 » [PyInvoke][INV] for general development workflow  
 » Good familiarity with C++11 and Python 3  
@@ -43,3 +43,92 @@ The source code & docs are in the public domain and are [available on GitHub][GI
 [PIO]: https://docs.platformio.org/en/latest/
 [MPX]: https://github.com/micropython/micropython/tree/master/mpy-cross
 [INV]: https://www.pyinvoke.org/
+
+## So what is Monty?
+
+Today's microcontrollers (µCs) are amazing wonders of technology, with their ability
+to connect to the real world and to autonomously perform complex tasks, while
+drawing only milliwatts of energy, or even mere microwatts when idle. This domain
+called
+[Physical Computing][PHY] is now easily in range of the interested amateur and
+hobbyist, as all the "Arduino" and "Raspberry" projects out there illustrate.
+
+Tinkering with software, hardware, and electronics can be great fun and highly
+educational. But the software side of this story is often the most
+time-consuming and error-prone of all. Writing code in C, C++, or Rust requires
+a deep dive into writing software, getting it compiled and uploaded, and chasing
+the inevitable bugs.  With more programmer-friendly languages such as
+MicroPython, Espruino, and TinyGo, the task has become much simpler, but there's
+still substantial complexity involved, and these more extensive languages can
+quickly exceed the capabilities of lower-end µCs.
+
+Monty is an exploration into taking things further: the ability to mix Python
+and C++ code to take advantage of their respective strenghts, a much smaller
+core, and a strong focus on modularity, extensibility, and inter-operability
+with existing code.
+
+One of the key goals of Monty is to bring Python and C++ closer together. There
+is a comprehensive hierarchy of data types, with garbage collected objects as
+central model, which can be used from Python as well as from C++. Thus, most of
+the application logic can be written as elegant high-level Python "scripts",
+while the more hardware- and performance-specific parts can be written in C++,
+using a similar notation and the same types of objects to avoid "friction" and
+"impedance mismatch".
+
+The modularity of it all means that Monty's core is still under 5000 lines of
+C++ for all the object types, basic list / set / dict collections, and garbage
+collector. On top of this, but as _optional_ module, there's "PyVM", Monty's
+virtual machine which interprets bytecode files created by MicroPython's
+`mpy-cross` tool. PyVM is under 2000 LOC, due to a close match to Monty's core.
+
+Another kind of motivation, is that Monty wants to take Python on µCs _further_,
+but not follow it blindly: the `async` / `await` features which have been added
+to Python 3 are considered ... _misguided_, and have been replaced by a design which
+is much closer to the [Go][GOL] programming language: coroutines as tasks, but
+using a _synchronous_ model instead of asynchronous directives at the language
+level. This means that an I/O read or write can block the entire coroutine,
+while others are free to resume. Just as a Unix process usually blocks on I/O.
+This blocking happens at the C++ level, using "stacklets" for task switching.
+Python's iterators, generators, and coroutines will continue to work as
+expected.
+
+So in a way, Monty is very much tied to MicroPython, as it uses its unmodified
+`mpy-cross` compiler to produce the bytecode files. But the back end, i.e. VM,
+is completely different, using a "stackless" design and many C++11 techniques
+instead of standard C. The way this works in practice, is that bytecode is
+compiled on a host (MacOS or Linux) and sent to the µC running Monty. This
+bytecode can be executed directly or stored in Minimal Replaceable File Storage,
+or "MRFS": this is Monty's lightweight mechanism for storing files in flash
+memory (it's not called a _file system_ because MRFS merely stores entire files
+like an archive, there's no support for writing to file in separate pieces).
+
+Monty does not support interactive Python, but on embedded builds there's a tiny
+command-line interface: enough to send bytecode modules, to store data in flash,
+and to issue basic commands (mostly for debugging). This serial link also acts
+as console for all textual `print` output.
+
+## A dataflow vision
+
+Further down the line, there's a much more ambituous goal: creating a [Pure
+Data][PDA]'ish dataflow-driven system, with small "gadgets" implemented in
+Python or in C++ and "circuits" built up from these gadgets by connecting them
+with (virtual) "wires". Pure Data (or "Pd") was originally designed as tool for
+creating (and performing) musing in a [live coding][LVC] fashion. The idea being
+that many parts of an application consist of "glue" between fairly standard
+components (which is also the [original idea][OHD] behind scripting). By making
+these interconnections data-driven, it becomes possible to adjust and extend an
+application while it is running, i.e. in a much more "exploratory" mode.
+
+Monty is a first step towards this far more dynamic style of programming, with a
+graphical editor in a web browser front end to make it all really "live". Such
+systems already exist, most notably [Node-RED][NDR] for NodeJS, but Monty is
+specifically aimed at running on very low-end & ultra low-power µC's.
+
+_But this dataflow approach is just a daydream for now ..._
+
+[PHY]: https://en.wikipedia.org/wiki/Physical_computing
+[GOL]: https://en.wikipedia.org/wiki/Go_(programming_language)
+[PDA]: https://puredata.info
+[LVC]: https://en.wikipedia.org/wiki/Live_coding
+[NDR]: https://nodered.org
+[OHD]: https://en.wikipedia.org/wiki/Ousterhout%27s_dichotomy

@@ -29,7 +29,7 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 » This is experimental code: some things work, many don't, asserts will fail  
 
 **Requirements**  
-» [MP cross compiler][MPX] for bytecode generation  
+» [MPy cross compiler][MPX] for bytecode generation  
 » [PlatformIO][PIO] for native and embedded builds  
 » [PyInvoke][INV] for general development workflow  
 » Good familiarity with C++11 and Python 3  
