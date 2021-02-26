@@ -116,15 +116,16 @@ executed.
 Further down the line, there's a much more ambitious goal: creating a [Pure
 Data][PDA] 'ish dataflow-driven system, with small "gadgets" implemented in
 Python or in C++ and "circuits" built up from these gadgets by connecting them
-with (virtual) "wires". Pure Data (or "Pd") was originally designed as tool for
-creating (and performing) music in a [live coding][LVC] fashion. The idea being
-that many parts of an application consist of "glue" between fairly standard
-components (which is also the [original idea][OHD] behind scripting). By making
-these interconnections data-driven, it becomes possible to adjust and extend an
-application while it is running, i.e. in a much more "exploratory" mode.
+with (virtual) "wires". Pure Data (or "Pd") was originally designed as a tool
+for creating (and performing) music in a [live coding][LVC] fashion. The idea
+being that many parts of an application consist of "glue" between fairly
+standard components (which is also the [original idea][OHD] behind scripting).
+By making these interconnections data-driven, it becomes possible to adjust and
+extend an application while it is running, i.e. in a much more "exploratory"
+mode.
 
-Monty is a first step towards this far more dynamic style of programming, with a
-graphical editor in a web browser front end to make it all really "live". Such
+Monty is a first step towards this far more dynamic style of programming, using
+a graphical editor in a web browser front end to make it all really "live". Such
 systems already exist, most notably [Node-RED][NDR] for NodeJS, but Monty is
 specifically aimed at running on very low-end & ultra low-power µC's.
 

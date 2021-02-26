@@ -19,10 +19,10 @@ is essential for certain tasks in Python (and `sys.tasks` is one of them ...).
 The `sys` module has the following attributes:
 
 * `sys.builtins` - a dict for extending built-in types and functions
-* `sys.event` - create a new event object, for coro/task synchronisation
-* `sys.gc` - trigger an object garbage collection and vector compaction
-* `sys.gcmax` - report size of the largest memory area which can be allocated
-* `sys.gcstats` - print out some GC statistics
+* `sys.event()` - create a new event object, for coro/task synchronisation
+* `sys.gc()` - trigger an object garbage collection and vector compaction
+* `sys.gcmax()` - report size of the largest memory area which can be allocated
+* `sys.gcstats()` - print out some GC statistics
 * `sys.implementation` - name of this implementation, i.e. `"monty"`
 * `sys.modules` - a map of all currently-loaded bytecode modules
 * `sys.tasks` -  this is the list of currently-runnable tasks

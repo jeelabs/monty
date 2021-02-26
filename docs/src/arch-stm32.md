@@ -110,11 +110,11 @@ The above two functions are also defined for native builds. What follows is
 only on STM32:
 
 * `machine.pins` - direct access to the GPIO pins
-* `machine.spi` - set up an SPI bus on 4 specific I/O pins
-* `machine.rf69` - a driver for the RFM69 wireless radio module
-* `machine.dog` - set up a hardware watchdog with timeout between 8 ms and 32
+* `machine.spi()` - set up an SPI bus on 4 specific I/O pins
+* `machine.rf69()` - a driver for the RFM69 wireless radio module
+* `machine.dog()` - set up a hardware watchdog with timeout between 8 ms and 32
   sec
-* `machine.kick` - kick the watchdog so it won't reset the µC
+* `machine.kick()` - kick the watchdog so it won't reset the µC
 
 These functions are highly experimental at this stage. The following test
 scripts illustrate some of the functionality that is currently available:
@@ -125,5 +125,5 @@ scripts illustrate some of the functionality that is currently available:
 
 The `s_rf69.py` example also illustrates how to use the hardware watchdog.
 
-If nothing else, this code for the `machine` module is example of how Monty can
-be extended in C++ in such a way that it's also usable from the Python VM.
+If nothing else, this code for the `machine` module is an example of how Monty
+can be extended in C++ in such a way that it's also usable from the Python VM.
