@@ -56,18 +56,18 @@ Ubuntu 20.04):
 ```
 $ inv
 main
-hello monty cdd7e0d
+hello monty v1.0
 done
 $ inv python
-34 tests, 34 matches, 0 failures, 2 skipped
+36 tests, 36 matches, 0 failures, 5 skipped, 0 ignored
 $ inv test
 Test    Environment    Status    Duration
 ------  -------------  --------  ------------
-array   native         PASSED    00:00:00.504
-data    native         PASSED    00:00:00.350
-gc      native         PASSED    00:00:00.346
-repr    native         PASSED    00:00:00.341
-========================= 4 succeeded in 00:00:01.541 =========================
+array   native         PASSED    00:00:00.505
+data    native         PASSED    00:00:00.498
+gc      native         PASSED    00:00:00.515
+repr    native         PASSED    00:00:00.489
+========================= 4 succeeded in 00:00:02.007 =========================
 $ 
 ```
 
@@ -161,7 +161,7 @@ single line with the text "main" and when it ends normally, it sends the text
 
 ```text
 main
-monty hello [etc...]
+monty hello v1.0
 done
 ```
 
@@ -220,7 +220,7 @@ output:
 
 ```
 main
-hello monty cdd7e0d
+hello monty v1.0
 done
 ```
 
@@ -243,28 +243,28 @@ The full test will complete in under a minute:
 $ inv all
 Test    Environment    Status    Duration
 ------  -------------  --------  ------------
-array   native         PASSED    00:00:00.750
-data    native         PASSED    00:00:00.565
-gc      native         PASSED    00:00:00.577
-repr    native         PASSED    00:00:00.559
-============================ 4 succeeded in 00:00:02.450 ============================
-35 tests, 35 matches, 0 failures, 5 skipped, 1 ignored
+array   native         PASSED    00:00:00.881
+data    native         PASSED    00:00:00.556
+gc      native         PASSED    00:00:00.582
+repr    native         PASSED    00:00:00.555
+============================ 4 succeeded in 00:00:02.573 ============================
+36 tests, 36 matches, 0 failures, 5 skipped, 0 ignored
 Test    Environment    Status    Duration
 ------  -------------  --------  ------------
-array   nucleo-l432    PASSED    00:00:04.222
-data    nucleo-l432    PASSED    00:00:03.072
-gc      nucleo-l432    PASSED    00:00:03.243
-repr    nucleo-l432    PASSED    00:00:03.041
-============================ 4 succeeded in 00:00:13.578 ============================
+array   nucleo-l432    PASSED    00:00:04.588
+data    nucleo-l432    PASSED    00:00:03.478
+gc      nucleo-l432    PASSED    00:00:03.623
+repr    nucleo-l432    PASSED    00:00:03.464
+============================ 4 succeeded in 00:00:15.153 ============================
 Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsis)
-STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
+STM32 STLink: /dev/cu.usbmodem143202 ser# 066BFF555052836687031442
 upload 0x040E0 done, 16608 bytes sent
-STM32 STLink: /dev/cu.usbmodem102 ser# 0669FF555052836687022922
-37 tests, 37 matches, 0 failures, 3 skipped, 1 ignored
+STM32 STLink: /dev/cu.usbmodem143202 ser# 066BFF555052836687031442
+37 tests, 37 matches, 0 failures, 2 skipped, 2 ignored
    text	   data	    bss	    dec	    hex	filename
-  55760	   2496	   2472	  60728	   ed38	.pio/build/nucleo-l432/firmware.elf
-  43128	   2496	   2472	  48096	   bbe0	.pio/build/noassert/firmware.elf
-  33932	   2388	   2472	  38792	   9788	.pio/build/nopyvm/firmware.elf
+  56048	   2480	   2472	  61000	   ee48	.pio/build/nucleo-l432/firmware.elf
+  43184	   2480	   2472	  48136	   bc08	.pio/build/noassert/firmware.elf
+  33988	   2372	   2472	  38832	   97b0	.pio/build/nopyvm/firmware.elf
 blinker
 minimal
 pipeline
@@ -273,4 +273,17 @@ switcher
 $
 ```
 
+Where ... for both `inv python` (native) and `inv runner` (embedded):
+
+* `tests` is the number of test which were actually performed
+* `matches` is the number of these that matched the expected output
+* `failures` is the number of tests which did not complete successfully
+* `skipped` is the number of tests which do not apply to this platform
+* `ignored` counts the number of tests which were explicitly skipped (`-i`)
+
 The examples listed at the end are only verified to compile, not actually run.
+
+?> The above description of `inv all` is not _100%_ accurate. To be able to
+run repeatable tests, a few tests will be ignored (for example: the `gcoll.py`
+output is not identical for 64-bit native and 32-bit STM32). The tests skipped
+by `inv all` are listed in the `[invoke]` section of `platformio.ini`.

@@ -87,7 +87,7 @@ The code generator is configured from the `[codegen]` section in the
 [codegen]
 all = lib/extend/ lib/pyvm/
 native = lib/arch-native/
-stm32 = lib/arch-stm32/ lib/mrfs
+stm32 = lib/arch-stm32/ lib/mrfs/
 ```
 
 This section is ignored by PIO itself. It specifies which platform groups

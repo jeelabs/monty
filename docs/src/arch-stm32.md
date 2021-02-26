@@ -78,16 +78,16 @@ _Unix'y_ shell (without a prompt):
 ```text
 $ inv serial
 bv
-Monty 8214fc9 (Feb 25 2021, 14:51:59)
+Monty v1.0 (Feb 26 2021, 00:37:34)
 di
-flash 0x08000000..0x0800DB24, ram 0x20000000..0x20000DA4, stack top 0x20010000
+flash 0x08000000..0x0800DB1C, ram 0x20000000..0x20000DA4, stack top 0x20010000
 cpuid 0x410FC241, 256 kB flash, 64 kB ram, package type 8
-clock 80000 kHz, devid 0028003D-324B500E-20363642
+clock 80000 kHz, devid 00300029-324B500E-20363642
 hello
-hello monty 8214fc9
+hello monty v1.0
 gr
 gc: max 11528 b, 1 checks, 0 sweeps, 0 compacts
-gc: total      6 objs      416 b,    312 vecs     4784 b
+gc: total      6 objs      416 b,    306 vecs     4736 b
 gc:  curr      6 objs      416 b,      6 vecs      360 b
 gc:   max      6 objs      416 b,      9 vecs      736 b
 ^C

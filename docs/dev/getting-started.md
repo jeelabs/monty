@@ -12,7 +12,7 @@ Darwin x86_64
 Python 3.9.2
 Invoke 1.5.0
 PlatformIO Core, version 5.1.0
-MicroPython v1.14 on 2021-02-04; mpy-cross emitting mpy v5
+MicroPython v1.14 on 2021-02-25; mpy-cross emitting mpy v5
 ```
 
 ## Development

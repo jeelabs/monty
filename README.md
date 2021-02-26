@@ -43,13 +43,13 @@ import sys
 print('hello', sys.implementation, sys.version)
 $ inv native -f pytests/hello.mpy
 main
-hello monty f3745d5
+hello monty v1.0
 done
-$ inv python flash runner
-34 tests, 34 matches, 0 failures, 2 skipped
+$ inv python flash runner -i gcoll
+36 tests, 36 matches, 0 failures, 5 skipped, 0 ignored
 Processing nucleo-l432 (board: nucleo_l432kc; platform: ststm32; framework: cmsis)
 STM32 STLink: /dev/cu.usbmodem143202 ser# 066BFF555052836687031442
-33 tests, 33 matches, 0 failures, 3 skipped
+38 tests, 38 matches, 0 failures, 2 skipped, 1 ignored
 $
 ```
 

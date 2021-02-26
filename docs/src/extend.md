@@ -18,15 +18,15 @@ is essential for certain tasks in Python (and `sys.tasks` is one of them ...).
 
 The `sys` module has the following attributes:
 
+* `sys.builtins` - a dict for extending built-in types and functions
 * `sys.event` - create a new event object, for coro/task synchronisation
 * `sys.gc` - trigger an object garbage collection and vector compaction
 * `sys.gcmax` - report size of the largest memory area which can be allocated
 * `sys.gcstats` - print out some GC statistics
-* `sys.tasks` -  this is the list of currently-runnable tasks
-* `sys.modules` - a map of all currently-loaded bytecode modules
-* `sys.builtins` - a dict for extending built-in types and functions
 * `sys.implementation` - name of this implementation, i.e. `"monty"`
-* `sys.version` - version of this build (based on `git describe`)
+* `sys.modules` - a map of all currently-loaded bytecode modules
+* `sys.tasks` -  this is the list of currently-runnable tasks
+* `sys.version` - version of this build, i.e. `"v1.0"` (based on `git describe`)
 
 The `//CG ...` code generator directives in `mod-sys.cpp` have as side effect
 that this module is automatically included on the list of built-in modules.
