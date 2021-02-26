@@ -110,10 +110,10 @@ as console for all textual `print` output.
 ## A dataflow vision
 
 Further down the line, there's a much more ambituous goal: creating a [Pure
-Data][PDA]'ish dataflow-driven system, with small "gadgets" implemented in
+Data][PDA] 'ish dataflow-driven system, with small "gadgets" implemented in
 Python or in C++ and "circuits" built up from these gadgets by connecting them
 with (virtual) "wires". Pure Data (or "Pd") was originally designed as tool for
-creating (and performing) musing in a [live coding][LVC] fashion. The idea being
+creating (and performing) music in a [live coding][LVC] fashion. The idea being
 that many parts of an application consist of "glue" between fairly standard
 components (which is also the [original idea][OHD] behind scripting). By making
 these interconnections data-driven, it becomes possible to adjust and extend an
