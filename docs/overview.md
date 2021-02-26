@@ -101,11 +101,15 @@ bytecode can be executed directly or stored in Minimal Replaceable File Storage,
 or "MRFS": this is Monty's lightweight mechanism for storing files in flash
 memory (it's not called a _file system_ because MRFS merely stores entire files
 like an archive, there's no support for writing to file in separate pieces).
+MRFS can be used to store bytecode files, and then loaded with Python's `import`
+statement.
 
-Monty does not support interactive Python, but on embedded builds there's a tiny
-command-line interface: enough to send bytecode modules, to store data in flash,
-and to issue basic commands (mostly for debugging). This serial link also acts
-as console for all textual `print` output.
+Monty does not have an interactive Python [REPL][REP], but on embedded builds
+there's a tiny cmd-line interface: enough to quickly send a bytecode module, store
+data in flash, or issue basic commands (mostly for debugging). This serial
+link also acts as console for all textual `print` output. Python code can be
+compiled to bytecode on the host and then sent over serial and immediately
+executed.
 
 ## A dataflow vision
 
@@ -132,3 +136,4 @@ _But this dataflow approach is just a daydream for now ..._
 [LVC]: https://en.wikipedia.org/wiki/Live_coding
 [NDR]: https://nodered.org
 [OHD]: https://en.wikipedia.org/wiki/Ousterhout%27s_dichotomy
+[REP]: https://en.wikipedia.org/wiki/Read–eval–print_loop

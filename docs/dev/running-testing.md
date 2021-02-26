@@ -47,8 +47,8 @@ Here's how to build the native executable and run Python scripts:
 | `inv python -t hello,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv test` | run the C++ test suite, with results summarised at the end |
 
-Tests named `n_*` are included, others starting with `<letter>_` will be skipped
-unless mentioned by name.
+Tests named `<letter>_*.py` are only included if they match the platform: `n_*`
+is only for native tests, `s_*` is only for tests on STM32 (such as `s_spi.py`).
 
 The above commands work on MacOS (verified on 11.2) and on Linux (verified on
 Ubuntu 20.04):
@@ -88,10 +88,12 @@ small board containing an ARM Cortex M4 µC with 256 kB flash and 64 kB RAM, an
 on-board LED, and the ST-Link programmer to upload, debug, and communicate over
 USB.
 
-There is no "big" reason to use this board, but it's a convenient self-contained
-default for now.  PIO supports [numerous boards](https://platformio.org/boards),
-although some work may be needed to adapt the machine-dependent aspects for
-Monty, see the [Platform support](platform-support) section for more details.
+The Nucleos are self-contained, low-cost,
+widely available, with a modern low-power architecture and a wide range of
+built-in peripherals.  PIO supports
+[numerous boards](https://platformio.org/boards), but some work may be
+needed to adapt the machine-dependent aspects for Monty, see the [Platform
+support](platform-support) section for more details.
 
 Here's how to build and upload the µC firmware and run Python scripts:
 
@@ -104,6 +106,9 @@ Here's how to build and upload the µC firmware and run Python scripts:
 | `inv upload` | run the C++ test suite, with results summarised at the end |
 | `inv builds` | show firmware image sizes of a few embedded build variations |
 | `inv all` | run all C++ and Python tests, native and embedded, and more ... |
+
+(MRFS is Monty's lightweight mechanism for storing files in flash, see [this
+section](/#/?id=so-what-is-monty) for more details)
 
 Tests named `s_*` are included on STM32, all others starting with `<letter>_`
 will be skipped.
