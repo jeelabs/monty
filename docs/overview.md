@@ -88,7 +88,7 @@ is much closer to the [Go][GOL] programming language: coroutines as tasks, but
 using a _synchronous_ model instead of asynchronous directives at the language
 level. This means that an I/O read or write can block the entire coroutine,
 while others are free to resume. Just as a Unix process usually blocks on I/O.
-This blocking happens at the C++ level, using "stacklets" for task switching.
+This blocking happens at the C++ level, using "stacklets" for context switching.
 Python's iterators, generators, and coroutines will continue to work as
 expected.
 
@@ -128,7 +128,7 @@ graphical editor in a web browser front end to make it all really "live". Such
 systems already exist, most notably [Node-RED][NDR] for NodeJS, but Monty is
 specifically aimed at running on very low-end & ultra low-power µC's.
 
-_But this dataflow approach is just a daydream for now ..._
+_PS. This dataflow approach is just a daydream for now._
 
 [PHY]: https://en.wikipedia.org/wiki/Physical_computing
 [GOL]: https://en.wikipedia.org/wiki/Go_(programming_language)

@@ -1,10 +1,10 @@
 # Objects and vectors
 
-!> The description below does not clearly describe the distinction between `Obj`
-and `Object`, and between `Vec` and `Vector`, because these types are still
-somewhat in flux. Suffice to say that `Obj` is the base class for `Object` (and
-`Vec` for `Vector`), to keep GC-related logic separate from the higher-level
-data types. Exact details will be added later, once the dust settles.
+!> The text below does not clearly describe the distinction between `Obj` and
+`Object`, and between `Vec` and `Vector`, because these types are still somewhat
+in flux. Suffice to say that `Obj` is the base class for `Object` (and `Vec` for
+`Vector`), to keep GC-related logic separate from the higher-level data types.
+Exact details will be added later, once the dust settles.
 
 There are two core data structures in Monty: objects and vectors.
 
