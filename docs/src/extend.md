@@ -57,8 +57,8 @@ following types are available:
 
 The 1-/2-/4-bit versions are tightly packed, making them very memory-efficient
 for small values. The current implementation does not know how to shift partial
-bytes however, so slices insertion/removal can only be done in steps of 8, 4,
-or 2, respectively.
+bytes however, so slice insertion/removal can only be done in steps of 8, 4, or
+2, respectively.
 
 There is no "Q" type for unsigned 64-bit integer values, because Monty cannot
 distinguish 64-bit signed from 64-bit unsigned.
@@ -84,7 +84,7 @@ fitted into a single `ByteVec` in memory, but there are several trade-offs:
 
 * the total size of a VaryVec, i.e. index + all items, is limited to ≈ 65,000
   bytes
-* read access is quick, and items sizes can be retrieved without retreiving the
+* read access is quick, and item sizes can be queried without retrieving the
   item itself
 * write access is only quick when the size remains the same, else considerable
   amounts of data may have to be moved up or down in the vector
