@@ -101,7 +101,7 @@ re-flash the stored MRFS data files.
 
 The `machine` module is for use from Python. It currently defines the following:
 
-* `machine.ticks` is the number of milliseconds since program start
+* `machine.ticks()` is the number of milliseconds since program start
 * `machine.ticker(N)` can be used to set up a periodic tick event every N
   milliseconds - the event object is returned, supporting `wait`, `set`, and
   `clear` methods
