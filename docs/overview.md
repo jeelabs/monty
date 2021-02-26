@@ -109,7 +109,7 @@ as console for all textual `print` output.
 
 ## A dataflow vision
 
-Further down the line, there's a much more ambituous goal: creating a [Pure
+Further down the line, there's a much more ambitious goal: creating a [Pure
 Data][PDA] 'ish dataflow-driven system, with small "gadgets" implemented in
 Python or in C++ and "circuits" built up from these gadgets by connecting them
 with (virtual) "wires". Pure Data (or "Pd") was originally designed as tool for
