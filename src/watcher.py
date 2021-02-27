@@ -36,11 +36,11 @@ try:
     for fn in watcher(py):
         e = compileAndSend(ser, fn)
         if e:
-            print("%s: %s" % (fn, e))
+            print("\x1B[31m%s: %s\x1B[0m" % (fn, e)) # red
         else:
             ser.readline() # eat first output, which is a 0xFF (???)
             count += 1
-            print("<<<", count, ">>>")
+            print("\x1B[32m<<<", count, ">>>\x1B[0m") # green
 
 except KeyboardInterrupt:
     pass

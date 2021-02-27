@@ -57,7 +57,12 @@ def compileIfOutdated(fn):
     mpy = root + ".mpy"
     mtime = os.stat(fn).st_mtime
     if not os.path.isfile(mpy) or (mtime >= os.stat(mpy).st_mtime):
-        subprocess.run(["mpy-cross", "-s", "", fn])
+        # make any output from mpy-cross stand out in red
+        try:
+            print("\x1B[31m", end=""); sys.stdout.flush()
+            subprocess.run(["mpy-cross", "-s", "", fn])
+        finally:
+            print("\x1B[0m", end=""); sys.stdout.flush()
     return mpy
 
 def compareWithExpected (fn, output):
