@@ -126,6 +126,23 @@ def printSeparator(fn, e=None):
     if e:
         print(e)
 
+def compileAndSend(ser, fn):
+    try:
+        mpy = compileIfOutdated(fn)
+        # set watchdog and make sure it was accepted
+        ser.reset_input_buffer()
+        ser.write(b'wd 250\n')
+        line = ser.readline().decode()
+        if not line.endswith(" ms\n"):
+            return line + "NO RESPONSE"
+        # set the bytecode as intel hex
+        with open(mpy, "rb") as f:
+            for line in genHex(f.read()):
+                ser.write(line.encode())
+                ser.flush()
+    except Exception as e:
+        return e
+
 if __name__ == "__main__":
     ser = openSerialPort()
     verbose, tests, match, fail, skip, ignores = 0, 0, 0, 0, 0, []
@@ -147,25 +164,14 @@ if __name__ == "__main__":
             continue # skip non-stm32 tests
         tests += 1
 
-        try:
-            mpy = compileIfOutdated(fn)
-            # set watchdog and make sure it was accepted
-            ser.reset_input_buffer()
-            ser.write(b'wd 250\n')
-            line = ser.readline().decode()
-            if not line.endswith(" ms\n"):
-                printSeparator(fn, line + "NO RESPONSE")
-                fail += 1
-                break
-            # set the bytecode as intel hex
-            with open(mpy, "rb") as f:
-                for line in genHex(f.read()):
-                    ser.write(line.encode())
-                    ser.flush()
-        except Exception as e:
+        e = compileAndSend(ser, fn)
+        if e:
             printSeparator(fn, e)
             fail += 1
-            continue
+            if e is Exception:
+                continue
+            else:
+                break
 
         results = []
         ok = False

@@ -202,6 +202,11 @@ def mrfs(c, offset=0, file=""):
     else:
         c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
 
+@task(help={"file": "the Python script to send whenever it changes"})
+def watch(c, file):
+    """send-exec-view loop for quickly trying out Python code"""
+    c.run("src/watcher.py %s" % file, pty=True)
+
 @task
 def health(c):
     """verify proper toolchain setup"""
