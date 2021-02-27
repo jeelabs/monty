@@ -60,7 +60,7 @@ def compileIfOutdated(fn):
         # make any output from mpy-cross stand out in red
         try:
             print("\x1B[31m", end=""); sys.stdout.flush()
-            subprocess.run(["mpy-cross", "-s", "", fn])
+            subprocess.run(["mpy-cross", "-s", os.path.basename(fn), fn])
         finally:
             print("\x1B[0m", end=""); sys.stdout.flush()
     return mpy

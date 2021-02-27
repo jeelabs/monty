@@ -177,7 +177,7 @@ def builds(c):
 @task
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio monty.bin")
+    c.run("rm -rf .pio examples/*/.pio pytests/*.mpy")
 
 @task
 def examples(c):
@@ -204,7 +204,7 @@ def mrfs(c, offset=0, file=""):
 
 @task(help={"file": "the Python script to send whenever it changes"})
 def watch(c, file):
-    """send-exec-view loop for quickly trying out Python code"""
+    """compile-send-exec-view loop for quick Python dev cycles"""
     c.run("src/watcher.py %s" % file, pty=True)
 
 @task
