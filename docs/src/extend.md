@@ -34,11 +34,11 @@ that this module is automatically included on the list of built-in modules.
 ## type Array
 
 The other source code in this area defines a new datatype, and is implemented
-in the files `typ-array.h` and `type-array.cpp`. As with `sys`, the `//CG`
-directives in the source code take care of all necessarty setup to bind this
+in the files `typ-array.h` and `typ-array.cpp`. As with `sys`, the `//CG`
+directives in the source code take care of all necessary setup to bind this
 optional datatype into the rest of Monty.
 
-The array type extends what is usually in CPython and MicroPython. The
+The array type goes beyond what is available in CPython and MicroPython. The
 following types are available:
 
 * `array("P")` - array of 1-bit "packed" values (0..1)
@@ -63,7 +63,7 @@ bytes however, so slice insertion/removal can only be done in steps of 8, 4, or
 There is no "Q" type for unsigned 64-bit integer values, because Monty cannot
 distinguish 64-bit signed from 64-bit unsigned.
 
-All arrays can be printed in a lossless textual represenatation, which has the
+All arrays can be printed in a lossless textual representation, which has the
 following structure:
 
 ```text
