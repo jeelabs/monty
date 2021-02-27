@@ -58,12 +58,28 @@ def compileIfOutdated(fn):
     mtime = os.stat(fn).st_mtime
     if not os.path.isfile(mpy) or (mtime >= os.stat(mpy).st_mtime):
         # make any output from mpy-cross stand out in red
-        try:
-            print("\x1B[31m", end=""); sys.stdout.flush()
-            subprocess.run(["mpy-cross", "-s", os.path.basename(fn), fn])
-        finally:
-            print("\x1B[0m", end=""); sys.stdout.flush()
+        base = os.path.basename(fn)
+        out = subprocess.getoutput("mpy-cross -s %s %s" % (base, fn))
+        if out:
+            raise Exception(out)
     return mpy
+
+def compileAndSend(ser, fn):
+    try:
+        mpy = compileIfOutdated(fn)
+        # set watchdog and make sure it was accepted
+        ser.reset_input_buffer()
+        ser.write(b'wd 250\n')
+        line = ser.readline().decode()
+        if not line.endswith(" ms\n"):
+            return line + "NO RESPONSE"
+    except Exception as e:
+        return e
+    # send the bytecode as intel hex
+    with open(mpy, "rb") as f:
+        for line in genHex(f.read()):
+            ser.write(line.encode())
+            ser.flush()
 
 def compareWithExpected (fn, output):
     adjout = output
@@ -130,23 +146,6 @@ def printSeparator(fn, e=None):
     print("---------------------------", fn, sep, msg)
     if e:
         print(e)
-
-def compileAndSend(ser, fn):
-    try:
-        mpy = compileIfOutdated(fn)
-        # set watchdog and make sure it was accepted
-        ser.reset_input_buffer()
-        ser.write(b'wd 250\n')
-        line = ser.readline().decode()
-        if not line.endswith(" ms\n"):
-            return line + "NO RESPONSE"
-        # set the bytecode as intel hex
-        with open(mpy, "rb") as f:
-            for line in genHex(f.read()):
-                ser.write(line.encode())
-                ser.flush()
-    except Exception as e:
-        return e
 
 if __name__ == "__main__":
     ser = openSerialPort()
