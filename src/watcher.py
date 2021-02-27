@@ -22,9 +22,12 @@ def watcher(fname):
             stamp = t
         # show any output coming back, while waiting a bit
         for line in ser.readlines():
-            if line[:1] == b'\xFF':
+            if line == b'\xFF\n':
                 continue
-            line = line.decode().rstrip("\n")
+            try:
+                line = line.decode().rstrip("\n")
+            except UnicodeDecodeError:
+                line = repr(line)
             if line in ["done", "abort"]:
                 print("\x1B[33m%s\x1B[0m" % line) # yellow
             elif line != "main":

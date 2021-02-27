@@ -222,8 +222,10 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo --quiet", pty=True)
 
-@task(clean, test, call(python, python_skip),
-      upload, flash, mrfs, call(runner, runner_skip),
-      builds, examples)
+@task(post=[clean, test, call(python, python_skip),
+            upload, flash, mrfs, call(runner, runner_skip),
+            builds, examples])
 def all(c):
     """i.e. clean test python upload flash mrfs runner builds examples"""
+    # make sure the JeeH library is not found locally, i.e. unset this env var
+    os.environ.pop("PLATFORMIO_LIB_EXTRA_DIRS", None)
