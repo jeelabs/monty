@@ -28,5 +28,5 @@ int main (int argc, char const** argv) {
 #ifndef NDEBUG
     printf("done\n");
 #endif
-    return arch::done();
+    arch::done();
 }

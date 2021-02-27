@@ -25,8 +25,8 @@ def watcher(fname):
             if line[:1] == b'\xFF':
                 continue
             line = line.decode().rstrip("\n")
-            if line == "done":
-                print("\x1B[33mdone\x1B[0m") # yellow
+            if line in ["done", "abort"]:
+                print("\x1B[33m%s\x1B[0m" % line) # yellow
             elif line != "main":
                 print(line)
 
