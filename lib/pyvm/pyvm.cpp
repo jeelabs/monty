@@ -1199,7 +1199,6 @@ struct PyVM : Stacklet {
             _fill = 0; // delete stack entries
             adj(1); // release vector FIXME crashes when set to 0 (???)
             switchTo(_caller);
-            set(); // resume any stacklets waiting for this one to end
         }
 
         return r;

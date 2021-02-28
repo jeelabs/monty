@@ -74,8 +74,8 @@ static auto pyRunner (Runner* feed) -> Value {
     if (v.ifType<Bytes>() != nullptr) {
         auto task = vmLaunch(v.asType<Bytes>().begin());
         if (task != nullptr) {
-            Stacklet::tasks.append(task);
-            task->wait();
+            assert(Stacklet::current != nullptr);
+            task->next();
             return 0;
         }
     }

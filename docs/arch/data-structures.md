@@ -11,7 +11,6 @@ Object
 ├─ Bool
 ├─ Int
 ├─ Event
-│  └─ Stacklet
 ├─ Bytes
 │  ├─ Str
 │  └─ Array
@@ -24,7 +23,8 @@ Object
    │     ├─ Type
    │     │  └─ Class
    │     └─ Inst
-   └─ Closure
+   ├─ Closure
+   └─ Stacklet
 ```
 
 A few of these deserve special mention:
@@ -36,9 +36,8 @@ A few of these deserve special mention:
 * **List** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes
 * **Dict** derives from `Set` because it is implemented as a set of keys, with
   the values saved separately in the same vector
-* **Stacklet** is an `Event`, but it's also a Vector which is used extensively
-  as a "stack of call frames" in the VM (and very similar to a Python "generator
-  object")
+* **Stacklet** is a `List` which is used extensively as a "stack of call
+  frames" in the VM (and very similar to a Python "generator object")
 
 ## Bytes
 

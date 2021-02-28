@@ -857,7 +857,7 @@ namespace monty {
     };
 
     //CG3 type <stacklet>
-    struct Stacklet : Event, Vector {
+    struct Stacklet : List {
         static Type info;
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
@@ -873,8 +873,6 @@ namespace monty {
 
         static void exception (Value); // a safe way to current->raise()
         static void gcAll ();
-
-        void marker () const override { Event::marker(); markVec(*this); }
 
         // see https://en.cppreference.com/w/c/atomic and
         // https://gcc.gnu.org/onlinedocs/gcc/_005f_005fatomic-Builtins.html
