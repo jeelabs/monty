@@ -1,45 +1,45 @@
 main
-BaseException("abc",1,2,3)
-Exception("abc",1,2,3)
-StopIteration("abc",1,2,3)
-ArithmeticError("abc",1,2,3)
-ZeroDivisionError("abc",1,2,3)
-AssertionError("abc",1,2,3)
-AttributeError("abc",1,2,3)
-EOFError("abc",1,2,3)
-ImportError("abc",1,2,3)
-LookupError("abc",1,2,3)
-IndexError("abc",1,2,3)
-KeyError("abc",1,2,3)
-MemoryError("abc",1,2,3)
-NameError("abc",1,2,3)
-OSError("abc",1,2,3)
-RuntimeError("abc",1,2,3)
-NotImplementedError("abc",1,2,3)
-TypeError("abc",1,2,3)
-ValueError("abc",1,2,3)
-UnicodeError("abc",1,2,3)
+BaseException("abc",1,2,3) ["except.py",22,"<module>"]
+Exception("abc",1,2,3) ["except.py",22,"<module>"]
+StopIteration("abc",1,2,3) ["except.py",22,"<module>"]
+ArithmeticError("abc",1,2,3) ["except.py",22,"<module>"]
+ZeroDivisionError("abc",1,2,3) ["except.py",22,"<module>"]
+AssertionError("abc",1,2,3) ["except.py",22,"<module>"]
+AttributeError("abc",1,2,3) ["except.py",22,"<module>"]
+EOFError("abc",1,2,3) ["except.py",22,"<module>"]
+ImportError("abc",1,2,3) ["except.py",22,"<module>"]
+LookupError("abc",1,2,3) ["except.py",22,"<module>"]
+IndexError("abc",1,2,3) ["except.py",22,"<module>"]
+KeyError("abc",1,2,3) ["except.py",22,"<module>"]
+MemoryError("abc",1,2,3) ["except.py",22,"<module>"]
+NameError("abc",1,2,3) ["except.py",22,"<module>"]
+OSError("abc",1,2,3) ["except.py",22,"<module>"]
+RuntimeError("abc",1,2,3) ["except.py",22,"<module>"]
+NotImplementedError("abc",1,2,3) ["except.py",22,"<module>"]
+TypeError("abc",1,2,3) ["except.py",22,"<module>"]
+ValueError("abc",1,2,3) ["except.py",22,"<module>"]
+UnicodeError("abc",1,2,3) ["except.py",22,"<module>"]
 start 1
-bingo 1
+bingo 1 RuntimeError() ["except.py",28,"boom1","except.py",32,"<module>"]
 start 2
 final 2
-bingo 2
-ZeroDivisionError()
-NameError("xx")
-AttributeError("yy","A")
-KeyError("zz")
+bingo 2 RuntimeError() ["except.py",39,"boom2","except.py",45,"<module>"]
+ZeroDivisionError() ["except.py",50,"<module>"]
+NameError("xx") ["except.py",55,"<module>"]
+AttributeError("yy","A") ["except.py",62,"<module>"]
+KeyError("zz") ["except.py",68,"<module>"]
 98
-TypeError("index not int or slice","a")
+TypeError("index not int or slice","a") ["except.py",75,"f"]
 e
-TypeError("index not int or slice","a")
+TypeError("index not int or slice","a") ["except.py",75,"f"]
 2
-TypeError("index not int or slice","a")
+TypeError("index not int or slice","a") ["except.py",75,"f"]
 4
-TypeError("index not int or slice","a")
-arithmetic error: ZeroDivisionError()
-runtime error: NotImplementedError()
-exception: EOFError()
-base exception: BaseException()
-exception: UnicodeError()
-AttributeError("blah","str")
+TypeError("index not int or slice","a") ["except.py",75,"f"]
+arithmetic error: ZeroDivisionError() ["except.py",86,"g"]
+runtime error: NotImplementedError() ["except.py",86,"g"]
+exception: EOFError() ["except.py",86,"g"]
+base exception: BaseException() ["except.py",86,"g"]
+exception: UnicodeError() ["except.py",86,"g"]
+AttributeError("blah","str") ["except.py",105,"<module>"]
 done

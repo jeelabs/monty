@@ -21,7 +21,7 @@ for exc in [BaseException,
     try:
         raise exc("abc",1,2,3)
     except BaseException as e:
-        print(e)
+        print(e, e.trace())
 
 def boom1():
     print('start 1')
@@ -30,8 +30,8 @@ def boom1():
 
 try:
     boom1()
-except:
-    print('bingo 1')
+except Exception as e:
+    print('bingo 1', e, e.trace())
 
 def boom2():
     print('start 2')
@@ -43,38 +43,38 @@ def boom2():
 
 try:
     boom2()
-except:
-    print('bingo 2')
+except Exception as e:
+    print('bingo 2', e, e.trace())
 
 try:
     a = 1 // 0
 except BaseException as e:
-    print(e)
+    print(e, e.trace())
 
 try:
     print(xx)
 except BaseException as e:
-    print(e)
+    print(e, e.trace())
 
 class A: pass
 a = A()
 try:
     print(a.yy)
 except BaseException as e:
-    print(e)
+    print(e, e.trace())
 
 a = {}
 try:
     print(a['zz'])
 except BaseException as e:
-    print(e)
+    print(e, e.trace())
 
 def f(t):
     print(t[1])
     try:
         print(t["a"])
     except BaseException as e:
-        print(e)
+        print(e, e.trace())
 
 f(b'abc')
 f("def")
@@ -85,15 +85,15 @@ def g(e):
     try:
         raise(e())
     except RuntimeError as e:
-        print('runtime error:', e)
+        print('runtime error:', e, e.trace())
     except ArithmeticError as e:
-        print('arithmetic error:', e)
+        print('arithmetic error:', e, e.trace())
     except Exception as e:
-        print('exception:', e)
+        print('exception:', e, e.trace())
     except BaseException as e:
-        print('base exception:', e)
+        print('base exception:', e, e.trace())
     except ValueError as e:
-        print('value error:', e)
+        print('value error:', e, e.trace())
 
 g(ZeroDivisionError)
 g(NotImplementedError)
@@ -104,4 +104,4 @@ g(UnicodeError)
 try:
     print("abcde".blah())
 except Exception as e:
-    print(e)
+    print(e, e.trace())

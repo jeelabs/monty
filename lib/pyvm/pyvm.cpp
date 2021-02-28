@@ -1220,8 +1220,12 @@ struct PyVM : Stacklet {
         _signal = {};
 
         auto& einfo = e.asType<Exception>();
-        einfo.traceVec().append(_ipOff);
-        einfo.traceVec().append(&_callee->_bc);
+
+        // finally clauses and re-raises must not extend the trace
+        if (_ip[-1] != EndFinally && _ip[-1] != RaiseLast) {
+            einfo.traceVec().append(_ipOff-1);
+            einfo.traceVec().append(&_callee->_bc);
+        }
 
         if (frame().ep > 0) { // simple exception, no stack unwind
             auto ep = excBase(0);
