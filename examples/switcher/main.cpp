@@ -21,7 +21,7 @@ int main () {
 
     gcSetup(mem, sizeof mem); // set up GC memory pool
 
-    Stacklet::tasks.append(new Switcher);
+    Stacklet::ready.append(new Switcher);
 
     while (Stacklet::runLoop()) {}
 

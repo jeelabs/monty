@@ -25,7 +25,7 @@ void onOff (int n, bool f) {
 }
 
 // Simple delay via polling: add the current stacklet (i.e. ourselves)
-// to the end of the tasks queue until requested time delay has passed.
+// to the end of the ready queue until requested time delay has passed.
 // This also works outside stacklets (by falling back to a busy wait).
 
 void delay_ms (uint32_t ms) {
@@ -60,7 +60,7 @@ int main () {
 
     // create 7 stacklets, with different delays
     for (int i = 0; i < 7; ++i)
-        Stacklet::tasks.append(new Toggler (i));
+        Stacklet::ready.append(new Toggler (i));
 
     // minimal loop to keep stacklets going
     while (Stacklet::runLoop()) {}
