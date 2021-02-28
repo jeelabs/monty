@@ -63,11 +63,11 @@ static Function const fo_ticker (f_ticker);
 static Function const fo_ticks (f_ticks);
 
 static Lookup::Item const machine_map [] = {
-    { Q(199,"ticker"), fo_ticker },
-    { Q(200,"ticks"), fo_ticks },
+    { Q(200,"ticker"), fo_ticker },
+    { Q(201,"ticks"), fo_ticks },
 //CG>
 };
 
 //CG2 module-end
 static Lookup const machine_attrs (machine_map, sizeof machine_map);
-Module ext_machine (Q(201,"machine"), machine_attrs);
+Module ext_machine (Q(202,"machine"), machine_attrs);

@@ -19,7 +19,7 @@ import io, os, sys
 from binascii import crc32
 from datetime import datetime
 from struct import pack, unpack
-from runner import compileIfOutdated, openSerialPort, genHex
+from runner import openSerialPort, compileIfOutdated, genHex
 
 ofile = None
 upload = None

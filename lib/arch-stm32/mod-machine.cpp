@@ -47,7 +47,7 @@ struct Pins : Object {
     }
 };
 
-Type Pins::info (Q(212,"<pins>"));
+Type Pins::info (Q(213,"<pins>"));
 
 static Pins pins; // there is one static pins object, used via attr access
 
@@ -80,14 +80,14 @@ static auto const m_spi_xfer = Method::wrap(&Spi::xfer);
 static Method const mo_spi_xfer (m_spi_xfer);
 
 static Lookup::Item const spi_map [] = {
-    { Q(199,"disable"), mo_spi_disable },
-    { Q(200,"enable"), mo_spi_enable },
-    { Q(201,"xfer"), mo_spi_xfer },
+    { Q(200,"disable"), mo_spi_disable },
+    { Q(201,"enable"), mo_spi_enable },
+    { Q(202,"xfer"), mo_spi_xfer },
 };
 Lookup const Spi::attrs (spi_map, sizeof spi_map);
 //CG>
 
-Type Spi::info (Q(213,"<spi>"), &Spi::attrs);
+Type Spi::info (Q(214,"<spi>"), &Spi::attrs);
 
 struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     static Lookup const attrs;
@@ -127,14 +127,14 @@ static auto const m_rf69_xmit = Method::wrap(&RF69::xmit);
 static Method const mo_rf69_xmit (m_rf69_xmit);
 
 static Lookup::Item const rf69_map [] = {
-    { Q(202,"recv"), mo_rf69_recv },
-    { Q(203,"sleep"), mo_rf69_sleep },
-    { Q(204,"xmit"), mo_rf69_xmit },
+    { Q(203,"recv"), mo_rf69_recv },
+    { Q(204,"sleep"), mo_rf69_sleep },
+    { Q(205,"xmit"), mo_rf69_xmit },
 };
 Lookup const RF69::attrs (rf69_map, sizeof rf69_map);
 //CG>
 
-Type RF69::info (Q(214,"<rf69>"), &RF69::attrs);
+Type RF69::info (Q(215,"<rf69>"), &RF69::attrs);
 
 //CG1 bind spi
 static auto f_spi (ArgVec const& args) -> Value {
@@ -234,16 +234,16 @@ static Function const fo_ticker (f_ticker);
 static Function const fo_ticks (f_ticks);
 
 static Lookup::Item const machine_map [] = {
-    { Q(205,"dog"), fo_dog },
-    { Q(206,"kick"), fo_kick },
-    { Q(207,"rf69"), fo_rf69 },
-    { Q(208,"spi"), fo_spi },
-    { Q(209,"ticker"), fo_ticker },
-    { Q(210,"ticks"), fo_ticks },
+    { Q(206,"dog"), fo_dog },
+    { Q(207,"kick"), fo_kick },
+    { Q(208,"rf69"), fo_rf69 },
+    { Q(209,"spi"), fo_spi },
+    { Q(210,"ticker"), fo_ticker },
+    { Q(211,"ticks"), fo_ticks },
 //CG>
-    { Q(215,"pins"), pins },
+    { Q(216,"pins"), pins },
 };
 
 //CG2 module-end
 static Lookup const machine_attrs (machine_map, sizeof machine_map);
-Module ext_machine (Q(211,"machine"), machine_attrs);
+Module ext_machine (Q(212,"machine"), machine_attrs);

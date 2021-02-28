@@ -45,17 +45,16 @@ int printf(const char* fmt, ...) {
 extern "C" int puts (char const* s) { return printf("%s\n", s); }
 extern "C" int putchar (int ch) { return printf("%c", ch); }
 
-void systemReset () {
+static void systemReset [[noreturn]] () {
     // ARM Cortex specific
     MMIO32(0xE000ED0C) = (0x5FA<<16) | (1<<2); // SCB AIRCR reset
     while (true) {}
 }
 
 extern "C" void abort () {
-    printf("\nabort\n");
-    wait_ms(250);
+    printf("abort\n");
+    wait_ms(250); // slow down a bit, in case of runaway restarts
     arch::done();
-    while (true) {} // comply with abort's "noreturn" attribute
 }
 
 extern "C" void __assert_func (char const* f, int l, char const* n, char const* e) {
@@ -390,12 +389,11 @@ void arch::idle () {
     asm ("wfi");
 }
 
-auto arch::done () -> int {
+void arch::done () {
     //monty::Stacklet::gcAll();
     HexSerial::magic() = 0; // clear boot command buffer
     wait_ms(10);
     systemReset(); // will resume the cli task with a clean slate
-    return 0;
 }
 
 #ifdef UNIT_TEST

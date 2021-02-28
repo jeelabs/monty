@@ -177,7 +177,7 @@ def builds(c):
 @task
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio monty.bin")
+    c.run("rm -rf .pio examples/*/.pio pytests/*.mpy")
 
 @task
 def examples(c):
@@ -202,6 +202,11 @@ def mrfs(c, offset=0, file=""):
     else:
         c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
 
+@task(help={"file": "the Python script to send whenever it changes"})
+def watch(c, file):
+    """compile-send-exec-view loop for quick Python dev cycles"""
+    c.run("src/watcher.py %s" % file, pty=True)
+
 @task
 def health(c):
     """verify proper toolchain setup"""
@@ -217,8 +222,10 @@ def serial(c):
     """serial terminal session, use in separate window"""
     c.run("pio device monitor -b115200 --echo --quiet", pty=True)
 
-@task(clean, test, call(python, python_skip),
-      upload, flash, mrfs, call(runner, runner_skip),
-      builds, examples)
+@task(post=[clean, test, call(python, python_skip),
+            upload, flash, mrfs, call(runner, runner_skip),
+            builds, examples])
 def all(c):
     """i.e. clean test python upload flash mrfs runner builds examples"""
+    # make sure the JeeH library is not found locally, i.e. unset this env var
+    os.environ.pop("PLATFORMIO_LIB_EXTRA_DIRS", None)
