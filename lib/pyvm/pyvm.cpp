@@ -1220,11 +1220,8 @@ struct PyVM : Stacklet {
         _signal = {};
 
         auto& einfo = e.asType<Exception>();
-        einfo.trace().append(_ipOff);
-        einfo.trace().append(_callee);
-auto info = (uint16_t const*) _callee->_bc.base();
-printf("  File \"%s\", line %d, in %s\n",
-        Q::str(info[1]+1), _callee->_bc.findLine(_ipOff-1), Q::str(info[0]+1));
+        einfo.traceVec().append(_ipOff);
+        einfo.traceVec().append(&_callee->_bc);
 
         if (frame().ep > 0) { // simple exception, no stack unwind
             auto ep = excBase(0);
@@ -1239,6 +1236,8 @@ printf("  File \"%s\", line %d, in %s\n",
                 Buffer buf;
                 buf.print("uncaught exception: ");
                 e->repr(buf);
+                buf.puts("\n  ");
+                einfo.trace()->repr(buf);
                 buf.putc('\n');
             }
         }

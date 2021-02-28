@@ -221,6 +221,14 @@ static Lookup::Item const event_map [] = {
 };
 Lookup const Event::attrs (event_map, sizeof event_map);
 
+static auto const m_exception_trace = Method::wrap(&Exception::trace);
+static Method const mo_exception_trace (m_exception_trace);
+
+static Lookup::Item const exception_map [] = {
+    { Q(184,"trace"), mo_exception_trace },
+};
+Lookup const Exception::attrs (exception_map, sizeof exception_map);
+
 static auto const m_list_append = Method::wrap(&List::append);
 static Method const mo_list_append (m_list_append);
 
@@ -263,17 +271,17 @@ static Lookup::Item const builtinsMap [] = {
     { Q(167,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(184,"array"), Array::info },
+    { Q(185,"array"), Array::info },
     { Q( 62,"bool"),  Bool::info },
     { Q( 66,"bytes"), Bytes::info },
-    { Q(185,"class"), Class::info },
+    { Q(186,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
     { Q(170,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
     { Q(140,"set"),   Set::info },
-    { Q(186,"slice"), Slice::info },
+    { Q(187,"slice"), Slice::info },
     { Q(151,"str"),   Str::info },
     { Q(154,"super"), Super::info },
     { Q(157,"tuple"), Tuple::info },
@@ -291,8 +299,10 @@ static Lookup const builtins_attrs (builtinsMap, sizeof builtinsMap);
 Dict Module::builtins (&builtins_attrs);
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
-    extra() = { .code=exc };
-    memset(extra().trace, 0, sizeof extra().trace);
+    extra() = { .code=exc, .trace={} };
+    // TODO nasty, fixup Exception::info, as it doesn't have the attrs set
+    //  because exception is not an exposed type ("<exception>" iso "exception")
+    info._chain = &attrs;
 }
 
 auto Exception::findId (Function const& f) -> int {
@@ -318,9 +328,26 @@ auto Exception::binop (BinOp op, Value rhs) const -> Value {
     return Tuple::binop(op, rhs);
 }
 
+auto Exception::traceVec () const -> Vector& {
+    auto p = extra().trace; // FIXME awful hack for Vector copying & const-ness
+    return *(Vector*) (void*) p;
+}
+
+auto Exception::trace () -> Value {
+    auto r = new List;
+    auto& v = traceVec();
+    for (uint32_t i = 0; i < v.size(); i += 2) {
+        auto e = v[i+1]; // Bytecode object
+        r->append(e->getAt(-1));    // filename
+        r->append(e->getAt(v[i]));  // line number
+        r->append(e->getAt(-2));    // function
+    }
+    return r;
+}
+
 void Exception::marker () const {
     Tuple::marker();
-    markVec(trace()); // awkward access to Vector
+    markVec(traceVec()); // awkward access to Vector
 }
 
 auto Exception::create (E exc, ArgVec const& args) -> Value {
@@ -335,31 +362,31 @@ auto Exception::repr (Buffer& buf) const -> Value {
 }
 
 //CG< type-info
-Type    BoundMeth::info (Q(187,"<boundmeth>"));
-Type       Buffer::info (Q(188,"<buffer>"));
-Type         Cell::info (Q(189,"<cell>"));
-Type      Closure::info (Q(190,"<closure>"));
-Type     DictView::info (Q(191,"<dictview>"));
-Type    Exception::info (Q(192,"<exception>"));
-Type     Function::info (Q(193,"<function>"));
-Type     Iterator::info (Q(194,"<iterator>"));
-Type       Lookup::info (Q(195,"<lookup>"));
-Type       Method::info (Q(196,"<method>"));
+Type    BoundMeth::info (Q(188,"<boundmeth>"));
+Type       Buffer::info (Q(189,"<buffer>"));
+Type         Cell::info (Q(190,"<cell>"));
+Type      Closure::info (Q(191,"<closure>"));
+Type     DictView::info (Q(192,"<dictview>"));
+Type    Exception::info (Q(193,"<exception>"));
+Type     Function::info (Q(194,"<function>"));
+Type     Iterator::info (Q(195,"<iterator>"));
+Type       Lookup::info (Q(196,"<lookup>"));
+Type       Method::info (Q(197,"<method>"));
 Type       Module::info (Q(  7,"<module>"));
-Type         None::info (Q(197,"<none>"));
-Type     Stacklet::info (Q(198,"<stacklet>"));
+Type         None::info (Q(198,"<none>"));
+Type     Stacklet::info (Q(199,"<stacklet>"));
 
-Type    Array::info (Q(184,"array"), &Array::attrs, Array::create);
+Type    Array::info (Q(185,"array"), &Array::attrs, Array::create);
 Type     Bool::info (Q( 62,"bool"),   &Bool::attrs,  Bool::create);
 Type    Bytes::info (Q( 66,"bytes"), &Bytes::attrs, Bytes::create);
-Type    Class::info (Q(185,"class"), &Class::attrs, Class::create);
+Type    Class::info (Q(186,"class"), &Class::attrs, Class::create);
 Type     Dict::info (Q( 75,"dict"),   &Dict::attrs,  Dict::create);
 Type    Event::info (Q(170,"event"), &Event::attrs, Event::create);
 Type      Int::info (Q( 94,"int"),     &Int::attrs,   Int::create);
 Type     List::info (Q(108,"list"),   &List::attrs,  List::create);
 Type    Range::info (Q(124,"range"), &Range::attrs, Range::create);
 Type      Set::info (Q(140,"set"),     &Set::attrs,   Set::create);
-Type    Slice::info (Q(186,"slice"), &Slice::attrs, Slice::create);
+Type    Slice::info (Q(187,"slice"), &Slice::attrs, Slice::create);
 Type      Str::info (Q(151,"str"),     &Str::attrs,   Str::create);
 Type    Super::info (Q(154,"super"), &Super::attrs, Super::create);
 Type    Tuple::info (Q(157,"tuple"), &Tuple::attrs, Tuple::create);

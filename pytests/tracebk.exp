@@ -1,8 +1,8 @@
 main
 <exception> Exception(123)
-Exception(123)
+["tracebk.py",9,"<module>"]
 <exception> Exception(456)
-Exception(456)
+["tracebk.py",15,"f","tracebk.py",18,"<module>"]
 <exception> Exception(789)
-Exception(789)
+["tracebk.py",15,"f","tracebk.py",24,"g","tracebk.py",27,"<module>"]
 done

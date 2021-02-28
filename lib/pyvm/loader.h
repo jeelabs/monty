@@ -26,6 +26,7 @@ struct Bytecode : List {
     auto base () const -> uint8_t const* { return (uint8_t const*) (this+1); }
     auto start () const -> uint8_t const* { return base() + code; }
 
+    // determine the source line number, given an offset into the bytecode
     auto findLine (uint32_t off) const -> uint32_t {
         uint32_t line = 1;
         for (auto p = base() + 4; *p != 0; ++p) {
@@ -44,6 +45,19 @@ struct Bytecode : List {
             line += l;
         }
         return line;
+    }
+
+    // this function is abused for line lookup, keeping Bytecode a hidden type
+    auto getAt (Value k) const -> Value override {
+        assert(k.isInt());
+        int i = k;
+        if (i >= 0)
+            return findLine(i);
+        auto p = reinterpret_cast<uint16_t const*>(base());
+        // index with -1 or -2 to obtain the file/function names, respectively
+        if (i == -1)
+            ++p;
+        return Q(*p+1); // return first or second qstr in the bytecode body
     }
 
     static auto load (void const*, Value) -> Callable*;

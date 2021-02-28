@@ -1057,14 +1057,17 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
 
-        struct Extra { E code; uint8_t trace [sizeof (Vector)]; };
+        static constexpr auto NVEC32 = sizeof (Vector) / sizeof (uintptr_t);
+        struct Extra { E code; uintptr_t trace [NVEC32]; };
         auto extra () const -> Extra& {
             return *static_cast<Extra*> ((void*) end()); // TODO yuck!
         }
-        auto trace () const -> Vector& {
-            return (Vector&) extra().trace; // TODO hack around Vector copying
-        }
+        auto traceVec () const -> Vector&; // TODO has to mess with const :(
 
+        //CG: wrap Exception trace
+        auto trace () -> Value;
+        static Lookup const attrs;
+        
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
         static auto findId (Function const&) -> int; // find in builtinsMap
@@ -1072,7 +1075,7 @@ namespace monty {
         void marker () const override;
     private:
         Exception (E exc, ArgVec const& args);
-        ~Exception () override { trace().adj(0); } // needs explicit cleanup
+        ~Exception () override { traceVec().adj(0); } // needs explicit cleanup
 
         auto binop (BinOp, Value) const -> Value override;
     };
