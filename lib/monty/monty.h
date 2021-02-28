@@ -1057,9 +1057,12 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         auto repr (Buffer&) const -> Value override;
 
-        struct Extra { E code; uint16_t ipOff; Object const* callee; };
+        struct Extra { E code; uint8_t trace [sizeof (Vector)]; };
         auto extra () const -> Extra& {
             return *static_cast<Extra*> ((void*) end()); // TODO yuck!
+        }
+        auto trace () const -> Vector& {
+            return (Vector&) extra().trace; // TODO hack around Vector copying
         }
 
         static auto create (E, ArgVec const&) -> Value; // diff API
@@ -1069,6 +1072,7 @@ namespace monty {
         void marker () const override;
     private:
         Exception (E exc, ArgVec const& args);
+        ~Exception () override { trace().adj(0); } // needs explicit cleanup
 
         auto binop (BinOp, Value) const -> Value override;
     };

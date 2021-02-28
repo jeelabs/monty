@@ -23,8 +23,27 @@ struct Bytecode : List {
         return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
     }
 
-    auto start () const -> uint8_t const* {
-        return (uint8_t const*) (this + 1) + code;
+    auto base () const -> uint8_t const* { return (uint8_t const*) (this+1); }
+    auto start () const -> uint8_t const* { return base() + code; }
+
+    auto findLine (uint32_t off) const -> uint32_t {
+        uint32_t line = 1;
+        for (auto p = base() + 4; *p != 0; ++p) {
+            uint32_t b, l;
+            if (*p & 0x80) { // 0b1LLLBBBB 0bLLLLLLLL
+                b = *p & 0x0F;
+                l = (*p & 0x70) << 4;
+                l += *++p;
+            } else { // 0b0LLBBBBB
+                b = *p & 0x1F;
+                l = *p >> 5;
+            }
+            if (off < b)
+                break;
+            off -= b;
+            line += l;
+        }
+        return line;
     }
 
     static auto load (void const*, Value) -> Callable*;
@@ -194,9 +213,9 @@ struct Loader {
         for (int i = 0; i < len; ++i)
             qBuf[i] = *dp++;
         qBuf[len] = 0;
-        debugf("q:%s\n", qBuf);
 
         auto n = Q::make(qBuf);
+        debugf("q:%s <%d>\n", qBuf, n);
         if (vvec != nullptr) {
             assert(n > 256); // not in std set
             n = n & 0xFF;
@@ -270,6 +289,7 @@ struct Loader {
         for (int i = -bc.n_cell; i < 0; ++i)
             debugf("deref %d: %d\n", i, bcNext[i]);
         bc.code = bcNext - bcBuf;
+        debugf("n_cell %d code %d\n", bc.n_cell, bc.code);
 
         loadOps();
 

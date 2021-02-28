@@ -158,7 +158,8 @@ struct PyVM : Stacklet {
     }
 
     static constexpr int EXC_STEP = 3; // use 3 entries per exception
-    static constexpr auto FinallyTag = 1<<20;
+    static constexpr auto FinallyFlag = 1U<<20;
+    static constexpr auto FinallyMask = FinallyFlag - 1;
 
     auto globals () const -> Module& { return _callee->_mo; }
 
@@ -495,7 +496,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op o
     void opSetupFinally (int arg) {
-        opSetupExcept(arg + FinallyTag);
+        opSetupExcept(arg | FinallyFlag);
     }
     //CG1 op
     void opEndFinally () {
@@ -1218,13 +1219,16 @@ struct PyVM : Stacklet {
             return; // there was no exception, just an inner loop exit
         _signal = {};
 
-        auto& einfo = e.asType<Exception>().extra();
-        einfo.ipOff = _ipOff;
-        einfo.callee = _callee;
+        auto& einfo = e.asType<Exception>();
+        einfo.trace().append(_ipOff);
+        einfo.trace().append(_callee);
+auto info = (uint16_t const*) _callee->_bc.base();
+printf("  File \"%s\", line %d, in %s\n",
+        Q::str(info[1]+1), _callee->_bc.findLine(_ipOff-1), Q::str(info[0]+1));
 
         if (frame().ep > 0) { // simple exception, no stack unwind
             auto ep = excBase(0);
-            _ipOff = ep[0] & (FinallyTag - 1);
+            _ipOff = ep[0] & FinallyMask;
             _spOff = ep[1];
             begin()[++_spOff] = e.isNil() ? ep[2] : e;
         } else {

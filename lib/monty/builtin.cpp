@@ -291,7 +291,8 @@ static Lookup const builtins_attrs (builtinsMap, sizeof builtinsMap);
 Dict Module::builtins (&builtins_attrs);
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
-    extra() = { .code=exc, .ipOff=0, .callee=nullptr };
+    extra() = { .code=exc };
+    memset(extra().trace, 0, sizeof extra().trace);
 }
 
 auto Exception::findId (Function const& f) -> int {
@@ -319,7 +320,7 @@ auto Exception::binop (BinOp op, Value rhs) const -> Value {
 
 void Exception::marker () const {
     Tuple::marker();
-    mark(extra().callee);
+    markVec(trace()); // awkward access to Vector
 }
 
 auto Exception::create (E exc, ArgVec const& args) -> Value {
