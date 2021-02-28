@@ -18,7 +18,7 @@ int main (int argc, char const** argv) {
     auto task = arch::cliTask();
 #endif
     if (task != nullptr)
-        Stacklet::tasks.append(task);
+        Stacklet::ready.append(task);
     else
         printf("no task\n");
 

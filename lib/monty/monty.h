@@ -888,7 +888,7 @@ namespace monty {
             return __atomic_fetch_and(&pending, 0, __ATOMIC_RELAXED); // clears
         }
 
-        static List tasks;
+        static List ready;
         static volatile uint32_t pending;
         static Stacklet* current;
     };

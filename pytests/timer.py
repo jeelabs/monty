@@ -11,4 +11,4 @@ async def loop():
         evt.clear()
     machine.ticker()
 
-sys.tasks.append(loop())
+sys.ready.append(loop())

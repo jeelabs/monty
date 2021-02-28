@@ -18,7 +18,7 @@ async def task(rate):
         i += 1
 
 for i in [25]:
-    sys.tasks.append(task(i))
+    sys.ready.append(task(i))
 
 async def timeout():
     print(machine.pins)
@@ -27,4 +27,4 @@ async def timeout():
         print(i, machine.pins.B3, machine.ticks())
     machine.ticker()
 
-sys.tasks.append(timeout())
+sys.ready.append(timeout())

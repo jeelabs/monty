@@ -15,10 +15,10 @@ async def task(rate):
         i += 1
 
 for i in [2, 3, 5]:
-    sys.tasks.append(task(i))
+    sys.ready.append(task(i))
 
 async def timeout():
     delay(20)
     machine.ticker()
 
-sys.tasks.append(timeout())
+sys.ready.append(timeout())

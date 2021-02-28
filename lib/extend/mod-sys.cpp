@@ -47,7 +47,7 @@ static Lookup::Item const sys_map [] = {
     { Q(172,"gcmax"), fo_gcmax },
     { Q(173,"gcstats"), fo_gcstats },
 //CG>
-    { Q(175,"tasks"), Stacklet::tasks },
+    { Q(175,"ready"), Stacklet::ready },
     { Q(176,"modules"), Module::loaded },
     { Q( 63,"builtins"), Module::builtins },
     { Q(177,"implementation"), Q(178,"monty") },

@@ -65,7 +65,7 @@ void arch::idle () {
 
 static void cleanup () {
     Event::triggers.clear();
-    Stacklet::tasks.clear();
+    Stacklet::ready.clear();
     Module::builtins.clear();
     Module::loaded.clear();
     qstrCleanup();

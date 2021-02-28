@@ -130,7 +130,7 @@ int main (int argc, char const** argv) {
     auto cmd  = new Runner (cmdRunner, py);
     Pipeline pipe (cmd);
 
-    Stacklet::tasks.append(&pipe);
+    Stacklet::ready.append(&pipe);
 
     while (Stacklet::runLoop()) {}
 

@@ -14,7 +14,7 @@ There are currently two different extension categories in here:
 ## module sys
 
 This module can hardly be called "optional", as it provides functionality which
-is essential for certain tasks in Python (and `sys.tasks` is one of them ...).
+is essential for certain tasks in Python.
 
 The `sys` module has the following attributes:
 
@@ -25,7 +25,7 @@ The `sys` module has the following attributes:
 * `sys.gcstats()` - print out some GC statistics
 * `sys.implementation` - name of this implementation, i.e. `"monty"`
 * `sys.modules` - a map of all currently-loaded bytecode modules
-* `sys.tasks` -  this is the list of currently-runnable tasks
+* `sys.ready` -  this is the list of ready-to-run coroutines
 * `sys.version` - version of this build, i.e. `"v1.0"` (based on `git describe`)
 
 The `//CG ...` code generator directives in `mod-sys.cpp` have as side effect

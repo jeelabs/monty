@@ -25,4 +25,4 @@ async def loop():
         print(machine.ticks(), buf[:n])
     machine.ticker()
 
-sys.tasks.append(loop())
+sys.ready.append(loop())

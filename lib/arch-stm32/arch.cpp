@@ -326,7 +326,7 @@ static auto execCmd (char const* buf) -> bool {
     if (data != nullptr) {
         auto p = vmLaunch(data);
         assert(p != nullptr);
-        Stacklet::tasks.append(p);
+        Stacklet::ready.append(p);
         return true;
     }
 #endif

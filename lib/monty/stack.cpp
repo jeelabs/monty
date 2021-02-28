@@ -13,7 +13,7 @@ extern void timerHook ();
 
 using namespace monty;
 
-List Stacklet::tasks;
+List Stacklet::ready;
 uint32_t volatile Stacklet::pending;
 Stacklet* Stacklet::current;
 
@@ -37,7 +37,7 @@ void Stacklet::gcAll () {
 
     markVec(Event::triggers);
     mark(current);
-    tasks.marker();
+    ready.marker();
     save->marker();
 
     // restore the broken chain, now that marking is complete
@@ -83,9 +83,9 @@ void Event::set () {
     _value = true;
     auto n = _queue.size();
     if (n > 0) {
-        // insert all entries at head of tasks and remove them from this event
-        Stacklet::tasks.insert(0, n);
-        memcpy(Stacklet::tasks.begin(), _queue.begin(), n * sizeof (Value));
+        // insert all entries at head of ready and remove them from this event
+        Stacklet::ready.insert(0, n);
+        memcpy(Stacklet::ready.begin(), _queue.begin(), n * sizeof (Value));
         if (_id >= 0)
             queued -= n;
         assert(queued >= 0);
@@ -148,12 +148,12 @@ void Stacklet::yield (bool fast) {
     if (fast) {
         if (pending == 0)
             return; // don't yield if there are no pending triggers
-        assert(tasks.find(current) >= tasks.size());
-        tasks.push(current);
+        assert(ready.find(current) >= ready.size());
+        ready.push(current);
         current = nullptr;
         suspend();
     } else
-        suspend(tasks);
+        suspend(ready);
 }
 
 void Stacklet::suspend (Vector& queue) {
@@ -200,10 +200,10 @@ auto Stacklet::runLoop () -> bool {
             if ((flags & (1U<<i)) && !Event::triggers[i].isNil())
                 Event::triggers[i].asType<Event>().set();
 
-        if (tasks.size() == 0)
+        if (ready.size() == 0)
             break;
 
-        current = (Stacklet*) &tasks.pull().obj();
+        current = (Stacklet*) &ready.pull().obj();
         assert(current != nullptr);
 
         if (current->cap() > current->_fill + sizeof (jmp_buf) / sizeof (Value))
@@ -214,12 +214,12 @@ auto Stacklet::runLoop () -> bool {
 
         if (current != nullptr) {
             current->adj(current->_fill);
-            assert(tasks.find(current) >= tasks.size());
-            tasks.push(current);
+            assert(ready.find(current) >= ready.size());
+            ready.push(current);
         }
     }
 
-    return Event::queued > 0 || tasks.size() > 0;
+    return Event::queued > 0 || ready.size() > 0;
 }
 
 auto Stacklet::repr (Buffer& buf) const -> Value {

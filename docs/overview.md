@@ -75,7 +75,7 @@ while the more hardware- and performance-specific parts can be written in C++,
 using a similar notation and the same types of objects to avoid "friction" and
 "impedance mismatch".
 
-The modularity of it all means that Monty's core is still under 5000 lines of
+The modularity of it all means that Monty's core is still under 4000 lines of
 C++ for all the object types, basic list / set / dict collections, and garbage
 collector. On top of this, but as _optional_ module, there's "PyVM", Monty's
 virtual machine which interprets bytecode files created by MicroPython's
