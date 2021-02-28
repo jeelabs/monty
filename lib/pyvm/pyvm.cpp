@@ -1306,20 +1306,47 @@ auto Callable::call (ArgVec const& args) const -> Value {
     int nPos = _bc.numArgs(0);
     int nDef = _bc.numArgs(1);
     int nKwo = _bc.numArgs(2);
-    int nc = _bc.numCells();
+    int nCel = _bc.numCells();
+    //printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p\n",
+    //    args._num, nPos, nDef, nKwo, nCel, _pos, _kw);
+    auto aPos = args._num & 0xFF;
+    auto aKwd = args._num >> 8;
 
-    for (int i = 0; i < nPos + nc; ++i)
-        if (i < args._num)
+    if (_kw != nullptr) // preset args with kw defaults
+        for (int j = 0; j < nPos + nKwo; ++j) {
+            assert(_bc[j].isStr());
+            Value v = _kw->at(_bc[j]);
+            if (!v.isNil())
+                ctx->fastSlot(j) = v;
+            // TODO else, add to kwarg dict?
+        }
+
+    for (int i = 0; i < nPos + nCel; ++i)
+        if (i < aPos)
             ctx->fastSlot(i) = args[i];
         else if (_pos != nullptr && (uint32_t) i < nDef + _pos->_fill)
             ctx->fastSlot(i) = (*_pos)[i+nDef-nPos];
+
+    for (int i = 0; i < aKwd; ++i) {
+        auto off = aPos + 2*i;
+        auto name = args[off];
+        assert(name.isStr()); // TODO is this certain to be a qstr?
+        for (int j = 0; j < nPos + nKwo; ++j) {
+            assert(_bc[j].isStr());
+            if (name.id() == _bc[j].id()) {
+                ctx->fastSlot(j) = args[off+1];
+                break;
+            }
+        }
+        // TODO else, add to kwarg dict?
+    }
 
     if (_bc.hasVarArgs())
         ctx->fastSlot(nPos+nKwo) =
             Tuple::create({args._vec, args._num-nPos, args._off+nPos});
 
-    uint8_t const* cellMap = _bc.start() - nc;
-    for (int i = 0; i < nc; ++i) {
+    uint8_t const* cellMap = _bc.start() - nCel;
+    for (int i = 0; i < nCel; ++i) {
         auto slot = cellMap[i];
         ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
     }

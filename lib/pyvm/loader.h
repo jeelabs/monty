@@ -339,8 +339,11 @@ struct Loader {
 
         auto dpOff = dp;
 
-        for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i)
-            bc.append(loadQstr());
+        for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i) {
+            auto qs = loadQstr();
+            debugf("bc %d qs %d: %s\n", bc.size(), qs, Q::str(qs));
+            bc.append(Q(qs));
+        }
 
         for (uint32_t i = 0; i < nData; ++i) {
             auto type = *dp++;
