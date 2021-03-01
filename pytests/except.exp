@@ -42,4 +42,7 @@ exception: EOFError() ["except.py",86,"g"]
 base exception: BaseException() ["except.py",86,"g"]
 exception: UnicodeError() ["except.py",86,"g"]
 AttributeError("blah","str") ["except.py",105,"<module>"]
+<exception> AssertionError() ["except.py",112,"<module>"]
+<exception> AssertionError("this should fail") ["except.py",117,"<module>"]
+<exception> Exception() ["except.py",122,"<module>"]
 done

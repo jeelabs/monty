@@ -105,3 +105,20 @@ try:
     print("abcde".blah())
 except Exception as e:
     print(e, e.trace())
+
+assert 1 == 1
+
+try:
+    assert 1 == 0
+except Exception as e:
+    print(type(e), e, e.trace())
+
+try:
+    assert 1 == 0, "this should fail"
+except Exception as e:
+    print(type(e), e, e.trace())
+
+try:
+    raise Exception
+except Exception as e:
+    print(type(e), e, e.trace())

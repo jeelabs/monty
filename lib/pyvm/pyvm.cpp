@@ -1218,6 +1218,11 @@ struct PyVM : Stacklet {
             return; // there was no exception, just an inner loop exit
         _signal = {};
 
+        // quirky: "assert" without 2nd arg does not construct the exception
+        // and "raise Exception" is also allowed, iso "raise Exception()" ...
+        if (e.ifType<Function>())
+            e = e->call(Vector{}); // so construct it now
+
         auto& einfo = e.asType<Exception>();
 
         // finally clauses and re-raises must not extend the trace
