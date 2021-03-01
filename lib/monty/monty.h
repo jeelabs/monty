@@ -38,8 +38,8 @@ namespace monty {
 
     struct Vec {
         constexpr Vec () =default;
-        constexpr Vec (void const* ptr, uint32_t num =0)
-                    : _data ((uint8_t*) ptr), _capa (num) {}
+        constexpr Vec (void const* data, uint32_t capa =0)
+                    : _data ((uint8_t*) data), _capa (capa) {}
         ~Vec () { (void) adj(0); }
 
         static auto isInPool (void const* p) -> bool;
@@ -50,13 +50,13 @@ namespace monty {
         static void compact (); // reclaim and compact unused vector space
         static void dumpAll (); // like compact, but only to print all vec+free
 
-    // protected: TODO test/*/main.cpp need access
+    protected:
         auto ptr () const -> uint8_t* { return _data; }
         auto cap () const -> uint32_t { return _capa; }
         auto adj (uint32_t bytes) -> bool;
     private:
         uint8_t* _data = nullptr; // pointer to vector when capa > 0
-        uint32_t _capa = 0; // capacity in bytes
+        uint32_t _capa = 0;       // capacity in bytes
 
         auto slots () const -> uint32_t; // capacity in vecslots
         auto findSpace (uint32_t) -> void*; // hidden private type
@@ -101,7 +101,7 @@ namespace monty {
     void qstrCleanup ();
 
     struct Q {
-        constexpr Q (uint16_t i, char const* =nullptr) : _id (i) {}
+        constexpr Q (uint16_t id, char const* =nullptr) : _id (id) {}
 
         operator char const* () const { return str(_id); }
 
@@ -231,18 +231,16 @@ namespace monty {
         inline auto isTrue  () const -> bool;
                auto isBool  () const -> bool { return isFalse() || isTrue(); }
 
+        static auto asBool (bool f) -> Value;
         auto truthy () const -> bool;
+        auto invert () const -> Value { return asBool(!truthy()); }
 
         auto operator== (Value) const -> bool;
-
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
 
         inline void marker () const;
         void dump (char const* msg =nullptr) const;
-
-        static inline auto asBool (bool f) -> Value;
-        auto invert () const -> Value { return asBool(!truthy()); }
 
     private:
         auto check (Type const& t) const -> bool;
@@ -259,8 +257,6 @@ namespace monty {
     extern Value const False;
     extern Value const True;
     extern Value const Empty; // Tuple
-
-    auto Value::asBool (bool f) -> Value { return f ? True : False; }
 
     template< typename T >
     struct VecOf : private Vec {
@@ -401,7 +397,9 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
 
-        static None const nullObj;
+        auto binop (BinOp, Value) const -> Value override;
+
+        static None const noneObj;
     private:
         constexpr None () =default; // can't construct more instances
     };
@@ -421,7 +419,7 @@ namespace monty {
         constexpr Bool () =default; // can't construct more instances
     };
 
-    auto Value::isNone  () const -> bool { return _o == &None::nullObj; }
+    auto Value::isNone  () const -> bool { return _o == &None::noneObj; }
     auto Value::isFalse () const -> bool { return _o == &Bool::falseObj; }
     auto Value::isTrue  () const -> bool { return _o == &Bool::trueObj; }
 
@@ -475,7 +473,7 @@ namespace monty {
         void repr (Buffer&) const override;
     //CG>
         auto len () const -> uint32_t override;
-        auto getAt (Value k) const -> Value override;
+        auto getAt (Value k) const -> Value override { return _from + k * _by; }
         auto iter () const -> Value override { return 0; }
 
         Range (int from, int to, int by) : _from (from), _to (to), _by (by) {}

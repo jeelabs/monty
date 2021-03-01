@@ -17,6 +17,13 @@ private:
     Object* other;
 };
 
+// expose some methods just for testing
+struct TestVec : Vec {
+    using Vec::ptr;
+    using Vec::cap;
+    using Vec::adj;
+};
+
 void setUp () {
     gcSetup(memory, sizeof memory);
     memAvail = gcMax();
@@ -198,7 +205,7 @@ void outOfObjs () {
 
 void newVec () {
     {
-        Vec v1;
+        TestVec v1;
         TEST_ASSERT_EQUAL(2 * sizeof (void*), sizeof v1);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
         TEST_ASSERT_EQUAL(0, v1.cap());
@@ -209,7 +216,7 @@ void newVec () {
 
 void resizeVec () {
     {
-        Vec v1;
+        TestVec v1;
         auto f = v1.adj(0);
         TEST_ASSERT_TRUE(f);
         TEST_ASSERT_EQUAL_PTR(0, v1.ptr());
@@ -240,9 +247,9 @@ void resizeVec () {
 }
 
 void reuseVecs () {
-    Vec v1;
+    TestVec v1;
     v1.adj(100);                    // [ v1 ]
-    Vec v2;
+    TestVec v2;
     v2.adj(20);                     // [ v1 v2 ]
 
     auto a = gcMax();
@@ -252,11 +259,11 @@ void reuseVecs () {
     v1.adj(0);                      // [ gap v2 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 
-    Vec v3;
+    TestVec v3;
     v3.adj(20);                     // [ v3 gap v2 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 
-    Vec v4;
+    TestVec v4;
     v4.adj(20);                     // [ v3 v4 gap v2 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 
@@ -264,7 +271,7 @@ void reuseVecs () {
     v4.adj(0);                      // [ gap gap v2 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 
-    Vec v5;
+    TestVec v5;
     v5.adj(100);                    // [ v5 v2 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 
@@ -297,46 +304,46 @@ void reuseVecs () {
 }
 
 void compactVecs () {
-    Vec v1;
+    TestVec v1;
     v1.adj(20);                     // [ v1 ]
-    Vec v2;
+    TestVec v2;
     v2.adj(20);                     // [ v1 v2 ]
 
     auto a = gcMax();
 
-    Vec v3;
+    TestVec v3;
     v3.adj(20);                     // [ v1 v2 v3 ]
 
     auto b = gcMax();
 
-    Vec v4;
+    TestVec v4;
     v4.adj(20);                     // [ v1 v2 v3 v4 ]
-    Vec v5;
+    TestVec v5;
     v5.adj(20);                     // [ v1 v2 v3 v4 v5 ]
 
     auto c = gcMax();
     TEST_ASSERT_LESS_THAN(b, c);
 
-    Vec::compact();                      // [ v1 v2 v3 v4 v5 ]
+    Vec::compact();                 // [ v1 v2 v3 v4 v5 ]
     TEST_ASSERT_EQUAL(c, gcMax());
 
     v2.adj(0);                      // [ v1 gap v3 v4 v5 ]
     v4.adj(0);                      // [ v1 gap v3 gap v5 ]
     TEST_ASSERT_EQUAL(c, gcMax());
 
-    Vec::compact();                      // [ v1 v3 v5 ]
+    Vec::compact();                 // [ v1 v3 v5 ]
     TEST_ASSERT_EQUAL(b, gcMax());
 
     v1.adj(0);                      // [ gap v3 v5 ]
     TEST_ASSERT_EQUAL(b, gcMax());
 
-    Vec::compact();                      // [ v3 v5 ]
+    Vec::compact();                 // [ v3 v5 ]
     TEST_ASSERT_EQUAL(a, gcMax());
 }
 
 void vecData () {
     {
-        Vec v1;                     // fill with 0xFF's
+        TestVec v1;                 // fill with 0xFF's
         v1.adj(1000);
         TEST_ASSERT_GREATER_OR_EQUAL(1000, v1.cap());
 
@@ -345,7 +352,7 @@ void vecData () {
         TEST_ASSERT_EQUAL(0xFF, v1.ptr()[v1.cap()-1]);
     }
 
-    Vec v2;
+    TestVec v2;
     v2.adj(20);                     // [ v2 ]
     auto p2 = v2.ptr();
     auto n = v2.cap();
@@ -371,7 +378,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(11, v2.ptr()[n]);
     TEST_ASSERT_EQUAL(22, v2.ptr()[v2.cap()-1]);
 
-    Vec v3;
+    TestVec v3;
     v3.adj(20);                     // [ v2 v3 ]
     auto p3 = v3.ptr();
     p3[0] = 3;
@@ -379,7 +386,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(3, p3[0]);
     TEST_ASSERT_EQUAL(4, p3[n-1]);
 
-    Vec v4;
+    TestVec v4;
     v4.adj(20);                     // [ v2 v3 v4 ]
     auto p4 = v4.ptr();
     p4[0] = 5;
@@ -400,7 +407,7 @@ void vecData () {
     TEST_ASSERT_EQUAL(44, v3.ptr()[v3.cap()-1]);
 
     auto a = gcMax();
-    Vec::compact();                      // [ v2 v4 v3 ]
+    Vec::compact();                 // [ v2 v4 v3 ]
     TEST_ASSERT_GREATER_THAN(a, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v2.ptr());
@@ -419,7 +426,7 @@ void vecData () {
     v2.adj(0);                      // [ gap v4 v3 ]
     v4.adj(0);                      // [ gap gap v3 ]
 
-    Vec::compact();                      // [ v3 ]
+    Vec::compact();                 // [ v3 ]
     TEST_ASSERT_LESS_THAN(memAvail, gcMax());
 
     TEST_ASSERT_EQUAL_PTR(p2, v3.ptr());
@@ -429,7 +436,7 @@ void vecData () {
 }
 
 void outOfVecs () {
-    Vec v1;
+    TestVec v1;
     auto f = v1.adj(999);
     TEST_ASSERT_TRUE(f);
     TEST_ASSERT_EQUAL(0, failed);

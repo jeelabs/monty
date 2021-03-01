@@ -6,11 +6,11 @@
 using namespace monty;
 //using monty::Q;
 
-None const None::nullObj;
+None const None::noneObj;
 Bool const Bool::falseObj;
 Bool const Bool::trueObj;
 
-Value const monty::Null  {None::nullObj};
+Value const monty::Null  {None::noneObj};
 Value const monty::False {Bool::falseObj};
 Value const monty::True  {Bool::trueObj};
 
@@ -138,7 +138,11 @@ auto Value::asInt () const -> int64_t {
     return asType<struct Int>();
 }
 
-bool Value::truthy () const {
+auto Value::asBool (bool f) -> Value {
+    return f ? True : False;
+}
+
+auto Value::truthy () const -> bool {
     switch (tag()) {
         case Nil: break;
         case Int: return (int) *this != 0;
@@ -203,65 +207,43 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
         default:               break;
     }
 
-    if (tag() == rhs.tag())
-        switch (tag()) {
-            case Int: {
-                auto l = (int) *this, r = (int) rhs;
-                switch (op) {
-                    case BinOp::Less:
-                        return asBool(l < r);
-                    case BinOp::Equal:
-                        return asBool(l == r);
-                    case BinOp::Or: case BinOp::InplaceOr:
-                        return l | r;
-                    case BinOp::Xor: case BinOp::InplaceXor:
-                        return l ^ r;
-                    case BinOp::And: case BinOp::InplaceAnd:
-                        return l & r;
-                    case BinOp::Lshift: case BinOp::InplaceLshift:
-                        return Int::make((int64_t) l << r);
-                    case BinOp::Rshift: case BinOp::InplaceRshift:
-                        return l >> r;
-                    case BinOp::Add: case BinOp::InplaceAdd:
-                        return l + r;
-                    case BinOp::Subtract: case BinOp::InplaceSubtract:
-                        return l - r;
-                    case BinOp::Multiply: case BinOp::InplaceMultiply:
-                        return Int::make((int64_t) l * r);
-                    case BinOp::TrueDivide: case BinOp::InplaceTrueDivide:
-                        // TODO needs floats, fall through
-                    case BinOp::FloorDivide: case BinOp::InplaceFloorDivide:
-                        if (r == 0)
-                            return E::ZeroDivisionError;
-                        return l / r;
-                    case BinOp::Modulo: case BinOp::InplaceModulo:
-                        if (r == 0)
-                            return E::ZeroDivisionError;
-                        return l % r;
-                    default:
-                        break;
-                }
-                break;
-            }
-            case Str: {
-                break;
-            }
+    if (isInt() && rhs.isInt()) {
+        auto l = (int) *this, r = (int) rhs;
+        switch (op) {
+            case BinOp::Less:
+                return asBool(l < r);
+            case BinOp::Equal:
+                return asBool(l == r);
+            case BinOp::Or: case BinOp::InplaceOr:
+                return l | r;
+            case BinOp::Xor: case BinOp::InplaceXor:
+                return l ^ r;
+            case BinOp::And: case BinOp::InplaceAnd:
+                return l & r;
+            case BinOp::Lshift: case BinOp::InplaceLshift:
+                return Int::make((int64_t) l << r);
+            case BinOp::Rshift: case BinOp::InplaceRshift:
+                return l >> r;
+            case BinOp::Add: case BinOp::InplaceAdd:
+                return l + r;
+            case BinOp::Subtract: case BinOp::InplaceSubtract:
+                return l - r;
+            case BinOp::Multiply: case BinOp::InplaceMultiply:
+                return Int::make((int64_t) l * r);
+            case BinOp::TrueDivide: case BinOp::InplaceTrueDivide:
+                // TODO needs floats, fall through
+            case BinOp::FloorDivide: case BinOp::InplaceFloorDivide:
+                if (r == 0)
+                    return E::ZeroDivisionError;
+                return l / r;
+            case BinOp::Modulo: case BinOp::InplaceModulo:
+                if (r == 0)
+                    return E::ZeroDivisionError;
+                return l % r;
             default:
-                assert(isObj());
-                switch (op) {
-                    case BinOp::Equal:
-#if 0
-                        return asBool(id() == rhs.id()); //XXX
-#else
-                        if (ifType<None>() != 0) // FIXME special-cased!
-                            return asBool(id() == rhs.id());
-                        // fall through
-#endif
-                    default:
-                        break;
-                }
                 break;
         }
+    }
 
     return asObj().binop(op, rhs);
 }
@@ -374,8 +356,15 @@ void Object::repr (Buffer& buf) const {
     buf.print("<%s at %p>", (char const*) type()._name, this);
 }
 
+auto None::binop (BinOp op, Value rhs) const -> Value {
+    if (op == BinOp::Equal)
+        return Value::asBool(rhs.isNone());
+    assert(false);
+    return {}; // TODO
+}
+
 void None::repr (Buffer& buf) const {
-    buf << "null";
+    buf << "null"; // JSON ...
 }
 
 auto Bool::unop (UnOp op) const -> Value {
@@ -462,7 +451,7 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
         default:
             break;
     }
-    (void) rhs; assert(false);
+    assert(false);
     return {}; // TODO
 }
 
@@ -511,10 +500,6 @@ auto Range::len () const -> uint32_t {
     assert(_by != 0);
     auto n = (_to - _from + _by + (_by > 0 ? -1 : 1)) / _by;
     return n < 0 ? 0 : n;
-}
-
-auto Range::getAt (Value k) const -> Value {
-    return _from + k * _by;
 }
 
 auto Range::create (ArgVec const& args, Type const*) -> Value {
