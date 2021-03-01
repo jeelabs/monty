@@ -1311,12 +1311,23 @@ auto Callable::call (ArgVec const& args) const -> Value {
     int nKwo = _bc.numArgs(2);
     int nCel = _bc.numCells();
     bool hva = _bc.hasVarArgs();
+    auto aPos = args._num & 0xFF;
+    auto aKwd = (args._num >> 8) & 0xFF;
+
+    Value xSeq, xMap;
+    auto more = args._num & (1<<16); // two hidden args, for "*seq" and "**map"
+    if (more) {
+        xSeq = args[aPos+2*aKwd];
+        xMap = args[aPos+2*aKwd+1];
+    }
 #if 0
     printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
             args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
+    if (more) {
+        xSeq.dump("xSeq");
+        xMap.dump("xMap");
+    }
 #endif
-    auto aPos = args._num & 0xFF;
-    auto aKwd = args._num >> 8;
 
     if (!hva && aPos > nPos + nCel)
         return {E::TypeError, "too many positional args", aPos};
@@ -1335,17 +1346,32 @@ auto Callable::call (ArgVec const& args) const -> Value {
             Value v = _kw->at(_bc[j]);
             if (!v.isNil())
                 ctx->fastSlot(j) = v;
-            // TODO else, add to kwarg dict?
         }
 
-    for (int i = 0; i < nPos + nCel; ++i)
-        if (i < aPos)
-            ctx->fastSlot(i) = args[i];
-        else if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
-            ctx->fastSlot(i) = (*_pos)[i+nDef-nPos];
+    int idx;
+    for (idx = 0; idx < aPos && idx < nPos + nCel; ++idx)
+        ctx->fastSlot(idx) = args[idx];
+    if (xSeq.isObj() && (hva || idx < nPos)) {
+        Value vit = xSeq->iter();
+        Iterator it (xSeq.obj());
+        auto& vob = vit.isInt() ? it : xSeq.obj();
+        while (hva || idx < nPos) {
+            auto v = vob.next();
+            if (v.isNil())
+                break;
+            if (v.ifType<Exception>() != nullptr) {
+                ctx->_signal = {}; // TODO hack, clear the raised signal
+                break;
+            }
+            ctx->fastSlot(idx++) = v;
+        }
+        aPos = idx;
+    }
+    for (; idx < nPos + nCel; ++idx)
+        if (_pos != nullptr && nPos-nDef <= idx && idx < nDef+(int)_pos->_fill)
+            ctx->fastSlot(idx) = (*_pos)[idx+nDef-nPos];
 
     uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
-    int kwSet = 0;
 
     for (int i = 0; i < aKwd; ++i) {
         auto off = aPos + 2*i;
@@ -1356,7 +1382,6 @@ auto Callable::call (ArgVec const& args) const -> Value {
             if (name.id() == _bc[j].id()) {
                 ctx->fastSlot(j) = args[off+1];
                 seen |= 1 << i; // key has been used, forget about it
-                ++kwSet;
                 break;
             }
         }
