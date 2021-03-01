@@ -247,7 +247,7 @@ auto Array::create (ArgVec const& args, Type const*) -> Value {
     return new Array (type, len);
 }
 
-Value Array::repr (Buffer& buf) const {
+void Array::repr (Buffer& buf) const {
     auto m = mode();
     auto n = len();
     buf.print("%d%c", n, m);
@@ -264,5 +264,4 @@ Value Array::repr (Buffer& buf) const {
     auto p = (uint8_t const*) begin();
     for (uint32_t i = 0; i < n; ++i)
         buf.print("%02x", p[i]);
-    return {};
 }

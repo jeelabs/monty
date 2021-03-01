@@ -169,7 +169,7 @@ auto Value::unOp (UnOp op) const -> Value {
                 case UnOp::Intg: // fall through
                 case UnOp::Pos:  // fall through
                 case UnOp::Hash: return *this;
-                case UnOp::Abs:  if (n > 0) return *this;
+                case UnOp::Abso: if (n > 0) return *this;
                                  // else fall through
                 case UnOp::Neg:  return Int::make(-n);
                 case UnOp::Inv:  return ~n;
@@ -267,7 +267,7 @@ auto Value::binOp (BinOp op, Value rhs) const -> Value {
 }
 
 auto Value::check (Type const& t) const -> bool {
-    return isObj() && &obj().type() == &t;
+    return isObj() && &_o->type() == &t;
 }
 
 void Value::verify (Type const& t) const {
@@ -370,14 +370,12 @@ auto Object::sliceSetter (Value k, Value v) -> Value {
     return store(r, v.obj());
 }
 
-auto Object::repr (Buffer& buf) const -> Value {
+void Object::repr (Buffer& buf) const {
     buf.print("<%s at %p>", (char const*) type()._name, this);
-    return {};
 }
 
-auto None::repr (Buffer& buf) const -> Value {
+void None::repr (Buffer& buf) const {
     buf << "null";
-    return {};
 }
 
 auto Bool::unop (UnOp op) const -> Value {
@@ -398,9 +396,8 @@ auto Bool::create (ArgVec const& args, Type const*) -> Value {
     return False;
 }
 
-auto Bool::repr (Buffer& buf) const -> Value {
+void Bool::repr (Buffer& buf) const {
     buf << (this == &falseObj ? "false" : "true");
-    return {};
 }
 
 auto Int::make (int64_t i) -> Value {
@@ -418,7 +415,7 @@ auto Int::unop (UnOp op) const -> Value {
         case UnOp::Intg: // fall through
         case UnOp::Pos:  return *this;
         case UnOp::Hash: return Q::hash(&_i64, sizeof _i64);
-        case UnOp::Abs:  if (_i64 > 0) return *this; // else fall through
+        case UnOp::Abso: if (_i64 > 0) return *this; // else fall through
         case UnOp::Neg:  return make(-_i64);
         case UnOp::Inv:  return make(~_i64);
         case UnOp::Not:  return Value::asBool(_i64 == 0);
@@ -481,7 +478,7 @@ auto Int::create (ArgVec const& args, Type const*) -> Value {
     return {};
 }
 
-auto Int::repr (Buffer& buf) const -> Value {
+void Int::repr (Buffer& buf) const {
     uint64_t val = _i64;
     if (_i64 < 0) {
         buf.putc('-');
@@ -499,16 +496,15 @@ auto Int::repr (Buffer& buf) const -> Value {
         buf.print("%d%06d", v2, v3);
     else
         buf.print("%d", v3);
-    return {};
 }
 
 auto Iterator::next() -> Value {
-    if (_ipos >= (int) iobj.len())
+    if (_pos >= (int) _obj.len())
         return E::StopIteration;
     // TODO duplicate code, see opForIter in pyvm.h
-    if (&iobj.type() == &Dict::info || &iobj.type() == &Set::info)
-        return ((List&) iobj)[_ipos++]; // avoid keyed access
-    return iobj.getAt(_ipos++);
+    if (&_obj.type() == &Dict::info || &_obj.type() == &Set::info)
+        return ((List&) _obj)[_pos++]; // avoid keyed access
+    return _obj.getAt(_pos++);
 }
 
 auto Range::len () const -> uint32_t {
@@ -529,9 +525,8 @@ auto Range::create (ArgVec const& args, Type const*) -> Value {
     return new Range (a, b, c);
 }
 
-auto Range::repr (Buffer& buf) const -> Value {
+void Range::repr (Buffer& buf) const {
     buf.print("range(%d,%d,%d)", _from, _to, _by);
-    return {};
 }
 
 auto Slice::asRange (int sz) const -> Range {
@@ -558,7 +553,6 @@ auto Slice::create (ArgVec const& args, Type const*) -> Value {
     return new Slice (a, b, c);
 }
 
-auto Slice::repr (Buffer& buf) const -> Value {
+void Slice::repr (Buffer& buf) const {
     buf << "slice(" << _off << ',' << _num << ',' << _step << ')';
-    return {};
 }

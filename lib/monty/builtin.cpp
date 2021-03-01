@@ -40,9 +40,7 @@ static auto f_iter (ArgVec const& args) -> Value {
     assert(args._num == 1 && args[0].isObj());
     auto& o = args[0].obj();
     auto v = o.iter();
-    if (v.isInt())
-        v = new Iterator (o, v);
-    return v;
+    return v.isInt() ? new Iterator (o, v) : v;
 }
 
 //CG1 bind next
@@ -54,15 +52,13 @@ static auto f_next (ArgVec const& args) -> Value {
 //CG1 bind len
 static auto f_len (ArgVec const& args) -> Value {
     assert(args._num == 1);
-    if (args[0].isStr())
-        return strlen(args[0]);
-    return args[0]->len();
+    return args[0].isStr() ? strlen(args[0]) : args[0]->len();
 }
 
 //CG1 bind abs
 static auto f_abs (ArgVec const& args) -> Value {
     assert(args._num == 1);
-    return args[0].unOp(UnOp::Abs);
+    return args[0].unOp(UnOp::Abso);
 }
 
 //CG1 bind hash
@@ -356,9 +352,9 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
     return new (sz) Exception (exc, args);
 }
 
-auto Exception::repr (Buffer& buf) const -> Value {
+void Exception::repr (Buffer& buf) const {
     buf.puts(bases._items[(int) extra().code].k);
-    return Tuple::repr(buf);
+    Tuple::repr(buf);
 }
 
 //CG< type-info

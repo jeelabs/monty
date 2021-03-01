@@ -6,7 +6,7 @@ namespace monty {
         static Lookup const attrs;
         static Type info;
         auto type () const -> Type const& override { return info; }
-        auto repr (Buffer&) const -> Value override;
+        void repr (Buffer&) const override;
     //CG>
         constexpr static auto LEN_BITS = 27;
 

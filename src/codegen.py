@@ -298,7 +298,7 @@ def TYPE(block, tag, *_):
         '    static Lookup const attrs;',
         '    static Type info;',
         '    auto type () const -> Type const& override { return info; }',
-        '    auto repr (Buffer&) const -> Value override;',
+        '    void repr (Buffer&) const override;',
     ]
     if tag.startswith('<'):
         hiddenTypes.append([tag,name,base])

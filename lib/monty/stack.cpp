@@ -124,8 +124,8 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
     return new Event;
 }
 
-auto Event::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
+void Event::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as a list
 }
 
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
@@ -222,8 +222,8 @@ auto Stacklet::runLoop () -> bool {
     return Event::queued > 0 || ready.size() > 0;
 }
 
-auto Stacklet::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
+void Stacklet::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as a list
 }
 
 auto BoundMeth::call (ArgVec const& args) const -> Value {
@@ -251,11 +251,10 @@ auto Closure::call (ArgVec const& args) const -> Value {
     return _func.call({v, n + args._num});
 }
 
-auto Closure::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as a list
+void Closure::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as a list
 }
 
-auto Module::repr (Buffer& buf) const -> Value {
+void Module::repr (Buffer& buf) const {
     buf.print("<module '%s'>", (char const*) _name);
-    return {};
 }

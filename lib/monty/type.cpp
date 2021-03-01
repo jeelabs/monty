@@ -167,8 +167,8 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
-auto Buffer::repr (Buffer& buf) const -> Value {
-    return Object::repr(buf); // don't print as bytes
+void Buffer::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as bytes
 }
 
 Bytes::Bytes (void const* ptr, uint32_t len) {
@@ -241,7 +241,7 @@ auto Bytes::create (ArgVec const& args, Type const*) -> Value {
     return new Bytes (p, n);
 }
 
-auto Bytes::repr (Buffer& buf) const -> Value {
+void Bytes::repr (Buffer& buf) const {
     buf << '\'';
     for (auto b : *this) {
         if (b == '\\' || b == '\'')
@@ -252,7 +252,6 @@ auto Bytes::repr (Buffer& buf) const -> Value {
             putcEsc(buf, "x%02x", b);
     }
     buf << '\'';
-    return {};
 }
 
 Str::Str (char const* s, int n) {
@@ -318,9 +317,8 @@ auto Str::create (ArgVec const& args, Type const*) -> Value {
     return new Str (args[0]);
 }
 
-auto Str::repr (Buffer& buf) const -> Value {
+void Str::repr (Buffer& buf) const {
     putsEsc(buf, (char const*) begin());
-    return {};
 }
 
 void VaryVec::atAdj (uint32_t idx, uint32_t len) {
@@ -429,7 +427,7 @@ auto Tuple::create (ArgVec const& args, Type const*) -> Value {
     return new (args._num * sizeof (Value)) Tuple (args);
 }
 
-auto Tuple::repr (Buffer& buf) const -> Value {
+void Tuple::repr (Buffer& buf) const {
     buf << '(';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -437,7 +435,6 @@ auto Tuple::repr (Buffer& buf) const -> Value {
         buf << (*this)[i];
     }
     buf << ')';
-    return {};
 }
 
 List::List (ArgVec const& args) {
@@ -502,7 +499,7 @@ auto List::create (ArgVec const& args, Type const*) -> Value {
     return new List (args);
 }
 
-auto List::repr (Buffer& buf) const -> Value {
+void List::repr (Buffer& buf) const {
     buf << '[';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -510,7 +507,6 @@ auto List::repr (Buffer& buf) const -> Value {
         buf << (*this)[i];
     }
     buf << ']';
-    return {};
 }
 
 auto Set::find (Value v) const -> uint32_t {
@@ -558,7 +554,7 @@ auto Set::create (ArgVec const& args, Type const*) -> Value {
     return p;
 }
 
-auto Set::repr (Buffer& buf) const -> Value {
+void Set::repr (Buffer& buf) const {
     buf << '{';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -566,7 +562,6 @@ auto Set::repr (Buffer& buf) const -> Value {
         buf << (*this)[i];
     }
     buf << '}';
-    return {};
 }
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()
@@ -627,7 +622,7 @@ auto Dict::create (ArgVec const&, Type const*) -> Value {
     return new Dict;
 }
 
-auto Dict::repr (Buffer& buf) const -> Value {
+void Dict::repr (Buffer& buf) const {
     buf << '{';
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
@@ -635,7 +630,6 @@ auto Dict::repr (Buffer& buf) const -> Value {
         buf << (*this)[i] << ':' << (*this)[_fill+i];
     }
     buf << '}';
-    return {};
 }
 
 auto DictView::getAt (Value k) const -> Value {
@@ -673,9 +667,8 @@ auto Type::create (ArgVec const& args, Type const*) -> Value {
     return {};
 }
 
-auto Type::repr (Buffer& buf) const -> Value {
+void Type::repr (Buffer& buf) const {
     buf.print("<type %s>", (char const*) _name);
-    return {};
 }
 
 Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
@@ -694,9 +687,8 @@ auto Class::create (ArgVec const& args, Type const*) -> Value {
     return new Class (args);
 }
 
-auto Class::repr (Buffer& buf) const -> Value {
+void Class::repr (Buffer& buf) const {
     buf.print("<class %s>", (char const*) at("__name__"));
-    return {};
 }
 
 Super::Super (ArgVec const& args) {
@@ -709,9 +701,8 @@ auto Super::create (ArgVec const& args, Type const*) -> Value {
     return new Super (args);
 }
 
-auto Super::repr (Buffer& buf) const -> Value {
+void Super::repr (Buffer& buf) const {
     buf << "<super: ...>";
-    return {};
 }
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
@@ -729,7 +720,6 @@ auto Inst::create (ArgVec const& args, Type const* t) -> Value {
     return new Inst (args, v.asType<Class>());
 }
 
-auto Inst::repr (Buffer& buf) const -> Value {
+void Inst::repr (Buffer& buf) const {
     buf.print("<%s object at %p>", (char const*) type()._name, this);
-    return {};
 }
