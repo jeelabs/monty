@@ -202,10 +202,14 @@ def mrfs(c, offset=0, file=""):
     else:
         c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
 
-@task(help={"file": "the Python script to send whenever it changes"})
-def watch(c, file):
-    """compile-send-exec-view loop for quick Python dev cycles"""
-    c.run("src/watcher.py %s" % file, pty=True)
+@task(help={"file": "the Python script to send whenever it changes",
+            "remote": "run script remotely iso natively"})
+def watch(c, file, remote=False):
+    """watch-exec/upload-print loop for quick Python iteration"""
+    if remote:
+        c.run("src/watcher.py -r %s" % file, pty=True)
+    else:
+        c.run("src/watcher.py %s" % file, pty=True)
 
 @task
 def health(c):
