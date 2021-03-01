@@ -3,6 +3,7 @@ f 111 22 33
 f 111 <b> 33
 f 111 22 <c>
 f 111 <b> <c>
+TypeError("required arg missing","aa") ["kwargs.py",10,"<module>"]
 g 1 2 33 44
 g 1 2 33 <d>
 g 1 2 3 44
@@ -10,4 +11,13 @@ g 1 2 3 4
 h 1 2 ()
 h 1 2 (3)
 h 1 2 (3,4)
+TypeError("required arg missing","bb") ["kwargs.py",30,"<module>"]
+k 1 2 33 44
+k 1 2 <c> 44
+TypeError("too many positional args",3) ["kwargs.py",41,"<module>"]
+l 1 2 {"c":"<c>","d":"<d>"}
+l 1 2 {"d":"<d>","c":"<c>"}
+m 1 2 (3,4) <d> {"e":"<e>"}
+m 5 6 (7,8) <d> {"e":"<e>"}
+TypeError("required arg missing","d") ["kwargs.py",58,"<module>"]
 done

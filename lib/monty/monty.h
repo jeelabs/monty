@@ -192,9 +192,9 @@ namespace monty {
         constexpr Value (int arg) : _v (arg * 2 + 1) {}
         constexpr Value (Q const& arg) : _v (arg._id * 4 + 2) {}
                   Value (char const* arg);
-        constexpr Value (Object const* arg) : _p (arg) {} // TODO keep?
+        constexpr Value (Object const* arg) : _p (arg) {}
         constexpr Value (Object const& arg) : _p (&arg) {}
-                  Value (E, Value ={}, Value ={}); // also raises the exception
+                  Value (E, char const* =nullptr, Value ={}); // also raises
 
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;

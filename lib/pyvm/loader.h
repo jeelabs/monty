@@ -15,8 +15,8 @@ struct Bytecode : List {
 
     auto fastSlotTop () const -> uint32_t { return stackSz; }
     auto excLevel () const -> uint32_t { return excDepth; }
-    auto isGenerator () const -> bool { return (flags & 1) != 0; }
-    auto hasVarArgs () const -> bool { return (flags & 4) != 0; }
+    auto isGenerator () const -> bool { return flags & 1; }
+    auto hasVarArgs () const -> bool { return (flags >> 2) & 1; }
     auto numCells () const -> uint32_t { return n_cell; }
 
     auto numArgs (int t) const -> uint32_t {

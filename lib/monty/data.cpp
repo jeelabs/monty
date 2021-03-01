@@ -103,12 +103,13 @@ auto Value::operator ->() const -> Object* {
     return _o;
 }
 
-Value::Value (E exc, Value arg1, Value arg2) {
+Value::Value (E exc, char const* arg1, Value arg2) {
     Vector v;
     v.insert(0, 2);
-    v[0] = arg1;
+    if (arg1 != nullptr)
+        v[0] = arg1;
     v[1] = arg2;
-    auto nargs = arg1.isNil() ? 0 : arg2.isNil() ? 1 : 2;
+    auto nargs = arg1 == nullptr ? 0 : arg2.isNil() ? 1 : 2;
     *this = Exception::create(exc, {v, nargs, 0});
     Stacklet::exception(*this);
 }

@@ -597,7 +597,11 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
-        (void) arg; assert(false); // TODO
+        // TODO some duplication w.r.t. opCallMethod
+        uint8_t npos = arg, nkw = arg >> 8;
+        _sp -= npos + 2 * nkw + 3;
+        auto skip = _sp[1].isNil();
+        wrappedCall(*_sp, {*this, arg + 1 - skip + (1<<16), _sp + 1 + skip});
     }
     //CG1 op v
     void opMakeFunction (int arg) {
@@ -612,15 +616,18 @@ struct PyVM : Stacklet {
     void opCallFunction (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw;
-        auto& fun = _sp->obj();
+        auto isClass = &_sp->obj() == &Class::info;
         wrappedCall(*_sp, {*this, arg, _sp + 1});
         // TODO yuck, special cased because Class doesn't have access to PyVM
-        if (&fun == &Class::info)
+        if (isClass)
             frame().locals = *_sp;
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
-        (void) arg; assert(false); // TODO
+        // TODO some duplication w.r.t. opCallFunction
+        uint8_t npos = arg, nkw = arg >> 8;
+        _sp -= npos + 2 * nkw + 2;
+        wrappedCall(*_sp, {*this, arg + (1<<16), _sp + 1});
     }
 
     //CG1 op v
@@ -694,8 +701,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op
     void opGetIterStack () {
-        // TODO the compiler assumes 4 stack entries are used!
-        //  layout [seq,(idx|iter),nil,nil]
+        // hard-coded to use 4 entries, layout [seq,(idx|iter),nil,nil]
         *_sp = _sp->asObj(); // for qstrs, etc
         auto v = _sp->obj().iter(); // will be 0 for indexed iteration
         *++_sp = v;
@@ -732,15 +738,14 @@ struct PyVM : Stacklet {
         Value mod = Module::loaded.at(arg);
         if (mod.isNil()) {
             auto data = vmImport(arg);
-            if (data == nullptr) {
-                *_sp = {E::ImportError, arg};
-                return;
-            }
-            auto init = Bytecode::load(data, arg);
-            assert(init != nullptr);
-            wrappedCall(init, {*this, 0});
-            frame().locals = mod = init->_mo;
-            Module::loaded.at(arg) = &init->_mo;
+            if (data != nullptr) {
+                auto init = Bytecode::load(data, arg);
+                assert(init != nullptr);
+                wrappedCall(init, {*this, 0});
+                frame().locals = mod = init->_mo;
+                Module::loaded.at(arg) = &init->_mo;
+            } else
+                mod = {E::ImportError, arg};
         }
         *_sp = mod;
     }
@@ -1226,8 +1231,9 @@ struct PyVM : Stacklet {
         auto& einfo = e.asType<Exception>();
 
         // finally clauses and re-raises must not extend the trace
-        if (_ip[-1] != EndFinally && _ip[-1] != RaiseLast) {
-            einfo.traceVec().append(_ipOff-1);
+        // _ipOff can be zero if the error comes from inside Callable::call
+        if (_ip[-1] != EndFinally && _ip[-1] != RaiseLast && _ipOff > 0) {
+            einfo.traceVec().append(_ipOff - 1);
             einfo.traceVec().append(&_callee->_bc);
         }
 
@@ -1300,6 +1306,21 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
 }
 
 auto Callable::call (ArgVec const& args) const -> Value {
+    int nPos = _bc.numArgs(0);
+    int nDef = _bc.numArgs(1);
+    int nKwo = _bc.numArgs(2);
+    int nCel = _bc.numCells();
+    bool hva = _bc.hasVarArgs();
+#if 0
+    printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
+            args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
+#endif
+    auto aPos = args._num & 0xFF;
+    auto aKwd = args._num >> 8;
+
+    if (!hva && aPos > nPos + nCel)
+        return {E::TypeError, "too many positional args", aPos};
+
     auto ctx = &currentVM();
     auto coro = _bc.isGenerator();
     if (coro)
@@ -1307,15 +1328,6 @@ auto Callable::call (ArgVec const& args) const -> Value {
     ctx->enter(*this);
     if (coro)
         ctx->frame().locals = &_mo;
-
-    int nPos = _bc.numArgs(0);
-    int nDef = _bc.numArgs(1);
-    int nKwo = _bc.numArgs(2);
-    int nCel = _bc.numCells();
-    //printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p\n",
-    //    args._num, nPos, nDef, nKwo, nCel, _pos, _kw);
-    auto aPos = args._num & 0xFF;
-    auto aKwd = args._num >> 8;
 
     if (_kw != nullptr) // preset args with kw defaults
         for (int j = 0; j < nPos + nKwo; ++j) {
@@ -1329,8 +1341,11 @@ auto Callable::call (ArgVec const& args) const -> Value {
     for (int i = 0; i < nPos + nCel; ++i)
         if (i < aPos)
             ctx->fastSlot(i) = args[i];
-        else if (_pos != nullptr && (uint32_t) i < nDef + _pos->_fill)
+        else if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
             ctx->fastSlot(i) = (*_pos)[i+nDef-nPos];
+
+    uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
+    int kwSet = 0;
 
     for (int i = 0; i < aKwd; ++i) {
         auto off = aPos + 2*i;
@@ -1340,15 +1355,30 @@ auto Callable::call (ArgVec const& args) const -> Value {
             assert(_bc[j].isStr());
             if (name.id() == _bc[j].id()) {
                 ctx->fastSlot(j) = args[off+1];
+                seen |= 1 << i; // key has been used, forget about it
+                ++kwSet;
                 break;
             }
         }
-        // TODO else, add to kwarg dict?
     }
 
-    if (_bc.hasVarArgs())
+    for (int i = 0; i < nPos + nKwo; ++i)
+        if (ctx->fastSlot(i).isNil())
+            return {E::TypeError, "required arg missing", _bc[i]};
+
+    if (hva)
         ctx->fastSlot(nPos+nKwo) =
-            Tuple::create({args._vec, args._num-nPos, args._off+nPos});
+            Tuple::create({args._vec, aPos-nPos, args._off+nPos});
+
+    if (aKwd > nKwo) {
+        auto d = new Dict;
+        for (int i = 0; i < aKwd; ++i)
+            if ((seen & (1<<i)) == 0) {
+                auto off = aPos + 2*i;
+                d->at(args[off]) = args[off+1];
+            }
+        ctx->fastSlot(nPos+nKwo+hva) = d;
+    }
 
     uint8_t const* cellMap = _bc.start() - nCel;
     for (int i = 0; i < nCel; ++i) {

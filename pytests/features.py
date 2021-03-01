@@ -3,7 +3,7 @@ print(sys.implementation)
 print(machine.ticks())
 
 # use polyfill stubs to generate the "correct" output
-str.count = lambda x: 9
+str.count = lambda *x: 9
 str.format = lambda *x: "4"
 
 # mad.py
