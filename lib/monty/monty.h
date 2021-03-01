@@ -11,8 +11,12 @@ namespace monty {
 
 // see gc.cpp - objects and vectors with garbage collection
 
-    template< typename T >
     struct Obj {
+        Obj () =default;
+        virtual ~Obj () =default;
+
+        virtual void marker () const {} // called to mark all ref'd objects
+
         static auto isInPool (void const* p) -> bool;
         auto isCollectable () const -> bool { return isInPool(this); }
 
@@ -26,7 +30,6 @@ namespace monty {
         static void dumpAll (); // like sweep, but only to print all obj+free
 
         // JT's "Rule of 5"
-        Obj () =default;
         Obj (Obj&&) =delete;
         Obj (Obj const&) =delete;
         auto operator= (Obj&&) -> Obj& =delete;
@@ -365,14 +368,8 @@ namespace monty {
         int _off;
     };
 
-    // see https://en.wikipedia.org/wiki/Curiously_recurring_template_pattern
-    // see JT's 10 minute video: https://www.youtube.com/watch?v=ZQ-8laAr9Dg
-    // it doesn't do much here, just avoids an extra layer of class derivation
-
     // can't use "CG type <object>", this is the start of the type hierarchy
-    struct Object : Obj<Object> {
-        virtual ~Object () =default;
-
+    struct Object : Obj {
         static const Type info;
         virtual auto type () const -> Type const& { return info; }
         virtual void repr  (Buffer&) const;
@@ -389,14 +386,12 @@ namespace monty {
         virtual auto copy  (Range const&) const -> Value;
         virtual auto store (Range const&, Object const&) -> Value;
 
-        virtual void marker () const {} // called to mark all ref'd objects
-
         auto sliceGetter (Value k) const -> Value;
         auto sliceSetter (Value k, Value v) -> Value;
     };
 
-    void mark (Object const&);
-    inline void mark (Object const* p) { if (p != nullptr) mark(*p); }
+    void mark (Obj const&);
+    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
 
     void Value::marker () const { if (isObj()) mark(obj()); }
 

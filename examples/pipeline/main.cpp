@@ -97,7 +97,7 @@ static Command const commands [] = {
     { "bv    show build version"         , printBuildVer },
     { "gc    trigger garbage collection" , Stacklet::gcAll },
     { "gr    generate a GC report"       , gcReport },
-    { "od    object dump"                , Object::dumpAll },
+    { "od    object dump"                , Obj::dumpAll },
     { "vd    vector dump"                , Vec::dumpAll },
     { "-h    this help"                  , helpCmd },
 };

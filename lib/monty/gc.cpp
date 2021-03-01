@@ -9,20 +9,13 @@ using namespace monty;
 
 #if VERBOSE_GC
 #define D(x) { x; }
-static void V (Object const& o, char const* s) {
-    Value(o).dump(s);
+static void V (Obj const& o, char const* s) {
+    Value((Object const&) o).dump(s);
 }
 #else
 #define D(...)
 #define V(...)
 #endif
-
-template auto Obj<Object>::operator new (size_t bytes) -> void*;
-template void Obj<Object>::operator delete (void*);
-
-template auto Obj<Object>::isInPool (void const* p) -> bool;
-template void Obj<Object>::sweep ();
-template void Obj<Object>::dumpAll ();
 
 struct ObjSlot {
     auto next () const -> ObjSlot* { return (ObjSlot*) (flag & ~1); }
@@ -78,7 +71,7 @@ static auto multipleOf (uint32_t n) -> uint32_t {
     return roundUp<T>(n) / sizeof (T);
 }
 
-static auto obj2slot (Object const& o) -> ObjSlot* {
+static auto obj2slot (Obj const& o) -> ObjSlot* {
     return o.isCollectable() ? (ObjSlot*) ((uintptr_t) &o - PTR_SZ) : 0;
 }
 
@@ -122,13 +115,11 @@ static void* defaultOutOfMemoryHandler () { assert(false); return nullptr; }
 namespace monty {
     void* (*panicOutOfMemory)() = defaultOutOfMemoryHandler;
 
-    template< typename T >
-    auto Obj<T>::isInPool (void const* p) -> bool {
+    auto Obj::isInPool (void const* p) -> bool {
         return objLow < p && p < limit;
     }
 
-    template< typename T >
-    auto Obj<T>::operator new (size_t sz) -> void* {
+    auto Obj::operator new (size_t sz) -> void* {
         auto needs = multipleOf<ObjSlot>(sz + PTR_SZ);
 
         ++gcStats.toa;
@@ -167,10 +158,9 @@ namespace monty {
         return &objLow->vt;
     }
 
-    template< typename T >
-    void Obj<T>::operator delete (void* p) {
+    void Obj::operator delete (void* p) {
         assert(p != nullptr);
-        auto slot = obj2slot(*(Object*) p);
+        auto slot = obj2slot(*(Obj*) p);
         assert(slot != nullptr);
 
         --gcStats.coa;
@@ -185,23 +175,21 @@ namespace monty {
             objLow = objLow->chain;
     }
 
-    template< typename T >
-    void Obj<T>::sweep () {
+    void Obj::sweep () {
         D( printf("\tsweeping ...\n"); )
         ++gcStats.sweeps;
         for (auto slot = objLow; slot != nullptr; slot = slot->chain)
             if (slot->isMarked())
                 slot->clearMark();
             else if (!slot->isFree()) {
-                auto q = (Object*) &slot->vt;
+                auto q = (Obj*) &slot->vt;
                 V(*q, "\t delete");
                 delete q;
                 assert(slot->isFree());
             }
     }
 
-    template< typename T >
-    void Obj<T>::dumpAll () {
+    void Obj::dumpAll () {
         printf("objects: %p .. %p\n", objLow, limit);
         for (auto slot = objLow; slot != nullptr; slot = slot->chain) {
             if (slot->chain == 0)
@@ -386,7 +374,7 @@ namespace monty {
         return gcMax() < total / 4; // TODO crude
     }
 
-    void mark (Object const& obj) {
+    void mark (Obj const& obj) {
         if (obj.isCollectable()) {
             auto p = obj2slot(obj);
             if (p != nullptr) {

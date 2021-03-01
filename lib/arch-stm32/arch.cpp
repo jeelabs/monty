@@ -308,7 +308,7 @@ Command const commands [] = {
 #if HAS_MRFS
     { "ls    list files in MRFS"           , mrfs::dump },
 #endif
-    { "od    object dump"                  , Object::dumpAll },
+    { "od    object dump"                  , Obj::dumpAll },
     { "pd    power down"                   , pd_cmd },
     { "sr    system reset"                 , systemReset },
     { "vd    vector dump"                  , Vec::dumpAll },
