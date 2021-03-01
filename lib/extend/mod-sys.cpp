@@ -57,5 +57,5 @@ static Lookup::Item const sys_map [] = {
 };
 
 //CG2 module-end
-static Lookup const sys_attrs (sys_map, sizeof sys_map);
+static Lookup const sys_attrs (sys_map);
 Module ext_sys (Q(174,"sys"), sys_attrs);

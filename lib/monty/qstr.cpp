@@ -20,7 +20,7 @@ static Lookup::Item const mod_map [] = {
 //CG>
 };
 
-static Lookup const mod_attrs (mod_map, sizeof mod_map);
+static Lookup const mod_attrs (mod_map);
 Dict Module::loaded (&mod_attrs);
 
 extern char const monty::qstrBase [] =

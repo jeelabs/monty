@@ -1369,7 +1369,7 @@ static Method const mo_pyvm_send (m_pyvm_send);
 static Lookup::Item const pyvm_map [] = {
     { Q(138,"send"), mo_pyvm_send },
 };
-Lookup const PyVM::attrs (pyvm_map, sizeof pyvm_map);
+Lookup const PyVM::attrs (pyvm_map);
 //CG>
 
 Type PyVM::info (Q(182,"<pyvm>"), &PyVM::attrs);

@@ -84,7 +84,7 @@ static Lookup::Item const spi_map [] = {
     { Q(201,"enable"), mo_spi_enable },
     { Q(202,"xfer"), mo_spi_xfer },
 };
-Lookup const Spi::attrs (spi_map, sizeof spi_map);
+Lookup const Spi::attrs (spi_map);
 //CG>
 
 Type Spi::info (Q(214,"<spi>"), &Spi::attrs);
@@ -131,7 +131,7 @@ static Lookup::Item const rf69_map [] = {
     { Q(204,"sleep"), mo_rf69_sleep },
     { Q(205,"xmit"), mo_rf69_xmit },
 };
-Lookup const RF69::attrs (rf69_map, sizeof rf69_map);
+Lookup const RF69::attrs (rf69_map);
 //CG>
 
 Type RF69::info (Q(215,"<rf69>"), &RF69::attrs);
@@ -245,5 +245,5 @@ static Lookup::Item const machine_map [] = {
 };
 
 //CG2 module-end
-static Lookup const machine_attrs (machine_map, sizeof machine_map);
+static Lookup const machine_attrs (machine_map);
 Module ext_machine (Q(212,"machine"), machine_attrs);

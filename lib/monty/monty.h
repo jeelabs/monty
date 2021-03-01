@@ -263,7 +263,7 @@ namespace monty {
         uint32_t _fill = 0;
 
         constexpr VecOf () =default;
-        template< size_t N >
+        template< size_t N > // auto-determine the array's item count
         constexpr VecOf (T const (&ary)[N])
                     : Vec (&ary, N * sizeof (T)), _fill (N) {}
         constexpr VecOf (T const* ptr, uint32_t num)
@@ -590,11 +590,13 @@ namespace monty {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
-        struct Item { Value k, v; }; // TODO plain const Value list or dict ?
+        struct Item { Q k; Value v; };
 
-        constexpr Lookup (Item const* p =nullptr, uint32_t sz =0)
-                        : _items (p), _count (sz / sizeof (Item)) {}
-
+        constexpr Lookup (Lookup const* chain =nullptr) : _chain (chain) {}
+        template< size_t N > // auto-determine the array's item count
+        constexpr Lookup (Item const (&items)[N], Lookup const* chain =nullptr)
+            : _items (items), _count (N), _chain (chain) {}
+            
         auto operator[] (char const* key) const -> Value;
 
         auto len () const -> uint32_t override { return _count; }
@@ -602,8 +604,9 @@ namespace monty {
 
         void marker () const override;
     private:
-        Item const* _items;
-        uint32_t _count;
+        Item const* _items {nullptr};
+        uint32_t _count {0};
+        Lookup const* _chain;
 
         friend struct Exception; // to get exception's string name
     };

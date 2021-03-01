@@ -43,7 +43,7 @@ def MODULE_END(block):
     m = flags.mod
     assert m != ""
     flags.mod = ""
-    return ["static Lookup const %s_attrs (%s_map, sizeof %s_map);" % (m, m, m),
+    return ["static Lookup const %s_attrs (%s_map);" % (m, m),
             "Module ext_%s (%s, %s_attrs);" % (m, q(m), m)]
 
 # emit the definitions to find all known modules
@@ -122,7 +122,7 @@ def WRAPPERS(block, typ=None):
             out.append("    { %s, mo_%s_%s }," % (q(f), l, f))
         if mod == "" or typ:
             out += ["};",
-                    "Lookup const %s::attrs (%s_map, sizeof %s_map);" % (t, l, l)]
+                    "Lookup const %s::attrs (%s_map);" % (t, l)]
 
     del funs[mod]
     del meths[mod]

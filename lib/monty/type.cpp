@@ -382,6 +382,8 @@ auto Lookup::operator[] (char const* key) const -> Value {
     for (uint32_t i = 0; i < _count; ++i)
         if (strcmp(key, _items[i].k) == 0)
             return _items[i].v;
+    if (_chain != nullptr)
+        return (*_chain)[key];
     return {};
 }
 

@@ -175,7 +175,7 @@ static Lookup::Item const exceptionMap [] = {
     //CG>
 };
 
-Lookup const Exception::bases (exceptionMap, sizeof exceptionMap);
+Lookup const Exception::bases (exceptionMap);
 
 //CG< wrappers
 static Function const fo_abs (f_abs);
@@ -199,7 +199,7 @@ static Lookup::Item const dict_map [] = {
     { Q(106,"keys"), mo_dict_keys },
     { Q(163,"values"), mo_dict_values },
 };
-Lookup const Dict::attrs (dict_map, sizeof dict_map);
+Lookup const Dict::attrs (dict_map);
 
 static auto const m_event_clear = Method::wrap(&Event::clear);
 static Method const mo_event_clear (m_event_clear);
@@ -215,7 +215,7 @@ static Lookup::Item const event_map [] = {
     { Q(140,"set"), mo_event_set },
     { Q(183,"wait"), mo_event_wait },
 };
-Lookup const Event::attrs (event_map, sizeof event_map);
+Lookup const Event::attrs (event_map);
 
 static auto const m_exception_trace = Method::wrap(&Exception::trace);
 static Method const mo_exception_trace (m_exception_trace);
@@ -223,7 +223,7 @@ static Method const mo_exception_trace (m_exception_trace);
 static Lookup::Item const exception_map [] = {
     { Q(184,"trace"), mo_exception_trace },
 };
-Lookup const Exception::attrs (exception_map, sizeof exception_map);
+Lookup const Exception::attrs (exception_map);
 
 static auto const m_list_append = Method::wrap(&List::append);
 static Method const mo_list_append (m_list_append);
@@ -239,7 +239,7 @@ static Lookup::Item const list_map [] = {
     { Q( 70,"clear"), mo_list_clear },
     { Q(120,"pop"), mo_list_pop },
 };
-Lookup const List::attrs (list_map, sizeof list_map);
+Lookup const List::attrs (list_map);
 //CG>
 
 static Lookup::Item const builtinsMap [] = {
@@ -291,7 +291,7 @@ static Lookup::Item const builtinsMap [] = {
     { Q( 90,"hash"),  fo_hash },
 };
 
-static Lookup const builtins_attrs (builtinsMap, sizeof builtinsMap);
+static Lookup const builtins_attrs (builtinsMap);
 Dict Module::builtins (&builtins_attrs);
 
 Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
