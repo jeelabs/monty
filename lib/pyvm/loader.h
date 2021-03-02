@@ -81,7 +81,7 @@ private:
 };
 
 struct Loader {
-    const uint8_t* dp;
+    uint8_t const* dp;
     VecOf<uint16_t> qWin;
     uint8_t* bcBuf;
     uint8_t* bcNext;
@@ -208,7 +208,7 @@ struct Loader {
         return pos;
     }
 
-    const uint8_t* skip (uint32_t n) {
+    uint8_t const* skip (uint32_t n) {
         auto p = (const uint8_t*) dp;
         dp += n;
         return p;
@@ -267,7 +267,7 @@ struct Loader {
         return n;
     }
 
-    const Bytecode& loadRaw () {
+    Bytecode const& loadRaw () {
         auto typsiz = varInt();
         auto bCount = typsiz >> 2;
         debugf("type %d size %d (%d)\n", typsiz & 3, bCount, typsiz);

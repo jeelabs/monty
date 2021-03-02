@@ -125,7 +125,7 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
 }
 
 void Event::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
+    Object::repr(buf);
 }
 
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
@@ -220,39 +220,6 @@ auto Stacklet::runLoop () -> bool {
     }
 
     return Event::queued > 0 || ready.size() > 0;
-}
-
-void Stacklet::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
-}
-
-auto BoundMeth::call (ArgVec const& args) const -> Value {
-    assert(args._num > 0 && this == &args[-1].obj());
-    args[-1] = _self; // overwrites the entry before first arg
-    return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
-}
-
-Closure::Closure (Object const& f, ArgVec const& args)
-        : _func (f) {
-    insert(0, args._num);
-    for (int i = 0; i < args._num; ++i)
-        begin()[i] = args[i];
-}
-
-auto Closure::call (ArgVec const& args) const -> Value {
-    int n = size();
-    assert(n > 0);
-    Vector v;
-    v.insert(0, n + args._num);
-    for (int i = 0; i < n; ++i)
-        v[i] = begin()[i];
-    for (int i = 0; i < args._num; ++i)
-        v[n+i] = args[i];
-    return _func.call({v, n + args._num});
-}
-
-void Closure::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
 }
 
 void Module::repr (Buffer& buf) const {

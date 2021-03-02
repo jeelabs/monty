@@ -347,7 +347,7 @@ namespace monty {
     void markVec (Vector const&);
 
     struct ArgVec {
-        ArgVec (Vector const& vec)
+        ArgVec (Vector const& vec ={})
             : ArgVec (vec, vec.size()) {}
         ArgVec (Vector const& vec, int num, Value const* ptr)
             : ArgVec (vec, num, ptr - vec.begin()) {}
@@ -538,7 +538,7 @@ namespace monty {
     struct Buffer : Bytes {
         static Type info;
         auto type () const -> Type const& override { return info; }
-        void repr (Buffer& buf) const override;
+        void repr (Buffer& buf) const override { Object::repr(buf); }
 
         ~Buffer () override;
 
@@ -601,12 +601,14 @@ namespace monty {
 
         auto len () const -> uint32_t override { return _count; }
         auto getAt (Value k) const -> Value override;
-
-        void marker () const override;
     private:
         Item const* _items {nullptr};
         uint32_t _count {0};
         Lookup const* _chain;
+
+        // these are not for use on the heap and there's no cleanup to be done
+        auto operator new (size_t bytes) -> void* =delete;
+        void operator delete (void*) {}
 
         friend struct Exception; // to get exception's string name
     };
@@ -621,6 +623,8 @@ namespace monty {
     //CG>
         constexpr Tuple () =default;
         Tuple (ArgVec const&);
+
+        void printer (Buffer&, char const*) const;
 
         auto len () const -> uint32_t override { return _fill; }
         auto getAt (Value k) const -> Value override;
@@ -710,23 +714,6 @@ namespace monty {
         Dict (uint32_t n) { adj(2*n); }
     };
 
-    //CG3 type <dictview>
-    struct DictView : Object {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-
-        DictView (Dict const& d, int vt) : _dict (d), _vtype (vt) {}
-
-        auto len () const -> uint32_t override { return _dict._fill; }
-        auto getAt (Value k) const -> Value override;
-        auto iter () const -> Value override { return 0; }
-
-        void marker () const override { _dict.marker(); }
-    private:
-        Dict const& _dict;
-        int _vtype;
-    };
-
     //CG< type type
     struct Type : Dict {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
@@ -740,15 +727,17 @@ namespace monty {
         constexpr Type (Value s, Lookup const* a =nullptr, Factory f =noFactory)
                         : Dict (a), _name (s), _factory (f) {}
 
-        auto call (ArgVec const&) const -> Value override;
+        auto call (ArgVec const& args) const -> Value override  {
+            return _factory(args, this);
+        }
         auto attr (char const* name, Value&) const -> Value override {
             return getAt(name);
         }
 
         Value _name;
+    private:
         Factory _factory;
 
-    private:
         static auto noFactory (ArgVec const&, Type const*) -> Value;
     };
 
@@ -838,7 +827,7 @@ namespace monty {
     struct Stacklet : List {
         static Type info;
         auto type () const -> Type const& override { return info; }
-        void repr (Buffer&) const override;
+        void repr (Buffer& buf) const override { Object::repr(buf); }
 
         auto binop (BinOp, Value) const -> Value override;
 
@@ -960,7 +949,7 @@ namespace monty {
         }
 
     private:
-        const M _methPtr;
+        M const _methPtr;
     };
 
     //CG3 type <method>
@@ -980,49 +969,7 @@ namespace monty {
         }
 
     private:
-        const MethodBase& _meth;
-    };
-
-    //CG3 type <boundmeth>
-    struct BoundMeth : Object {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-
-        BoundMeth (Object const& f, Value o) : _meth (f), _self (o) {}
-
-        auto call (ArgVec const&) const -> Value override;
-
-        void marker () const override { mark(_meth); _self.marker(); }
-    private:
-        Object const& _meth;
-        Value _self;
-    };
-
-    //CG3 type <cell>
-    struct Cell : Object {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-
-        Cell (Value v) : _val (v) {}
-
-        void marker () const override { _val.marker(); }
-
-        Value _val;
-    };
-
-    //CG3 type <closure>
-    struct Closure : List {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-        void repr (Buffer& buf) const override;
-
-        Closure (Object const&, ArgVec const&);
-
-        auto call (ArgVec const&) const -> Value override;
-
-        void marker () const override { List::marker(); mark(_func); }
-    private:
-        Object const& _func;
+        MethodBase const& _meth;
     };
 
 // see builtin.cpp - exceptions and auto-generated built-in tables
@@ -1048,14 +995,6 @@ namespace monty {
     private:
         Exception (E exc, ArgVec const& args);
         ~Exception () override { adj(0); } // needs explicit cleanup
-
-        struct SizeFix {
-            SizeFix (Exception&);
-            ~SizeFix ();
-
-            Exception& _exc;
-            uint32_t _orig;
-        };
 
         E _code;
     };

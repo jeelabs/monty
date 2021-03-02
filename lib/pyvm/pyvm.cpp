@@ -134,10 +134,75 @@ auto Callable::funcAt (int n) const -> Bytecode const& {
     return _bc[n].asType<Bytecode>();
 }
 
-struct PyVM : Stacklet {
-    static Lookup const attrs;
+// was: CG3 type <cell>
+struct Cell : Object {
     static Type info;
     auto type () const -> Type const& override { return info; }
+
+    Cell (Value val) : _val (val) {}
+
+    void marker () const override { _val.marker(); }
+
+    Value _val;
+};
+
+// was: CG3 type <boundmeth>
+struct BoundMeth : Object {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+
+    BoundMeth (Object const& f, Value o) : _meth (f), _self (o) {}
+
+    auto call (ArgVec const& args) const -> Value override {
+        assert(args._num > 0 && this == &args[-1].obj());
+        args[-1] = _self; // overwrites the entry before first arg
+        return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
+    }
+
+    void marker () const override { mark(_meth); _self.marker(); }
+private:
+    Object const& _meth;
+    Value _self;
+};
+
+// was: CG3 type <closure>
+struct Closure : List {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+    void repr (Buffer& buf) const override;
+
+    Closure (Object const& func, ArgVec const& args) : _func (func) {
+        insert(0, args._num);
+        for (int i = 0; i < args._num; ++i)
+            begin()[i] = args[i];
+    }
+
+    auto call (ArgVec const& args) const -> Value override {
+        int n = size();
+        assert(n > 0);
+        Vector v;
+        v.insert(0, n + args._num);
+        for (int i = 0; i < n; ++i)
+            v[i] = begin()[i];
+        for (int i = 0; i < args._num; ++i)
+            v[n+i] = args[i];
+        return _func.call({v, n + args._num});
+    }
+
+    void marker () const override { List::marker(); mark(_func); }
+private:
+    Object const& _func;
+};
+
+void Closure::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as a list
+}
+
+// was: CG3 type <pyvm>
+struct PyVM : Stacklet {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+    static Lookup const attrs;
 
     struct Frame {
         //    <------- previous ------->  <---- actual ---->
@@ -1228,7 +1293,7 @@ frame().result = *_sp;
         // quirky: "assert" without 2nd arg does not construct the exception
         // and "raise Exception" is also allowed, iso "raise Exception()" ...
         if (e.ifType<Function>())
-            e = e->call(Vector{}); // so construct it now
+            e = e->call({}); // so construct it now
 
         auto& einfo = e.asType<Exception>();
 
@@ -1430,8 +1495,11 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return ctx->argSetup(args);
 }
 
-Type Bytecode::info (Q(180,"<bytecode>"));
-Type Callable::info (Q(181,"<callable>"));
+Type  Bytecode::info (Q(181,"<bytecode>"));
+Type  Callable::info (Q(182,"<callable>"));
+Type      Cell::info (Q(183,"<cell>"));
+Type BoundMeth::info (Q(184,"<boundmeth>"));
+Type   Closure::info (Q(185,"<closure>"));
 
 //CG< wrappers PyVM
 static auto const m_pyvm_send = Method::wrap(&PyVM::send);
@@ -1443,7 +1511,7 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map);
 //CG>
 
-Type PyVM::info (Q(182,"<pyvm>"), &PyVM::attrs);
+Type PyVM::info (Q(186,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
