@@ -732,8 +732,7 @@ struct PyVM : Stacklet {
         // TODO messy: result needs to be stored in another PyVM instance
         //  might be better to store in its signal slot, then pick up on resume
         myCaller[myCaller._spOff] = *_sp;
-//_sp->dump("yieldval");
-frame().result = *_sp;
+        frame().result = *_sp; // TODO one of these two is redundant
         switchTo(&myCaller);
     }
     //CG1 op
@@ -1285,10 +1284,9 @@ frame().result = *_sp;
     }
 
     void caught () {
-        auto e = _signal;
+        auto e = _signal.take();
         if (e.isNil())
             return; // there was no exception, just an inner loop exit
-        _signal = {};
 
         // quirky: "assert" without 2nd arg does not construct the exception
         // and "raise Exception" is also allowed, iso "raise Exception()" ...
@@ -1342,12 +1340,14 @@ frame().result = *_sp;
 
     //CG: wrap PyVM send
     auto send (Value arg =Null) -> Value {
-        assert(_fill > 0); // can only resume if not ended
+        if (_fill == 0)
+            return {};
         assert(current != nullptr);
         assert(current != this);
         assert(_caller == nullptr);
         _caller = current;
-        current = this;
+        current = nullptr;
+        ready.push(this);
         setPending(0);
         // TODO messy: arg needs to be stored at the top of the stack
         //  see also YieldValue
@@ -1414,21 +1414,20 @@ frame().result = *_sp;
             }
         if (xSeq.isObj() && (hva || idx < nPos)) {
             Value vit = xSeq->iter();
-//vit.dump("vit");
             Iterator it (xSeq.obj());
             auto& vob = vit.isInt() ? it : xSeq.obj();
             while (hva || idx < nPos) {
                 auto v = vob.next();
                 if (v.isNil()) {
-                    v = vit.asType<PyVM>().frame().result;
-//v.dump("result?");
+                    current = const_cast<PyVM*>(this);
+                    suspend();
+                    v = vit.asType<PyVM>().frame().result.take();
                 }
-                if (v.ifType<Exception>() != nullptr) {
+                if (v.isNil() || v.ifType<Exception>() != nullptr) {
                     // TODO hack, clear the raised signal
                     const_cast<PyVM*>(this)->_signal = {};
                     break;
                 }
-//printf("idx %d ", idx); v.dump("v");
                 if (idx < nPos)
                     fastSlot(idx++) = v;
                 else {

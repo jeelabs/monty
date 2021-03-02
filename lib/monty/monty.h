@@ -239,6 +239,8 @@ namespace monty {
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
 
+        auto take () -> Value { Value r = *this; *this = {}; return r; }
+
         inline void marker () const;
         void dump (char const* msg =nullptr) const;
 

@@ -152,7 +152,7 @@ void Stacklet::yield (bool fast) {
             return; // don't yield if there are no pending triggers
         assert(ready.find(current) >= ready.size());
         ready.push(current);
-        current = nullptr;
+        // TODO ????? current = nullptr;
         suspend();
     } else
         suspend(ready);
@@ -215,7 +215,7 @@ auto Stacklet::runLoop () -> bool {
         while (current->run()) {}
 
         if (current != nullptr) {
-            current->adj(current->_fill);
+            //current->adj(current->_fill);
             assert(ready.find(current) >= ready.size());
             ready.push(current);
         }
