@@ -79,7 +79,7 @@ void Event::deregHandler () {
     }
 }
 
-void Event::set () {
+auto Event::set () -> Value {
     _value = true;
     auto n = _queue.size();
     if (n > 0) {
@@ -91,14 +91,16 @@ void Event::set () {
         assert(queued >= 0);
         _queue.clear();
     }
+    return {};
 }
 
-void Event::wait () {
+auto Event::wait () -> Value {
     if (!_value) {
         if (_id >= 0)
             ++queued;
         Stacklet::suspend(_queue);
     }
+    return {};
 }
 
 auto Event::regHandler () -> uint32_t {

@@ -648,7 +648,8 @@ namespace monty {
 
         //CG: wrap List pop append clear
         auto pop (int idx) -> Value;
-        void append (Value v);
+        auto append (Value v) -> Value;
+        auto clear () -> Value { Vector::clear(); return {}; }
 
         auto setAt (Value k, Value v) -> Value override;
         auto store (Range const&, Object const&) -> Value override;
@@ -811,9 +812,9 @@ namespace monty {
         operator bool () const { return _value; }
 
         //CG: wrap Event wait set clear
-        void set ();
-        void clear () { _value = false; }
-        void wait ();
+        auto set () -> Value ;
+        auto clear () -> Value { _value = false; return {}; }
+        auto wait () -> Value ;
 
         static int queued;
         static Vector triggers;
@@ -901,28 +902,10 @@ namespace monty {
     // It's probably just a neophyte's version of STL's <functional> types ...
     // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
 
-    // obj.meth() const -> void
-    template< typename T >
-    auto argConv (void (T::*m)() const, Object& o, ArgVec const&) -> Value {
-        (((T&) o).*m)();
-        return {};
-    }
-    // obj.meth() -> void
-    template< typename T >
-    auto argConv (void (T::*m)(), Object& o, ArgVec const&) -> Value {
-        (((T&) o).*m)();
-        return {};
-    }
     // obj.meth() -> Value
     template< typename T, typename V >
     auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
         return (((T&) o).*m)();
-    }
-    // obj.meth(arg) -> void
-    template< typename T, typename U >
-    auto argConv (void (T::*m)(U), Object& o, ArgVec const& a) -> Value {
-        (((T&) o).*m)(a[1]);
-        return {};
     }
     // obj.meth(arg) -> Value
     template< typename T, typename U, typename V >

@@ -67,6 +67,8 @@ struct Spi : Object, jeeh::SpiGpio {
     }
 
     //CG: wrap Spi enable disable xfer
+    auto enable () -> Value { jeeh::SpiGpio::enable(); return {}; }
+    auto disable () -> Value { jeeh::SpiGpio::disable(); return {}; }
 };
 
 //CG< wrappers Spi
@@ -110,6 +112,11 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
         assert(args._num == 2 && args[0].isInt());
         auto& a = args[1].asType<Array>();
         send(args[0], a.begin(), a.size());
+        return {};
+    }
+
+    auto sleep () -> Value {
+        jeeh::RF69<jeeh::SpiGpio>::sleep();
         return {};
     }
 
