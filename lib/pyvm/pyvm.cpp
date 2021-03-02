@@ -730,7 +730,7 @@ struct PyVM : Stacklet {
         auto& myCaller = Value(_caller).asType<PyVM>(); // TODO non-PyVM caller ?
         _caller = nullptr;
         // TODO messy: result needs to be stored in another PyVM instance
-        //  might be better to store it its signal slot, then pick up on resume
+        //  might be better to store in its signal slot, then pick up on resume
         myCaller[myCaller._spOff] = *_sp;
 //_sp->dump("yieldval");
 frame().result = *_sp;
@@ -1391,6 +1391,7 @@ frame().result = *_sp;
             xMap.dump("xMap");
         }
 #endif
+        auto posVec = hva ? new Tuple : nullptr;
 
         if (!hva && aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
@@ -1404,25 +1405,36 @@ frame().result = *_sp;
             }
 
         int idx;
-        for (idx = 0; idx < aPos && idx < nPos + nCel; ++idx)
-            fastSlot(idx) = args[idx];
+        for (idx = 0; idx < aPos; ++idx)
+            if (idx < nPos + nCel)
+                fastSlot(idx) = args[idx];
+            else {
+                assert(posVec != nullptr);
+                posVec->append(args[idx]);
+            }
         if (xSeq.isObj() && (hva || idx < nPos)) {
             Value vit = xSeq->iter();
-    //vit.dump("vit");
+//vit.dump("vit");
             Iterator it (xSeq.obj());
             auto& vob = vit.isInt() ? it : xSeq.obj();
             while (hva || idx < nPos) {
                 auto v = vob.next();
                 if (v.isNil()) {
                     v = vit.asType<PyVM>().frame().result;
-    //v.dump("result?");
+//v.dump("result?");
                 }
                 if (v.ifType<Exception>() != nullptr) {
-                    //_signal = {}; // TODO hack, clear the raised signal
+                    // TODO hack, clear the raised signal
+                    const_cast<PyVM*>(this)->_signal = {};
                     break;
                 }
-    //printf("idx %d ", idx); v.dump("v");
-                fastSlot(idx++) = v;
+//printf("idx %d ", idx); v.dump("v");
+                if (idx < nPos)
+                    fastSlot(idx++) = v;
+                else {
+                    assert(posVec != nullptr);
+                    posVec->append(v);
+                }
             }
             aPos = idx;
         }
@@ -1451,8 +1463,8 @@ frame().result = *_sp;
                 return {E::TypeError, "required arg missing", _bc[i]};
 
         if (hva)
-            fastSlot(nPos+nKwo) =
-                Tuple::create({args._vec, aPos-nPos, args._off+nPos});
+            fastSlot(nPos+nKwo) = posVec;
+                //Tuple::create({args._vec, aPos-nPos, args._off+nPos});
 
         if (aKwd > nKwo) {
             auto d = new Dict;
