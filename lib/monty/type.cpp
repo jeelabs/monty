@@ -397,36 +397,33 @@ void Lookup::marker () const {
         _items[i].v.marker();
 }
 
-Tuple::Tuple (ArgVec const& args) : _fill (args._num) {
-    memcpy((Value*) data(), args.begin(), args._num * sizeof (Value));
+Tuple::Tuple (ArgVec const& args) {
+    insert(0, args._num);
+    for (int i = 0; i < args._num; ++i)
+        (*this)[i] = args[i];
 }
 
 auto Tuple::getAt (Value k) const -> Value {
     if (!k.isInt())
         return sliceGetter(k);
-    return data()[k];
+    auto n = relPos(k);
+    assert(n < size());
+    return (*this)[n];
 }
 
 auto Tuple::copy (Range const& r) const -> Value {
-    int n = r.len();
-    Vector avec; // TODO messy way to create tuple via sized vec with no data
-    avec.insert(0, n);
-    auto v = Tuple::create({avec, n, 0});
-    auto p = (Value*) (&v.asType<Tuple>() + 1);
-    for (int i = 0; i < n; ++i)
-        p[i] = getAt(r.getAt(i));
+    // TODO can't use this, because of the range: return type().call(*this);
+    //  the proper solution is to support arbitrary iterators & generators
+    auto& v = &type() == &info ? *new Tuple : *new List;
+    auto n = r.len();
+    v.insert(0, n);
+    for (uint32_t i = 0; i < n; ++i)
+        v[i] = (*this)[r.getAt(i)];
     return v;
 }
 
-void Tuple::marker () const {
-    for (uint32_t i = 0; i < _fill; ++i)
-        data()[i].marker();
-}
-
 auto Tuple::create (ArgVec const& args, Type const*) -> Value {
-    if (args._num == 0)
-        return Empty; // there's one unique empty tuple
-    return new (args._num * sizeof (Value)) Tuple (args);
+    return new Tuple (args);
 }
 
 void Tuple::repr (Buffer& buf) const {
@@ -437,12 +434,6 @@ void Tuple::repr (Buffer& buf) const {
         buf << (*this)[i];
     }
     buf << ')';
-}
-
-List::List (ArgVec const& args) {
-    insert(0, args._num);
-    for (int i = 0; i < args._num; ++i)
-        (*this)[i] = args[i];
 }
 
 auto List::pop (int idx) -> Value {
@@ -459,29 +450,12 @@ void List::append (Value v) {
     (*this)[n] = v;
 }
 
-auto List::getAt (Value k) const -> Value {
-    if (!k.isInt())
-        return sliceGetter(k);
-    auto n = relPos(k);
-    assert(n < size());
-    return (*this)[n];
-}
-
 auto List::setAt (Value k, Value v) -> Value {
     if (!k.isInt())
         return sliceSetter(k, v);
     auto n = relPos(k);
     assert(n < size());
     return (*this)[n] = v;
-}
-
-auto List::copy (Range const& r) const -> Value {
-    auto n = r.len();
-    auto v = new List;
-    v->insert(0, n);
-    for (uint32_t i = 0; i < n; ++i)
-        (*v)[i] = (*this)[r.getAt(i)];
-    return v;
 }
 
 auto List::store (Range const& r, Object const& v) -> Value {

@@ -14,17 +14,17 @@ Object
 ├─ Bytes
 │  ├─ Str
 │  └─ Array
-├─ Tuple
-│  └─ Exception
-└─ List
-   ├─ Set
-   │  └─ Dict
-   │     ├─ Module
-   │     ├─ Type
-   │     │  └─ Class
-   │     └─ Inst
-   ├─ Closure
-   └─ Stacklet
+└─ Tuple
+   ├─ Exception
+   └─ List
+      ├─ Set
+      │  └─ Dict
+      │     ├─ Module
+      │     ├─ Type
+      │     │  └─ Class
+      │     └─ Inst
+      ├─ Closure
+      └─ Stacklet
 ```
 
 A few of these deserve special mention:
@@ -33,7 +33,8 @@ A few of these deserve special mention:
   characters, not 8-bit bytes
 * **Array** is also derived from `Bytes`, because it implements data structures
   with elements that are all represented internally as a sequence of raw bytes
-* **List** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes
+* **Tuple** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes
+* **List** is a `Tuple` with additional modifying methods
 * **Dict** derives from `Set` because it is implemented as a set of keys, with
   the values saved separately in the same vector
 * **Stacklet** is a `List` which is used extensively as a "stack of call

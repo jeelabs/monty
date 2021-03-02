@@ -612,61 +612,42 @@ namespace monty {
     };
 
     //CG< type tuple
-    struct Tuple : Object {
+    struct Tuple : Object, Vector {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type info;
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
     //CG>
-        auto size () const -> uint32_t { return _fill; }
-        auto begin () const -> Value const* { return data(); }
-        auto end () const -> Value const* { return begin() + size(); }
-        auto operator[] (uint32_t idx) const -> Value { return begin()[idx]; }
+        constexpr Tuple () =default;
+        Tuple (ArgVec const&);
 
         auto len () const -> uint32_t override { return _fill; }
         auto getAt (Value k) const -> Value override;
         auto iter () const -> Value override { return 0; }
         auto copy (Range const&) const -> Value override;
 
-        void marker () const override;
-
-        uint32_t const _fill;
+        void marker () const override { markVec(*this); }
 
         static Tuple const emptyObj;
-    protected:
-        constexpr Tuple () : _fill (0) {}
-        Tuple (ArgVec const&);
-
-        auto data () const -> Value const* {
-            return reinterpret_cast<Value const*> (this+1);
-        }
     };
 
     //CG< type list
-    struct List : Object, Vector {
+    struct List : Tuple {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type info;
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
     //CG>
-        constexpr List () =default;
+        using Tuple::Tuple;
 
         //CG: wrap List pop append clear
         auto pop (int idx) -> Value;
         void append (Value v);
 
-        auto len () const -> uint32_t override { return _fill; }
-        auto getAt (Value k) const -> Value override;
         auto setAt (Value k, Value v) -> Value override;
-        auto iter () const -> Value override { return 0; }
-        auto copy (Range const&) const -> Value override;
         auto store (Range const&, Object const&) -> Value override;
-
-        void marker () const override { markVec(*this); }
-    protected:
-        List (ArgVec const& args);
     };
 
     //CG< type set
@@ -1052,27 +1033,31 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
 
-        static constexpr auto NVEC32 = sizeof (Vector) / sizeof (uintptr_t);
-        struct Extra { E code; uintptr_t trace [NVEC32]; };
-        auto extra () const -> Extra& {
-            return *static_cast<Extra*> ((void*) end()); // TODO yuck!
-        }
-        auto traceVec () const -> Vector&; // TODO has to mess with const :(
+        auto binop (BinOp, Value) const -> Value override;
+
+        void marker () const override;
 
         //CG: wrap Exception trace
         auto trace () -> Value;
-        static Lookup const attrs;
-        
+        void addTrace (uint32_t off, Value bc);
+
         static auto create (E, ArgVec const&) -> Value; // diff API
         static Lookup const bases; // this maps the derivation hierarchy
         static auto findId (Function const&) -> int; // find in builtinsMap
-
-        void marker () const override;
+        static Lookup const attrs;
     private:
         Exception (E exc, ArgVec const& args);
-        ~Exception () override { traceVec().adj(0); } // needs explicit cleanup
+        ~Exception () override { adj(0); } // needs explicit cleanup
 
-        auto binop (BinOp, Value) const -> Value override;
+        struct SizeFix {
+            SizeFix (Exception&);
+            ~SizeFix ();
+
+            Exception& _exc;
+            uint32_t _orig;
+        };
+
+        E _code;
     };
 
 // see library.cpp - runtime library functions for several datatypes

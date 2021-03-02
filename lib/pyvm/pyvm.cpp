@@ -1232,10 +1232,8 @@ struct PyVM : Stacklet {
 
         // finally clauses and re-raises must not extend the trace
         // _ipOff can be zero if the error comes from inside Callable::call
-        if (_ip[-1] != EndFinally && _ip[-1] != RaiseLast && _ipOff > 0) {
-            einfo.traceVec().append(_ipOff - 1);
-            einfo.traceVec().append(&_callee->_bc);
-        }
+        if (_ip[-1] != EndFinally && _ip[-1] != RaiseLast && _ipOff > 0)
+            einfo.addTrace(_ipOff - 1, _callee->_bc);
 
         if (frame().ep > 0) { // simple exception, no stack unwind
             auto ep = excBase(0);

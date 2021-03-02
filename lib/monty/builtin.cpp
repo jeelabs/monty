@@ -294,8 +294,9 @@ static Lookup::Item const builtinsMap [] = {
 static Lookup const builtins_attrs (builtinsMap);
 Dict Module::builtins (&builtins_attrs);
 
-Exception::Exception (E exc, ArgVec const& args) : Tuple (args) {
-    extra() = { .code=exc, .trace={} };
+Exception::Exception (E code, ArgVec const& args) : Tuple (args), _code (code) {
+    adj(_fill+1);
+    (*this)[_fill] = _fill+1;
     // TODO nasty, fixup Exception::info, as it doesn't have the attrs set
     //  because exception is not an exposed type ("<exception>" iso "exception")
     info._chain = &attrs;
@@ -313,7 +314,7 @@ auto Exception::findId (Function const& f) -> int {
 auto Exception::binop (BinOp op, Value rhs) const -> Value {
     if (op == BinOp::ExceptionMatch) {
         auto id = findId(rhs.asType<Function>());
-        auto code = (int) extra().code;
+        auto code = (int) _code;
         do {
             if (code == id)
                 return True;
@@ -324,36 +325,44 @@ auto Exception::binop (BinOp op, Value rhs) const -> Value {
     return Tuple::binop(op, rhs);
 }
 
-auto Exception::traceVec () const -> Vector& {
-    auto p = extra().trace; // FIXME awful hack for Vector copying & const-ness
-    return *(Vector*) (void*) p;
+Exception::SizeFix::SizeFix (Exception& exc) : _exc (exc), _orig (exc._fill) {
+    _exc._fill = _exc[_orig];       // expose the trace info, temporarily
+}
+
+Exception::SizeFix::~SizeFix () {
+    _exc[_orig] = _exc._fill;
+    _exc._fill = _orig;
+}
+
+void Exception::addTrace (uint32_t off, Value bc) {
+    SizeFix fixer (*this);
+    append(off);
+    append(bc);
 }
 
 auto Exception::trace () -> Value {
     auto r = new List;
-    auto& v = traceVec();
-    for (uint32_t i = 0; i < v.size(); i += 2) {
-        auto e = v[i+1]; // Bytecode object
-        r->append(e->getAt(-1));    // filename
-        r->append(e->getAt(v[i]));  // line number
-        r->append(e->getAt(-2));    // function
+    SizeFix fixer (*this);
+    for (uint32_t i = fixer._orig + 1; i < size(); i += 2) {
+        auto e = (*this)[i+1]; // Bytecode object
+        r->append(e->getAt(-1));            // filename
+        r->append(e->getAt((*this)[i]));    // line number
+        r->append(e->getAt(-2));            // function
     }
     return r;
 }
 
 void Exception::marker () const {
+    SizeFix fixer (*const_cast<Exception*>(this));
     Tuple::marker();
-    markVec(traceVec()); // awkward access to Vector
 }
 
 auto Exception::create (E exc, ArgVec const& args) -> Value {
-    // single alloc: first a tuple with args._num values, then exception info
-    auto sz = args._num * sizeof (Value) + sizeof (Extra);
-    return new (sz) Exception (exc, args);
+    return new Exception (exc, args);
 }
 
 void Exception::repr (Buffer& buf) const {
-    buf.puts(bases._items[(int) extra().code].k);
+    buf.puts(bases._items[(int) _code].k);
     Tuple::repr(buf);
 }
 
