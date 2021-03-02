@@ -216,7 +216,7 @@ struct PyVM : Stacklet {
     auto ipBase () const -> uint8_t const* { return _callee->_bc.start(); }
 
     auto fastSlot (uint32_t i) const -> Value& {
-        return spBase()[_callee->_bc.fastSlotTop() + ~i];
+        return spBase()[_callee->_bc.sTop + ~i];
     }
     auto derefSlot (uint32_t i) const -> Value& {
         return fastSlot(i).asType<Cell>()._val;
@@ -1229,7 +1229,7 @@ struct PyVM : Stacklet {
     }
 
     void enter (Callable const& func) {
-        auto frameSize = func._bc.fastSlotTop() + EXC_STEP * func._bc.excLevel();
+        auto frameSize = func._bc.sTop + EXC_STEP * func._bc.nExc;
         int need = (frame().stack + frameSize) - (begin() + _base);
 
         auto curr = _base;          // current frame offset
@@ -1280,7 +1280,7 @@ struct PyVM : Stacklet {
         frame().ep = ep + incr;
         if (incr <= 0)
             --ep;
-        return frame().stack + _callee->_bc.fastSlotTop() + EXC_STEP * ep;
+        return frame().stack + _callee->_bc.sTop + EXC_STEP * ep;
     }
 
     void caught () {
@@ -1364,21 +1364,22 @@ struct PyVM : Stacklet {
         setPending(num);    // force inner loop exit
     }
 
-    auto argSetup (ArgVec const& args) const -> Value { // rename to "call()" ?
+    auto argSetup (ArgVec const& args) -> Value {
         auto& _bc = _callee->_bc;
         auto& _pos = _callee->_pos;
         auto& _kw = _callee->_kw;
 
-        int nPos = _bc.numArgs(0);
-        int nDef = _bc.numArgs(1);
-        int nKwo = _bc.numArgs(2);
-        int nCel = _bc.numCells();
+        auto nPos = _bc.nPos;
+        auto nDef = _bc.nDef;
+        auto nKwo = _bc.nKwo;
+        auto nCel = _bc.nCel;
         bool hva = _bc.hasVarArgs();
+
         auto aPos = args._num & 0xFF;
         auto aKwd = (args._num >> 8) & 0xFF;
+        auto more = args._num & (1<<16); // hidden args for "*seq" and "**map"
 
         Value xSeq, xMap;
-        auto more = args._num & (1<<16); // hidden args for "*seq" and "**map"
         if (more) {
             xSeq = args[aPos+2*aKwd];
             xMap = args[aPos+2*aKwd+1];
@@ -1391,10 +1392,19 @@ struct PyVM : Stacklet {
             xMap.dump("xMap");
         }
 #endif
-        auto posVec = hva ? new Tuple : nullptr;
-
         if (!hva && aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
+
+        auto posVec = hva ? new Tuple : nullptr;
+        int idx = 0;
+
+        auto addArg = [&](Value v) {
+            if (idx < nPos + nCel)
+                fastSlot(idx) = v;
+            else
+                posVec->append(v);
+            ++idx;
+        };
 
         if (_kw != nullptr) // preset args with kw defaults
             for (int j = 0; j < nPos + nKwo; ++j) {
@@ -1404,42 +1414,29 @@ struct PyVM : Stacklet {
                     fastSlot(j) = v;
             }
 
-        int idx;
-        for (idx = 0; idx < aPos; ++idx)
-            if (idx < nPos + nCel)
-                fastSlot(idx) = args[idx];
-            else {
-                assert(posVec != nullptr);
-                posVec->append(args[idx]);
-            }
-        if (xSeq.isObj() && (hva || idx < nPos)) {
+        while (idx < aPos)
+            addArg(args[idx]);
+
+        if (xSeq.isObj()) {
             Value vit = xSeq->iter();
             Iterator it (xSeq.obj());
             auto& vob = vit.isInt() ? it : xSeq.obj();
-            while (hva || idx < nPos) {
+            while (true) {
                 auto v = vob.next();
                 if (v.isNil()) {
-                    current = const_cast<PyVM*>(this);
+                    current = this;
                     suspend();
-                    v = vit.asType<PyVM>().frame().result.take();
+                    // TODO messy result passing, perhaps suspend should do it?
+                    v = _sp->take();
+                    if (v.isNil())
+                        break;
                 }
-                if (v.isNil() || v.ifType<Exception>() != nullptr) {
-                    // TODO hack, clear the raised signal
-                    const_cast<PyVM*>(this)->_signal = {};
-                    break;
-                }
-                if (idx < nPos)
-                    fastSlot(idx++) = v;
-                else {
-                    assert(posVec != nullptr);
-                    posVec->append(v);
-                }
+                addArg(v);
             }
-            aPos = idx;
         }
-        for (; idx < nPos + nCel; ++idx)
-            if (_pos != nullptr && nPos-nDef <= idx && idx < nDef+(int)_pos->_fill)
-                fastSlot(idx) = (*_pos)[idx+nDef-nPos];
+        for (auto i = idx; i < nPos + nCel; ++i)
+            if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
+                fastSlot(i) = (*_pos)[i+nDef-nPos];
 
         uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
 
@@ -1463,7 +1460,6 @@ struct PyVM : Stacklet {
 
         if (hva)
             fastSlot(nPos+nKwo) = posVec;
-                //Tuple::create({args._vec, aPos-nPos, args._off+nPos});
 
         if (aKwd > nKwo) {
             auto d = new Dict;

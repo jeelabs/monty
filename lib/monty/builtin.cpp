@@ -46,7 +46,8 @@ static auto f_iter (ArgVec const& args) -> Value {
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
     assert(args._num == 1);
-    return args[0]->next();
+    auto v = args[0]->next();
+    return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
 
 //CG1 bind len

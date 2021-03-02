@@ -458,7 +458,7 @@ namespace monty {
 
         Iterator (Object const& obj, int pos =0) : _pos (pos), _obj (obj) {}
 
-        auto next() -> Value override;
+        auto next () -> Value override;
 
         void marker () const override { mark(_obj); }
     private:

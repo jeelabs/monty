@@ -18,7 +18,7 @@ print(type(rf69))
 
 async def loop():
     buf = array('B', 50);
-    for _ in range(20):
+    for _ in range(5):
         evt.wait()
         evt.clear()
         n = rf69.recv(buf)

@@ -8,20 +8,70 @@
 #define debugf(...)
 #endif
 
-// was: CG3 type <bytecode>
-struct Bytecode : List {
-    static Type info;
-    auto type () const -> Type const& override { return info; }
+struct CodePrefix {
+    int16_t constOff;
+    int16_t code;
+    int8_t sTop;
+    int8_t nExc;
+    int8_t flag;
+    int8_t nPos;
+    int8_t nKwo;
+    int8_t nDef;
+    int8_t nCel;
 
-    auto fastSlotTop () const -> uint32_t { return stackSz; }
-    auto excLevel () const -> uint32_t { return excDepth; }
-    auto isGenerator () const -> bool { return flags & 1; }
-    auto hasVarArgs () const -> bool { return (flags >> 2) & 1; }
-    auto numCells () const -> uint32_t { return n_cell; }
+    auto isGenerator () const -> bool { return flag & 1; }
+    auto hasVarArgs () const -> bool { return (flag >> 2) & 1; }
 
     auto numArgs (int t) const -> uint32_t {
-        return t == 0 ? n_pos : t == 1 ? n_def_pos : n_kwonly;
+        return t == 0 ? nPos :
+               t == 1 ? nDef :
+               t == 2 ? nKwo :
+                        nCel;
     }
+
+    int prelude (uint8_t const*& dp) {
+        uint8_t z = *dp++; /* xSSSSEAA */
+        sTop = (z >> 3) & 0xf;
+        nExc = (z >> 2) & 0x1;
+        flag = 0;
+        nPos = z & 0x3;
+        nKwo = 0;
+        nDef = 0;
+        for (int n = 0; z & 0x80; ++n) {
+            z = *dp++; /* xFSSKAED */
+            sTop |= (z & 0x30) << (2 * n);
+            nExc |= (z & 0x02) << n;
+            flag |= ((z & 0x40) >> 6) << n;
+            nPos |= (z & 0x4) << n;
+            nKwo |= ((z & 0x08) >> 3) << n;
+            nDef |= (z & 0x1) << n;
+        }
+        sTop += 1;
+        debugf("sTop %d\n", sTop);
+        debugf("nExc %d\n", nExc);
+        debugf("flag %d\n", flag);
+        debugf("nPos %d\n", nPos);
+        debugf("nKwo %d\n", nKwo);
+        debugf("nDef %d\n", nDef);
+
+        int nInf = 0;
+        nCel = 0;
+        z = 0x80;
+        for (int n = 0; z & 0x80; ++n) {
+            z = *dp++; /* xIIIIIIC */
+            nCel |= (z & 1) << n;
+            nInf |= ((z & 0x7e) >> 1) << (6 * n);
+        }
+        debugf("nInf %d\n", nInf);
+        debugf("nCel %d\n", nCel);
+        return nInf + nCel;
+    }
+};
+
+// was: CG3 type <bytecode>
+struct Bytecode : List, CodePrefix {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
 
     auto base () const -> uint8_t const* { return (uint8_t const*) (this+1); }
     auto start () const -> uint8_t const* { return base() + code; }
@@ -61,21 +111,6 @@ struct Bytecode : List {
     }
 
     static auto load (void const*, Value) -> Callable*;
-private:
-    Bytecode () {}
-
-    //int32_t spare1; // future bc format
-    //int16_t spare2; // ...
-
-    int16_t code;
-    int16_t stackSz;
-
-    int8_t flags;
-    int8_t excDepth;
-    int8_t n_pos;
-    int8_t n_kwonly;
-    int8_t n_def_pos;
-    int8_t n_cell;
 
     friend struct Loader;
 };
@@ -90,67 +125,6 @@ struct Loader {
     VaryVec* vvec;          // convert: new module format if converting, else 0
     ByteVec constData;      // convert: all collected const data
     uint16_t constNext {0}; // convert: index of next unused const entry
-
-    struct Prelude {
-        uint32_t n_state;
-        uint32_t n_exc_stack;
-        uint32_t scope_flags;
-        uint32_t n_pos_args;
-        uint32_t n_kwonly_args;
-        uint32_t n_def_pos_args;
-        uint32_t n_info = 0;
-        uint32_t n_cell = 0;
-
-        int load (Loader& l) {
-            uint8_t z = *l.dp++; /* xSSSSEAA */
-            n_state = (z >> 3) & 0xf;
-            n_exc_stack = (z >> 2) & 0x1;
-            scope_flags = 0;
-            n_pos_args = z & 0x3;
-            n_kwonly_args = 0;
-            n_def_pos_args = 0;
-            for (int n = 0; z & 0x80; ++n) {
-                z = *l.dp++; /* xFSSKAED */
-                n_state |= (z & 0x30) << (2 * n);
-                n_exc_stack |= (z & 0x02) << n;
-                scope_flags |= ((z & 0x40) >> 6) << n;
-                n_pos_args |= (z & 0x4) << n;
-                n_kwonly_args |= ((z & 0x08) >> 3) << n;
-                n_def_pos_args |= (z & 0x1) << n;
-            }
-            n_state += 1;
-            debugf("n_state        %d\n", n_state);
-            debugf("n_exc_stack    %d\n", n_exc_stack);
-            debugf("scope_flags    %d\n", scope_flags);
-            debugf("n_pos_args     %d\n", n_pos_args);
-            debugf("n_kwonly_args  %d\n", n_kwonly_args);
-            debugf("n_def_pos_args %d\n", n_def_pos_args);
-
-            n_info = 0;
-            n_cell = 0;
-            z = 0x80;
-            for (int n = 0; z & 0x80; ++n) {
-                z = *l.dp++; /* xIIIIIIC */
-                n_cell |= (z & 1) << n;
-                n_info |= ((z & 0x7e) >> 1) << (6 * n);
-            }
-            debugf("n_info         %d\n", n_info);
-            debugf("n_cell         %d\n", n_cell);
-            return n_info + n_cell;
-        }
-    } prelude;
-
-    struct CodePrefix {
-        int8_t constOff;
-        int8_t code;
-        int8_t stackSz;
-        int8_t flags;
-        int8_t excDepth;
-        int8_t n_pos;
-        int8_t n_kwonly;
-        int8_t n_def_pos;
-        int8_t n_cell;
-    };
 
     Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
@@ -272,25 +246,18 @@ struct Loader {
         auto bCount = typsiz >> 2;
         debugf("type %d size %d (%d)\n", typsiz & 3, bCount, typsiz);
 
-        auto savedDp = dp;
-        auto nskip = prelude.load(*this);
-        auto npre = dp - savedDp;
-
         // bytecode will be stored in extra bytes allocated after Bytecode
         auto& bc = *new (bCount) Bytecode;
+
+        auto savedDp = dp;
+        auto nskip = bc.prelude(dp);
+        auto npre = dp - savedDp;
+
         bcBuf = bcNext = (uint8_t*) (&bc + 1);
         bcLimit = bcBuf + bCount - npre;
 
-        bc.stackSz = prelude.n_state;
-        bc.excDepth = prelude.n_exc_stack;
-        bc.flags = prelude.scope_flags;
-        bc.n_pos = prelude.n_pos_args;
-        bc.n_kwonly = prelude.n_kwonly_args;
-        bc.n_def_pos = prelude.n_def_pos_args;
-        bc.n_cell = prelude.n_cell;
         debugf("raw sc %d np %d ns %d nx %d ko %d dp %d\n",
-                bc.flags, bc.n_pos, bc.stackSz, bc.excDepth,
-                bc.n_kwonly, bc.n_def_pos);
+                bc.flag, bc.nPos, bc.sTop, bc.nExc, bc.nKwo, bc.nDef);
 
         auto n1 = storeQstr();
         auto n2 = storeQstr();
@@ -300,10 +267,10 @@ struct Loader {
         for (int i = 4; i < nskip; ++i)
             *bcNext++ = *dp++;
 
-        for (int i = -bc.n_cell; i < 0; ++i)
+        for (int i = -bc.nCel; i < 0; ++i)
             debugf("deref %d: %d\n", i, bcNext[i]);
         bc.code = bcNext - bcBuf;
-        debugf("n_cell %d code %d\n", bc.n_cell, bc.code);
+        debugf("nCel %d code %d\n", bc.nCel, bc.code);
 
         loadOps();
 
@@ -318,13 +285,13 @@ struct Loader {
             CodePrefix pfx; // new bytecode prefix when converting
             pfx.constOff = constNext;
             pfx.code = bc.code;
-            pfx.stackSz = bc.stackSz;
-            pfx.flags = bc.flags;
-            pfx.excDepth = bc.excDepth;
-            pfx.n_pos = bc.n_pos;
-            pfx.n_kwonly = bc.n_kwonly;
-            pfx.n_def_pos = bc.n_def_pos;
-            pfx.n_cell = bc.n_cell;
+            pfx.sTop = bc.sTop;
+            pfx.flag = bc.flag;
+            pfx.nExc = bc.nExc;
+            pfx.nPos = bc.nPos;
+            pfx.nKwo = bc.nKwo;
+            pfx.nDef = bc.nDef;
+            pfx.nCel = bc.nCel;
 
             int n = vvec->size();
             vvec->insert(n);
@@ -334,12 +301,12 @@ struct Loader {
             memcpy(p + sizeof pfx, (uint8_t const*) (&bc + 1), bCount);
         }
 
-        bc.adj(bc.n_pos + bc.n_kwonly + nData + nCode); // pre-alloc
-        constNext += bc.n_pos + bc.n_kwonly + nData + nCode;
+        bc.adj(bc.nPos + bc.nKwo + nData + nCode); // pre-alloc
+        constNext += bc.nPos + bc.nKwo + nData + nCode;
 
         auto dpOff = dp;
 
-        for (int i = 0; i < bc.n_pos + bc.n_kwonly; ++i) {
+        for (int i = 0; i < bc.nPos + bc.nKwo; ++i) {
             auto qs = loadQstr();
             debugf("bc %d qs %d: %s\n", bc.size(), qs, Q::str(qs));
             bc.append(Q(qs));

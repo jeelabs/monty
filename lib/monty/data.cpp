@@ -490,7 +490,7 @@ void Int::repr (Buffer& buf) const {
 
 auto Iterator::next() -> Value {
     if (_pos >= (int) _obj.len())
-        return E::StopIteration;
+        return {};
     // TODO duplicate code, see opForIter in pyvm.h
     if (&_obj.type() == &Dict::info || &_obj.type() == &Set::info)
         return ((List&) _obj)[_pos++]; // avoid keyed access
