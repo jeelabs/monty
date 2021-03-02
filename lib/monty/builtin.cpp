@@ -46,7 +46,8 @@ static auto f_iter (ArgVec const& args) -> Value {
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
     assert(args._num == 1);
-    return args[0]->next();
+    auto v = args[0]->next();
+    return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
 
 //CG1 bind len
@@ -213,7 +214,7 @@ static Method const mo_event_wait (m_event_wait);
 static Lookup::Item const event_map [] = {
     { Q( 70,"clear"), mo_event_clear },
     { Q(140,"set"), mo_event_set },
-    { Q(183,"wait"), mo_event_wait },
+    { Q(187,"wait"), mo_event_wait },
 };
 Lookup const Event::attrs (event_map);
 
@@ -221,7 +222,7 @@ static auto const m_exception_trace = Method::wrap(&Exception::trace);
 static Method const mo_exception_trace (m_exception_trace);
 
 static Lookup::Item const exception_map [] = {
-    { Q(184,"trace"), mo_exception_trace },
+    { Q(188,"trace"), mo_exception_trace },
 };
 Lookup const Exception::attrs (exception_map);
 
@@ -267,17 +268,17 @@ static Lookup::Item const builtinsMap [] = {
     { Q(167,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(185,"array"), Array::info },
+    { Q(189,"array"), Array::info },
     { Q( 62,"bool"),  Bool::info },
     { Q( 66,"bytes"), Bytes::info },
-    { Q(186,"class"), Class::info },
+    { Q(190,"class"), Class::info },
     { Q( 75,"dict"),  Dict::info },
-    { Q(170,"event"), Event::info },
+    { Q(171,"event"), Event::info },
     { Q( 94,"int"),   Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
     { Q(140,"set"),   Set::info },
-    { Q(187,"slice"), Slice::info },
+    { Q(191,"slice"), Slice::info },
     { Q(151,"str"),   Str::info },
     { Q(154,"super"), Super::info },
     { Q(157,"tuple"), Tuple::info },
@@ -325,14 +326,18 @@ auto Exception::binop (BinOp op, Value rhs) const -> Value {
     return Tuple::binop(op, rhs);
 }
 
-Exception::SizeFix::SizeFix (Exception& exc) : _exc (exc), _orig (exc._fill) {
-    _exc._fill = _exc[_orig];       // expose the trace info, temporarily
-}
+struct SizeFix {
+    SizeFix (Exception& exc) : _exc (exc), _orig (exc._fill) {
+        _exc._fill = _exc[_orig]; // expose the trace info, temporarily
+    }
+    ~SizeFix () {
+        _exc[_orig] = _exc._fill;
+        _exc._fill = _orig;
+    }
 
-Exception::SizeFix::~SizeFix () {
-    _exc[_orig] = _exc._fill;
-    _exc._fill = _orig;
-}
+    Exception& _exc;
+    uint32_t _orig;
+};
 
 void Exception::addTrace (uint32_t off, Value bc) {
     SizeFix fixer (*this);
@@ -367,11 +372,7 @@ void Exception::repr (Buffer& buf) const {
 }
 
 //CG< type-info
-Type    BoundMeth::info (Q(188,"<boundmeth>"));
-Type       Buffer::info (Q(189,"<buffer>"));
-Type         Cell::info (Q(190,"<cell>"));
-Type      Closure::info (Q(191,"<closure>"));
-Type     DictView::info (Q(192,"<dictview>"));
+Type       Buffer::info (Q(192,"<buffer>"));
 Type    Exception::info (Q(193,"<exception>"));
 Type     Function::info (Q(194,"<function>"));
 Type     Iterator::info (Q(195,"<iterator>"));
@@ -381,17 +382,17 @@ Type       Module::info (Q(  7,"<module>"));
 Type         None::info (Q(198,"<none>"));
 Type     Stacklet::info (Q(199,"<stacklet>"));
 
-Type    Array::info (Q(185,"array"), &Array::attrs, Array::create);
+Type    Array::info (Q(189,"array"), &Array::attrs, Array::create);
 Type     Bool::info (Q( 62,"bool"),   &Bool::attrs,  Bool::create);
 Type    Bytes::info (Q( 66,"bytes"), &Bytes::attrs, Bytes::create);
-Type    Class::info (Q(186,"class"), &Class::attrs, Class::create);
+Type    Class::info (Q(190,"class"), &Class::attrs, Class::create);
 Type     Dict::info (Q( 75,"dict"),   &Dict::attrs,  Dict::create);
-Type    Event::info (Q(170,"event"), &Event::attrs, Event::create);
+Type    Event::info (Q(171,"event"), &Event::attrs, Event::create);
 Type      Int::info (Q( 94,"int"),     &Int::attrs,   Int::create);
 Type     List::info (Q(108,"list"),   &List::attrs,  List::create);
 Type    Range::info (Q(124,"range"), &Range::attrs, Range::create);
 Type      Set::info (Q(140,"set"),     &Set::attrs,   Set::create);
-Type    Slice::info (Q(187,"slice"), &Slice::attrs, Slice::create);
+Type    Slice::info (Q(191,"slice"), &Slice::attrs, Slice::create);
 Type      Str::info (Q(151,"str"),     &Str::attrs,   Str::create);
 Type    Super::info (Q(154,"super"), &Super::attrs, Super::create);
 Type    Tuple::info (Q(157,"tuple"), &Tuple::attrs, Tuple::create);

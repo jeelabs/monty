@@ -167,10 +167,6 @@ void Buffer::print(char const* fmt, ...) {
     va_end(ap);
 }
 
-void Buffer::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as bytes
-}
-
 Bytes::Bytes (void const* ptr, uint32_t len) {
     insert(0, len);
     memcpy(begin(), ptr, len);
@@ -382,19 +378,12 @@ auto Lookup::operator[] (char const* key) const -> Value {
     for (uint32_t i = 0; i < _count; ++i)
         if (strcmp(key, _items[i].k) == 0)
             return _items[i].v;
-    if (_chain != nullptr)
-        return (*_chain)[key];
-    return {};
+    return _chain != nullptr ?  (*_chain)[key] : Value {};
 }
 
 auto Lookup::getAt (Value k) const -> Value {
     assert(k.isStr());
     return (*this)[k];
-}
-
-void Lookup::marker () const {
-    for (uint32_t i = 0; i < _count; ++i)
-        _items[i].v.marker();
 }
 
 Tuple::Tuple (ArgVec const& args) {
@@ -426,14 +415,20 @@ auto Tuple::create (ArgVec const& args, Type const*) -> Value {
     return new Tuple (args);
 }
 
-void Tuple::repr (Buffer& buf) const {
-    buf << '(';
+void Tuple::printer (Buffer& buf, char const* sep) const {
+    buf << sep[0];
     for (uint32_t i = 0; i < _fill; ++i) {
         if (i > 0)
             buf << ',';
         buf << (*this)[i];
+        if (sep[2] != 0)
+            buf << sep[2] << (*this)[_fill+i]; // special-cased for Dict
     }
-    buf << ')';
+    buf << sep[1];
+}
+
+void Tuple::repr (Buffer& buf) const {
+    printer(buf, "()");
 }
 
 auto List::pop (int idx) -> Value {
@@ -444,10 +439,9 @@ auto List::pop (int idx) -> Value {
     return v;
 }
 
-void List::append (Value v) {
-    auto n = size();
-    insert(n);
-    (*this)[n] = v;
+auto List::append (Value v) -> Value {
+    Vector::append(v);
+    return {};
 }
 
 auto List::setAt (Value k, Value v) -> Value {
@@ -476,13 +470,7 @@ auto List::create (ArgVec const& args, Type const*) -> Value {
 }
 
 void List::repr (Buffer& buf) const {
-    buf << '[';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i];
-    }
-    buf << ']';
+    printer(buf, "[]");
 }
 
 auto Set::find (Value v) const -> uint32_t {
@@ -531,14 +519,27 @@ auto Set::create (ArgVec const& args, Type const*) -> Value {
 }
 
 void Set::repr (Buffer& buf) const {
-    buf << '{';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i];
-    }
-    buf << '}';
+    printer(buf, "{}");
 }
+
+// was: CG3 type <dictview>
+struct DictView : Object {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+
+    DictView (Dict const& dict, int vtype) : _dict (dict), _vtype (vtype) {}
+
+    auto len () const -> uint32_t override { return _dict._fill; }
+    auto getAt (Value k) const -> Value override;
+    auto iter () const -> Value override { return 0; }
+
+    void marker () const override { _dict.marker(); }
+private:
+    Dict const& _dict;
+    int _vtype;
+};
+
+Type DictView::info (Q(169,"<dictview>"));
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()
 auto Dict::Proxy::operator= (Value v) -> Value {
@@ -599,13 +600,7 @@ auto Dict::create (ArgVec const&, Type const*) -> Value {
 }
 
 void Dict::repr (Buffer& buf) const {
-    buf << '{';
-    for (uint32_t i = 0; i < _fill; ++i) {
-        if (i > 0)
-            buf << ',';
-        buf << (*this)[i] << ':' << (*this)[_fill+i];
-    }
-    buf << '}';
+    printer(buf, "{}:");
 }
 
 auto DictView::getAt (Value k) const -> Value {
@@ -615,15 +610,8 @@ auto DictView::getAt (Value k) const -> Value {
         n += _dict._fill;
     if (_vtype <= 1)
         return _dict[n];
-    Vector avec;
-    avec.insert(0, 2);
-    avec[0] = _dict[n];
-    avec[1] = _dict[n+_dict._fill];
-    return Tuple::create({avec, 2, 0});
-}
-
-auto Type::call (ArgVec const& args) const -> Value {
-    return _factory(args, this);
+    Value args [] = {_dict[n], _dict[n+_dict._fill]};
+    return Tuple::create({args});
 }
 
 auto Type::noFactory (ArgVec const&, const Type*) -> Value {
@@ -653,7 +641,7 @@ Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
         _chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(169,"__bases__")) = Tuple::create({args._vec, args._num-2, args._off+2});
+    at(Q(170,"__bases__")) = Tuple::create({args._vec, args._num-2, args._off+2});
 
     args[0]->call({args._vec, args._num - 2, args._off + 2});
 }

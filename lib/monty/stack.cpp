@@ -79,7 +79,7 @@ void Event::deregHandler () {
     }
 }
 
-void Event::set () {
+auto Event::set () -> Value {
     _value = true;
     auto n = _queue.size();
     if (n > 0) {
@@ -91,14 +91,16 @@ void Event::set () {
         assert(queued >= 0);
         _queue.clear();
     }
+    return {};
 }
 
-void Event::wait () {
+auto Event::wait () -> Value {
     if (!_value) {
         if (_id >= 0)
             ++queued;
         Stacklet::suspend(_queue);
     }
+    return {};
 }
 
 auto Event::regHandler () -> uint32_t {
@@ -125,7 +127,7 @@ auto Event::create (ArgVec const& args, Type const*) -> Value {
 }
 
 void Event::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
+    Object::repr(buf);
 }
 
 auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
@@ -150,7 +152,7 @@ void Stacklet::yield (bool fast) {
             return; // don't yield if there are no pending triggers
         assert(ready.find(current) >= ready.size());
         ready.push(current);
-        current = nullptr;
+        // TODO ????? current = nullptr;
         suspend();
     } else
         suspend(ready);
@@ -213,46 +215,13 @@ auto Stacklet::runLoop () -> bool {
         while (current->run()) {}
 
         if (current != nullptr) {
-            current->adj(current->_fill);
+            //current->adj(current->_fill);
             assert(ready.find(current) >= ready.size());
             ready.push(current);
         }
     }
 
     return Event::queued > 0 || ready.size() > 0;
-}
-
-void Stacklet::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
-}
-
-auto BoundMeth::call (ArgVec const& args) const -> Value {
-    assert(args._num > 0 && this == &args[-1].obj());
-    args[-1] = _self; // overwrites the entry before first arg
-    return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
-}
-
-Closure::Closure (Object const& f, ArgVec const& args)
-        : _func (f) {
-    insert(0, args._num);
-    for (int i = 0; i < args._num; ++i)
-        begin()[i] = args[i];
-}
-
-auto Closure::call (ArgVec const& args) const -> Value {
-    int n = size();
-    assert(n > 0);
-    Vector v;
-    v.insert(0, n + args._num);
-    for (int i = 0; i < n; ++i)
-        v[i] = begin()[i];
-    for (int i = 0; i < args._num; ++i)
-        v[n+i] = args[i];
-    return _func.call({v, n + args._num});
-}
-
-void Closure::repr (Buffer& buf) const {
-    Object::repr(buf); // don't print as a list
 }
 
 void Module::repr (Buffer& buf) const {

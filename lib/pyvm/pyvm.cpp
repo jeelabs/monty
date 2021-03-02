@@ -134,10 +134,75 @@ auto Callable::funcAt (int n) const -> Bytecode const& {
     return _bc[n].asType<Bytecode>();
 }
 
-struct PyVM : Stacklet {
-    static Lookup const attrs;
+// was: CG3 type <cell>
+struct Cell : Object {
     static Type info;
     auto type () const -> Type const& override { return info; }
+
+    Cell (Value val) : _val (val) {}
+
+    void marker () const override { _val.marker(); }
+
+    Value _val;
+};
+
+// was: CG3 type <boundmeth>
+struct BoundMeth : Object {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+
+    BoundMeth (Object const& f, Value o) : _meth (f), _self (o) {}
+
+    auto call (ArgVec const& args) const -> Value override {
+        assert(args._num > 0 && this == &args[-1].obj());
+        args[-1] = _self; // overwrites the entry before first arg
+        return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
+    }
+
+    void marker () const override { mark(_meth); _self.marker(); }
+private:
+    Object const& _meth;
+    Value _self;
+};
+
+// was: CG3 type <closure>
+struct Closure : List {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+    void repr (Buffer& buf) const override;
+
+    Closure (Object const& func, ArgVec const& args) : _func (func) {
+        insert(0, args._num);
+        for (int i = 0; i < args._num; ++i)
+            begin()[i] = args[i];
+    }
+
+    auto call (ArgVec const& args) const -> Value override {
+        int n = size();
+        assert(n > 0);
+        Vector v;
+        v.insert(0, n + args._num);
+        for (int i = 0; i < n; ++i)
+            v[i] = begin()[i];
+        for (int i = 0; i < args._num; ++i)
+            v[n+i] = args[i];
+        return _func.call({v, n + args._num});
+    }
+
+    void marker () const override { List::marker(); mark(_func); }
+private:
+    Object const& _func;
+};
+
+void Closure::repr (Buffer& buf) const {
+    Object::repr(buf); // don't print as a list
+}
+
+// was: CG3 type <pyvm>
+struct PyVM : Stacklet {
+    static Type info;
+    auto type () const -> Type const& override { return info; }
+    static Lookup const attrs;
 
     struct Frame {
         //    <------- previous ------->  <---- actual ---->
@@ -151,7 +216,7 @@ struct PyVM : Stacklet {
     auto ipBase () const -> uint8_t const* { return _callee->_bc.start(); }
 
     auto fastSlot (uint32_t i) const -> Value& {
-        return spBase()[_callee->_bc.fastSlotTop() + ~i];
+        return spBase()[_callee->_bc.sTop + ~i];
     }
     auto derefSlot (uint32_t i) const -> Value& {
         return fastSlot(i).asType<Cell>()._val;
@@ -665,8 +730,9 @@ struct PyVM : Stacklet {
         auto& myCaller = Value(_caller).asType<PyVM>(); // TODO non-PyVM caller ?
         _caller = nullptr;
         // TODO messy: result needs to be stored in another PyVM instance
-        //  might be better to store it its signal slot, then pick up on resume
+        //  might be better to store in its signal slot, then pick up on resume
         myCaller[myCaller._spOff] = *_sp;
+        frame().result = *_sp; // TODO one of these two is redundant
         switchTo(&myCaller);
     }
     //CG1 op
@@ -735,19 +801,19 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opImportName (Q arg) {
         --_sp; // TODO ignore fromlist for now, *_sp level also ignored
-        Value mod = Module::loaded.at(arg);
-        if (mod.isNil()) {
+        Value v = Module::loaded.at(arg);
+        if (v.isNil()) {
             auto data = vmImport(arg);
             if (data != nullptr) {
                 auto init = Bytecode::load(data, arg);
                 assert(init != nullptr);
                 wrappedCall(init, {*this, 0});
-                frame().locals = mod = init->_mo;
+                frame().locals = v = init->_mo;
                 Module::loaded.at(arg) = &init->_mo;
             } else
-                mod = {E::ImportError, arg};
+                v = {E::ImportError, arg};
         }
-        *_sp = mod;
+        *_sp = v;
     }
     //CG1 op q
     void opImportFrom (Q arg) {
@@ -1163,7 +1229,7 @@ struct PyVM : Stacklet {
     }
 
     void enter (Callable const& func) {
-        auto frameSize = func._bc.fastSlotTop() + EXC_STEP * func._bc.excLevel();
+        auto frameSize = func._bc.sTop + EXC_STEP * func._bc.nExc;
         int need = (frame().stack + frameSize) - (begin() + _base);
 
         auto curr = _base;          // current frame offset
@@ -1214,19 +1280,18 @@ struct PyVM : Stacklet {
         frame().ep = ep + incr;
         if (incr <= 0)
             --ep;
-        return frame().stack + _callee->_bc.fastSlotTop() + EXC_STEP * ep;
+        return frame().stack + _callee->_bc.sTop + EXC_STEP * ep;
     }
 
     void caught () {
-        auto e = _signal;
+        auto e = _signal.take();
         if (e.isNil())
             return; // there was no exception, just an inner loop exit
-        _signal = {};
 
         // quirky: "assert" without 2nd arg does not construct the exception
         // and "raise Exception" is also allowed, iso "raise Exception()" ...
         if (e.ifType<Function>())
-            e = e->call(Vector{}); // so construct it now
+            e = e->call({}); // so construct it now
 
         auto& einfo = e.asType<Exception>();
 
@@ -1255,6 +1320,11 @@ struct PyVM : Stacklet {
         }
     }
 
+    PyVM (Callable const& clb) {
+        enter(clb);
+        frame().locals = &clb._mo;
+    }
+
     auto run () -> bool override {
         while (current == this) {
             inner();
@@ -1270,12 +1340,14 @@ struct PyVM : Stacklet {
 
     //CG: wrap PyVM send
     auto send (Value arg =Null) -> Value {
-        assert(_fill > 0); // can only resume if not ended
+        if (_fill == 0)
+            return {};
         assert(current != nullptr);
         assert(current != this);
         assert(_caller == nullptr);
         _caller = current;
-        current = this;
+        current = nullptr;
+        ready.push(this);
         setPending(0);
         // TODO messy: arg needs to be stored at the top of the stack
         //  see also YieldValue
@@ -1291,6 +1363,122 @@ struct PyVM : Stacklet {
             _signal = exc;  // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
+
+    auto argSetup (ArgVec const& args) -> Value {
+        auto& _bc = _callee->_bc;
+        auto& _pos = _callee->_pos;
+        auto& _kw = _callee->_kw;
+
+        auto nPos = _bc.nPos;
+        auto nDef = _bc.nDef;
+        auto nKwo = _bc.nKwo;
+        auto nCel = _bc.nCel;
+        bool hva = _bc.hasVarArgs();
+
+        auto aPos = args._num & 0xFF;
+        auto aKwd = (args._num >> 8) & 0xFF;
+        auto more = args._num & (1<<16); // hidden args for "*seq" and "**map"
+
+        Value xSeq, xMap;
+        if (more) {
+            xSeq = args[aPos+2*aKwd];
+            xMap = args[aPos+2*aKwd+1];
+        }
+#if 0
+        printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
+                args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
+        if (more) {
+            xSeq.dump("xSeq");
+            xMap.dump("xMap");
+        }
+#endif
+        if (!hva && aPos > nPos + nCel)
+            return {E::TypeError, "too many positional args", aPos};
+
+        auto posVec = hva ? new Tuple : nullptr;
+        int idx = 0;
+
+        auto addArg = [&](Value v) {
+            if (idx < nPos + nCel)
+                fastSlot(idx) = v;
+            else
+                posVec->append(v);
+            ++idx;
+        };
+
+        if (_kw != nullptr) // preset args with kw defaults
+            for (int j = 0; j < nPos + nKwo; ++j) {
+                assert(_bc[j].isStr());
+                Value v = _kw->at(_bc[j]);
+                if (!v.isNil())
+                    fastSlot(j) = v;
+            }
+
+        while (idx < aPos)
+            addArg(args[idx]);
+
+        if (xSeq.isObj()) {
+            Value vit = xSeq->iter();
+            Iterator it (xSeq.obj());
+            auto& vob = vit.isInt() ? it : xSeq.obj();
+            while (true) {
+                auto v = vob.next();
+                if (v.isNil()) {
+                    current = this;
+                    suspend();
+                    // TODO messy result passing, perhaps suspend should do it?
+                    v = _sp->take();
+                    if (v.isNil())
+                        break;
+                }
+                addArg(v);
+            }
+        }
+        for (auto i = idx; i < nPos + nCel; ++i)
+            if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
+                fastSlot(i) = (*_pos)[i+nDef-nPos];
+
+        uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
+
+        for (int i = 0; i < aKwd; ++i) {
+            auto off = aPos + 2*i;
+            auto name = args[off];
+            assert(name.isStr()); // TODO is this certain to be a qstr?
+            for (int j = 0; j < nPos + nKwo; ++j) {
+                assert(_bc[j].isStr());
+                if (name.id() == _bc[j].id()) {
+                    fastSlot(j) = args[off+1];
+                    seen |= 1 << i; // key has been used, forget about it
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < nPos + nKwo; ++i)
+            if (fastSlot(i).isNil())
+                return {E::TypeError, "required arg missing", _bc[i]};
+
+        if (hva)
+            fastSlot(nPos+nKwo) = posVec;
+
+        if (aKwd > nKwo) {
+            auto d = new Dict;
+            for (int i = 0; i < aKwd; ++i)
+                if ((seen & (1<<i)) == 0) {
+                    auto off = aPos + 2*i;
+                    d->at(args[off]) = args[off+1];
+                }
+            fastSlot(nPos+nKwo+hva) = d;
+        }
+
+        uint8_t const* cellMap = _bc.start() - nCel;
+        for (int i = 0; i < nCel; ++i) {
+            auto slot = cellMap[i];
+            fastSlot(slot) = new Cell (fastSlot(slot));
+        }
+
+        return _bc.isGenerator() ? this : Value {};
+    }
 };
 
 static auto currentVM () -> PyVM& {
@@ -1304,116 +1492,21 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
 }
 
 auto Callable::call (ArgVec const& args) const -> Value {
-    int nPos = _bc.numArgs(0);
-    int nDef = _bc.numArgs(1);
-    int nKwo = _bc.numArgs(2);
-    int nCel = _bc.numCells();
-    bool hva = _bc.hasVarArgs();
-    auto aPos = args._num & 0xFF;
-    auto aKwd = (args._num >> 8) & 0xFF;
-
-    Value xSeq, xMap;
-    auto more = args._num & (1<<16); // two hidden args, for "*seq" and "**map"
-    if (more) {
-        xSeq = args[aPos+2*aKwd];
-        xMap = args[aPos+2*aKwd+1];
+    PyVM* ctx;
+    if (_bc.isGenerator())
+        ctx = new PyVM (*this);
+    else {
+        ctx = &currentVM();
+        ctx->enter(*this);
     }
-#if 0
-    printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
-            args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
-    if (more) {
-        xSeq.dump("xSeq");
-        xMap.dump("xMap");
-    }
-#endif
-
-    if (!hva && aPos > nPos + nCel)
-        return {E::TypeError, "too many positional args", aPos};
-
-    auto ctx = &currentVM();
-    auto coro = _bc.isGenerator();
-    if (coro)
-        ctx = new PyVM;
-    ctx->enter(*this);
-    if (coro)
-        ctx->frame().locals = &_mo;
-
-    if (_kw != nullptr) // preset args with kw defaults
-        for (int j = 0; j < nPos + nKwo; ++j) {
-            assert(_bc[j].isStr());
-            Value v = _kw->at(_bc[j]);
-            if (!v.isNil())
-                ctx->fastSlot(j) = v;
-        }
-
-    int idx;
-    for (idx = 0; idx < aPos && idx < nPos + nCel; ++idx)
-        ctx->fastSlot(idx) = args[idx];
-    if (xSeq.isObj() && (hva || idx < nPos)) {
-        Value vit = xSeq->iter();
-        Iterator it (xSeq.obj());
-        auto& vob = vit.isInt() ? it : xSeq.obj();
-        while (hva || idx < nPos) {
-            auto v = vob.next();
-            if (v.isNil())
-                break;
-            if (v.ifType<Exception>() != nullptr) {
-                ctx->_signal = {}; // TODO hack, clear the raised signal
-                break;
-            }
-            ctx->fastSlot(idx++) = v;
-        }
-        aPos = idx;
-    }
-    for (; idx < nPos + nCel; ++idx)
-        if (_pos != nullptr && nPos-nDef <= idx && idx < nDef+(int)_pos->_fill)
-            ctx->fastSlot(idx) = (*_pos)[idx+nDef-nPos];
-
-    uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
-
-    for (int i = 0; i < aKwd; ++i) {
-        auto off = aPos + 2*i;
-        auto name = args[off];
-        assert(name.isStr()); // TODO is this certain to be a qstr?
-        for (int j = 0; j < nPos + nKwo; ++j) {
-            assert(_bc[j].isStr());
-            if (name.id() == _bc[j].id()) {
-                ctx->fastSlot(j) = args[off+1];
-                seen |= 1 << i; // key has been used, forget about it
-                break;
-            }
-        }
-    }
-
-    for (int i = 0; i < nPos + nKwo; ++i)
-        if (ctx->fastSlot(i).isNil())
-            return {E::TypeError, "required arg missing", _bc[i]};
-
-    if (hva)
-        ctx->fastSlot(nPos+nKwo) =
-            Tuple::create({args._vec, aPos-nPos, args._off+nPos});
-
-    if (aKwd > nKwo) {
-        auto d = new Dict;
-        for (int i = 0; i < aKwd; ++i)
-            if ((seen & (1<<i)) == 0) {
-                auto off = aPos + 2*i;
-                d->at(args[off]) = args[off+1];
-            }
-        ctx->fastSlot(nPos+nKwo+hva) = d;
-    }
-
-    uint8_t const* cellMap = _bc.start() - nCel;
-    for (int i = 0; i < nCel; ++i) {
-        auto slot = cellMap[i];
-        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
-    }
-
-    return coro ? ctx : Value {};
+    return ctx->argSetup(args);
 }
 
-Type Bytecode::info (Q(180,"<bytecode>"));
-Type Callable::info (Q(181,"<callable>"));
+Type  Bytecode::info (Q(181,"<bytecode>"));
+Type  Callable::info (Q(182,"<callable>"));
+Type      Cell::info (Q(183,"<cell>"));
+Type BoundMeth::info (Q(184,"<boundmeth>"));
+Type   Closure::info (Q(185,"<closure>"));
 
 //CG< wrappers PyVM
 static auto const m_pyvm_send = Method::wrap(&PyVM::send);
@@ -1425,23 +1518,20 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map);
 //CG>
 
-Type PyVM::info (Q(182,"<pyvm>"), &PyVM::attrs);
+Type PyVM::info (Q(186,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
         return nullptr;
     auto init = Bytecode::load(data, Q( 21,"__main__"));
-    if (init == nullptr) { // try doing an MRFS lookup if it's a name
+    if (init == nullptr) {
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
             init = Bytecode::load(mpy, Q( 21,"__main__"));
         if (init == nullptr)
             return nullptr;
     }
-    auto vm = new PyVM;
-    vm->enter(*init);
-    vm->frame().locals = &init->_mo;
-    return vm;
+    return new PyVM (*init);
 }
 
 #else

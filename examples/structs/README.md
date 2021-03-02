@@ -6,7 +6,7 @@ To build and run on MacOS or Linux (64b):
 $ inv
    24 b  Array
     8 b  Bool
-   24 b  BoundMeth
+   24 b  Buffer
 [...]
    16 b  VaryVec
    16 b  Vec
@@ -20,7 +20,7 @@ To build and run on STM32 (32b):
 $ inv stm32
    16 b  Array
     4 b  Bool
-   12 b  BoundMeth
+   16 b  Buffer
 [...]
    12 b  VaryVec
     8 b  Vec
