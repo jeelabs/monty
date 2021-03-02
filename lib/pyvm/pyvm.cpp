@@ -1257,6 +1257,11 @@ frame().result = *_sp;
         }
     }
 
+    PyVM (Callable const& clb) {
+        enter(clb);
+        frame().locals = &clb._mo;
+    }
+
     auto run () -> bool override {
         while (current == this) {
             inner();
@@ -1293,6 +1298,115 @@ frame().result = *_sp;
             _signal = exc;  // trigger exception or other outer-loop req
         setPending(num);    // force inner loop exit
     }
+
+    auto argSetup (ArgVec const& args) const -> Value { // rename to "call()" ?
+        auto& _bc = _callee->_bc;
+        auto& _pos = _callee->_pos;
+        auto& _kw = _callee->_kw;
+
+        int nPos = _bc.numArgs(0);
+        int nDef = _bc.numArgs(1);
+        int nKwo = _bc.numArgs(2);
+        int nCel = _bc.numCells();
+        bool hva = _bc.hasVarArgs();
+        auto aPos = args._num & 0xFF;
+        auto aKwd = (args._num >> 8) & 0xFF;
+
+        Value xSeq, xMap;
+        auto more = args._num & (1<<16); // hidden args for "*seq" and "**map"
+        if (more) {
+            xSeq = args[aPos+2*aKwd];
+            xMap = args[aPos+2*aKwd+1];
+        }
+#if 0
+        printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
+                args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
+        if (more) {
+            xSeq.dump("xSeq");
+            xMap.dump("xMap");
+        }
+#endif
+
+        if (!hva && aPos > nPos + nCel)
+            return {E::TypeError, "too many positional args", aPos};
+
+        if (_kw != nullptr) // preset args with kw defaults
+            for (int j = 0; j < nPos + nKwo; ++j) {
+                assert(_bc[j].isStr());
+                Value v = _kw->at(_bc[j]);
+                if (!v.isNil())
+                    fastSlot(j) = v;
+            }
+
+        int idx;
+        for (idx = 0; idx < aPos && idx < nPos + nCel; ++idx)
+            fastSlot(idx) = args[idx];
+        if (xSeq.isObj() && (hva || idx < nPos)) {
+            Value vit = xSeq->iter();
+    //vit.dump("vit");
+            Iterator it (xSeq.obj());
+            auto& vob = vit.isInt() ? it : xSeq.obj();
+            while (hva || idx < nPos) {
+                auto v = vob.next();
+                if (v.isNil()) {
+                    v = vit.asType<PyVM>().frame().result;
+    //v.dump("result?");
+                }
+                if (v.ifType<Exception>() != nullptr) {
+                    //_signal = {}; // TODO hack, clear the raised signal
+                    break;
+                }
+    //printf("idx %d ", idx); v.dump("v");
+                fastSlot(idx++) = v;
+            }
+            aPos = idx;
+        }
+        for (; idx < nPos + nCel; ++idx)
+            if (_pos != nullptr && nPos-nDef <= idx && idx < nDef+(int)_pos->_fill)
+                fastSlot(idx) = (*_pos)[idx+nDef-nPos];
+
+        uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
+
+        for (int i = 0; i < aKwd; ++i) {
+            auto off = aPos + 2*i;
+            auto name = args[off];
+            assert(name.isStr()); // TODO is this certain to be a qstr?
+            for (int j = 0; j < nPos + nKwo; ++j) {
+                assert(_bc[j].isStr());
+                if (name.id() == _bc[j].id()) {
+                    fastSlot(j) = args[off+1];
+                    seen |= 1 << i; // key has been used, forget about it
+                    break;
+                }
+            }
+        }
+
+        for (int i = 0; i < nPos + nKwo; ++i)
+            if (fastSlot(i).isNil())
+                return {E::TypeError, "required arg missing", _bc[i]};
+
+        if (hva)
+            fastSlot(nPos+nKwo) =
+                Tuple::create({args._vec, aPos-nPos, args._off+nPos});
+
+        if (aKwd > nKwo) {
+            auto d = new Dict;
+            for (int i = 0; i < aKwd; ++i)
+                if ((seen & (1<<i)) == 0) {
+                    auto off = aPos + 2*i;
+                    d->at(args[off]) = args[off+1];
+                }
+            fastSlot(nPos+nKwo+hva) = d;
+        }
+
+        uint8_t const* cellMap = _bc.start() - nCel;
+        for (int i = 0; i < nCel; ++i) {
+            auto slot = cellMap[i];
+            fastSlot(slot) = new Cell (fastSlot(slot));
+        }
+
+        return _bc.isGenerator() ? this : Value {};
+    }
 };
 
 static auto currentVM () -> PyVM& {
@@ -1306,116 +1420,14 @@ Callable::Callable (Bytecode const& callee, Module* mod, Tuple* t, Dict* d)
 }
 
 auto Callable::call (ArgVec const& args) const -> Value {
-    int nPos = _bc.numArgs(0);
-    int nDef = _bc.numArgs(1);
-    int nKwo = _bc.numArgs(2);
-    int nCel = _bc.numCells();
-    bool hva = _bc.hasVarArgs();
-    auto aPos = args._num & 0xFF;
-    auto aKwd = (args._num >> 8) & 0xFF;
-
-    Value xSeq, xMap;
-    auto more = args._num & (1<<16); // two hidden args, for "*seq" and "**map"
-    if (more) {
-        xSeq = args[aPos+2*aKwd];
-        xMap = args[aPos+2*aKwd+1];
+    PyVM* ctx;
+    if (_bc.isGenerator())
+        ctx = new PyVM (*this);
+    else {
+        ctx = &currentVM();
+        ctx->enter(*this);
     }
-#if 0
-    printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
-            args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
-    if (more) {
-        xSeq.dump("xSeq");
-        xMap.dump("xMap");
-    }
-#endif
-
-    if (!hva && aPos > nPos + nCel)
-        return {E::TypeError, "too many positional args", aPos};
-
-    auto ctx = &currentVM();
-    auto coro = _bc.isGenerator();
-    if (coro)
-        ctx = new PyVM;
-    ctx->enter(*this);
-    if (coro)
-        ctx->frame().locals = &_mo;
-
-    if (_kw != nullptr) // preset args with kw defaults
-        for (int j = 0; j < nPos + nKwo; ++j) {
-            assert(_bc[j].isStr());
-            Value v = _kw->at(_bc[j]);
-            if (!v.isNil())
-                ctx->fastSlot(j) = v;
-        }
-
-    int idx;
-    for (idx = 0; idx < aPos && idx < nPos + nCel; ++idx)
-        ctx->fastSlot(idx) = args[idx];
-    if (xSeq.isObj() && (hva || idx < nPos)) {
-        Value vit = xSeq->iter();
-//vit.dump("vit");
-        Iterator it (xSeq.obj());
-        auto& vob = vit.isInt() ? it : xSeq.obj();
-        while (hva || idx < nPos) {
-            auto v = vob.next();
-            if (v.isNil()) {
-                v = vit.asType<PyVM>().frame().result;
-//v.dump("result?");
-            }
-            if (v.ifType<Exception>() != nullptr) {
-                ctx->_signal = {}; // TODO hack, clear the raised signal
-                break;
-            }
-//printf("idx %d ", idx); v.dump("v");
-            ctx->fastSlot(idx++) = v;
-        }
-        aPos = idx;
-    }
-    for (; idx < nPos + nCel; ++idx)
-        if (_pos != nullptr && nPos-nDef <= idx && idx < nDef+(int)_pos->_fill)
-            ctx->fastSlot(idx) = (*_pos)[idx+nDef-nPos];
-
-    uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
-
-    for (int i = 0; i < aKwd; ++i) {
-        auto off = aPos + 2*i;
-        auto name = args[off];
-        assert(name.isStr()); // TODO is this certain to be a qstr?
-        for (int j = 0; j < nPos + nKwo; ++j) {
-            assert(_bc[j].isStr());
-            if (name.id() == _bc[j].id()) {
-                ctx->fastSlot(j) = args[off+1];
-                seen |= 1 << i; // key has been used, forget about it
-                break;
-            }
-        }
-    }
-
-    for (int i = 0; i < nPos + nKwo; ++i)
-        if (ctx->fastSlot(i).isNil())
-            return {E::TypeError, "required arg missing", _bc[i]};
-
-    if (hva)
-        ctx->fastSlot(nPos+nKwo) =
-            Tuple::create({args._vec, aPos-nPos, args._off+nPos});
-
-    if (aKwd > nKwo) {
-        auto d = new Dict;
-        for (int i = 0; i < aKwd; ++i)
-            if ((seen & (1<<i)) == 0) {
-                auto off = aPos + 2*i;
-                d->at(args[off]) = args[off+1];
-            }
-        ctx->fastSlot(nPos+nKwo+hva) = d;
-    }
-
-    uint8_t const* cellMap = _bc.start() - nCel;
-    for (int i = 0; i < nCel; ++i) {
-        auto slot = cellMap[i];
-        ctx->fastSlot(slot) = new Cell (ctx->fastSlot(slot));
-    }
-
-    return coro ? ctx : Value {};
+    return ctx->argSetup(args);
 }
 
 Type Bytecode::info (Q(180,"<bytecode>"));
@@ -1437,17 +1449,14 @@ auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
         return nullptr;
     auto init = Bytecode::load(data, Q( 21,"__main__"));
-    if (init == nullptr) { // try doing an MRFS lookup if it's a name
+    if (init == nullptr) {
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
             init = Bytecode::load(mpy, Q( 21,"__main__"));
         if (init == nullptr)
             return nullptr;
     }
-    auto vm = new PyVM;
-    vm->enter(*init);
-    vm->frame().locals = &init->_mo;
-    return vm;
+    return new PyVM (*init);
 }
 
 #else
