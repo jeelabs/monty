@@ -667,6 +667,8 @@ struct PyVM : Stacklet {
         // TODO messy: result needs to be stored in another PyVM instance
         //  might be better to store it its signal slot, then pick up on resume
         myCaller[myCaller._spOff] = *_sp;
+//_sp->dump("yieldval");
+frame().result = *_sp;
         switchTo(&myCaller);
     }
     //CG1 op
@@ -735,19 +737,19 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opImportName (Q arg) {
         --_sp; // TODO ignore fromlist for now, *_sp level also ignored
-        Value mod = Module::loaded.at(arg);
-        if (mod.isNil()) {
+        Value v = Module::loaded.at(arg);
+        if (v.isNil()) {
             auto data = vmImport(arg);
             if (data != nullptr) {
                 auto init = Bytecode::load(data, arg);
                 assert(init != nullptr);
                 wrappedCall(init, {*this, 0});
-                frame().locals = mod = init->_mo;
+                frame().locals = v = init->_mo;
                 Module::loaded.at(arg) = &init->_mo;
             } else
-                mod = {E::ImportError, arg};
+                v = {E::ImportError, arg};
         }
-        *_sp = mod;
+        *_sp = v;
     }
     //CG1 op q
     void opImportFrom (Q arg) {
@@ -1351,16 +1353,20 @@ auto Callable::call (ArgVec const& args) const -> Value {
         ctx->fastSlot(idx) = args[idx];
     if (xSeq.isObj() && (hva || idx < nPos)) {
         Value vit = xSeq->iter();
+//vit.dump("vit");
         Iterator it (xSeq.obj());
         auto& vob = vit.isInt() ? it : xSeq.obj();
         while (hva || idx < nPos) {
             auto v = vob.next();
-            if (v.isNil())
-                break;
+            if (v.isNil()) {
+                v = vit.asType<PyVM>().frame().result;
+//v.dump("result?");
+            }
             if (v.ifType<Exception>() != nullptr) {
                 ctx->_signal = {}; // TODO hack, clear the raised signal
                 break;
             }
+//printf("idx %d ", idx); v.dump("v");
             ctx->fastSlot(idx++) = v;
         }
         aPos = idx;
