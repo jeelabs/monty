@@ -732,7 +732,6 @@ struct PyVM : Stacklet {
         // TODO messy: result needs to be stored in another PyVM instance
         //  might be better to store in its signal slot, then pick up on resume
         myCaller[myCaller._spOff] = *_sp;
-        frame().result = *_sp; // TODO one of these two is redundant
         switchTo(&myCaller);
     }
     //CG1 op
@@ -761,41 +760,26 @@ struct PyVM : Stacklet {
     //CG1 op
     void opGetIter () {
         auto v = _sp->obj().iter();
-        if (v.isInt())
-            v = new Iterator (_sp->obj(), v);
-        *_sp = v;
+        *_sp = v.isObj() ? v : new Iterator (*_sp, 0);
     }
     //CG1 op
     void opGetIterStack () {
         // hard-coded to use 4 entries, layout [seq,(idx|iter),nil,nil]
-        *_sp = _sp->asObj(); // for qstrs, etc
-        auto v = _sp->obj().iter(); // will be 0 for indexed iteration
-        *++_sp = v;
+        auto& obj = _sp->asObj(); // may need to convert, e.g. qstrs
+        *_sp = obj;
+        *++_sp = obj.iter(); // will be 0 for indexed iteration
         *++_sp = {};
         *++_sp = {};
     }
     //CG1 op o
     void opForIter (int arg) {
-        Value v;
-        auto& pos = _sp[-2];
-        if (pos.isInt()) {
-            assert(_sp[-3].isObj());
-            auto& seq = _sp[-3].obj();
-            int n = pos;
-            if (n < (int) seq.len()) {
-                if (&seq.type() == &Dict::info || &seq.type() == &Set::info)
-                    v = ((List&) seq)[n]; // avoid keyed access
-                else
-                    v = seq.getAt(n);
-                pos = n + 1;
-            }
-        } else
-            v = pos->next();
-        if (v.isNil()) {
+        Value v = Iterator::stepper(_sp[-3], _sp[-2]);
+        if (v.isOk())
+            *++_sp = v;
+        else {
             _sp -= 4;
             _ip += arg;
-        } else
-            *++_sp = v;
+        }
     }
 
     //CG1 op q
@@ -1366,23 +1350,18 @@ struct PyVM : Stacklet {
 
     template< typename F >
     void consume (Value seq, F fun) {
-        assert(seq.isObj());
-        Value vit = seq->iter();
-        Iterator it (seq.obj());
-        auto& vob = vit.isInt() ? it : seq.obj();
+        Iterator it (seq);
         while (true) {
-            auto v = vob.next();
-            if (v.isNil()) {
-                if (vit.isInt())
-                    break;
+            auto v = it.next();
+            if (v.isNil() && it.isGenerator()) {
                 current = this;
                 suspend();
                 // TODO messy result passing, perhaps suspend should do it?
                 // TODO this requires the PyVM type, can't use Stacklet
-                v = vit.asType<PyVM>().frame().result.take();
-                if (v.isNil())
-                    break;
+                v = (*this)[_spOff].take();
             }
+            if (v.isNil())
+                break;
             fun(v);
         }
     }

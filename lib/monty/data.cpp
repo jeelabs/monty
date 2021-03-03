@@ -104,13 +104,9 @@ auto Value::operator ->() const -> Object* {
 }
 
 Value::Value (E exc, char const* arg1, Value arg2) {
-    Vector v;
-    v.insert(0, 2);
-    if (arg1 != nullptr)
-        v[0] = arg1;
-    v[1] = arg2;
-    auto nargs = arg1 == nullptr ? 0 : arg2.isNil() ? 1 : 2;
-    *this = Exception::create(exc, {v, nargs, 0});
+    Value v [] {arg1, arg2};
+    auto n = *arg1 == 0 ? 0 : arg2.isNil() ? 1 : 2;
+    *this = Exception::create(exc, {v, n});
     Stacklet::exception(*this);
 }
 
@@ -488,13 +484,18 @@ void Int::repr (Buffer& buf) const {
         buf.print("%d", v3);
 }
 
-auto Iterator::next() -> Value {
-    if (_pos >= (int) _obj.len())
+auto Iterator::stepper (Value obj, Value& pos) -> Value {
+    if (!pos.isInt())
+        return pos->next();
+    uint32_t n = pos;
+    assert(obj.isObj());
+    if (n >= obj->len())
         return {};
-    // TODO duplicate code, see opForIter in pyvm.h
-    if (&_obj.type() == &Dict::info || &_obj.type() == &Set::info)
-        return ((List&) _obj)[_pos++]; // avoid keyed access
-    return _obj.getAt(_pos++);
+    // TODO better would be: if it's derived from Tuple, i.e. based on Vector
+    pos = n + 1;
+    if (&obj->type() == &Dict::info || &obj->type() == &Set::info)
+        return ((List&) obj.obj())[n]; // avoid keyed access
+    return obj->getAt(n);
 }
 
 auto Range::len () const -> uint32_t {

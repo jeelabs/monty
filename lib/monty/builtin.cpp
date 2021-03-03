@@ -38,9 +38,8 @@ static auto f_print (ArgVec const& args) -> Value {
 //CG1 bind iter
 static auto f_iter (ArgVec const& args) -> Value {
     assert(args._num == 1 && args[0].isObj());
-    auto& o = args[0].obj();
-    auto v = o.iter();
-    return v.isInt() ? new Iterator (o, v) : v;
+    auto v = args[0]->iter();
+    return v.isObj() ? v : new Iterator (args[0], 0);
 }
 
 //CG1 bind next

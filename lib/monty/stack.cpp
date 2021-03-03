@@ -198,27 +198,25 @@ auto Stacklet::runLoop () -> bool {
         INNER_HOOK
 
         auto flags = allPending();
-        for (uint32_t i = 1; flags != 0 && i < Event::triggers.size(); ++i)
-            if ((flags & (1U<<i)) && Event::triggers[i].isOk())
-                Event::triggers[i].asType<Event>().set();
-
-        if (ready.size() == 0)
-            break;
+        for (auto& e : Event::triggers)
+            if (flags != 0) {
+                if ((flags & 1) && e.isObj())
+                    e.asType<Event>().set();
+                flags >>= 1;
+            }
 
         current = (Stacklet*) &ready.pull().obj();
-        assert(current != nullptr);
+        if (current == nullptr)
+            break;
 
         if (current->cap() > current->_fill + sizeof (jmp_buf) / sizeof (Value))
             longjmp(*(jmp_buf*) current->end(), 1);
 
-        // FIXME careful, this won't pick up pending events while looping
-        while (current->run()) {}
+        while (current->run() && pending == 0) {}
 
-        if (current != nullptr) {
-            //current->adj(current->_fill);
-            assert(ready.find(current) >= ready.size());
+        assert(ready.find(current) >= ready.size());
+        if (current != nullptr)
             ready.push(current);
-        }
     }
 
     return Event::queued > 0 || ready.size() > 0;

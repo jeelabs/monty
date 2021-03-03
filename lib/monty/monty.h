@@ -194,7 +194,7 @@ namespace monty {
                   Value (char const* arg);
         constexpr Value (Object const* arg) : _p (arg) {}
         constexpr Value (Object const& arg) : _p (&arg) {}
-                  Value (E, char const* =nullptr, Value ={}); // also raises
+                  Value (E, char const* ="", Value ={}); // also raises
 
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;
@@ -448,8 +448,6 @@ namespace monty {
         int64_t _i64 __attribute__((packed));
     }; // packing gives a better fit on 32b arch, and has no effect on 64b
 
-// see type.cpp - collection types and type system
-
     using ByteVec = VecOf<uint8_t>;
 
     //CG3 type <iterator>
@@ -457,14 +455,18 @@ namespace monty {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
-        Iterator (Object const& obj, int pos =0) : _pos (pos), _obj (obj) {}
+        Iterator (Value obj, Value pos ={})
+            : _obj (obj), _pos (pos.isNil() ? obj->iter() : pos) {}
 
-        auto next () -> Value override;
+        auto isGenerator () const -> bool { return !_pos.isInt(); }
+        auto next () -> Value override { return stepper(_obj, _pos); }
 
-        void marker () const override { mark(_obj); }
+        void marker () const override { _obj.marker(); }
+
+        static auto stepper (Value obj, Value& pos) -> Value;
     private:
-        int _pos;
-        Object const& _obj;
+        Value _obj;
+        Value _pos;
     };
 
     //CG< type range
@@ -536,6 +538,8 @@ namespace monty {
         auto binop (BinOp, Value) const -> Value override;
         auto getAt (Value k) const -> Value override;
     };
+
+// see type.cpp - collection types and type system
 
     //CG3 type <buffer>
     struct Buffer : Bytes {
