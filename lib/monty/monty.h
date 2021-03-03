@@ -31,9 +31,9 @@ namespace monty {
 
         // JT's "Rule of 5"
         Obj (Obj&&) =delete;
-        Obj (Obj const&) =default;
+        Obj (Obj const&) =delete;
         auto operator= (Obj&&) -> Obj& =delete;
-        auto operator= (Obj const&) -> Obj& =default;
+        auto operator= (Obj const&) -> Obj& =delete;
     };
 
     struct Vec {
@@ -461,6 +461,8 @@ namespace monty {
 
         Iterator (Value obj, Value pos ={})
             : _obj (obj), _pos (pos.isNil() ? obj->iter() : pos) {}
+        // unlike most Obj's, Iterator must be copyable (range-based for loops)
+        Iterator (Iterator const& it) : Iterator (it._obj, it._pos) {}
 
         auto next () -> Value override { return stepper(_obj, _pos); }
 
