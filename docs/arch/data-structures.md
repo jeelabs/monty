@@ -5,7 +5,7 @@ This is what allows them to also be used from Python. Several of these classes
 form a hierarchy, since they build upon - and extend - the features implemented
 in other classes. The main classes in this hierarchy are:
 
-```
+```text
 Obj
 └─ Object
    ├─ None
@@ -14,20 +14,20 @@ Obj
    ├─ Event
    ├─ Iterator
    ├─ Bytes
-   │  ├─ Str
-   │  ├─ Buffer
-   │  └─ Array
+   │  ├─ Str
+   │  ├─ Buffer
+   │  └─ Array
    └─ Tuple
-      ├─ Exception
+      ├─ Exception
       └─ List
-         ├─ Set
-         │  └─ Dict
-         │     ├─ Module
-         │     ├─ Type
-         │     │  └─ Class
-         │     └─ Inst
-         └─ Stacklet
-            └─ PyVM
+         ├─ Set
+         │  └─ Dict
+         │     ├─ Module
+         │     ├─ Type
+         │     │  └─ Class
+         │     └─ Inst
+         └─ Stacklet
+            └─ PyVM
 ```
 
 A few of these deserve special mention:
