@@ -11,32 +11,25 @@
 struct CodePrefix {
     int16_t constOff;
     int16_t code;
-    int8_t sTop;
-    int8_t nExc;
-    int8_t flag;
-    int8_t nPos;
-    int8_t nKwo;
-    int8_t nDef;
-    int8_t nCel;
+    int16_t nInf;
+    int8_t sTop;    // stack top
+    int8_t nExc;    // number of exception levels
+    int8_t flag;    // flag bits
+    int8_t nPos;    // number of positional args
+    int8_t nKwo;    // number of keyword-only args
+    int8_t nDef;    // number of default args
+    int8_t nCel;    // number of closure cells
 
     auto isGenerator () const -> bool { return flag & 1; }
     auto hasVarArgs () const -> bool { return (flag >> 2) & 1; }
 
-    auto numArgs (int t) const -> uint32_t {
-        return t == 0 ? nPos :
-               t == 1 ? nDef :
-               t == 2 ? nKwo :
-                        nCel;
-    }
-
-    int prelude (uint8_t const*& dp) {
+    void decodePrelude (uint8_t const*& dp) {
         uint8_t z = *dp++; /* xSSSSEAA */
-        sTop = (z >> 3) & 0xf;
-        nExc = (z >> 2) & 0x1;
-        flag = 0;
+        sTop = (z >> 3) & 0x0F;
+        nExc = (z >> 2) & 0x01;
         nPos = z & 0x3;
-        nKwo = 0;
-        nDef = 0;
+        flag = nKwo = nDef = 0;
+
         for (int n = 0; z & 0x80; ++n) {
             z = *dp++; /* xFSSKAED */
             sTop |= (z & 0x30) << (2 * n);
@@ -47,14 +40,8 @@ struct CodePrefix {
             nDef |= (z & 0x1) << n;
         }
         sTop += 1;
-        debugf("sTop %d\n", sTop);
-        debugf("nExc %d\n", nExc);
-        debugf("flag %d\n", flag);
-        debugf("nPos %d\n", nPos);
-        debugf("nKwo %d\n", nKwo);
-        debugf("nDef %d\n", nDef);
 
-        int nInf = 0;
+        nInf = 0;
         nCel = 0;
         z = 0x80;
         for (int n = 0; z & 0x80; ++n) {
@@ -62,9 +49,9 @@ struct CodePrefix {
             nCel |= (z & 1) << n;
             nInf |= ((z & 0x7e) >> 1) << (6 * n);
         }
-        debugf("nInf %d\n", nInf);
-        debugf("nCel %d\n", nCel);
-        return nInf + nCel;
+
+        debugf("sTop %d nExc %d flag %d nPos %d nKwo %d nDef %d nInf %d nCel %d\n",
+                    sTop, nExc, flag, nPos, nKwo, nDef, nInf, nCel);
     }
 };
 
@@ -134,12 +121,11 @@ struct Loader {
         if (*dp++ != 'M')
             return 0; // incorrect file format
 
-        debugf("version %d\n", dp[0]);
-        debugf("features 0x%02x\n", dp[1]);
-        debugf("intbits %d\n", dp[2]);
+        debugf("version %d features 0x%02x intbits %d\n", dp[0], dp[1], dp[2]);
         dp += 3;
+
         int n = varInt();
-        debugf("qwin %d\n", (int) n);
+        debugf("qwin %d\n", n);
         qWin.insert(0, n); // qstr window
 
         auto& bc = loadRaw();
@@ -149,7 +135,7 @@ struct Loader {
             vvec->insert(n, 2);
             constInsertVaryInt(0, constNext);
             debugf("vvec %d: %d consts in %d bytes\n",
-                    (int) n, constNext, (int) constData.size());
+                    n, constNext, constData.size());
             vvec->atSet(n, constData.begin(), (int) constData.size());
         }
 
@@ -219,17 +205,15 @@ struct Loader {
             n += 0x100;
         }
 
-        qWin.remove(qWin._fill-1);
-        qWin.insert(0);
-        qWin[0] = n;
+        qWin.pop();
+        qWin.push(n);
         return n;
     }
 
     int winQstr (int i) {
         int n = qWin[i];
         qWin.remove(i);
-        qWin.insert(0);
-        qWin[0] = n;
+        qWin.push(n);
         return n;
     }
 
@@ -250,19 +234,17 @@ struct Loader {
         auto& bc = *new (bCount) Bytecode;
 
         auto savedDp = dp;
-        auto nskip = bc.prelude(dp);
-        auto npre = dp - savedDp;
+        bc.decodePrelude(dp);
+        int npre = dp - savedDp;
+        auto nskip = bc.nInf + bc.nCel;
 
         bcBuf = bcNext = (uint8_t*) (&bc + 1);
         bcLimit = bcBuf + bCount - npre;
 
-        debugf("raw sc %d np %d ns %d nx %d ko %d dp %d\n",
-                bc.flag, bc.nPos, bc.sTop, bc.nExc, bc.nKwo, bc.nDef);
-
         auto n1 = storeQstr();
         auto n2 = storeQstr();
         (void) n1; (void) n2;
-        debugf("qstr %d %d npre %d nskip %d\n", n1+1, n2+1, (int) npre, nskip);
+        debugf("qstr %d %d npre %d nskip %d\n", n1+1, n2+1, npre, nskip);
 
         for (int i = 4; i < nskip; ++i)
             *bcNext++ = *dp++;
@@ -274,24 +256,13 @@ struct Loader {
 
         loadOps();
 
-        debugf("subs %08x\n", *(uint32_t const*) dp);
-        //debugf("jump %08x\n", *(uint32_t const*) bc.code);
-
         auto nData = varInt();
         auto nCode = varInt();
         debugf("nData %d nCode %d\n", nData, nCode);
 
         if (vvec != nullptr) {
-            CodePrefix pfx; // new bytecode prefix when converting
+            CodePrefix pfx = bc; // new bytecode prefix when converting
             pfx.constOff = constNext;
-            pfx.code = bc.code;
-            pfx.sTop = bc.sTop;
-            pfx.flag = bc.flag;
-            pfx.nExc = bc.nExc;
-            pfx.nPos = bc.nPos;
-            pfx.nKwo = bc.nKwo;
-            pfx.nDef = bc.nDef;
-            pfx.nCel = bc.nCel;
 
             int n = vvec->size();
             vvec->insert(n);
@@ -323,12 +294,12 @@ struct Loader {
             auto ptr = skip(sz);
             if (type == 'b') {
                 auto p = new (sz) Bytes (ptr, sz);
-                debugf("  obj %d = type %c %db @ %p\n", i, type, (int) sz, p);
+                debugf("  obj %d = type %c %db @ %p\n", i, type, sz, p);
                 bc.append(p);
             } else if (type == 's') {
                 auto p = new Str ((char const*) ptr, sz);
                 debugf("  obj %d = type %c %db = %s\n",
-                        i, type, (int) sz, (char const*) *p);
+                        i, type, sz, (char const*) *p);
                 bc.append(p);
             } else if (type == 'i') {
                 assert(sz < 25);
@@ -386,7 +357,7 @@ struct Loader {
                 case MP_BC_FORMAT_QSTR: {
                     auto n = storeQstr() + 1;
                     (void) n; assert(n > 0);
-                    debugf("  Q: 0x%02x (%d) %s\n", op, (int) n, Q::str(n));
+                    debugf("  Q: 0x%02x (%d) %s\n", op, n, Q::str(n));
                     break;
                 }
                 case MP_BC_FORMAT_VAR_UINT: {
