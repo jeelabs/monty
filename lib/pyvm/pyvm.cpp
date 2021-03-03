@@ -1364,6 +1364,29 @@ struct PyVM : Stacklet {
         setPending(num);    // force inner loop exit
     }
 
+    template< typename F >
+    void consume (Value seq, F fun) {
+        assert(seq.isObj());
+        Value vit = seq->iter();
+        Iterator it (seq.obj());
+        auto& vob = vit.isInt() ? it : seq.obj();
+        while (true) {
+            auto v = vob.next();
+            if (v.isNil()) {
+                if (vit.isInt())
+                    break;
+                current = this;
+                suspend();
+                // TODO messy result passing, perhaps suspend should do it?
+                // TODO this requires the PyVM type, can't use Stacklet
+                v = vit.asType<PyVM>().frame().result.take();
+                if (v.isNil())
+                    break;
+            }
+            fun(v);
+        }
+    }
+
     auto argSetup (ArgVec const& args) -> Value {
         auto& _bc = _callee->_bc;
         auto& _pos = _callee->_pos;
@@ -1395,6 +1418,14 @@ struct PyVM : Stacklet {
         if (!hva && aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
 
+        if (_kw != nullptr) // preset args with kw defaults
+            for (int j = 0; j < nPos + nKwo; ++j) {
+                assert(_bc[j].isStr());
+                Value v = _kw->at(_bc[j]);
+                if (v.isOk())
+                    fastSlot(j) = v;
+            }
+
         auto posVec = hva ? new Tuple : nullptr;
         int idx = 0;
 
@@ -1406,34 +1437,12 @@ struct PyVM : Stacklet {
             ++idx;
         };
 
-        if (_kw != nullptr) // preset args with kw defaults
-            for (int j = 0; j < nPos + nKwo; ++j) {
-                assert(_bc[j].isStr());
-                Value v = _kw->at(_bc[j]);
-                if (v.isOk())
-                    fastSlot(j) = v;
-            }
-
         while (idx < aPos)
             addArg(args[idx]);
 
-        if (xSeq.isObj()) {
-            Value vit = xSeq->iter();
-            Iterator it (xSeq.obj());
-            auto& vob = vit.isInt() ? it : xSeq.obj();
-            while (true) {
-                auto v = vob.next();
-                if (v.isNil()) {
-                    current = this;
-                    suspend();
-                    // TODO messy result passing, perhaps suspend should do it?
-                    v = _sp->take();
-                    if (v.isNil())
-                        break;
-                }
-                addArg(v);
-            }
-        }
+        if (xSeq.isObj())
+            consume(xSeq, addArg);
+
         for (auto i = idx; i < nPos + nCel; ++i)
             if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
                 fastSlot(i) = (*_pos)[i+nDef-nPos];
