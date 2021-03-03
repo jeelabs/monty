@@ -837,10 +837,23 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer& buf) const override { Object::repr(buf); }
 
-        auto binop (BinOp, Value) const -> Value override;
+        void resumeCaller (Value v ={}) {
+            if (_caller != nullptr)
+                _caller->_transfer = v;
+            else if (v.isOk())
+                v.dump("result lost"); // TODO just for debugging
+            current = _caller;
+            _caller = nullptr;
+            setPending(0);
+        }
+
+        void marker () const override;
+
+        Stacklet* _caller = nullptr;
+        Value _transfer;
 
         static void yield (bool =false);
-        static void suspend (Vector& =Event::triggers);
+        static auto suspend (Vector& =Event::triggers) -> Value;
         static auto runLoop () -> bool;
 
         virtual auto run () -> bool =0;

@@ -231,7 +231,6 @@ struct PyVM : Stacklet {
     void marker () const override {
         Stacklet::marker();
         mark(_callee);
-        mark(_caller);
         _signal.marker();
     }
 
@@ -241,8 +240,7 @@ struct PyVM : Stacklet {
     uint16_t _ipOff = 0;
     Callable const* _callee = nullptr;
 
-    Stacklet* _caller = nullptr;
-    Value _signal = {};
+    Value _signal;
     Value* _sp = nullptr;
     uint8_t const* _ip = nullptr;
 
@@ -272,13 +270,6 @@ struct PyVM : Stacklet {
 
     auto fetchQ () -> Q {
         return fetchO() + 1; // TODO get rid of this off-by-one stuff
-    }
-
-    void switchTo (Stacklet* ctx) {
-        assert(current == this);
-        assert(ctx != this);
-        current = ctx;
-        setPending(0);
     }
 
     // special wrapper to deal with context changes vs cached sp/ip values
@@ -725,34 +716,22 @@ struct PyVM : Stacklet {
 
     //CG1 op
     void opYieldValue () {
-        assert(_caller != nullptr);
-        assert(_caller != this);
-        auto& myCaller = Value(_caller).asType<PyVM>(); // TODO non-PyVM caller ?
-        _caller = nullptr;
-        // TODO messy: result needs to be stored in another PyVM instance
-        //  might be better to store in its signal slot, then pick up on resume
-        myCaller[myCaller._spOff] = *_sp;
-        switchTo(&myCaller);
+        resumeCaller(*_sp);
     }
     //CG1 op
     void opYieldFrom () {
         --_sp;
-        auto& child = _sp->asType<PyVM>();
-        assert(child._caller == nullptr);
-#if 1
-        // FIXME not sure, shouldn't "yield from" pull out of the call chain?
-        child._caller = this;
-#else
-        assert(_caller != nullptr);
-        child._caller = _caller;
-        _caller = nullptr;
-#endif
-        switchTo(nullptr);
+        assert(false); // TODO
     }
     //CG1 op
     void opReturnValue () {
-        auto v = contextAdjuster([=]() -> Value {
-            return leave(*_sp);
+        auto& f = frame();
+        auto v = f.result;          // stored result
+        if (v.isNil())              // use return result if set
+            v = *_sp;               // ... else arg
+        contextAdjuster([=]() -> Value {
+            leave();
+            return {};
         });
         *_sp = v;
     }
@@ -843,6 +822,9 @@ struct PyVM : Stacklet {
     void inner () {
         _sp = begin() + _spOff;
         _ip = ipBase() + _ipOff;
+
+        if (_transfer.isOk())
+            *_sp = _transfer.take();
 
         do {
             INNER_HOOK  // used for simulated time in native builds
@@ -1232,13 +1214,9 @@ struct PyVM : Stacklet {
         f.ep = 0;                   // no exceptions pending
     }
 
-    Value leave (Value v ={}) {
-        auto& f = frame();
-        auto r = f.result;          // stored result
-        if (r.isNil())              // use return result if set
-            r = v;                  // ... else arg
-
+    void leave () {
         if (_base > 0) {
+            auto& f = frame();
             int prev = f.base;      // previous frame offset
             _spOff = f.spOff;       // restore stack index
             _ipOff = f.ipOff;       // restore instruction index
@@ -1253,10 +1231,8 @@ struct PyVM : Stacklet {
             // last frame, drop context, restore caller
             _fill = 0; // delete stack entries
             adj(1); // release vector FIXME crashes when set to 0 (???)
-            switchTo(_caller);
+            resumeCaller();
         }
-
-        return r;
     }
 
     auto excBase (int incr) -> Value* {
@@ -1348,24 +1324,6 @@ struct PyVM : Stacklet {
         setPending(num);    // force inner loop exit
     }
 
-    template< typename F >
-    void consume (Value seq, F fun) {
-        Iterator it (seq);
-        while (true) {
-            auto v = it.next();
-            if (v.isNil() && it.isGenerator()) {
-                current = this;
-                suspend();
-                // TODO messy result passing, perhaps suspend should do it?
-                // TODO this requires the PyVM type, can't use Stacklet
-                v = (*this)[_spOff].take();
-            }
-            if (v.isNil())
-                break;
-            fun(v);
-        }
-    }
-
     auto argSetup (ArgVec const& args) -> Value {
         auto& _bc = _callee->_bc;
         auto& _pos = _callee->_pos;
@@ -1419,8 +1377,15 @@ struct PyVM : Stacklet {
         while (idx < aPos)
             addArg(args[idx]);
 
-        if (xSeq.isObj())
-            consume(xSeq, addArg);
+        if (xSeq.isObj()) {
+            Iterator it (xSeq);
+            while (true) {
+                auto v = it.next();
+                if (v.isNil())
+                    break;
+                addArg(v);
+            }
+        }
 
         for (auto i = idx; i < nPos + nCel; ++i)
             if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)

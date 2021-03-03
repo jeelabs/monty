@@ -485,17 +485,23 @@ void Int::repr (Buffer& buf) const {
 }
 
 auto Iterator::stepper (Value obj, Value& pos) -> Value {
-    if (!pos.isInt())
-        return pos->next();
-    uint32_t n = pos;
-    assert(obj.isObj());
-    if (n >= obj->len())
-        return {};
-    // TODO better would be: if it's derived from Tuple, i.e. based on Vector
-    pos = n + 1;
-    if (&obj->type() == &Dict::info || &obj->type() == &Set::info)
-        return ((List&) obj.obj())[n]; // avoid keyed access
-    return obj->getAt(n);
+    if (pos.isInt()) {
+        uint32_t n = pos;
+        assert(obj.isObj());
+        if (n >= obj->len())
+            return {};
+        // TODO better would be: if derived from Tuple, i.e. based on Vector
+        pos = n + 1;
+        if (&obj->type() == &Dict::info || &obj->type() == &Set::info)
+            return ((List&) obj.obj())[n]; // avoid keyed access
+        return obj->getAt(n);
+    }
+    auto ctx = Stacklet::current;
+    auto v = pos->next();
+    if (v.isOk() || Stacklet::current == ctx)
+        return v;
+    Stacklet::current = ctx;
+    return Stacklet::suspend();
 }
 
 auto Range::len () const -> uint32_t {

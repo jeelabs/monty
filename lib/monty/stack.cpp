@@ -130,9 +130,10 @@ void Event::repr (Buffer& buf) const {
     Object::repr(buf);
 }
 
-auto Stacklet::binop (BinOp op, Value rhs) const -> Value {
-    assert(op == BinOp::Equal);
-    return Value::asBool(rhs.isObj() && this == &rhs.obj());
+void Stacklet::marker () const {
+    mark(_caller);
+    _transfer.marker();
+    List::marker();
 }
 
 void Stacklet::raise (Value v) {
@@ -158,7 +159,7 @@ void Stacklet::yield (bool fast) {
         suspend(ready);
 }
 
-void Stacklet::suspend (Vector& queue) {
+auto Stacklet::suspend (Vector& queue) -> Value {
     assert(current != nullptr);
     if (&queue != &Event::triggers) // special case: use as "do not append" mark
         queue.append(current);
@@ -184,6 +185,8 @@ void Stacklet::suspend (Vector& queue) {
 
     assert(c != nullptr);
     duff(&top, c->end(), n);
+
+    return c->_transfer.take();
 }
 
 auto Stacklet::runLoop () -> bool {
