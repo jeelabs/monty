@@ -1,44 +1,50 @@
 # Data structures
 
-All major data structures in Monty are built with classes derived from `Object`.
-This is what allows them to also be used from Python. Several of these classes form a
-hierarchy, since they build upon - and extend - the features implemented in
-other classes. The main classes in this hierarchy are:
+All main data structures in Monty are built with classes derived from `Object`.
+This is what allows them to also be used from Python. Several of these classes
+form a hierarchy, since they build upon - and extend - the features implemented
+in other classes. The main classes in this hierarchy are:
 
 ```
-Object
-├─ None
-├─ Bool
-├─ Int
-├─ Event
-├─ Bytes
-│  ├─ Str
-│  └─ Array
-└─ Tuple
-   ├─ Exception
-   └─ List
-      ├─ Set
-      │  └─ Dict
-      │     ├─ Module
-      │     ├─ Type
-      │     │  └─ Class
-      │     └─ Inst
-      ├─ Closure
-      └─ Stacklet
+Obj
+└─ Object
+   ├─ None
+   ├─ Bool
+   ├─ Int
+   ├─ Event
+   ├─ Iterator
+   ├─ Bytes
+   │  ├─ Str
+   │  ├─ Buffer
+   │  └─ Array
+   └─ Tuple
+      ├─ Exception
+      └─ List
+         ├─ Set
+         │  └─ Dict
+         │     ├─ Module
+         │     ├─ Type
+         │     │  └─ Class
+         │     └─ Inst
+         └─ Stacklet
 ```
 
 A few of these deserve special mention:
 
+* **Obj** is (only) used as the base class for all garbage-collectable instances
+* **Event** is used to sequence stacklets (aka generators / coroutines / tasks)
+* **Iterator** allows iteration over any kind of sequence, including stacklets
 * **Str** is like `Bytes`, but represents (and indexes) variable-length UTF-8
-  characters, not 8-bit bytes
+  characters, not 8-bit bytes (or rather: it will, some day ...)
 * **Array** is also derived from `Bytes`, because it implements data structures
   with elements that are all represented internally as a sequence of raw bytes
-* **Tuple** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes
+* **Tuple** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes and
+  acts as the basis for all data collections
 * **List** is a `Tuple` with additional modifying methods
 * **Dict** derives from `Set` because it is implemented as a set of keys, with
   the values saved separately in the same vector
-* **Stacklet** is a `List` which is used extensively as a "stack of call
-  frames" in the VM (and very similar to a Python "generator object")
+* **Stacklet** is a `List` which is used extensively as a "stack of call frames"
+  in the VM (it's also similar to a Python "generator object")
 
 ## Bytes
 
