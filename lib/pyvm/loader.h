@@ -128,7 +128,7 @@ struct Loader {
 
     Loader (VaryVec* vv =nullptr) : vvec (vv) {}
 
-    Callable* load (const uint8_t* data, Value nm) {
+    Callable* load (uint8_t const* data, Value nm) {
         assert(data != nullptr);
         dp  = data;
         if (*dp++ != 'M')
@@ -183,7 +183,7 @@ struct Loader {
     }
 
     uint8_t const* skip (uint32_t n) {
-        auto p = (const uint8_t*) dp;
+        auto p = (uint8_t const*) dp;
         dp += n;
         return p;
     }
@@ -274,8 +274,8 @@ struct Loader {
 
         loadOps();
 
-        debugf("subs %08x\n", *(const uint32_t*) dp);
-        //debugf("jump %08x\n", *(const uint32_t*) bc.code);
+        debugf("subs %08x\n", *(uint32_t const*) dp);
+        //debugf("jump %08x\n", *(uint32_t const*) bc.code);
 
         auto nData = varInt();
         auto nCode = varInt();

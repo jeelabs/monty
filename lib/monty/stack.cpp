@@ -199,7 +199,7 @@ auto Stacklet::runLoop () -> bool {
 
         auto flags = allPending();
         for (uint32_t i = 1; flags != 0 && i < Event::triggers.size(); ++i)
-            if ((flags & (1U<<i)) && !Event::triggers[i].isNil())
+            if ((flags & (1U<<i)) && Event::triggers[i].isOk())
                 Event::triggers[i].asType<Event>().set();
 
         if (ready.size() == 0)

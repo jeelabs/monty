@@ -221,6 +221,7 @@ namespace monty {
 
         auto id () const -> uintptr_t { return _v; }
 
+        auto isOk  () const -> bool { return _v != 0; }
         auto isNil () const -> bool { return _v == 0; }
         auto isInt () const -> bool { return (_v&1) == Int; }
         auto isStr () const -> bool { return (_v&3) == Str; }
@@ -546,18 +547,18 @@ namespace monty {
 
         void write (uint8_t const* ptr, uint32_t num);
         void putc (char v) { write((uint8_t const*) &v, 1); }
-        void puts (char const* s) { while (*s != 0) putc(*s++); }
+        void puts (char const* s) { write((uint8_t const*) s, strlen(s)); }
         void print (char const* fmt, ...);
 
         auto operator<< (Value v) -> Buffer&;
         auto operator<< (char c) -> Buffer& { putc(c); return *this; }
-        auto operator<< (int i) -> Buffer& { return *this << (Value) i; }
+        auto operator<< (int i) -> Buffer& { putInt(i); return *this; }
         auto operator<< (char const* s) -> Buffer& { puts(s); return *this; }
 
     private:
         int splitInt (uint32_t val, int base, uint8_t* buf);
         void putFiller (int n, char fill);
-        void putInt (int val, int base, int width, char fill);
+        void putInt (int val, int =10, int =0, char =' ');
     };
 
     struct VaryVec : private ByteVec {

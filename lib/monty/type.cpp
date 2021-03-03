@@ -672,7 +672,7 @@ void Super::repr (Buffer& buf) const {
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     Value self;
     Value init = attr(Q( 17,"__init__"), self);
-    if (!init.isNil()) {
+    if (init.isOk()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;
         init->call({args._vec, args._num + 1, args._off - 1});

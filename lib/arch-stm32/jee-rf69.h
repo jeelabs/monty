@@ -19,10 +19,10 @@ namespace jeeh {
         RF69 (SPI bus) : spi (bus) {}
 
         void init (uint8_t id, uint8_t group, int freq);
-        void encrypt (const char* key) const;
+        void encrypt (char const* key) const;
         void txPower (uint8_t level) const;
 
-        int receive (void* ptr, int len);
+        auto receive (void* ptr, int len) -> int;
         void send (uint8_t header, const void* ptr, int len);
         void sleep ();
 
@@ -34,14 +34,14 @@ namespace jeeh {
         uint8_t parity;
         uint8_t mode;
 
-        uint8_t readReg (uint8_t addr) const {
+        auto readReg (uint8_t addr) const -> uint8_t {
             return rwReg(addr, 0);
         }
         void writeReg (uint8_t addr, uint8_t val) const {
             rwReg(addr | 0x80, val);
         }
         // TODO somewhat redundant to have readReg, writeReg, and rwReg ...
-        uint8_t rwReg (uint8_t cmd, uint8_t val) const {
+        auto rwReg (uint8_t cmd, uint8_t val) const -> uint8_t {
             spi.enable();
             spi.transfer(cmd);
             uint8_t r = spi.transfer(val);
@@ -89,7 +89,7 @@ namespace jeeh {
         };
 
         void setMode (uint8_t newMode);
-        void configure (const uint8_t* p) const;
+        void configure (uint8_t const * p) const;
         void setFrequency (uint32_t freq) const;
 
     };
@@ -123,7 +123,7 @@ namespace jeeh {
     }
 
     template< typename SPI >
-    void RF69<SPI>::configure (const uint8_t* p) const {
+    void RF69<SPI>::configure (uint8_t const * p) const {
         while (true) {
             uint8_t cmd = p[0];
             if (cmd == 0)
@@ -133,7 +133,7 @@ namespace jeeh {
         }
     }
 
-    static const uint8_t configRegs [] = {
+    static uint8_t const configRegs [] = {
         // POR value is better for first rf_sleep  0x01, 0x00, // OpMode = sleep
         0x02, 0x00, // DataModul = packet mode, fsk
         0x03, 0x02, // BitRateMsb, data rate = 49,261 khz
@@ -181,7 +181,7 @@ namespace jeeh {
     }
 
     template< typename SPI >
-    void RF69<SPI>::encrypt (const char* key) const {
+    void RF69<SPI>::encrypt (char const* key) const {
         uint8_t cfg = readReg(REG_PKTCONFIG2) & ~0x01;
         if (key) {
             for (int i = 0; i < 16; ++i) {
@@ -205,7 +205,7 @@ namespace jeeh {
     }
 
     template< typename SPI >
-    int RF69<SPI>::receive (void* ptr, int len) {
+    auto RF69<SPI>::receive (void* ptr, int len) -> int {
         if (mode != MODE_RECEIVE)
             setMode(MODE_RECEIVE);
         else {
@@ -273,14 +273,14 @@ namespace jeeh {
         spi.transfer((header & 0x3F) | parity);
         spi.transfer((header & 0xC0) | myId);
         for (int i = 0; i < len; ++i)
-            spi.transfer(((const uint8_t*) ptr)[i]);
+            spi.transfer(((uint8_t const*) ptr)[i]);
         spi.disable();
 #else
         writeReg(REG_FIFO, len + 2);
         writeReg(REG_FIFO, (header & 0x3F) | parity);
         writeReg(REG_FIFO, (header & 0xC0) | myId);
         for (int i = 0; i < len; ++i)
-            writeReg(REG_FIFO, ((const uint8_t*) ptr)[i]);
+            writeReg(REG_FIFO, ((uint8_t const*) ptr)[i]);
 #endif
 
         setMode(MODE_TRANSMIT);

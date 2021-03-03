@@ -37,7 +37,7 @@ static void outch (int c) {
 
 static auto outFun = outch;
 
-int printf(const char* fmt, ...) {
+int printf(char const* fmt, ...) {
     va_list ap; va_start(ap, fmt); veprintf(outFun, fmt, ap); va_end(ap);
     return 0;
 }

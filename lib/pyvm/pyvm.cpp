@@ -447,7 +447,7 @@ struct PyVM : Stacklet {
     //CG1 op q
     void opLoadGlobal (Q arg) {
         *++_sp = globals().at(arg);
-        assert(!_sp->isNil());
+        assert(_sp->isOk());
     }
     //CG1 op q
     void opStoreGlobal (Q arg) {
@@ -467,7 +467,7 @@ struct PyVM : Stacklet {
             *_sp = v;
             // TODO should this be moved into Inst::attr ???
             auto f = _sp->ifType<Callable>();
-            if (!self.isNil() && f != 0)
+            if (self.isOk() && f != 0)
                 *_sp = new BoundMeth (*f, self);
         }
     }
@@ -712,7 +712,7 @@ struct PyVM : Stacklet {
     //CG1 op v
     void opLoadDeref (int arg) {
         *++_sp = derefSlot(arg);
-        assert(!_sp->isNil());
+        assert(_sp->isOk());
     }
     //CG1 op v
     void opStoreDeref (int arg) {
@@ -840,7 +840,7 @@ struct PyVM : Stacklet {
     //CG1 op m 16
     void opLoadFastMulti (uint32_t arg) {
         *++_sp = fastSlot(arg);
-        assert(!_sp->isNil());
+        assert(_sp->isOk());
     }
     //CG1 op m 16
     void opStoreFastMulti (uint32_t arg) {
@@ -1410,7 +1410,7 @@ struct PyVM : Stacklet {
             for (int j = 0; j < nPos + nKwo; ++j) {
                 assert(_bc[j].isStr());
                 Value v = _kw->at(_bc[j]);
-                if (!v.isNil())
+                if (v.isOk())
                     fastSlot(j) = v;
             }
 
