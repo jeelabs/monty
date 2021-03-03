@@ -1325,106 +1325,110 @@ struct PyVM : Stacklet {
     }
 
     auto argSetup (ArgVec const& args) -> Value {
-        auto& _bc = _callee->_bc;
-        auto& _pos = _callee->_pos;
-        auto& _kw = _callee->_kw;
+        auto& bc = _callee->_bc;
+        auto& defV = _callee->_pos;
+        auto& defM = _callee->_kw;
 
-        auto nPos = _bc.nPos;
-        auto nDef = _bc.nDef;
-        auto nKwo = _bc.nKwo;
-        auto nCel = _bc.nCel;
-        bool hva = _bc.hasVarArgs();
-
+        auto nPos = bc.nPos;
+        auto nDef = bc.nDef;
+        auto nKwo = bc.nKwo;
+        auto nCel = bc.nCel;
+        bool wVec = bc.wantsVec();
+        bool wMap = bc.wantsMap();
+#if 0
+        printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d "
+               "wVec %d wMap %d defV %p defM %p\n",
+                    args._num, nPos, nDef, nKwo, nCel, wVec, wMap, defV, defM);
+#endif
         auto aPos = args._num & 0xFF;
         auto aKwd = (args._num >> 8) & 0xFF;
-        auto more = args._num & (1<<16); // hidden args for "*seq" and "**map"
 
-        Value xSeq, xMap;
-        if (more) {
+        Value xSeq;
+        Dict* xMap = nullptr;
+        if (args._num & (1<<16)) { // hidden args for "*seq" and "**map"
             xSeq = args[aPos+2*aKwd];
-            xMap = args[aPos+2*aKwd+1];
+            xMap = args[aPos+2*aKwd+1].ifType<Dict>(); // TODO generator (???)
         }
-#if 0
-        printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d _pos %p _kw %p hva %d\n",
-                args._num, nPos, nDef, nKwo, nCel, _pos, _kw, hva);
-        if (more) {
-            xSeq.dump("xSeq");
-            xMap.dump("xMap");
-        }
-#endif
-        if (!hva && aPos > nPos + nCel)
+
+        Tuple* asVec = nullptr;
+        if (wVec) {
+            asVec = new Tuple;
+            fastSlot(nPos+nKwo) = asVec;
+        } else if (aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
 
-        if (_kw != nullptr) // preset args with kw defaults
+        if (defM != nullptr) // preset args with kw defaults
             for (int j = 0; j < nPos + nKwo; ++j) {
-                assert(_bc[j].isStr());
-                Value v = _kw->at(_bc[j]);
+                assert(bc[j].isStr());
+                Value v = defM->at(bc[j]);
                 if (v.isOk())
                     fastSlot(j) = v;
             }
 
-        auto posVec = hva ? new Tuple : nullptr;
         int idx = 0;
 
         auto addArg = [&](Value v) {
             if (idx < nPos + nCel)
                 fastSlot(idx) = v;
             else
-                posVec->append(v);
+                asVec->append(v);
             ++idx;
         };
 
         while (idx < aPos)
             addArg(args[idx]);
 
-        if (xSeq.isObj())
+        if (xSeq.isOk())
             for (auto v : xSeq)
                 addArg(v);
 
         for (auto i = idx; i < nPos + nCel; ++i)
-            if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)
-                fastSlot(i) = (*_pos)[i+nDef-nPos];
+            if (defV != nullptr && nPos-nDef <= i && i < nDef+(int)defV->_fill)
+                fastSlot(i) = (*defV)[i+nDef-nPos];
+
+        if (xMap != nullptr)
+            for (int i = 0; i < nPos + nKwo; ++i) {
+                Value val = xMap->at(bc[i]);
+                if (val.isOk()) {
+                    fastSlot(i) = val;
+                    xMap->at(bc[i]) = {}; // TODO is delete from incoming ok?
+                }
+            }
 
         uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
 
         for (int i = 0; i < aKwd; ++i) {
-            auto off = aPos + 2*i;
-            auto name = args[off];
-            assert(name.isStr()); // TODO is this certain to be a qstr?
-            for (int j = 0; j < nPos + nKwo; ++j) {
-                assert(_bc[j].isStr());
-                if (name.id() == _bc[j].id()) {
-                    fastSlot(j) = args[off+1];
+            auto name = args[aPos+2*i];
+            for (int j = 0; j < nPos + nKwo; ++j)
+                if (name.id() == bc[j].id()) {
+                    fastSlot(j) = args[aPos+2*i+1];
                     seen |= 1 << i; // key has been used, forget about it
                     break;
                 }
-            }
         }
 
         for (int i = 0; i < nPos + nKwo; ++i)
             if (fastSlot(i).isNil())
-                return {E::TypeError, "required arg missing", _bc[i]};
+                return {E::TypeError, "required arg missing", bc[i]};
 
-        if (hva)
-            fastSlot(nPos+nKwo) = posVec;
-
-        if (aKwd > nKwo) {
-            auto d = new Dict;
+        if (wMap) {
+            if (xMap == nullptr)
+                xMap = new Dict;
             for (int i = 0; i < aKwd; ++i)
                 if ((seen & (1<<i)) == 0) {
                     auto off = aPos + 2*i;
-                    d->at(args[off]) = args[off+1];
+                    xMap->at(args[off]) = args[off+1];
                 }
-            fastSlot(nPos+nKwo+hva) = d;
+            fastSlot(nPos+nKwo+wVec) = xMap;
         }
 
-        uint8_t const* cellMap = _bc.start() - nCel;
+        uint8_t const* cellMap = bc.start() - nCel;
         for (int i = 0; i < nCel; ++i) {
             auto slot = cellMap[i];
             fastSlot(slot) = new Cell (fastSlot(slot));
         }
 
-        return _bc.isGenerator() ? this : Value {};
+        return bc.isGenerator() ? this : Value {};
     }
 };
 

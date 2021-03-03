@@ -21,7 +21,8 @@ struct CodePrefix {
     int8_t nCel;    // number of closure cells
 
     auto isGenerator () const -> bool { return flag & 1; }
-    auto hasVarArgs () const -> bool { return (flag >> 2) & 1; }
+    auto wantsMap () const -> bool { return (flag >> 1) & 1; }
+    auto wantsVec () const -> bool { return (flag >> 2) & 1; }
 
     void decodePrelude (uint8_t const*& dp) {
         uint8_t z = *dp++; /* xSSSSEAA */
