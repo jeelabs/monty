@@ -27,6 +27,7 @@ Obj
          │     │  └─ Class
          │     └─ Inst
          └─ Stacklet
+            └─ PyVM
 ```
 
 A few of these deserve special mention:
@@ -35,16 +36,17 @@ A few of these deserve special mention:
 * **Event** is used to sequence stacklets (aka generators / coroutines / tasks)
 * **Iterator** allows iteration over any kind of sequence, including stacklets
 * **Str** is like `Bytes`, but represents (and indexes) variable-length UTF-8
-  characters, not 8-bit bytes (or rather: it will, some day ...)
+  characters, not 8-bit bytes
 * **Array** is also derived from `Bytes`, because it implements data structures
   with elements that are all represented internally as a sequence of raw bytes
-* **Tuple** combines the `Object` and `Vector` (aka `VecOf<Value>`) classes and
-  acts as the basis for all data collections
+* **Tuple** combines `Object` and `Vector` (aka `VecOf<Value>`) classes and is
+  the basis for all data collections
 * **List** is a `Tuple` with additional modifying methods
-* **Dict** derives from `Set` because it is implemented as a set of keys, with
-  the values saved separately in the same vector
-* **Stacklet** is a `List` which is used extensively as a "stack of call frames"
-  in the VM (it's also similar to a Python "generator object")
+* **Dict** derives from `Set` because it also has keys (plus their values, saved
+  in the same vector)
+* **Stacklet** is used as a "stack of call frames" in the VM (it's also similar
+  to a Python "generator object")
+* **PyVM** runs bytecode in a virtual machine, and is built op top of stacklets
 
 ## Bytes
 
