@@ -1377,15 +1377,9 @@ struct PyVM : Stacklet {
         while (idx < aPos)
             addArg(args[idx]);
 
-        if (xSeq.isObj()) {
-            Iterator it (xSeq);
-            while (true) {
-                auto v = it.next();
-                if (v.isNil())
-                    break;
+        if (xSeq.isObj())
+            for (auto v : xSeq)
                 addArg(v);
-            }
-        }
 
         for (auto i = idx; i < nPos + nCel; ++i)
             if (_pos != nullptr && nPos-nDef <= i && i < nDef+(int)_pos->_fill)

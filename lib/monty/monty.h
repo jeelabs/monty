@@ -31,9 +31,9 @@ namespace monty {
 
         // JT's "Rule of 5"
         Obj (Obj&&) =delete;
-        Obj (Obj const&) =delete;
+        Obj (Obj const&) =default;
         auto operator= (Obj&&) -> Obj& =delete;
-        auto operator= (Obj const&) -> Obj& =delete;
+        auto operator= (Obj const&) -> Obj& =default;
     };
 
     struct Vec {
@@ -95,6 +95,7 @@ namespace monty {
     struct Buffer;
     struct Type;
     struct Range;
+    struct Iterator;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -245,6 +246,9 @@ namespace monty {
         inline void marker () const;
         void dump (char const* msg =nullptr) const;
 
+        // see Iterator in data.cpp
+        auto begin () const -> Iterator;
+        auto end () const -> Iterator;
     private:
         auto check (Type const& t) const -> bool;
         void verify (Type const& t) const;
@@ -458,15 +462,21 @@ namespace monty {
         Iterator (Value obj, Value pos ={})
             : _obj (obj), _pos (pos.isNil() ? obj->iter() : pos) {}
 
-        auto isGenerator () const -> bool { return !_pos.isInt(); }
         auto next () -> Value override { return stepper(_obj, _pos); }
 
         void marker () const override { _obj.marker(); }
+
+        // range-based for loops for vectors, iterators, and generators, see
+        // https://www.nextptr.com/tutorial/ta1208652092/how-cplusplus-rangebased-for-loop-works
+        auto operator* () -> Value { return _val; }
+        auto operator!= (Iterator const&) -> bool;
+        void operator++ () { _val = {}; }
 
         static auto stepper (Value obj, Value& pos) -> Value;
     private:
         Value _obj;
         Value _pos;
+        Value _val;
     };
 
     //CG< type range

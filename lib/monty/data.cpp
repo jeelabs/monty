@@ -484,6 +484,20 @@ void Int::repr (Buffer& buf) const {
         buf.print("%d", v3);
 }
 
+auto Value::begin () const -> Iterator {
+    return *this;
+}
+
+auto Value::end () const -> Iterator {
+    return {{}, 0};
+}
+
+auto Iterator::operator!= (Iterator const&) -> bool {
+    if (_val.isNil())
+        _val = stepper(_obj, _pos);
+    return _val.isOk();
+}
+
 auto Iterator::stepper (Value obj, Value& pos) -> Value {
     if (pos.isInt()) {
         uint32_t n = pos;
