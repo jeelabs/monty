@@ -256,7 +256,6 @@ Str::Str (char const* s, int n) {
         n = strlen(s);
     insert(0, n);
     adj(n+1);
-    assert((int) cap() > n);
     if (s != nullptr)
         memcpy(begin(), s, n);
     else
@@ -386,6 +385,11 @@ auto Lookup::getAt (Value k) const -> Value {
     return (*this)[k];
 }
 
+Tuple::Tuple (Value seq) {
+    for (auto e : seq)
+        append(e);
+}
+
 Tuple::Tuple (ArgVec const& args) {
     insert(0, args._num);
     for (int i = 0; i < args._num; ++i)
@@ -412,7 +416,7 @@ auto Tuple::copy (Range const& r) const -> Value {
 }
 
 auto Tuple::create (ArgVec const& args, Type const*) -> Value {
-    return new Tuple (args);
+    return new Tuple (args._num == 1 ? args[0] : (Value) args._num);
 }
 
 void Tuple::printer (Buffer& buf, char const* sep) const {
@@ -466,7 +470,7 @@ auto List::store (Range const& r, Object const& v) -> Value {
 }
 
 auto List::create (ArgVec const& args, Type const*) -> Value {
-    return new List (args);
+    return new List (args._num == 1 ? args[0] : (Value) args._num);
 }
 
 void List::repr (Buffer& buf) const {
@@ -511,11 +515,7 @@ auto Set::setAt (Value k, Value v) -> Value {
 }
 
 auto Set::create (ArgVec const& args, Type const*) -> Value {
-    auto p = new Set (args);
-    p->adj(args._num);
-    for (int i = 0; i < args._num; ++i)
-        p->has(args[i]) = true; // TODO append, no need to lookup
-    return p;
+    return new Set (args._num == 1 ? args[0] : (Value) args._num);
 }
 
 void Set::repr (Buffer& buf) const {
@@ -595,8 +595,7 @@ void Dict::marker () const {
 }
 
 auto Dict::create (ArgVec const&, Type const*) -> Value {
-    // TODO pre-alloc space to support fast add, needs vals midway cap iso len
-    return new Dict;
+    return new Dict; // TODO 1 arg: mapping, iterable of tuples, or N kw-args
 }
 
 void Dict::repr (Buffer& buf) const {
@@ -611,7 +610,7 @@ auto DictView::getAt (Value k) const -> Value {
     if (_vtype <= 1)
         return _dict[n];
     Value args [] = {_dict[n], _dict[n+_dict._fill]};
-    return Tuple::create({args});
+    return new Tuple ({args});
 }
 
 auto Type::noFactory (ArgVec const&, const Type*) -> Value {
@@ -641,7 +640,7 @@ Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
         _chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(170,"__bases__")) = Tuple::create({args._vec, args._num-2, args._off+2});
+    at(Q(170,"__bases__")) = new Tuple ({args._vec, args._num-2, args._off+2});
 
     args[0]->call({args._vec, args._num - 2, args._off + 2});
 }

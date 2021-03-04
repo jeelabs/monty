@@ -490,26 +490,29 @@ struct PyVM : Stacklet {
     //CG1 op v
     void opBuildTuple (int arg) {
         _sp -= arg - 1;
-        *_sp = Tuple::create({*this, arg, (int) (_sp - begin())});
+        *_sp = new Tuple ({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildList (int arg) {
         _sp -= arg - 1;
-        *_sp = List::create({*this, arg, (int) (_sp - begin())});
+        *_sp = new List ({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildSet (int arg) {
         _sp -= arg - 1;
-        *_sp = Set::create({*this, arg, (int) (_sp - begin())});
+        *_sp = new Set ({*this, arg, (int) (_sp - begin())});
     }
     //CG1 op v
     void opBuildMap (int arg) {
-        *++_sp = Dict::create({*this, arg});
+        auto d = new Dict;
+        d->adj(2 * arg);
+        *++_sp = d;
     }
     //CG1 op
     void opStoreMap () {
         _sp -= 2;
-        _sp->obj().setAt(_sp[2], _sp[1]); // TODO optimise later: no key check
+        // TODO optimise later: no key check, could use direct list access
+        _sp->obj().setAt(_sp[2], _sp[1]);
     }
     //CG1 op v
     void opStoreComp (int arg) {
@@ -536,7 +539,7 @@ struct PyVM : Stacklet {
         else {
             for (int i = 0; i < right; ++i)
                 _sp[i] = seq.getAt(got-i-1);
-            _sp[right] = List::create({seq, got - left - right, left});
+            _sp[right] = new List ({seq, got - left - right, left});
             for (int i = 0; i < left; ++i)
                 _sp[right+1+i] = seq.getAt(left-i-1);
             _sp += left + right;

@@ -22,3 +22,15 @@ c = [111,222,333]
 print(type(iter(c)))
 for i in c:
     print(i)
+
+print(tuple())
+print(tuple([1,2,3]))
+print(tuple((i*i for i in range(5))))
+
+print(list())
+print(list([1,2,3]))
+print(list((i*i for i in range(5))))
+
+print(set())
+print(set([1,2,3]))
+print(set((i*i for i in range(5))))

@@ -98,11 +98,6 @@ Value::Value (char const* arg) : _v ((uintptr_t) arg * 4 + 2) {
         assert((char const*) *this == arg); // watch out for address truncation
 }
 
-auto Value::operator ->() const -> Object* {
-    assert(isObj());
-    return _o;
-}
-
 Value::Value (E exc, char const* arg1, Value arg2) {
     Value v [] {arg1, arg2};
     auto n = *arg1 == 0 ? 0 : arg2.isNil() ? 1 : 2;
@@ -130,9 +125,7 @@ auto Value::asObj () const -> Object& {
 }
 
 auto Value::asInt () const -> int64_t {
-    if (isInt())
-        return (int) *this;
-    return asType<struct Int>();
+    return isInt() ? (int) *this : (int64_t) asType<struct Int>();
 }
 
 auto Value::asBool (bool f) -> Value {
@@ -485,7 +478,7 @@ void Int::repr (Buffer& buf) const {
 }
 
 auto RawIter::operator!= (RawIter const&) -> bool {
-    if (_val.isNil())
+    if (_val.isNil() && _pos.isOk())
         _val = stepper();
     return _val.isOk();
 }

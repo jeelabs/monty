@@ -199,7 +199,7 @@ namespace monty {
 
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;
-        auto operator ->() const -> Object*;
+        auto operator-> () const -> Object* { return _o; }
 
         auto obj () const -> Object& { return *_o; }
         auto asObj () const -> Object&; // create int/str object if needed
@@ -456,7 +456,7 @@ namespace monty {
 
     struct RawIter {
         RawIter (Value obj, Value pos ={})
-            : _obj (obj), _pos (pos.isNil() ? obj->iter() : pos) {}
+            : _obj (obj), _pos (pos.isNil() && obj.isObj() ? obj->iter() : pos) {}
 
         auto stepper () -> Value;
 
@@ -644,6 +644,7 @@ namespace monty {
         void repr (Buffer&) const override;
     //CG>
         constexpr Tuple () =default;
+        Tuple (Value);
         Tuple (ArgVec const&);
 
         void printer (Buffer&, char const*) const;
@@ -713,6 +714,7 @@ namespace monty {
         void repr (Buffer&) const override;
     //CG>
         constexpr Dict (Object const* ch =nullptr) : _chain (ch) {}
+        Dict (Value);
 
         struct Proxy { Dict& d; Value k;
             operator Value () const { return ((Dict const&) d).at(k); }
@@ -733,8 +735,6 @@ namespace monty {
         void marker () const override;
 
         Object const* _chain {nullptr};
-    private:
-        Dict (uint32_t n) { adj(2*n); }
     };
 
     //CG< type type
