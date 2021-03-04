@@ -632,11 +632,9 @@ struct PyVM : Stacklet {
     void opLoadMethod (Q arg) {
         _sp[1] = {};
         auto v = _sp->asObj().attr(arg, _sp[1]);
-        if (v.isNil()) // TODO duplicate code, move test & exception into attr?
-            *_sp = {E::AttributeError, arg, _sp->asObj().type()._name};
-        else
-            *_sp = v;
-        ++_sp;
+        if (v.isNil())
+            v = {E::AttributeError, arg, _sp->asObj().type()._name};
+        *_sp++ = v;
     }
     //CG1 op q
     void opLoadSuperMethod (Q arg) {
@@ -653,7 +651,6 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
-        // TODO some duplication w.r.t. opCallMethod
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw + 3;
         auto skip = _sp[1].isNil();
@@ -680,7 +677,6 @@ struct PyVM : Stacklet {
     }
     //CG1 op v
     void opCallFunctionVarKw (int arg) {
-        // TODO some duplication w.r.t. opCallFunction
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw + 2;
         wrappedCall(*_sp, {*this, arg + (1<<16), _sp + 1});
@@ -744,15 +740,14 @@ struct PyVM : Stacklet {
     //CG1 op
     void opGetIterStack () {
         // hard-coded to use 4 entries, layout [seq,(idx|iter),nil,nil]
-        auto& obj = _sp->asObj(); // may need to convert, e.g. qstrs
-        *_sp = obj;
-        *++_sp = obj.iter(); // will be 0 for indexed iteration
-        *++_sp = {};
-        *++_sp = {};
+        static_assert(sizeof (RawIter) == 3 * sizeof *_sp, "RawIter size?");
+        (RawIter&) *_sp = {_sp->asObj()}; // may need to convert, e.g. qstrs
+        _sp += 3;
+        *_sp = {};
     }
     //CG1 op o
     void opForIter (int arg) {
-        Value v = Iterator::stepper(_sp[-3], _sp[-2]);
+        Value v = ((RawIter&) _sp[-3]).stepper();
         if (v.isOk())
             *++_sp = v;
         else {
@@ -1294,14 +1289,11 @@ struct PyVM : Stacklet {
         return false;
     }
 
-    auto iter () const -> Value override { return this; }
-
     auto next () -> Value override { return send(); }
 
     //CG: wrap PyVM send
     auto send (Value arg =Null) -> Value {
-        if (_fill == 0)
-            return {};
+        assert(_fill != 0);
         assert(current != nullptr);
         assert(current != this);
         assert(_caller == nullptr);
@@ -1309,9 +1301,7 @@ struct PyVM : Stacklet {
         current = nullptr;
         ready.push(this);
         setPending(0);
-        // TODO messy: arg needs to be stored at the top of the stack
-        //  see also YieldValue
-        (*this)[_spOff] = arg;
+        _transfer = arg;
         return {}; // no result yet
     }
 

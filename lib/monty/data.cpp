@@ -484,34 +484,26 @@ void Int::repr (Buffer& buf) const {
         buf.print("%d", v3);
 }
 
-auto Value::begin () const -> Iterator {
-    return *this;
-}
-
-auto Value::end () const -> Iterator {
-    return {{}, 0};
-}
-
-auto Iterator::operator!= (Iterator const&) -> bool {
+auto RawIter::operator!= (RawIter const&) -> bool {
     if (_val.isNil())
-        _val = stepper(_obj, _pos);
+        _val = stepper();
     return _val.isOk();
 }
 
-auto Iterator::stepper (Value obj, Value& pos) -> Value {
-    if (pos.isInt()) {
-        uint32_t n = pos;
-        assert(obj.isObj());
-        if (n >= obj->len())
+auto RawIter::stepper () -> Value {
+    if (_pos.isInt()) {
+        uint32_t n = _pos;
+        assert(_obj.isObj());
+        if (n >= _obj->len())
             return {};
         // TODO better would be: if derived from Tuple, i.e. based on Vector
-        pos = n + 1;
-        if (&obj->type() == &Dict::info || &obj->type() == &Set::info)
-            return ((List&) obj.obj())[n]; // avoid keyed access
-        return obj->getAt(n);
+        _pos = n + 1;
+        if (&_obj->type() == &Dict::info || &_obj->type() == &Set::info)
+            return ((List&) _obj.obj())[n]; // avoid keyed access
+        return _obj->getAt(n);
     }
     auto ctx = Stacklet::current;
-    auto v = pos->next();
+    auto v = _pos->next();
     if (v.isOk() || Stacklet::current == ctx)
         return v;
     Stacklet::current = ctx;

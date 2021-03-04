@@ -130,6 +130,16 @@ void Event::repr (Buffer& buf) const {
     Object::repr(buf);
 }
 
+void Stacklet::resumeCaller (Value v) {
+    if (_caller != nullptr)
+        _caller->_transfer = v;
+    else if (v.isOk())
+        v.dump("result lost"); // TODO just for debugging
+    current = _caller;
+    _caller = nullptr;
+    setPending(0);
+}
+
 void Stacklet::marker () const {
     mark(_caller);
     _transfer.marker();

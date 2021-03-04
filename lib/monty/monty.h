@@ -95,7 +95,7 @@ namespace monty {
     struct Buffer;
     struct Type;
     struct Range;
-    struct Iterator;
+    struct RawIter;
 
     extern char const qstrBase [];
     extern int const qstrBaseLen;
@@ -246,9 +246,9 @@ namespace monty {
         inline void marker () const;
         void dump (char const* msg =nullptr) const;
 
-        // see Iterator in data.cpp
-        auto begin () const -> Iterator;
-        auto end () const -> Iterator;
+        // see RawIter in data.cpp
+        inline auto begin () const -> RawIter;
+        inline auto end () const -> RawIter;
     private:
         auto check (Type const& t) const -> bool;
         void verify (Type const& t) const;
@@ -454,32 +454,35 @@ namespace monty {
 
     using ByteVec = VecOf<uint8_t>;
 
-    //CG3 type <iterator>
-    struct Iterator : Object {
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-
-        Iterator (Value obj, Value pos ={})
+    struct RawIter {
+        RawIter (Value obj, Value pos ={})
             : _obj (obj), _pos (pos.isNil() ? obj->iter() : pos) {}
-        // unlike most Obj's, Iterator must be copyable (range-based for loops)
-        Iterator (Iterator const& it) : Iterator (it._obj, it._pos) {}
 
-        auto next () -> Value override { return stepper(_obj, _pos); }
-
-        void marker () const override { _obj.marker(); }
+        auto stepper () -> Value;
 
         // range-based for loops for vectors, iterators, and generators, see
         // https://www.nextptr.com/tutorial/ta1208652092/how-cplusplus-rangebased-for-loop-works
         auto operator* () -> Value { return _val; }
-        auto operator!= (Iterator const&) -> bool;
+        auto operator!= (RawIter const&) -> bool;
         void operator++ () { _val = {}; }
-
-        static auto stepper (Value obj, Value& pos) -> Value;
-    private:
-        Value _obj;
-        Value _pos;
-        Value _val;
+    protected:
+        Value _obj, _pos, _val;
     };
+
+    //CG3 type <iterator>
+    struct Iterator : Object, RawIter {
+        static Type info;
+        auto type () const -> Type const& override { return info; }
+
+        Iterator (Value obj, Value pos ={}) : RawIter (obj, pos) {}
+
+        auto next () -> Value override { return stepper(); }
+
+        void marker () const override { _obj.marker(); }
+    };
+
+    auto Value::begin () const -> RawIter { return *this; }
+    auto Value::end () const -> RawIter { return {{}, 0}; }
 
     //CG< type range
     struct Range : Object {
@@ -849,15 +852,9 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer& buf) const override { Object::repr(buf); }
 
-        void resumeCaller (Value v ={}) {
-            if (_caller != nullptr)
-                _caller->_transfer = v;
-            else if (v.isOk())
-                v.dump("result lost"); // TODO just for debugging
-            current = _caller;
-            _caller = nullptr;
-            setPending(0);
-        }
+        auto iter () const -> Value override { return this; }
+
+        void resumeCaller (Value v ={});
 
         void marker () const override;
 
