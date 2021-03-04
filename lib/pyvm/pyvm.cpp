@@ -1326,12 +1326,12 @@ struct PyVM : Stacklet {
 
     auto argSetup (ArgVec const& args) -> Value {
         auto& bc = _callee->_bc;
-        auto nPos = bc.nPos;
-        auto nDef = bc.nDef;
-        auto nKwo = bc.nKwo;
-        auto nCel = bc.nCel;
-        bool wVec = bc.wantsVec();
-        bool wMap = bc.wantsMap();
+        auto nPos = bc.nPos;        // # of formal pos args
+        auto nDef = bc.nDef;        // # of defaults args, i.e. last pos args
+        auto nKwo = bc.nKwo;        // # of keyword-only args
+        auto nCel = bc.nCel;        // # of hidden closure args
+        bool wVec = bc.wantsVec();  // is there a "*arg" in def?
+        bool wMap = bc.wantsMap();  // is there a "**kw" in def?
 #if 0
         printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d "
                "wVec %d wMap %d defV %p defM %p\n",
@@ -1351,12 +1351,12 @@ struct PyVM : Stacklet {
         if (!wVec && aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
 
-        auto defV = _callee->_pos; // preset default pos args and closure cells
+        auto defV = _callee->_pos; // default pos + closure arg values vec
         if (defV != nullptr)
             for (auto i = nPos - nDef; i < nPos + nCel; ++i) // TODO no nKwo?
                 fastSlot(i) = (*defV)[i-nPos+nDef];
 
-        auto defM = _callee->_kw; // preset default kw args
+        auto defM = _callee->_kw; // default keyword arg values map
         if (defM != nullptr)
             for (int i = nPos; i < nPos + nKwo; ++i)
                 fastSlot(i) = defM->at(bc[i]);
