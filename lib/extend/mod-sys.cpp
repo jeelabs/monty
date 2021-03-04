@@ -9,26 +9,26 @@ using namespace monty;
 
 //CG1 bind event
 static auto f_event (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     return new Event;
 }
 
 //CG1 bind gc
 static auto f_gc (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     Stacklet::gcAll();
     return {};
 }
 
 //CG1 bind gcmax
 static auto f_gcmax (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     return gcMax();
 }
 
 //CG1 bind gcstats
 static auto f_gcstats (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     auto data = new List;
     for (auto e : gcStats.v)
         data->append(e);

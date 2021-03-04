@@ -11,7 +11,7 @@ using namespace monty;
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
     Buffer buf; // TODO
-    for (int i = 0; i < args._num; ++i) {
+    for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
         //  this only applies to the top level, not inside lists, etc.
         char const* s = nullptr;
@@ -37,33 +37,33 @@ static auto f_print (ArgVec const& args) -> Value {
 
 //CG1 bind iter
 static auto f_iter (ArgVec const& args) -> Value {
-    assert(args._num == 1 && args[0].isObj());
+    assert(args.size() == 1 && args[0].isObj());
     auto v = args[0]->iter();
     return v.isObj() ? v : new Iterator (args[0], 0);
 }
 
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     auto v = args[0]->next();
     return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
 
 //CG1 bind len
 static auto f_len (ArgVec const& args) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     return args[0].isStr() ? strlen(args[0]) : args[0]->len();
 }
 
 //CG1 bind abs
 static auto f_abs (ArgVec const& args) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     return args[0].unOp(UnOp::Abso);
 }
 
 //CG1 bind hash
 static auto f_hash (ArgVec const& args) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     return args[0].unOp(UnOp::Hash);
 }
 

@@ -210,7 +210,7 @@ auto Bytes::copy (Range const& r) const -> Value {
 }
 
 auto Bytes::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     Value v = args[0];
     if (v.isInt()) {
         auto o = new Bytes ();
@@ -308,7 +308,7 @@ auto Str::getAt (Value k) const -> Value {
 }
 
 auto Str::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num == 1 && args[0].isStr());
+    assert(args.size() == 1 && args[0].isStr());
     return new Str (args[0]);
 }
 
@@ -391,8 +391,8 @@ Tuple::Tuple (Value seq) {
 }
 
 Tuple::Tuple (ArgVec const& args) {
-    insert(0, args._num);
-    for (int i = 0; i < args._num; ++i)
+    insert(0, args.size());
+    for (int i = 0; i < args.size(); ++i)
         (*this)[i] = args[i];
 }
 
@@ -416,7 +416,7 @@ auto Tuple::copy (Range const& r) const -> Value {
 }
 
 auto Tuple::create (ArgVec const& args, Type const*) -> Value {
-    return new Tuple (args._num == 1 ? args[0] : (Value) args._num);
+    return new Tuple (args.size() == 1 ? args[0] : Value {});
 }
 
 void Tuple::printer (Buffer& buf, char const* sep) const {
@@ -470,7 +470,7 @@ auto List::store (Range const& r, Object const& v) -> Value {
 }
 
 auto List::create (ArgVec const& args, Type const*) -> Value {
-    return new List (args._num == 1 ? args[0] : (Value) args._num);
+    return new List (args.size() == 1 ? args[0] : Value {});
 }
 
 void List::repr (Buffer& buf) const {
@@ -504,8 +504,7 @@ auto Set::binop (BinOp op, Value rhs) const -> Value {
 
 auto Set::getAt (Value k) const -> Value {
     assert(k.isInt());
-    auto f = (*this)[k];
-    return Value::asBool(f);
+    return Value::asBool((*this)[k]);
 }
 
 auto Set::setAt (Value k, Value v) -> Value {
@@ -515,7 +514,7 @@ auto Set::setAt (Value k, Value v) -> Value {
 }
 
 auto Set::create (ArgVec const& args, Type const*) -> Value {
-    return new Set (args._num == 1 ? args[0] : (Value) args._num);
+    return new Set (args.size() == 1 ? args[0] : Value {});
 }
 
 void Set::repr (Buffer& buf) const {
@@ -568,6 +567,17 @@ auto Dict::Proxy::operator= (Value v) -> Value {
     return w;
 }
 
+Dict::Dict (Value seq) {
+    auto d = seq.ifType<Dict>();
+    for (auto e : seq)
+        if (d != nullptr)
+            at(e) = (Value) d->at(e);
+        else {
+            auto& t = e.asType<Tuple>();
+            at(t[0]) = t[1];
+        }
+}
+
 auto Dict::at (Value k) const -> Value {
     auto n = size();
     auto pos = find(k);
@@ -594,8 +604,12 @@ void Dict::marker () const {
     mark(_chain);
 }
 
-auto Dict::create (ArgVec const&, Type const*) -> Value {
-    return new Dict; // TODO 1 arg: mapping, iterable of tuples, or N kw-args
+auto Dict::create (ArgVec const& args, Type const*) -> Value {
+    auto d = new Dict (args.size() == 1 ? args[0] : Value {});
+    if (args.size() % 2 == 0)
+        for (int i = 0; i < args.kwNum(); ++i)
+            d->at(args.kwKey(i)) = args.kwVal(i);
+    return d;
 }
 
 void Dict::repr (Buffer& buf) const {
@@ -619,7 +633,7 @@ auto Type::noFactory (ArgVec const&, const Type*) -> Value {
 }
 
 auto Type::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     Value v = args[0];
     switch (v.tag()) {
         case Value::Nil: break;
@@ -635,18 +649,18 @@ void Type::repr (Buffer& buf) const {
 }
 
 Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
-    assert(2 <= args._num && args._num <= 3); // no support for multiple inheritance
-    if (args._num > 2)
+    assert(2 <= args.size() && args.size() <= 3); // no support for multiple inheritance
+    if (args.size() > 2)
         _chain = &args[2].asType<Class>();
 
     at(Q( 23,"__name__")) = args[1];
-    at(Q(170,"__bases__")) = new Tuple ({args._vec, args._num-2, args._off+2});
+    at(Q(170,"__bases__")) = new Tuple ({args._vec, args.size()-2, args._off+2});
 
-    args[0]->call({args._vec, args._num - 2, args._off + 2});
+    args[0]->call({args._vec, args.size() - 2, args._off + 2});
 }
 
 auto Class::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num >= 2 && args[0].isObj() && args[1].isStr());
+    assert(args.size() >= 2 && args[0].isObj() && args[1].isStr());
     return new Class (args);
 }
 
@@ -655,7 +669,7 @@ void Class::repr (Buffer& buf) const {
 }
 
 Super::Super (ArgVec const& args) {
-    assert(args._num == 2);
+    assert(args.size() == 2);
     _sclass = args[0];
     _sinst = args[1];
 }
@@ -674,7 +688,7 @@ Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     if (init.isOk()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;
-        init->call({args._vec, args._num + 1, args._off - 1});
+        init->call({args._vec, args.size() + 1, args._off - 1});
     }
 }
 

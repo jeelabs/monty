@@ -354,21 +354,35 @@ namespace monty {
     void markVec (Vector const&);
 
     struct ArgVec {
+        static constexpr auto SPREAD = 1<<16; // if "*arg" or "**kw" present
+
         ArgVec (Vector const& vec ={})
             : ArgVec (vec, vec.size()) {}
         ArgVec (Vector const& vec, int num, Value const* ptr)
             : ArgVec (vec, num, ptr - vec.begin()) {}
         constexpr ArgVec (Vector const& vec, int num, int off =0)
-            : _vec (vec), _num (num), _off (off) {}
+            : _vec (vec), _off (off), _num (num) {}
 
-        auto size () const -> uint32_t { return _num; }
+        auto size () const -> uint8_t { return _num; }
         auto begin () const -> Value const* { return _vec.begin() + _off; }
-        auto end () const -> Value const* { return begin() + _num; }
+        auto end () const -> Value const* { return begin() + size(); }
         auto operator[] (uint32_t idx) const -> Value& { return _vec[_off+idx]; }
 
+        auto kwNum () const -> uint8_t { return _num >> 8; }
+        auto kwKey (int i ) const -> Value { return begin()[size()+2*i]; }
+        auto kwVal (int i ) const -> Value { return begin()[size()+2*i+1]; }
+
+        auto expSeq () const -> Value {
+            return _num & SPREAD ? begin()[size()+2*kwNum()] : Value {};
+        }
+        auto expMap () const -> Value {
+            return _num & SPREAD ? begin()[size()+2*kwNum()+1] : Value {};
+        }
+
         Vector const& _vec;
-        int _num;
         int _off;
+    private:
+        int _num;
     };
 
     // can't use "CG type <object>", this is the start of the type hierarchy

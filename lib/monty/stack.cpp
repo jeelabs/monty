@@ -122,7 +122,7 @@ auto Event::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Event::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     return new Event;
 }
 

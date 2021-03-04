@@ -97,7 +97,7 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     auto type () const -> Type const& override { return info; }
 
     auto recv (ArgVec const& args) -> Value {
-        assert(args._num == 2);
+        assert(args.size() == 2);
         auto& a = args[1].asType<Array>();
         assert(a.size() >= 4);
         auto r = receive(a.begin()+4, a.size()-4);
@@ -109,7 +109,7 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     }
 
     auto xmit (ArgVec const& args) -> Value {
-        assert(args._num == 2 && args[0].isInt());
+        assert(args.size() == 2 && args[0].isInt());
         auto& a = args[1].asType<Array>();
         send(args[0], a.begin(), a.size());
         return {};
@@ -145,7 +145,7 @@ Type RF69::info (Q(215,"<rf69>"), &RF69::attrs);
 
 //CG1 bind spi
 static auto f_spi (ArgVec const& args) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     auto spi = new Spi;
     auto err = jeeh::Pin::define(args[0], &spi->_mosi, 4);
     if (err != nullptr || !spi->isValid())
@@ -156,7 +156,7 @@ static auto f_spi (ArgVec const& args) -> Value {
 
 //CG1 bind rf69
 static auto f_rf69 (ArgVec const& args) -> Value {
-    assert(args._num == 4);
+    assert(args.size() == 4);
     assert(args[1].isInt() && args[2].isInt() && args[3].isInt());
     auto rf69 = new RF69;
     auto err = jeeh::Pin::define(args[0], &rf69->spi._mosi, 4);
@@ -181,8 +181,8 @@ static auto msNow () -> Value {
 
 //CG1 bind ticker
 static auto f_ticker (ArgVec const& args) -> Value {
-    if (args._num > 0) {
-        assert(args._num == 1 && args[0].isInt());
+    if (args.size() > 0) {
+        assert(args.size() == 1 && args[0].isInt());
         ms = args[0];
         start = msNow(); // set first timeout relative to now
         last = 0;
@@ -210,14 +210,14 @@ static auto f_ticker (ArgVec const& args) -> Value {
 
 //CG1 bind ticks
 static auto f_ticks (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     return msNow();
 }
 
 //CG1 bind dog
 static auto f_dog (ArgVec const& args) -> Value {
     int count = 4095;
-    if (args._num > 0 && args[0].isInt())
+    if (args.size() > 0 && args[0].isInt())
         count = args[0];
 
     static Iwdg dog;
@@ -227,7 +227,7 @@ static auto f_dog (ArgVec const& args) -> Value {
 
 //CG1 bind kick
 static auto f_kick (ArgVec const& args) -> Value {
-    assert(args._num == 0);
+    assert(args.size() == 0);
     Iwdg::kick();
     return {};
 }

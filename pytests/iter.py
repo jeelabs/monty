@@ -25,12 +25,17 @@ for i in c:
 
 print(tuple())
 print(tuple([1,2,3]))
-print(tuple((i*i for i in range(5))))
+print(tuple((i*i for i in range(6))))
 
 print(list())
 print(list([1,2,3]))
-print(list((i*i for i in range(5))))
+print(list((i*i for i in range(6))))
 
 print(set())
 print(set([1,2,3]))
 print(set((i*i for i in range(5))))
+
+print(dict())
+print(dict({1:11,2:22,3:33}))
+print(dict([(11,111),(22,222),(33,333)]))
+print(dict(((i,i*i) for i in range(6))))

@@ -369,9 +369,9 @@ auto Bool::unop (UnOp op) const -> Value {
 }
 
 auto Bool::create (ArgVec const& args, Type const*) -> Value {
-    if (args._num == 1)
+    if (args.size() == 1)
         return args[0].unOp(UnOp::Boln);
-    assert(args._num == 0);
+    assert(args.size() == 0);
     return False;
 }
 
@@ -446,7 +446,7 @@ auto Int::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Int::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num == 1);
+    assert(args.size() == 1);
     auto v = args[0];
     switch (v.tag()) {
         case Value::Nil: // fall through
@@ -510,10 +510,10 @@ auto Range::len () const -> uint32_t {
 }
 
 auto Range::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args._num && args._num <= 3);
-    int a = args._num > 1 ? (int) args[0] : 0;
-    int b = args._num == 1 ? args[0] : args[1];
-    int c = args._num > 2 ? (int) args[2] : 1;
+    assert(1 <= args.size() && args.size() <= 3);
+    int a = args.size() > 1 ? (int) args[0] : 0;
+    int b = args.size() == 1 ? args[0] : args[1];
+    int c = args.size() > 2 ? (int) args[2] : 1;
     return new Range (a, b, c);
 }
 
@@ -538,10 +538,10 @@ auto Slice::asRange (int sz) const -> Range {
 }
 
 auto Slice::create (ArgVec const& args, Type const*) -> Value {
-    assert(1 <= args._num && args._num <= 3);
-    Value a = args._num > 1 ? args[0] : Null;
-    Value b = args._num == 1 ? args[0] : args[1];
-    Value c = args._num > 2 ? args[2] : Null;
+    assert(1 <= args.size() && args.size() <= 3);
+    Value a = args.size() > 1 ? args[0] : Null;
+    Value b = args.size() == 1 ? args[0] : args[1];
+    Value c = args.size() > 2 ? args[2] : Null;
     return new Slice (a, b, c);
 }
 

@@ -154,9 +154,9 @@ struct BoundMeth : Object {
     BoundMeth (Object const& f, Value o) : _meth (f), _self (o) {}
 
     auto call (ArgVec const& args) const -> Value override {
-        assert(args._num > 0 && this == &args[-1].obj());
+        assert(args.size() > 0 && this == &args[-1].obj());
         args[-1] = _self; // overwrites the entry before first arg
-        return _meth.call({args._vec, (int) args._num + 1, (int) args._off - 1});
+        return _meth.call({args._vec, (int) args.size() + 1, (int) args._off - 1});
     }
 
     void marker () const override { mark(_meth); _self.marker(); }
@@ -172,8 +172,8 @@ struct Closure : List {
     void repr (Buffer& buf) const override;
 
     Closure (Object const& func, ArgVec const& args) : _func (func) {
-        insert(0, args._num);
-        for (int i = 0; i < args._num; ++i)
+        insert(0, args.size());
+        for (int i = 0; i < args.size(); ++i)
             begin()[i] = args[i];
     }
 
@@ -181,12 +181,12 @@ struct Closure : List {
         int n = size();
         assert(n > 0);
         Vector v;
-        v.insert(0, n + args._num);
+        v.insert(0, n + args.size());
         for (int i = 0; i < n; ++i)
             v[i] = begin()[i];
-        for (int i = 0; i < args._num; ++i)
+        for (int i = 0; i < args.size(); ++i)
             v[n+i] = args[i];
-        return _func.call({v, n + args._num});
+        return _func.call({v, n + args.size()});
     }
 
     void marker () const override { List::marker(); mark(_func); }
@@ -650,14 +650,14 @@ struct PyVM : Stacklet {
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw + 1;
         auto skip = _sp[1].isNil();
-        wrappedCall(*_sp, {*this, arg + 1 - skip, _sp + 1 + skip});
+        wrappedCall(*_sp, {*this, arg+1-skip, _sp+1+skip});
     }
     //CG1 op v
     void opCallMethodVarKw (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw + 3;
         auto skip = _sp[1].isNil();
-        wrappedCall(*_sp, {*this, arg + 1 - skip + (1<<16), _sp + 1 + skip});
+        wrappedCall(*_sp, {*this, arg+1-skip+ArgVec::SPREAD, _sp+1+skip});
     }
     //CG1 op v
     void opMakeFunction (int arg) {
@@ -1328,21 +1328,11 @@ struct PyVM : Stacklet {
 #if 0
         printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d "
                "wVec %d wMap %d defV %p defM %p\n",
-                    args._num, nPos, nDef, nKwo, nCel, wVec, wMap,
+                    args.size(), nPos, nDef, nKwo, nCel, wVec, wMap,
                     _callee->_pos, _callee->_kw);
 #endif
-        Value xSeq;             // incoming "*arg" expansion
-        Dict* xMap = nullptr;   // incoming "**kw" expansion
-
-        auto aPos = args._num & 0xFF;
-        auto aKwd = (args._num >> 8) & 0xFF;
-        if (args._num & (1<<16)) { // hidden args for "*seq" and "**map"
-            xSeq = args[aPos+2*aKwd];
-            xMap = args[aPos+2*aKwd+1].ifType<Dict>(); // TODO generator (?)
-        }
-
-        if (!wVec && aPos > nPos + nCel)
-            return {E::TypeError, "too many positional args", aPos};
+        if (!wVec && args.size() > nPos + nCel)
+            return {E::TypeError, "too many positional args", args.size()};
 
         auto defV = _callee->_pos; // default pos + closure arg values vec
         if (defV != nullptr)
@@ -1365,13 +1355,15 @@ struct PyVM : Stacklet {
             ++idx;
         };
 
-        while (idx < aPos) // add all supplied actual pos args
+        while (idx < args.size()) // add all supplied actual pos args
             addArg(args[idx]);
 
+        Value xSeq = args.expSeq();
         if (xSeq.isOk()) // process "*arg" expansion
             for (auto v : xSeq)
                 addArg(v);
 
+        auto xMap = args.expMap().ifType<Dict>(); // TODO generator (?)
         if (xMap != nullptr) // process "**kw" expansion
             for (int i = 0; i < nPos + nKwo; ++i) {
                 Value val = xMap->at(bc[i]);
@@ -1381,13 +1373,13 @@ struct PyVM : Stacklet {
                 }
             }
 
-        uint32_t seen = 0; assert(aKwd <= 32); // used as bitmap
+        uint32_t seen = 0; assert(args.kwNum() <= 32); // used as bitmap
 
-        for (int i = 0; i < aKwd; ++i) { // supplied actual kw args
-            auto name = args[aPos+2*i];
+        for (int i = 0; i < args.kwNum(); ++i) { // supplied actual kw args
+            auto name = args.kwKey(i);
             for (int j = 0; j < nPos + nKwo; ++j)
                 if (name.id() == bc[j].id()) {
-                    fastSlot(j) = args[aPos+2*i+1];
+                    fastSlot(j) = args.kwVal(i);
                     seen |= 1 << i; // key has been used, forget about it
                     break;
                 }
@@ -1403,11 +1395,9 @@ struct PyVM : Stacklet {
         if (wMap) { // remaining kw args as a map
             if (xMap == nullptr)
                 xMap = new Dict;
-            for (int i = 0; i < aKwd; ++i)
-                if ((seen & (1<<i)) == 0) {
-                    auto off = aPos + 2*i;
-                    xMap->at(args[off]) = args[off+1];
-                }
+            for (int i = 0; i < args.kwNum(); ++i)
+                if ((seen & (1<<i)) == 0)
+                    xMap->at(args.kwKey(i)) = args.kwVal(i);
             fastSlot(nPos+nKwo+wVec) = xMap;
         }
 

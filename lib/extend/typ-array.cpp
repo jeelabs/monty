@@ -237,10 +237,10 @@ auto Array::store (Range const& r, Object const& v) -> Value {
 }
 
 auto Array::create (ArgVec const& args, Type const*) -> Value {
-    assert(args._num >= 1 && args[0].isStr());
+    assert(args.size() >= 1 && args[0].isStr());
     char type = *((char const*) args[0]);
     uint32_t len = 0;
-    if (args._num == 2) {
+    if (args.size() == 2) {
         assert(args[1].isInt());
         len = args[1];
     }
