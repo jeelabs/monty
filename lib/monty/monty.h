@@ -282,7 +282,7 @@ namespace monty {
         constexpr auto size () const -> uint32_t { return _fill; }
         constexpr auto begin () const -> T* { return (T*) Vec::ptr(); }
         constexpr auto end () const -> T* { return begin() + _fill; }
-        auto operator[] (uint32_t idx) const -> T& { return begin()[idx]; }
+        auto operator[] (uint32_t i) const -> T& { return begin()[i]; }
 
         auto relPos (int i) const -> uint32_t { return i < 0 ? i + _fill : i; }
 
@@ -366,11 +366,11 @@ namespace monty {
         auto size () const -> uint8_t { return _num; }
         auto begin () const -> Value const* { return _vec.begin() + _off; }
         auto end () const -> Value const* { return begin() + size(); }
-        auto operator[] (uint32_t idx) const -> Value& { return _vec[_off+idx]; }
+        auto operator[] (uint32_t i) const -> Value& { return _vec[_off+i]; }
 
         auto kwNum () const -> uint8_t { return _num >> 8; }
-        auto kwKey (int i ) const -> Value { return begin()[size()+2*i]; }
-        auto kwVal (int i ) const -> Value { return begin()[size()+2*i+1]; }
+        auto kwKey (int i) const -> Value { return begin()[size()+2*i]; }
+        auto kwVal (int i) const -> Value { return begin()[size()+2*i+1]; }
 
         auto expSeq () const -> Value {
             return _num & SPREAD ? begin()[size()+2*kwNum()] : Value {};
@@ -394,7 +394,7 @@ namespace monty {
         virtual auto call  (ArgVec const&) const -> Value;
         virtual auto unop  (UnOp) const -> Value;
         virtual auto binop (BinOp, Value) const -> Value;
-        virtual auto attr  (char const*, Value&) const -> Value;
+        virtual auto attr  (Value, Value&) const -> Value;
         virtual auto len   () const -> uint32_t;
         virtual auto getAt (Value) const -> Value;
         virtual auto setAt (Value, Value) -> Value;
@@ -633,7 +633,7 @@ namespace monty {
         constexpr Lookup (Item const (&items)[N], Lookup const* chain =nullptr)
             : _items (items), _count (N), _chain (chain) {}
             
-        auto operator[] (char const* key) const -> Value;
+        auto operator[] (Value) const -> Value;
 
         auto len () const -> uint32_t override { return _count; }
         auto getAt (Value k) const -> Value override;
@@ -767,7 +767,7 @@ namespace monty {
         auto call (ArgVec const& args) const -> Value override  {
             return _factory(args, this);
         }
-        auto attr (char const* name, Value&) const -> Value override {
+        auto attr (Value name, Value&) const -> Value override {
             return getAt(name);
         }
 
@@ -815,7 +815,7 @@ namespace monty {
         void repr (Buffer&) const override;
 
         auto type () const -> Type const& override { return *(Type*) _chain; }
-        auto attr (char const* name, Value& self) const -> Value override {
+        auto attr (Value name, Value& self) const -> Value override {
             self = this;
             return getAt(name);
         }
@@ -913,9 +913,9 @@ namespace monty {
         constexpr Module (Value nm, Object const& lu =builtins)
             : Dict (&lu), _name (nm) {}
 
-        auto attr (char const* s, Value&) const -> Value override {
-            Value v = getAt(s);
-            return v.isNil() && strcmp(s, "__name__") == 0 ? _name : v;
+        auto attr (Value name, Value&) const -> Value override {
+            Value v = getAt(name);
+            return v.isNil() && name == Q( 23,"__name__") ? _name : v;
         }
 
         static Dict builtins;

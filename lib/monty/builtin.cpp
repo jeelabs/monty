@@ -10,7 +10,7 @@ using namespace monty;
 
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
-    Buffer buf; // TODO
+    Buffer buf;
     for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
         //  this only applies to the top level, not inside lists, etc.
@@ -24,14 +24,14 @@ static auto f_print (ArgVec const& args) -> Value {
                 s = *p;
         }
         if (i > 0)
-            buf.putc(' ');
+            buf << ' ';
         // if it's a plain string, print as is, else print via repr()
         if (s != nullptr)
-            buf.puts(s);
+            buf << s;
         else
             buf << v;
     }
-    buf.putc('\n');
+    buf << '\n';
     return {};
 }
 
@@ -366,7 +366,7 @@ auto Exception::create (E exc, ArgVec const& args) -> Value {
 }
 
 void Exception::repr (Buffer& buf) const {
-    buf.puts(bases._items[(int) _code].k);
+    buf << (char const*) bases._items[(int) _code].k;
     Tuple::repr(buf);
 }
 

@@ -285,7 +285,7 @@ auto Object::binop (BinOp op, Value v2) const -> Value {
     return {};
 }
 
-auto Object::attr (char const* name, Value& self) const -> Value {
+auto Object::attr (Value name, Value& self) const -> Value {
     self = this;
     return type().getAt(name);
 }

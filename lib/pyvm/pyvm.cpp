@@ -156,7 +156,7 @@ struct BoundMeth : Object {
     auto call (ArgVec const& args) const -> Value override {
         assert(args.size() > 0 && this == &args[-1].obj());
         args[-1] = _self; // overwrites the entry before first arg
-        return _meth.call({args._vec, (int) args.size() + 1, (int) args._off - 1});
+        return _meth.call({args._vec, args.size()+1, args._off-1});
     }
 
     void marker () const override { mark(_meth); _self.marker(); }
@@ -600,7 +600,7 @@ struct PyVM : Stacklet {
         _sp[2] = Null;
         _sp -= 2;
 
-        wrappedCall(*_sp, {*this, 4, _sp + 1});
+        wrappedCall(*_sp, {*this, 4, _sp+1});
     }
     //CG1 op o
     void opPopExceptJump (int arg) {
@@ -673,7 +673,7 @@ struct PyVM : Stacklet {
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw;
         auto isClass = &_sp->obj() == &Class::info;
-        wrappedCall(*_sp, {*this, arg, _sp + 1});
+        wrappedCall(*_sp, {*this, arg, _sp+1});
         // TODO yuck, special cased because Class doesn't have access to PyVM
         if (isClass)
             frame().locals = *_sp;
@@ -682,7 +682,7 @@ struct PyVM : Stacklet {
     void opCallFunctionVarKw (int arg) {
         uint8_t npos = arg, nkw = arg >> 8;
         _sp -= npos + 2 * nkw + 2;
-        wrappedCall(*_sp, {*this, arg + (1<<16), _sp + 1});
+        wrappedCall(*_sp, {*this, arg+ArgVec::SPREAD, _sp+1});
     }
 
     //CG1 op v
@@ -697,7 +697,7 @@ struct PyVM : Stacklet {
         int num = *_ip++;
         _sp -= 2 + num - 1;
         auto f = new Callable (_callee->funcAt(arg), _sp[0], _sp[1]);
-        *_sp = new Closure (*f, {*this, num, _sp + 2});
+        *_sp = new Closure (*f, {*this, num, _sp+2});
     }
     //CG1 op v
     void opLoadDeref (int arg) {
@@ -732,7 +732,8 @@ struct PyVM : Stacklet {
             leave();
             return {};
         });
-        *_sp = v;
+        if (size() > 0)
+            *_sp = v;
     }
 
     //CG1 op
@@ -1219,16 +1220,11 @@ struct PyVM : Stacklet {
             _spOff = f.spOff;       // restore stack index
             _ipOff = f.ipOff;       // restore instruction index
             _callee = &f.callee.asType<Callable>(); // restore callee
-
-            assert(_fill > _base);
             remove(_base, _fill - _base); // delete current frame
-
-            assert(prev >= 0);
-            _base = prev;            // new lower frame offset
+            _base = prev;           // new lower frame offset
         } else {
-            // last frame, drop context, restore caller
-            _fill = 0; // delete stack entries
-            adj(1); // release vector FIXME crashes when set to 0 (???)
+            _fill = 0;              // last frame gone, delete stack
+            adj(0);                 // ... and release entire vector
             resumeCaller();
         }
     }
@@ -1249,7 +1245,7 @@ struct PyVM : Stacklet {
         // quirky: "assert" without 2nd arg does not construct the exception
         // and "raise Exception" is also allowed, iso "raise Exception()" ...
         if (e.ifType<Function>())
-            e = e->call({}); // so construct it now
+            e = e->call({*this, 0}); // so construct it now
 
         auto& einfo = e.asType<Exception>();
 
@@ -1267,14 +1263,9 @@ struct PyVM : Stacklet {
             leave();
             if (current != nullptr)
                 current->raise(e);
-            else {
-                Buffer buf;
-                buf.print("uncaught exception: ");
-                e->repr(buf);
-                buf.puts("\n  ");
-                einfo.trace()->repr(buf);
-                buf.putc('\n');
-            }
+            else
+                Buffer () << "uncaught exception: " << e <<
+                                "\n  " << einfo.trace() << '\n';
         }
     }
 

@@ -27,9 +27,10 @@ struct Pins : Object {
     static Type info;
     auto type () const -> Type const& override { return info; }
 
-    auto attr (char const* name, Value&) const -> Value override {
-        assert(strlen(name) >= 2);
-        jeeh::Pin p (name[0], atoi(name + 1));
+    auto attr (Value name, Value&) const -> Value override {
+        char const* s = name;
+        assert(strlen(s) >= 2);
+        jeeh::Pin p (s[0], atoi(s+1));
         return p.read();
     }
 

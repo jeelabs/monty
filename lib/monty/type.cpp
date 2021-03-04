@@ -106,7 +106,7 @@ void Buffer::putInt (int val, int base, int width, char fill) {
     }
 }
 
-void Buffer::print(char const* fmt, ...) {
+void Buffer::print (char const* fmt, ...) {
     va_list ap;
     va_start(ap, fmt);
 
@@ -373,9 +373,9 @@ void VaryVec::remove (uint32_t idx, uint32_t num) {
         pos(i) -= diff;
 }
 
-auto Lookup::operator[] (char const* key) const -> Value {
+auto Lookup::operator[] (Value key) const -> Value {
     for (uint32_t i = 0; i < _count; ++i)
-        if (strcmp(key, _items[i].k) == 0)
+        if (key == _items[i].k)
             return _items[i].v;
     return _chain != nullptr ?  (*_chain)[key] : Value {};
 }
