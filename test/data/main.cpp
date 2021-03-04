@@ -32,7 +32,7 @@ void dataSizes () {
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Object));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (None));
     TEST_ASSERT_EQUAL(sizeof (void*), sizeof (Bool));
-    TEST_ASSERT_EQUAL(3 * sizeof (void*), sizeof (Iterator));
+    TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Iterator));
     TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Bytes));
     TEST_ASSERT_EQUAL(2 * sizeof (void*) + 8, sizeof (Str));
     TEST_ASSERT_EQUAL(4 * sizeof (void*), sizeof (Lookup));

@@ -1326,9 +1326,6 @@ struct PyVM : Stacklet {
 
     auto argSetup (ArgVec const& args) -> Value {
         auto& bc = _callee->_bc;
-        auto& defV = _callee->_pos;
-        auto& defM = _callee->_kw;
-
         auto nPos = bc.nPos;
         auto nDef = bc.nDef;
         auto nKwo = bc.nKwo;
@@ -1338,36 +1335,36 @@ struct PyVM : Stacklet {
 #if 0
         printf("args 0x%x nPos %d nDef %d nKwo %d nCel %d "
                "wVec %d wMap %d defV %p defM %p\n",
-                    args._num, nPos, nDef, nKwo, nCel, wVec, wMap, defV, defM);
+                    args._num, nPos, nDef, nKwo, nCel, wVec, wMap,
+                    _callee->_pos, _callee->_kw);
 #endif
+        Value xSeq;             // incoming "*arg" expansion
+        Dict* xMap = nullptr;   // incoming "**kw" expansion
+
         auto aPos = args._num & 0xFF;
         auto aKwd = (args._num >> 8) & 0xFF;
-
-        Value xSeq;
-        Dict* xMap = nullptr;
         if (args._num & (1<<16)) { // hidden args for "*seq" and "**map"
             xSeq = args[aPos+2*aKwd];
-            xMap = args[aPos+2*aKwd+1].ifType<Dict>(); // TODO generator (???)
+            xMap = args[aPos+2*aKwd+1].ifType<Dict>(); // TODO generator (?)
         }
 
-        Tuple* asVec = nullptr;
-        if (wVec) {
-            asVec = new Tuple;
-            fastSlot(nPos+nKwo) = asVec;
-        } else if (aPos > nPos + nCel)
+        if (!wVec && aPos > nPos + nCel)
             return {E::TypeError, "too many positional args", aPos};
 
-        if (defM != nullptr) // preset args with kw defaults
-            for (int j = 0; j < nPos + nKwo; ++j) {
-                assert(bc[j].isStr());
-                Value v = defM->at(bc[j]);
-                if (v.isOk())
-                    fastSlot(j) = v;
-            }
+        auto defV = _callee->_pos; // preset default pos args and closure cells
+        if (defV != nullptr)
+            for (auto i = nPos - nDef; i < nPos + nCel; ++i) // TODO no nKwo?
+                fastSlot(i) = (*defV)[i-nPos+nDef];
 
+        auto defM = _callee->_kw; // preset default kw args
+        if (defM != nullptr)
+            for (int i = nPos; i < nPos + nKwo; ++i)
+                fastSlot(i) = defM->at(bc[i]);
+
+        auto asVec = wVec ? new Tuple : nullptr;
         int idx = 0;
 
-        auto addArg = [&](Value v) {
+        auto addArg = [&](Value v) { // lambda w/ closures
             if (idx < nPos + nCel)
                 fastSlot(idx) = v;
             else
@@ -1375,29 +1372,25 @@ struct PyVM : Stacklet {
             ++idx;
         };
 
-        while (idx < aPos)
+        while (idx < aPos) // add all supplied actual pos args
             addArg(args[idx]);
 
-        if (xSeq.isOk())
+        if (xSeq.isOk()) // process "*arg" expansion
             for (auto v : xSeq)
                 addArg(v);
 
-        for (auto i = idx; i < nPos + nCel; ++i)
-            if (defV != nullptr && nPos-nDef <= i && i < nDef+(int)defV->_fill)
-                fastSlot(i) = (*defV)[i+nDef-nPos];
-
-        if (xMap != nullptr)
+        if (xMap != nullptr) // process "**kw" expansion
             for (int i = 0; i < nPos + nKwo; ++i) {
                 Value val = xMap->at(bc[i]);
                 if (val.isOk()) {
                     fastSlot(i) = val;
-                    xMap->at(bc[i]) = {}; // TODO is delete from incoming ok?
+                    xMap->at(bc[i]) = {}; // TODO del from xMap probably not ok
                 }
             }
 
-        uint32_t seen = 0; assert(aKwd <= 32); // due to using "seen" as a bitmap
+        uint32_t seen = 0; assert(aKwd <= 32); // used as bitmap
 
-        for (int i = 0; i < aKwd; ++i) {
+        for (int i = 0; i < aKwd; ++i) { // supplied actual kw args
             auto name = args[aPos+2*i];
             for (int j = 0; j < nPos + nKwo; ++j)
                 if (name.id() == bc[j].id()) {
@@ -1407,11 +1400,14 @@ struct PyVM : Stacklet {
                 }
         }
 
-        for (int i = 0; i < nPos + nKwo; ++i)
+        for (int i = 0; i < nPos + nKwo; ++i) // check all required args
             if (fastSlot(i).isNil())
                 return {E::TypeError, "required arg missing", bc[i]};
 
-        if (wMap) {
+        if (wVec) // remaining pos args as a tuple
+            fastSlot(nPos+nKwo) = asVec;
+
+        if (wMap) { // remaining kw args as a map
             if (xMap == nullptr)
                 xMap = new Dict;
             for (int i = 0; i < aKwd; ++i)
@@ -1422,6 +1418,7 @@ struct PyVM : Stacklet {
             fastSlot(nPos+nKwo+wVec) = xMap;
         }
 
+        // lastly, convert some args to indirect closure cells
         uint8_t const* cellMap = bc.start() - nCel;
         for (int i = 0; i < nCel; ++i) {
             auto slot = cellMap[i];
