@@ -77,30 +77,30 @@ static auto f_id (ArgVec const& args) -> Value {
 static auto f_dir (ArgVec const& args) -> Value {
     assert(args.size() == 1);
     auto r = new Set;
-    Object const* obj = nullptr;
-    switch (args[0].tag()) {
-        case Value::Nil: assert(false); break;
-        case Value::Int: obj = &Int::info; break;
-        case Value::Str: obj = &Str::info; break;
-        case Value::Obj: obj = &args[0].obj(); break;
-    }
 
-    if (&obj->type() != &Type::info && &obj->type() != &Module::info)
+    Object const* obj = &args[0].asObj();
+    if (obj != &Module::builtins &&
+            obj != &Module::loaded &&
+            &obj->type() != &Type::info &&
+            &obj->type() != &Module::info)
         obj = &obj->type();
 
     do {
-        for (auto e : *(Dict const*) obj)
-            r->has(e) = true;
+        if (obj != &Module::builtins && obj != &Module::loaded)
+            for (auto e : *(Dict const*) obj)
+                r->has(e) = true;
         //obj->type()._name.dump("switch");
         switch (obj->type()._name.asQid()) {
             case Q(  7,"<module>")._id:
             case Q(158,"type")._id:
+            case Q( 75,"dict")._id:
                 obj = ((Dict const*) obj)->_chain; break;
             case Q(196,"<lookup>")._id: 
                 obj = ((Lookup const*) obj)->attrDir(r); break;
             default: obj = nullptr;
         }
     } while (obj != nullptr);
+
     return r;
 }
 

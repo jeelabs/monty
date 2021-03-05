@@ -379,8 +379,11 @@ auto Lookup::getAt (Value k) const -> Value {
 }
 
 auto Lookup::attrDir (Value v) const -> Lookup const* {
-    for (uint32_t i = 0; i < _count; ++i)
-        v->setAt(_items[i].k, true);
+    uint32_t i = 0;
+    if (this == Module::builtins._chain) // are these the built-in attributes?
+        i = (int) E::UnicodeError + 1;   // ... then skip all the exceptions
+    while (i < _count)
+        v->setAt(_items[i++].k, true);
     return _chain;
 }
 

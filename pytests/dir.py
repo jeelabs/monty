@@ -20,3 +20,8 @@ f(A())
 
 import sys
 f(sys)
+sys.builtins["abc"] = 123
+f(sys.builtins)
+
+import hello
+f(sys.modules)
