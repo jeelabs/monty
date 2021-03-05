@@ -20,4 +20,6 @@ l 1 2 {"d":"<d>","c":"<c>"}
 m 1 2 (3,4) <d> {"e":"<e>"}
 m 5 6 (7,8) <d> {"e":"<e>"}
 TypeError("required arg missing","d") ["kwargs.py",58,"<module>"]
+1!2!3
+TypeError("unknown option","blah") ["kwargs.py",64,"<module>"]
 done

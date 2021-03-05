@@ -58,3 +58,9 @@ try:
     m(1,2,3,4,e="<e>")
 except Exception as e:
     print(e, e.trace())
+
+print(1,2,3,sep='!')
+try:
+    print(1,2,3,blah=123)
+except Exception as e:
+    print(e, e.trace())

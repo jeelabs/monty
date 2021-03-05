@@ -10,6 +10,17 @@ using namespace monty;
 
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
+    //CG< kwopts end sep
+    Value end, sep;
+    for (int i = 0; i < args.kwNum(); ++i) {
+        auto k = args.kwKey(i), v = args.kwVal(i);
+        switch (k.asQid()) {
+            case Q(78,"end"): end = v; break;
+            case Q(139,"sep"): sep = v; break;
+            default: return {E::TypeError, "unknown option", k};
+        }
+    }
+    //CG>
     Buffer buf;
     for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
@@ -23,15 +34,22 @@ static auto f_print (ArgVec const& args) -> Value {
             if (p != nullptr)
                 s = *p;
         }
-        if (i > 0)
-            buf << ' ';
+        if (i > 0) {
+            if (sep.isStr())
+                buf << (char const*) sep;
+            else
+                buf << ' ';
+        }
         // if it's a plain string, print as is, else print via repr()
         if (s != nullptr)
             buf << s;
         else
             buf << v;
     }
-    buf << '\n';
+    if (end.isOk())
+        buf << end;
+    else
+        buf << '\n';
     return {};
 }
 

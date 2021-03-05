@@ -23,5 +23,5 @@ f(sys)
 sys.builtins["abc"] = 123
 f(sys.builtins)
 
-import hello
+import builtins
 f(sys.modules)

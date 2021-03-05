@@ -1,5 +1,4 @@
 / at [0-9A-Z]{8}>/ at {ADDR}>/
-/monty .*/monty {VERS}/
 main
 123 247
 id 366
@@ -12,6 +11,8 @@ id 366
 <A object at {ADDR}> {"__name__","__bases__","__module__","__qualname__","v","m"}
 <module 'sys'> {"event","gc","gcmax","gcstats","ready","modules","builtins","implementation","version"}
 {"abc":123} {"array","bool","bytes","class","dict","event","int","list","range","set","slice","str","super","tuple","type","abs","dir","hash","id","iter","len","next","print"}
-hello monty {VERS}
-{"hello":<module 'hello'>} {"sys","machine"}
+{"abc":123}
+12345
+{"abc":12345}
+{"builtins":<module 'builtins'>} {"sys","machine"}
 done

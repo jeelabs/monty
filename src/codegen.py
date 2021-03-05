@@ -19,6 +19,19 @@ funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
 dirs  = {}          # map of scanned dirnames to path, see IF
 
+# generate option parsing code, i.e. keyword args
+def KWOPTS(block, *arg):
+    out = ["Value %s;" % ", ".join(arg),
+           "for (int i = 0; i < args.kwNum(); ++i) {",
+           "    auto k = args.kwKey(i), v = args.kwVal(i);",
+           "    switch (k.asQid()) {"]
+    for a in arg:
+        out.append("        case %s: %s = v; break;" % (q(a), a))
+    out += ['        default: return {E::TypeError, "unknown option", k};',
+            "    }",
+            "}"]
+    return out
+
 # comment lines in or out, depending on a condition
 def IF(block, typ, arg):
     include = typ == "dir" and arg in dirs
