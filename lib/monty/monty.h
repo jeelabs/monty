@@ -36,6 +36,9 @@ namespace monty {
         auto operator= (Obj const&) -> Obj& =delete;
     };
 
+    void mark (Obj const&);
+    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
+
     struct Vec {
         constexpr Vec () =default;
         constexpr Vec (void const* data, uint32_t capa =0)
@@ -409,13 +412,16 @@ namespace monty {
         auto sliceSetter (Value k, Value v) -> Value;
     };
 
-    void mark (Obj const&);
-    inline void mark (Obj const* p) { if (p != nullptr) mark(*p); }
+    struct StaticObj : Object {
+        // these are not for use on the heap and there's no cleanup to be done
+        auto operator new (size_t) -> void* =delete;
+        void operator delete (void*) {}
+    };
 
     void Value::marker () const { if (isObj()) mark(obj()); }
 
     //CG3 type <none>
-    struct None : Object {
+    struct None : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
@@ -428,7 +434,7 @@ namespace monty {
     };
 
     //CG< type bool
-    struct Bool : Object {
+    struct Bool : StaticObj {
         static auto create (ArgVec const&,Type const* =nullptr) -> Value;
         static Lookup const attrs;
         static Type info;
@@ -624,7 +630,7 @@ namespace monty {
     };
 
     //CG3 type <lookup>
-    struct Lookup : Object {
+    struct Lookup : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
@@ -645,10 +651,6 @@ namespace monty {
         Item const* _items {nullptr};
         uint32_t _count {0};
         Lookup const* _chain;
-
-        // these are not for use on the heap and there's no cleanup to be done
-        auto operator new (size_t) -> void* =delete;
-        void operator delete (void*) {}
 
         friend struct Exception; // to get exception's string name
     };
@@ -929,7 +931,7 @@ namespace monty {
     };
 
     //CG3 type <function>
-    struct Function : Object {
+    struct Function : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
         using Prim = auto (*)(ArgVec const&) -> Value;
@@ -983,7 +985,7 @@ namespace monty {
     };
 
     //CG3 type <method>
-    struct Method : Object {
+    struct Method : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
