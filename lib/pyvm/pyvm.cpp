@@ -1424,11 +1424,11 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return ctx->argSetup(args);
 }
 
-Type  Bytecode::info (Q(181,"<bytecode>"));
-Type  Callable::info (Q(182,"<callable>"));
-Type      Cell::info (Q(183,"<cell>"));
-Type BoundMeth::info (Q(184,"<boundmeth>"));
-Type   Closure::info (Q(185,"<closure>"));
+Type  Bytecode::info (Q(180,"<bytecode>"));
+Type  Callable::info (Q(181,"<callable>"));
+Type      Cell::info (Q(182,"<cell>"));
+Type BoundMeth::info (Q(183,"<boundmeth>"));
+Type   Closure::info (Q(184,"<closure>"));
 
 //CG< wrappers PyVM
 static auto const m_pyvm_send = Method::wrap(&PyVM::send);
@@ -1440,7 +1440,7 @@ static Lookup::Item const pyvm_map [] = {
 Lookup const PyVM::attrs (pyvm_map);
 //CG>
 
-Type PyVM::info (Q(186,"<pyvm>"), &PyVM::attrs);
+Type PyVM::info (Q(185,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)

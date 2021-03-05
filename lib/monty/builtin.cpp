@@ -270,7 +270,7 @@ static Method const mo_event_wait (m_event_wait);
 static Lookup::Item const event_map [] = {
     { Q(70,"clear"), mo_event_clear },
     { Q(140,"set"), mo_event_set },
-    { Q(187,"wait"), mo_event_wait },
+    { Q(186,"wait"), mo_event_wait },
 };
 Lookup const Event::attrs (event_map);
 
@@ -278,7 +278,7 @@ static auto const m_exception_trace = Method::wrap(&Exception::trace);
 static Method const mo_exception_trace (m_exception_trace);
 
 static Lookup::Item const exception_map [] = {
-    { Q(188,"trace"), mo_exception_trace },
+    { Q(187,"trace"), mo_exception_trace },
 };
 Lookup const Exception::attrs (exception_map);
 
@@ -324,12 +324,12 @@ static Lookup::Item const builtinsMap [] = {
     { Q(167,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(189,"array"), Array::info },
+    { Q(188,"array"), Array::info },
     { Q(62,"bool"),   Bool::info },
     { Q(66,"bytes"),  Bytes::info },
-    { Q(190,"class"), Class::info },
+    { Q(189,"class"), Class::info },
     { Q(75,"dict"),   Dict::info },
-    { Q(171,"event"), Event::info },
+    { Q(190,"event"), Event::info },
     { Q(94,"int"),    Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
@@ -440,12 +440,12 @@ Type    Module::info (Q(7,"<module>"));
 Type      None::info (Q(198,"<none>"));
 Type  Stacklet::info (Q(199,"<stacklet>"));
 
-Type     Array::info (Q(189,"array"), &Array::attrs, Array::create);
+Type     Array::info (Q(188,"array"), &Array::attrs, Array::create);
 Type      Bool::info (Q(62,"bool"),    &Bool::attrs,  Bool::create);
 Type     Bytes::info (Q(66,"bytes"),  &Bytes::attrs, Bytes::create);
-Type     Class::info (Q(190,"class"), &Class::attrs, Class::create);
+Type     Class::info (Q(189,"class"), &Class::attrs, Class::create);
 Type      Dict::info (Q(75,"dict"),    &Dict::attrs,  Dict::create);
-Type     Event::info (Q(171,"event"), &Event::attrs, Event::create);
+Type     Event::info (Q(190,"event"), &Event::attrs, Event::create);
 Type       Int::info (Q(94,"int"),      &Int::attrs,   Int::create);
 Type      List::info (Q(108,"list"),   &List::attrs,  List::create);
 Type     Range::info (Q(124,"range"), &Range::attrs, Range::create);
