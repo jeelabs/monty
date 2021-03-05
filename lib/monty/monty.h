@@ -954,6 +954,7 @@ namespace monty {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
+    private:
         // Method objects point to these base instances to make virtual calls
         struct Base {
             virtual auto objCall (Object&, ArgVec const&) const -> Value = 0;
@@ -968,6 +969,24 @@ namespace monty {
             }
         };
 
+        // T::meth() -> V
+        template< typename T, typename V >
+        static auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> Value {
+            return (((T&) o).*m)();
+        }
+        // T::meth(U) -> V
+        template< typename T, typename U, typename V >
+        static auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> Value {
+            return (((T&) o).*m)(a[1]);
+        }
+        // T::meth(ArgVec const&) -> Value
+        template< typename T >
+        static auto argConv (Value (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> Value {
+            return (((T&) o).*m)(a);
+        }
+
+        Base const& _meth;
+    public:
         constexpr Method (Base const& meth) : _meth (meth) {}
 
         auto call (ArgVec const& args) const -> Value override {
@@ -976,25 +995,6 @@ namespace monty {
 
         template< typename M >
         constexpr static auto wrap (M meth) -> Wrap<M> { return meth; }
-
-    private:
-        // obj.meth() -> Value
-        template< typename T, typename V >
-        static auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
-            return (((T&) o).*m)();
-        }
-        // obj.meth(arg) -> Value
-        template< typename T, typename U, typename V >
-        static auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> V {
-            return (((T&) o).*m)(a[1]);
-        }
-        // obj.meth(argvec) -> Value
-        template< typename T, typename V >
-        static auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> V {
-            return (((T&) o).*m)(a);
-        }
-
-        Base const& _meth;
     };
 
 // see builtin.cpp - exceptions and auto-generated built-in tables
