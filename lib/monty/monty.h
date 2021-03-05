@@ -204,6 +204,7 @@ namespace monty {
         auto obj () const -> Object& { return *_o; }
         auto asObj () const -> Object&; // create int/str object if needed
         auto asInt () const -> int64_t;
+        auto asQid () const -> uint16_t;
 
         template< typename T > // return null pointer if not of required type
         auto ifType () const -> T* {
@@ -637,6 +638,8 @@ namespace monty {
 
         auto len () const -> uint32_t override { return _count; }
         auto getAt (Value k) const -> Value override;
+
+        auto attrDir (Value) const -> Lookup const*; // can access private info
     private:
         Item const* _items {nullptr};
         uint32_t _count {0};

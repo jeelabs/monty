@@ -128,6 +128,15 @@ auto Value::asInt () const -> int64_t {
     return isInt() ? (int) *this : (int64_t) asType<struct Int>();
 }
 
+auto Value::asQid () const -> uint16_t {
+    if (isStr()) {
+        auto p = _v >> 2;
+        if (p < QID_RAM_LAST)
+            return p;
+    }
+    return 0;
+}
+
 auto Value::asBool (bool f) -> Value {
     return f ? True : False;
 }
@@ -256,14 +265,18 @@ void Value::verify (Type const& t) const {
 void Value::dump (char const* msg) const {
     if (msg != 0)
         printf("%s ", msg);
-    switch (tag()) {
-        case Value::Nil: printf("<N>"); break;
-        case Value::Int: printf("<I %d>", (int) *this); break;
-        case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
-        case Value::Obj: printf("<O %s at %p>",
-                                 (char const*) obj().type()._name, &obj());
-                         break;
-    }
+    auto qid = asQid();
+    if (qid != 0)
+        printf("<Q %d \"%s\">", qid, (char const*) *this);
+    else
+        switch (tag()) {
+            case Value::Nil: printf("<N>"); break;
+            case Value::Int: printf("<I %d>", (int) *this); break;
+            case Value::Str: printf("<S \"%s\">", (char const*) *this); break;
+            case Value::Obj: printf("<O %s at %p>",
+                                    (char const*) obj().type()._name, &obj());
+                            break;
+        }
     if (msg != 0)
         printf("\n");
 }
