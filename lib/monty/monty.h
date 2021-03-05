@@ -946,62 +946,55 @@ namespace monty {
         Prim _func;
     };
 
-    // Horrendous C++11 ... this wraps several different argument calls into a
-    // virtual MethodBase object, which Method can then call in a generic way.
-    // It's probably just a neophyte's version of STL's <functional> types ...
-    // TODO maybe an "argument pack" or "forwarding" can simplify this stuff?
-
-    // obj.meth() -> Value
-    template< typename T, typename V >
-    auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
-        return (((T&) o).*m)();
-    }
-    // obj.meth(arg) -> Value
-    template< typename T, typename U, typename V >
-    auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> V {
-        return (((T&) o).*m)(a[1]);
-    }
-    // obj.meth(argvec) -> Value
-    template< typename T, typename V >
-    auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> V {
-        return (((T&) o).*m)(a);
-    }
-
-    // Method objects point to objects of this base class to make virtual calls
-    struct MethodBase {
-        virtual auto call (Object&, ArgVec const&) const -> Value = 0;
-    };
-
-    template< typename M >
-    struct MethodDef : MethodBase {
-        constexpr MethodDef (M memberPtr) : _methPtr (memberPtr) {}
-
-        auto call (Object& self, ArgVec const& args) const -> Value override {
-            return argConv(_methPtr, self, args);
-        }
-
-    private:
-        M const _methPtr;
-    };
+    // Template trickery - this wraps several different argument calls into a
+    // virtual Method::Base object, which Method can then call in a generic way.
 
     //CG3 type <method>
     struct Method : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
 
-        constexpr Method (MethodBase const& m) : _meth (m) {}
+        // Method objects point to these base instances to make virtual calls
+        struct Base {
+            virtual auto objCall (Object&, ArgVec const&) const -> Value = 0;
+        };
+
+        template< typename M >
+        struct Wrap : Base {
+            M _m;
+            constexpr Wrap (M m) : _m (m) {}
+            auto objCall (Object& o, ArgVec const& a) const -> Value override {
+                return argConv(_m, o, a);
+            }
+        };
+
+        constexpr Method (Base const& meth) : _meth (meth) {}
 
         auto call (ArgVec const& args) const -> Value override {
-            return _meth.call(args[0].obj(), args);
+            return _meth.objCall(args[0].obj(), args);
         }
 
         template< typename M >
-        constexpr static auto wrap (M memberPtr) -> MethodDef<M> {
-            return memberPtr;
-        }
+        constexpr static auto wrap (M meth) -> Wrap<M> { return meth; }
 
     private:
-        MethodBase const& _meth;
+        // obj.meth() -> Value
+        template< typename T, typename V >
+        static auto argConv (V (T::*m)(), Object& o, ArgVec const&) -> V {
+            return (((T&) o).*m)();
+        }
+        // obj.meth(arg) -> Value
+        template< typename T, typename U, typename V >
+        static auto argConv (V (T::*m)(U), Object& o, ArgVec const& a) -> V {
+            return (((T&) o).*m)(a[1]);
+        }
+        // obj.meth(argvec) -> Value
+        template< typename T, typename V >
+        static auto argConv (V (T::*m)(ArgVec const&), Object& o, ArgVec const& a) -> V {
+            return (((T&) o).*m)(a);
+        }
+
+        Base const& _meth;
     };
 
 // see builtin.cpp - exceptions and auto-generated built-in tables
