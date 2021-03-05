@@ -169,7 +169,9 @@ void Buffer::print (char const* fmt, ...) {
 
 Bytes::Bytes (void const* ptr, uint32_t len) {
     insert(0, len);
-    memcpy(begin(), ptr, len);
+    if (ptr != nullptr)
+        memcpy(begin(), ptr, len);
+    // else cleared by insert
 }
 
 auto Bytes::unop (UnOp op) const -> Value {
@@ -195,9 +197,7 @@ auto Bytes::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Bytes::getAt (Value k) const -> Value {
-    if (!k.isInt())
-        return sliceGetter(k);
-    return (*this)[k];
+    return k.isInt() ? (Value) (*this)[k] : sliceGetter(k);
 }
 
 auto Bytes::copy (Range const& r) const -> Value {
@@ -250,17 +250,10 @@ void Bytes::repr (Buffer& buf) const {
     buf << '\'';
 }
 
-Str::Str (char const* s, int n) {
-    assert(n >= 0 || s != nullptr);
-    if (n < 0)
-        n = strlen(s);
-    insert(0, n);
-    adj(n+1);
-    if (s != nullptr)
-        memcpy(begin(), s, n);
-    else
-        memset(begin(), 0, n);
-    begin()[n] = 0;
+Str::Str (char const* s, int n) : Bytes (s, n >= 0 ? n :
+                                            s != nullptr ? strlen(s) : 0) {
+    adj(_fill+1);
+    *end() = 0;
 }
 
 auto Str::unop (UnOp op) const -> Value {
@@ -385,6 +378,12 @@ auto Lookup::getAt (Value k) const -> Value {
     return (*this)[k];
 }
 
+auto Lookup::attrDir (Value v) const -> Lookup const* {
+    for (uint32_t i = 0; i < _count; ++i)
+        v->setAt(_items[i].k, true);
+    return _chain;
+}
+
 Tuple::Tuple (Value seq) {
     for (auto e : seq)
         append(e);
@@ -503,13 +502,11 @@ auto Set::binop (BinOp op, Value rhs) const -> Value {
 }
 
 auto Set::getAt (Value k) const -> Value {
-    assert(k.isInt());
-    return Value::asBool((*this)[k]);
+    return Value::asBool(has(k));
 }
 
 auto Set::setAt (Value k, Value v) -> Value {
-    assert(k.isInt());
-    auto f = (*this)[k] = v.truthy();
+    auto f = has(k) = v.truthy();
     return Value::asBool(f);
 }
 

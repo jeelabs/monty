@@ -67,6 +67,43 @@ static auto f_hash (ArgVec const& args) -> Value {
     return args[0].unOp(UnOp::Hash);
 }
 
+//CG1 bind id
+static auto f_id (ArgVec const& args) -> Value {
+    assert(args.size() == 1);
+    return args[0].id();
+}
+
+//CG1 bind dir
+static auto f_dir (ArgVec const& args) -> Value {
+    assert(args.size() == 1);
+    auto r = new Set;
+    Object const* obj = nullptr;
+    switch (args[0].tag()) {
+        case Value::Nil: assert(false); break;
+        case Value::Int: obj = &Int::info; break;
+        case Value::Str: obj = &Str::info; break;
+        case Value::Obj: obj = &args[0].obj(); break;
+    }
+
+    if (&obj->type() != &Type::info && &obj->type() != &Module::info)
+        obj = &obj->type();
+
+    do {
+        for (auto e : *(Dict const*) obj)
+            r->has(e) = true;
+        //obj->type()._name.dump("switch");
+        switch (obj->type()._name.asQid()) {
+            case Q(  7,"<module>")._id:
+            case Q(158,"type")._id:
+                obj = ((Dict const*) obj)->_chain; break;
+            case Q(196,"<lookup>")._id: 
+                obj = ((Lookup const*) obj)->attrDir(r); break;
+            default: obj = nullptr;
+        }
+    } while (obj != nullptr);
+    return r;
+}
+
 //CG< exception-emit f
 static auto e_BaseException (ArgVec const& args) -> Value {
     return Exception::create(E::BaseException, args);
@@ -179,7 +216,9 @@ Lookup const Exception::bases (exceptionMap);
 
 //CG< wrappers
 static Function const fo_abs (f_abs);
+static Function const fo_dir (f_dir);
 static Function const fo_hash (f_hash);
+static Function const fo_id (f_id);
 static Function const fo_iter (f_iter);
 static Function const fo_len (f_len);
 static Function const fo_next (f_next);
@@ -289,6 +328,8 @@ static Lookup::Item const builtinsMap [] = {
     { Q(107,"len"),   fo_len },
     { Q( 57,"abs"),   fo_abs },
     { Q( 90,"hash"),  fo_hash },
+    { Q( 91,"id"),    fo_id },
+    { Q( 76,"dir"),   fo_dir },
 };
 
 static Lookup const builtins_attrs (builtinsMap);

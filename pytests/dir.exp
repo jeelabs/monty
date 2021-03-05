@@ -1,0 +1,13 @@
+/ at [0-9A-Z]{8}>/ at {ADDR}>/
+main
+123 247
+id 366
+[] {"append","clear","pop"}
+<type list> {"append","clear","pop"}
+<<method> at {ADDR}> {}
+{1:2,3:4} {"items","keys","values"}
+{1,2,3} {}
+<class A> {}
+<A object at {ADDR}> {"__name__","__bases__","__module__","__qualname__","v","m"}
+<module 'sys'> {"event","gc","gcmax","gcstats","ready","modules","builtins","implementation","version"}
+done
