@@ -11,7 +11,7 @@ id 366
 <class A> {}
 <A object at {ADDR}> {"__name__","__bases__","__module__","__qualname__","v","m"}
 <module 'sys'> {"event","gc","gcmax","gcstats","ready","modules","builtins","implementation","version"}
-{"abc":123} {"array","bool","bytes","class","dict","event","int","list","range","set","slice","str","super","tuple","type","print","iter","next","len","abs","hash","id","dir"}
+{"abc":123} {"array","bool","bytes","class","dict","event","int","list","range","set","slice","str","super","tuple","type","abs","dir","hash","id","iter","len","next","print"}
 hello monty {VERS}
 {"hello":<module 'hello'>} {"sys","machine"}
 done

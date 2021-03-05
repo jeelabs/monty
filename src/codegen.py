@@ -192,7 +192,7 @@ def qid(s):
 
 # generate a qstr reference, with the proper ID filled in
 def q(s, a=None):
-    return 'Q(%3d,"%s")' % (qid(s), s)
+    return 'Q(%d,"%s")' % (qid(s), s)
 
 # calculate the string hash, must produce the same result as the C++ version
 def hash(s):
@@ -313,10 +313,10 @@ def TYPE_INFO(block):
     out = []
     hiddenTypes.sort()
     for tag, name, base in hiddenTypes:
-        out.append('Type %12s::info (%s);' % (name, q(tag)))
+        out.append('Type %9s::info (%s);' % (name, q(tag)))
     out.append("")
     publicTypes.sort()
-    fmt = 'Type %8s::info (%-15s %6s::attrs, %5s::create);'
+    fmt = 'Type %9s::info (%-15s %6s::attrs, %5s::create);'
     for tag, name, base in publicTypes:
         out.append(fmt % (name, q(tag) + ",", "&" + name, name))
     return out
@@ -532,7 +532,7 @@ def processLines(lines):
     def qfix(m):
         return q(m.group(1))
 
-    p = re.compile(r'\bQ\([ \d]*\d,"(.*?)"\)')
+    p = re.compile(r'\bQ\(\d+,"(.*?)"\)')
     return [p.sub(qfix, line) for line in result]
 
 # process one source file, replace it only if the new contents is different

@@ -105,6 +105,7 @@ namespace monty {
         constexpr Q (uint16_t id, char const* =nullptr) : _id (id) {}
 
         operator char const* () const { return str(_id); }
+        constexpr operator uint16_t () const { return _id; }
 
         static auto hash (void const*, uint32_t) -> uint32_t;
         static auto str (uint16_t) -> char const*;
@@ -646,7 +647,7 @@ namespace monty {
         Lookup const* _chain;
 
         // these are not for use on the heap and there's no cleanup to be done
-        auto operator new (size_t bytes) -> void* =delete;
+        auto operator new (size_t) -> void* =delete;
         void operator delete (void*) {}
 
         friend struct Exception; // to get exception's string name
@@ -918,7 +919,7 @@ namespace monty {
 
         auto attr (Value name, Value&) const -> Value override {
             Value v = getAt(name);
-            return v.isNil() && name == Q( 23,"__name__") ? _name : v;
+            return v.isNil() && name == Q(23,"__name__") ? _name : v;
         }
 
         static Dict builtins;

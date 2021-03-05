@@ -572,7 +572,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op o
     void opSetupWith (int arg) {
-        auto exit = Q( 13,"__exit__");
+        auto exit = Q(13,"__exit__");
         _sp[1] = {};
         *_sp = _sp->obj().attr(exit, _sp[1]);
         if (_sp->isNil()) {
@@ -580,7 +580,7 @@ struct PyVM : Stacklet {
             return;
         }
 
-        auto entry = Q( 12,"__enter__");
+        auto entry = Q(12,"__enter__");
         _sp[2] = _sp[1]->attr(entry, _sp[3]);
         if (_sp->isNil()) {
             _sp[2] = {E::AttributeError, entry};
@@ -1445,11 +1445,11 @@ Type PyVM::info (Q(186,"<pyvm>"), &PyVM::attrs);
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
         return nullptr;
-    auto init = Bytecode::load(data, Q( 21,"__main__"));
+    auto init = Bytecode::load(data, Q(21,"__main__"));
     if (init == nullptr) {
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
-            init = Bytecode::load(mpy, Q( 21,"__main__"));
+            init = Bytecode::load(mpy, Q(21,"__main__"));
         if (init == nullptr)
             return nullptr;
     }

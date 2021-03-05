@@ -49,7 +49,7 @@ static Lookup::Item const sys_map [] = {
 //CG>
     { Q(176,"ready"), Stacklet::ready },
     { Q(177,"modules"), Module::loaded },
-    { Q( 63,"builtins"), Module::builtins },
+    { Q(63,"builtins"), Module::builtins },
     { Q(178,"implementation"), Q(179,"monty") },
 #ifdef VERSION
     { Q(180,"version"), VERSION },
