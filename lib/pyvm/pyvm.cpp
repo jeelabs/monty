@@ -572,7 +572,7 @@ struct PyVM : Stacklet {
     }
     //CG1 op o
     void opSetupWith (int arg) {
-        auto exit = Q(13,"__exit__");
+        auto exit = Q(0,"__exit__");
         _sp[1] = {};
         *_sp = _sp->obj().attr(exit, _sp[1]);
         if (_sp->isNil()) {
@@ -580,7 +580,7 @@ struct PyVM : Stacklet {
             return;
         }
 
-        auto entry = Q(12,"__enter__");
+        auto entry = Q(0,"__enter__");
         _sp[2] = _sp[1]->attr(entry, _sp[3]);
         if (_sp->isNil()) {
             _sp[2] = {E::AttributeError, entry};
@@ -830,353 +830,10 @@ struct PyVM : Stacklet {
             instructionTrace();
             switch ((Op) *_ip++) {
 
-                //CG< op-emit d
-                case Op::LoadNull:
-                    opLoadNull();
-                    break;
-                case Op::LoadConstNone:
-                    opLoadConstNone();
-                    break;
-                case Op::LoadConstFalse:
-                    opLoadConstFalse();
-                    break;
-                case Op::LoadConstTrue:
-                    opLoadConstTrue();
-                    break;
-                case Op::LoadConstString: {
-                    Q arg = fetchQ();
-                    opLoadConstString(arg);
-                    break;
-                }
-                case Op::LoadConstSmallInt:
-                    opLoadConstSmallInt();
-                    break;
-                case Op::LoadConstObj: {
-                    int arg = fetchV();
-                    opLoadConstObj(arg);
-                    break;
-                }
-                case Op::LoadFastN: {
-                    int arg = fetchV();
-                    opLoadFastN(arg);
-                    break;
-                }
-                case Op::StoreFastN: {
-                    int arg = fetchV();
-                    opStoreFastN(arg);
-                    break;
-                }
-                case Op::DeleteFast: {
-                    int arg = fetchV();
-                    opDeleteFast(arg);
-                    break;
-                }
-                case Op::DupTop:
-                    opDupTop();
-                    break;
-                case Op::DupTopTwo:
-                    opDupTopTwo();
-                    break;
-                case Op::PopTop:
-                    opPopTop();
-                    break;
-                case Op::RotTwo:
-                    opRotTwo();
-                    break;
-                case Op::RotThree:
-                    opRotThree();
-                    break;
-                case Op::Jump: {
-                    int arg = fetchO()-0x8000;
-                    opJump(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::PopJumpIfFalse: {
-                    int arg = fetchO()-0x8000;
-                    opPopJumpIfFalse(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::JumpIfFalseOrPop: {
-                    int arg = fetchO()-0x8000;
-                    opJumpIfFalseOrPop(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::PopJumpIfTrue: {
-                    int arg = fetchO()-0x8000;
-                    opPopJumpIfTrue(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::JumpIfTrueOrPop: {
-                    int arg = fetchO()-0x8000;
-                    opJumpIfTrueOrPop(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::LoadName: {
-                    Q arg = fetchQ();
-                    opLoadName(arg);
-                    break;
-                }
-                case Op::StoreName: {
-                    Q arg = fetchQ();
-                    opStoreName(arg);
-                    break;
-                }
-                case Op::DeleteName: {
-                    Q arg = fetchQ();
-                    opDeleteName(arg);
-                    break;
-                }
-                case Op::LoadGlobal: {
-                    Q arg = fetchQ();
-                    opLoadGlobal(arg);
-                    break;
-                }
-                case Op::StoreGlobal: {
-                    Q arg = fetchQ();
-                    opStoreGlobal(arg);
-                    break;
-                }
-                case Op::DeleteGlobal: {
-                    Q arg = fetchQ();
-                    opDeleteGlobal(arg);
-                    break;
-                }
-                case Op::LoadAttr: {
-                    Q arg = fetchQ();
-                    opLoadAttr(arg);
-                    break;
-                }
-                case Op::StoreAttr: {
-                    Q arg = fetchQ();
-                    opStoreAttr(arg);
-                    break;
-                }
-                case Op::LoadSubscr:
-                    opLoadSubscr();
-                    break;
-                case Op::StoreSubscr:
-                    opStoreSubscr();
-                    break;
-                case Op::BuildSlice: {
-                    int arg = fetchV();
-                    opBuildSlice(arg);
-                    break;
-                }
-                case Op::BuildTuple: {
-                    int arg = fetchV();
-                    opBuildTuple(arg);
-                    break;
-                }
-                case Op::BuildList: {
-                    int arg = fetchV();
-                    opBuildList(arg);
-                    break;
-                }
-                case Op::BuildSet: {
-                    int arg = fetchV();
-                    opBuildSet(arg);
-                    break;
-                }
-                case Op::BuildMap: {
-                    int arg = fetchV();
-                    opBuildMap(arg);
-                    break;
-                }
-                case Op::StoreMap:
-                    opStoreMap();
-                    break;
-                case Op::StoreComp: {
-                    int arg = fetchV();
-                    opStoreComp(arg);
-                    break;
-                }
-                case Op::UnpackSequence: {
-                    int arg = fetchV();
-                    opUnpackSequence(arg);
-                    break;
-                }
-                case Op::UnpackEx: {
-                    int arg = fetchV();
-                    opUnpackEx(arg);
-                    break;
-                }
-                case Op::SetupExcept: {
-                    int arg = fetchO();
-                    opSetupExcept(arg);
-                    break;
-                }
-                case Op::SetupFinally: {
-                    int arg = fetchO();
-                    opSetupFinally(arg);
-                    break;
-                }
-                case Op::EndFinally:
-                    opEndFinally();
-                    break;
-                case Op::SetupWith: {
-                    int arg = fetchO();
-                    opSetupWith(arg);
-                    break;
-                }
-                case Op::WithCleanup:
-                    opWithCleanup();
-                    break;
-                case Op::PopExceptJump: {
-                    int arg = fetchO();
-                    opPopExceptJump(arg);
-                    break;
-                }
-                case Op::RaiseLast:
-                    opRaiseLast();
-                    break;
-                case Op::RaiseObj:
-                    opRaiseObj();
-                    break;
-                case Op::RaiseFrom:
-                    opRaiseFrom();
-                    break;
-                case Op::UnwindJump: {
-                    int arg = fetchO()-0x8000;
-                    opUnwindJump(arg);
-                    loopCheck(arg);
-                    break;
-                }
-                case Op::LoadBuildClass:
-                    opLoadBuildClass();
-                    break;
-                case Op::LoadMethod: {
-                    Q arg = fetchQ();
-                    opLoadMethod(arg);
-                    break;
-                }
-                case Op::LoadSuperMethod: {
-                    Q arg = fetchQ();
-                    opLoadSuperMethod(arg);
-                    break;
-                }
-                case Op::CallMethod: {
-                    int arg = fetchV();
-                    opCallMethod(arg);
-                    break;
-                }
-                case Op::CallMethodVarKw: {
-                    int arg = fetchV();
-                    opCallMethodVarKw(arg);
-                    break;
-                }
-                case Op::MakeFunction: {
-                    int arg = fetchV();
-                    opMakeFunction(arg);
-                    break;
-                }
-                case Op::MakeFunctionDefargs: {
-                    int arg = fetchV();
-                    opMakeFunctionDefargs(arg);
-                    break;
-                }
-                case Op::CallFunction: {
-                    int arg = fetchV();
-                    opCallFunction(arg);
-                    break;
-                }
-                case Op::CallFunctionVarKw: {
-                    int arg = fetchV();
-                    opCallFunctionVarKw(arg);
-                    break;
-                }
-                case Op::MakeClosure: {
-                    int arg = fetchV();
-                    opMakeClosure(arg);
-                    break;
-                }
-                case Op::MakeClosureDefargs: {
-                    int arg = fetchV();
-                    opMakeClosureDefargs(arg);
-                    break;
-                }
-                case Op::LoadDeref: {
-                    int arg = fetchV();
-                    opLoadDeref(arg);
-                    break;
-                }
-                case Op::StoreDeref: {
-                    int arg = fetchV();
-                    opStoreDeref(arg);
-                    break;
-                }
-                case Op::DeleteDeref: {
-                    int arg = fetchV();
-                    opDeleteDeref(arg);
-                    break;
-                }
-                case Op::YieldValue:
-                    opYieldValue();
-                    break;
-                case Op::YieldFrom:
-                    opYieldFrom();
-                    break;
-                case Op::ReturnValue:
-                    opReturnValue();
-                    break;
-                case Op::GetIter:
-                    opGetIter();
-                    break;
-                case Op::GetIterStack:
-                    opGetIterStack();
-                    break;
-                case Op::ForIter: {
-                    int arg = fetchO();
-                    opForIter(arg);
-                    break;
-                }
-                case Op::ImportName: {
-                    Q arg = fetchQ();
-                    opImportName(arg);
-                    break;
-                }
-                case Op::ImportFrom: {
-                    Q arg = fetchQ();
-                    opImportFrom(arg);
-                    break;
-                }
-                case Op::ImportStar:
-                    opImportStar();
-                    break;
-                //CG>
+                //CG: op-emit d
 
                 default: {
-                    //CG< op-emit m
-                    if ((uint32_t) (_ip[-1] - Op::LoadConstSmallIntMulti) < 64) {
-                        uint32_t arg = _ip[-1] - Op::LoadConstSmallIntMulti;
-                        opLoadConstSmallIntMulti(arg);
-                        break;
-                    }
-                    if ((uint32_t) (_ip[-1] - Op::LoadFastMulti) < 16) {
-                        uint32_t arg = _ip[-1] - Op::LoadFastMulti;
-                        opLoadFastMulti(arg);
-                        break;
-                    }
-                    if ((uint32_t) (_ip[-1] - Op::StoreFastMulti) < 16) {
-                        uint32_t arg = _ip[-1] - Op::StoreFastMulti;
-                        opStoreFastMulti(arg);
-                        break;
-                    }
-                    if ((uint32_t) (_ip[-1] - Op::UnaryOpMulti) < 7) {
-                        uint32_t arg = _ip[-1] - Op::UnaryOpMulti;
-                        opUnaryOpMulti(arg);
-                        break;
-                    }
-                    if ((uint32_t) (_ip[-1] - Op::BinaryOpMulti) < 35) {
-                        uint32_t arg = _ip[-1] - Op::BinaryOpMulti;
-                        opBinaryOpMulti(arg);
-                        break;
-                    }
-                    //CG>
+                    //CG: op-emit m
                     assert(false);
                 }
             }
@@ -1424,32 +1081,24 @@ auto Callable::call (ArgVec const& args) const -> Value {
     return ctx->argSetup(args);
 }
 
-Type  Bytecode::info (Q(180,"<bytecode>"));
-Type  Callable::info (Q(181,"<callable>"));
-Type      Cell::info (Q(182,"<cell>"));
-Type BoundMeth::info (Q(183,"<boundmeth>"));
-Type   Closure::info (Q(184,"<closure>"));
+Type  Bytecode::info (Q(0,"<bytecode>"));
+Type  Callable::info (Q(0,"<callable>"));
+Type      Cell::info (Q(0,"<cell>"));
+Type BoundMeth::info (Q(0,"<boundmeth>"));
+Type   Closure::info (Q(0,"<closure>"));
 
-//CG< wrappers PyVM
-static auto const m_pyvm_send = Method::wrap(&PyVM::send);
-static Method const mo_pyvm_send (m_pyvm_send);
+//CG: wrappers PyVM
 
-static Lookup::Item const pyvm_map [] = {
-    { Q(138,"send"), mo_pyvm_send },
-};
-Lookup const PyVM::attrs (pyvm_map);
-//CG>
-
-Type PyVM::info (Q(185,"<pyvm>"), &PyVM::attrs);
+Type PyVM::info (Q(0,"<pyvm>"), &PyVM::attrs);
 
 auto monty::vmLaunch (void const* data) -> Stacklet* {
     if (data == nullptr)
         return nullptr;
-    auto init = Bytecode::load(data, Q(21,"__main__"));
+    auto init = Bytecode::load(data, Q(0,"__main__"));
     if (init == nullptr) {
         auto mpy = vmImport((char const*) data);
         if (mpy != nullptr)
-            init = Bytecode::load(mpy, Q(21,"__main__"));
+            init = Bytecode::load(mpy, Q(0,"__main__"));
         if (init == nullptr)
             return nullptr;
     }

@@ -14,7 +14,7 @@ Value const monty::Null  {None::noneObj};
 Value const monty::False {Bool::falseObj};
 Value const monty::True  {Bool::trueObj};
 
-Type const Object::info (Q(166,"<object>"));
+Type const Object::info (Q(0,"<object>"));
 
 Lookup const Bool::attrs;
 Lookup const Int::attrs;

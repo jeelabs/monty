@@ -55,22 +55,12 @@ static auto f_ticker (ArgVec const& args) -> Value {
 
 //CG1 bind ticks
 static auto f_ticks (ArgVec const& args) -> Value {
-    //CG2 args
-    auto ainfo = args.parse("");
-    if (ainfo.isObj()) return ainfo;
+    //CG: args
     return msNow();
 }
 
-//CG< wrappers
-static Function const fo_ticker (f_ticker);
-static Function const fo_ticks (f_ticks);
-
+//CG1 wrappers
 static Lookup::Item const machine_map [] = {
-    { Q(204,"ticker"), fo_ticker },
-    { Q(205,"ticks"), fo_ticks },
-//CG>
 };
 
-//CG2 module-end
-static Lookup const machine_attrs (machine_map);
-Module ext_machine (Q(206,"machine"), machine_attrs);
+//CG: module-end
