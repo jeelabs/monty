@@ -227,7 +227,7 @@ def health(c):
     #c.run("which micropython || echo NOT FOUND: micropython")
     fn = ".git/hooks/pre-commit"
     if not os.path.isfile(fn):
-        print('creating pre-commit hook in "%s" for codegen strip check' % fn)
+        print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
         with open(fn, "w") as f:
             f.write(preCommitScript)
         os.chmod(fn, 0o755)
