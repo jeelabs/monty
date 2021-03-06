@@ -69,16 +69,6 @@ def shortTestOutput(r):
         if line:
             print(line)
 
-@task(help={"filter": 'filter tests by name (default: "*")'})
-def test(c, filter='*'):
-    """run C++ tests natively"""
-    try:
-        r = c.run('pio test -e native -f "%s"' % filter, hide='stdout', pty=True)
-    except Exception as e:
-        print(e.result.stdout)
-    else:
-        shortTestOutput(r)
-
 @task(generate, iterable=["ignore"],
       help={"tests": "specific tests to run, comma-separated",
             "ignore": "one specific test to ignore"})
@@ -131,6 +121,16 @@ def python(c, ignore, tests=""):
               f"{fail} failures, {skip} skipped, {len(ignore)} ignored")
     if num != match:
         c.run("exit 1") # yuck, force an error ...
+
+@task(generate, help={"filter": 'filter tests by name (default: "*")'})
+def test(c, filter='*'):
+    """run C++ tests natively"""
+    try:
+        r = c.run('pio test -e native -f "%s"' % filter, hide='stdout', pty=True)
+    except Exception as e:
+        print(e.result.stdout)
+    else:
+        shortTestOutput(r)
 
 @task(generate)
 def flash(c):
