@@ -373,6 +373,8 @@ namespace monty {
         auto end () const -> Value const* { return begin() + size(); }
         auto operator[] (uint32_t i) const -> Value& { return _vec[_off+i]; }
 
+        auto parse (char const*, ...) const -> Value; // defined in type.cpp
+
         auto kwNum () const -> uint8_t { return _num >> 8; }
         auto kwKey (int i) const -> Value { return begin()[size()+2*i]; }
         auto kwVal (int i) const -> Value { return begin()[size()+2*i+1]; }

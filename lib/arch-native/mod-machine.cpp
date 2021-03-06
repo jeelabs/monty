@@ -37,6 +37,7 @@ void timerHook () {
 
 //CG1 bind ticker
 static auto f_ticker (ArgVec const& args) -> Value {
+    // TODO optional args
     if (args.size() > 0) {
         assert(args.size() == 1 && args[0].isInt());
         ms = args[0];
@@ -54,7 +55,10 @@ static auto f_ticker (ArgVec const& args) -> Value {
 
 //CG1 bind ticks
 static auto f_ticks (ArgVec const& args) -> Value {
-    assert(args.size() == 0);
+    //CG2 args
+    auto ainfo = args.parse("");
+    if (ainfo.isObj()) return ainfo;
+
     return msNow();
 }
 
@@ -63,11 +67,11 @@ static Function const fo_ticker (f_ticker);
 static Function const fo_ticks (f_ticks);
 
 static Lookup::Item const machine_map [] = {
-    { Q(200,"ticker"), fo_ticker },
-    { Q(201,"ticks"), fo_ticks },
+    { Q(204,"ticker"), fo_ticker },
+    { Q(205,"ticks"), fo_ticks },
 //CG>
 };
 
 //CG2 module-end
 static Lookup const machine_attrs (machine_map);
-Module ext_machine (Q(202,"machine"), machine_attrs);
+Module ext_machine (Q(206,"machine"), machine_attrs);

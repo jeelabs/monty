@@ -8,9 +8,34 @@
 
 using namespace monty;
 
+//CG1 bind argtest
+static auto f_argtest (ArgVec const& args) -> Value {
+    //CG< args a1 a2 a3:o a4:i a5 a6:s a7:s a8
+    Value a1, a2, a5, a8;
+    Object *a3;
+    int a4;
+    char const *a6, *a7;
+    auto ainfo = args.parse("vvoivssv",&a1,&a2,&a3,&a4,&a5,&a6,&a7,&a8);
+    if (ainfo.isObj()) return ainfo;
+    //CG>
+    //CG< kwargs foo bar baz
+    Value foo, bar, baz;
+    for (int i = 0; i < args.kwNum(); ++i) {
+        auto k = args.kwKey(i), v = args.kwVal(i);
+        switch (k.asQid()) {
+            case Q(186,"foo"): foo = v; break;
+            case Q(187,"bar"): bar = v; break;
+            case Q(188,"baz"): baz = v; break;
+            default: return {E::TypeError, "unknown option", k};
+        }
+    }
+    //CG>
+    return a1.id()+a2.id()+a5.id()+a8.id()+(int)(uintptr_t)a3+a4+*a6+*a7;
+}
+
 //CG1 bind print
 static auto f_print (ArgVec const& args) -> Value {
-    //CG< kwopts end sep
+    //CG< kwargs end sep
     Value end, sep;
     for (int i = 0; i < args.kwNum(); ++i) {
         auto k = args.kwKey(i), v = args.kwVal(i);
@@ -21,6 +46,7 @@ static auto f_print (ArgVec const& args) -> Value {
         }
     }
     //CG>
+
     Buffer buf;
     for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
@@ -55,54 +81,81 @@ static auto f_print (ArgVec const& args) -> Value {
 
 //CG1 bind iter
 static auto f_iter (ArgVec const& args) -> Value {
-    assert(args.size() == 1 && args[0].isObj());
-    auto v = args[0]->iter();
+    //CG3 args obj:o
+    Object *obj;
+    auto ainfo = args.parse("o",&obj);
+    if (ainfo.isObj()) return ainfo;
+
+    auto v = obj->iter();
     return v.isObj() ? v : new Iterator (args[0], 0);
 }
 
 //CG1 bind next
 static auto f_next (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    auto v = args[0]->next();
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
+
+    auto v = arg->next();
     return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
 
 //CG1 bind len
 static auto f_len (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    return args[0].isStr() ? strlen(args[0]) : args[0]->len();
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
+
+    return arg.isStr() ? strlen(arg) : arg->len();
 }
 
 //CG1 bind abs
 static auto f_abs (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    return args[0].unOp(UnOp::Abso);
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
+
+    return arg.unOp(UnOp::Abso);
 }
 
 //CG1 bind hash
 static auto f_hash (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    return args[0].unOp(UnOp::Hash);
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
+
+    return arg.unOp(UnOp::Hash);
 }
 
 //CG1 bind id
 static auto f_id (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    return args[0].id();
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
+
+    return arg.id();
 }
 
 //CG1 bind dir
 static auto f_dir (ArgVec const& args) -> Value {
-    assert(args.size() == 1);
-    auto r = new Set;
+    //CG3 args arg
+    Value arg;
+    auto ainfo = args.parse("v",&arg);
+    if (ainfo.isObj()) return ainfo;
 
-    Object const* obj = &args[0].asObj();
+    Object const* obj = &arg.asObj();
     if (obj != &Module::builtins &&
             obj != &Module::loaded &&
             &obj->type() != &Type::info &&
             &obj->type() != &Module::info)
         obj = &obj->type();
 
+    auto r = new Set;
     do {
         if (obj != &Module::builtins && obj != &Module::loaded)
             for (auto e : *(Dict const*) obj)
@@ -113,12 +166,11 @@ static auto f_dir (ArgVec const& args) -> Value {
             case Q(158,"type")._id:
             case Q(75,"dict")._id:
                 obj = ((Dict const*) obj)->_chain; break;
-            case Q(196,"<lookup>"): 
+            case Q(199,"<lookup>"): 
                 obj = ((Lookup const*) obj)->attrDir(r); break;
             default: obj = nullptr;
         }
     } while (obj != nullptr);
-
     return r;
 }
 
@@ -234,6 +286,7 @@ Lookup const Exception::bases (exceptionMap);
 
 //CG< wrappers
 static Function const fo_abs (f_abs);
+static Function const fo_argtest (f_argtest);
 static Function const fo_dir (f_dir);
 static Function const fo_hash (f_hash);
 static Function const fo_id (f_id);
@@ -270,7 +323,7 @@ static Method const mo_event_wait (m_event_wait);
 static Lookup::Item const event_map [] = {
     { Q(70,"clear"), mo_event_clear },
     { Q(140,"set"), mo_event_set },
-    { Q(186,"wait"), mo_event_wait },
+    { Q(189,"wait"), mo_event_wait },
 };
 Lookup const Event::attrs (event_map);
 
@@ -278,7 +331,7 @@ static auto const m_exception_trace = Method::wrap(&Exception::trace);
 static Method const mo_exception_trace (m_exception_trace);
 
 static Lookup::Item const exception_map [] = {
-    { Q(187,"trace"), mo_exception_trace },
+    { Q(190,"trace"), mo_exception_trace },
 };
 Lookup const Exception::attrs (exception_map);
 
@@ -324,30 +377,32 @@ static Lookup::Item const builtinsMap [] = {
     { Q(167,"UnicodeError"),        fo_UnicodeError },
     //CG>
     //CG< type-builtin
-    { Q(188,"array"), Array::info },
+    { Q(191,"array"), Array::info },
     { Q(62,"bool"),   Bool::info },
     { Q(66,"bytes"),  Bytes::info },
-    { Q(189,"class"), Class::info },
+    { Q(192,"class"), Class::info },
     { Q(75,"dict"),   Dict::info },
-    { Q(190,"event"), Event::info },
+    { Q(193,"event"), Event::info },
     { Q(94,"int"),    Int::info },
     { Q(108,"list"),  List::info },
     { Q(124,"range"), Range::info },
     { Q(140,"set"),   Set::info },
-    { Q(191,"slice"), Slice::info },
+    { Q(194,"slice"), Slice::info },
     { Q(151,"str"),   Str::info },
     { Q(154,"super"), Super::info },
     { Q(157,"tuple"), Tuple::info },
     { Q(158,"type"),  Type::info },
     //CG>
-    { Q(57,"abs"),    fo_abs },
-    { Q(76,"dir"),    fo_dir },
-    { Q(90,"hash"),   fo_hash },
-    { Q(91,"id"),     fo_id },
-    { Q(103,"iter"),  fo_iter },
-    { Q(107,"len"),   fo_len },
-    { Q(116,"next"),  fo_next },
-    { Q(123,"print"), fo_print },
+    // TODO these should also be auto-inserted
+    { Q(57,"abs"),      fo_abs },
+    { Q(203,"argtest"), fo_argtest },
+    { Q(76,"dir"),      fo_dir },
+    { Q(90,"hash"),     fo_hash },
+    { Q(91,"id"),       fo_id },
+    { Q(103,"iter"),    fo_iter },
+    { Q(107,"len"),     fo_len },
+    { Q(116,"next"),    fo_next },
+    { Q(123,"print"),   fo_print },
 };
 
 static Lookup const builtins_attrs (builtinsMap);
@@ -430,27 +485,27 @@ void Exception::repr (Buffer& buf) const {
 }
 
 //CG< type-info
-Type    Buffer::info (Q(192,"<buffer>"));
-Type Exception::info (Q(193,"<exception>"));
-Type  Function::info (Q(194,"<function>"));
-Type  Iterator::info (Q(195,"<iterator>"));
-Type    Lookup::info (Q(196,"<lookup>"));
-Type    Method::info (Q(197,"<method>"));
+Type    Buffer::info (Q(195,"<buffer>"));
+Type Exception::info (Q(196,"<exception>"));
+Type  Function::info (Q(197,"<function>"));
+Type  Iterator::info (Q(198,"<iterator>"));
+Type    Lookup::info (Q(199,"<lookup>"));
+Type    Method::info (Q(200,"<method>"));
 Type    Module::info (Q(7,"<module>"));
-Type      None::info (Q(198,"<none>"));
-Type  Stacklet::info (Q(199,"<stacklet>"));
+Type      None::info (Q(201,"<none>"));
+Type  Stacklet::info (Q(202,"<stacklet>"));
 
-Type     Array::info (Q(188,"array"), &Array::attrs, Array::create);
+Type     Array::info (Q(191,"array"), &Array::attrs, Array::create);
 Type      Bool::info (Q(62,"bool"),    &Bool::attrs,  Bool::create);
 Type     Bytes::info (Q(66,"bytes"),  &Bytes::attrs, Bytes::create);
-Type     Class::info (Q(189,"class"), &Class::attrs, Class::create);
+Type     Class::info (Q(192,"class"), &Class::attrs, Class::create);
 Type      Dict::info (Q(75,"dict"),    &Dict::attrs,  Dict::create);
-Type     Event::info (Q(190,"event"), &Event::attrs, Event::create);
+Type     Event::info (Q(193,"event"), &Event::attrs, Event::create);
 Type       Int::info (Q(94,"int"),      &Int::attrs,   Int::create);
 Type      List::info (Q(108,"list"),   &List::attrs,  List::create);
 Type     Range::info (Q(124,"range"), &Range::attrs, Range::create);
 Type       Set::info (Q(140,"set"),     &Set::attrs,   Set::create);
-Type     Slice::info (Q(191,"slice"), &Slice::attrs, Slice::create);
+Type     Slice::info (Q(194,"slice"), &Slice::attrs, Slice::create);
 Type       Str::info (Q(151,"str"),     &Str::attrs,   Str::create);
 Type     Super::info (Q(154,"super"), &Super::attrs, Super::create);
 Type     Tuple::info (Q(157,"tuple"), &Tuple::attrs, Tuple::create);

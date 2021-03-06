@@ -25,6 +25,34 @@ void monty::markVec (Vector const& vec) {
         e.marker();
 }
 
+auto ArgVec::parse (char const* desc, ...) const -> Value {
+    auto args = begin();
+
+    va_list ap;
+    va_start(ap, desc);
+    for (int i = 0; desc[i] != 0; ++i) {
+        if (i >= size())
+            return {E::TypeError, "need more args", (int) strlen(desc)};
+
+        auto a = *args++;
+        assert(a.isOk()); // args can't be nil ("None" is fine)
+        switch (desc[i]) {
+            case 'i': { auto p = va_arg(ap, int*); *p = a; break; }
+            case 'o': { auto p = va_arg(ap, Object**); *p = &a.asObj(); break; }
+            case 's': { auto p = va_arg(ap, char const**); *p = a; break; }
+            case 'v': { auto p = va_arg(ap, Value*); *p = a; break; }
+            default:  assert(false);
+        }
+    }
+    va_end(ap);
+
+    if (args > end())
+        return {E::TypeError, "too many args", args-end()};
+
+    return 0;
+}
+
+
 static void putcEsc (Buffer& buf, char const* fmt, uint8_t ch) {
     buf.putc('\\');
     switch (ch) {

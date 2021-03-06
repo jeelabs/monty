@@ -10,7 +10,7 @@ id 366
 <class A> {}
 <A object at {ADDR}> {"__name__","__bases__","__module__","__qualname__","v","m"}
 <module 'sys'> {"gc","gcmax","gcstats","ready","modules","builtins","implementation","version"}
-{"abc":123} {"array","bool","bytes","class","dict","event","int","list","range","set","slice","str","super","tuple","type","abs","dir","hash","id","iter","len","next","print"}
+{"abc":123} {"array","bool","bytes","class","dict","event","int","list","range","set","slice","str","super","tuple","type","abs","argtest","dir","hash","id","iter","len","next","print"}
 {"abc":123}
 12345
 {"abc":12345}

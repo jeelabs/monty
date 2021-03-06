@@ -28,7 +28,6 @@ int main () {
     SIZEOF(Lookup)
     SIZEOF(Lookup::Item)
     SIZEOF(Method)
-    SIZEOF(Method::Base)
     SIZEOF(Module)
     SIZEOF(None)
     SIZEOF(Object)

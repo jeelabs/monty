@@ -9,20 +9,29 @@ using namespace monty;
 
 //CG1 bind gc
 static auto f_gc (ArgVec const& args) -> Value {
-    assert(args.size() == 0);
+    //CG2 args
+    auto ainfo = args.parse("");
+    if (ainfo.isObj()) return ainfo;
+
     Stacklet::gcAll();
     return {};
 }
 
 //CG1 bind gcmax
 static auto f_gcmax (ArgVec const& args) -> Value {
-    assert(args.size() == 0);
+    //CG2 args
+    auto ainfo = args.parse("");
+    if (ainfo.isObj()) return ainfo;
+
     return gcMax();
 }
 
 //CG1 bind gcstats
 static auto f_gcstats (ArgVec const& args) -> Value {
-    assert(args.size() == 0);
+    //CG2 args
+    auto ainfo = args.parse("");
+    if (ainfo.isObj()) return ainfo;
+
     auto data = new List;
     for (auto e : gcStats.v)
         data->append(e);

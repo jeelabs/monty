@@ -19,8 +19,30 @@ funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
 dirs  = {}          # map of scanned dirnames to path, see IF
 
+# generate positional arg checks and conversions
+def ARGS(block, *arg):
+    out, names, types, decls = [], [], [], {}
+    for a in arg:
+        n, t = (a + ":v").split(":")[:2]
+        names.append(n)
+        types.append(t or "v")
+        if t not in decls:
+            decls[t] = []
+        decls[t].append(n)
+    tmap = {"v":"Value", "i":"int", "o":"Object", "s":"char const"}
+    for t in decls:
+        m = tmap[t]
+        if t in "os":
+            out += ["%s *%s;" % (m, ", *".join(decls[t]))]
+        else:
+            out += ["%s %s;" % (m, ", ".join(decls[t]))]
+    params = ",&".join([""] + names)
+    out += ['auto ainfo = args.parse("%s"%s);' % ("".join(types), params),
+            "if (ainfo.isObj()) return ainfo;"]
+    return out
+
 # generate option parsing code, i.e. keyword args
-def KWOPTS(block, *arg):
+def KWARGS(block, *arg):
     out = ["Value %s;" % ", ".join(arg),
            "for (int i = 0; i < args.kwNum(); ++i) {",
            "    auto k = args.kwKey(i), v = args.kwVal(i);",
@@ -443,7 +465,7 @@ def OPCODES(block, fname):
     return ['%-22s = 0x%02X,' % (k, v) for v, k in defs]
 
 # used to test codegen parameter handling
-def ARGS(block, *args, **kwargs):
+def PARAMS(block, *args, **kwargs):
     out = []
     if args: out.append('// %s' % repr(args))
     if kwargs: out.append('// %s' % repr(kwargs))
