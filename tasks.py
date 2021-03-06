@@ -212,11 +212,8 @@ def watch(c, file, remote=False):
         c.run("src/watcher.py %s" % file, pty=True)
 
 preCommitScript = """#!/bin/sh
-if ! grep -q '"<stripped>"' lib/monty/monty.h
-then
-    echo "can't commit expanded code, please run: inv generate -s"
-    exit 1
-fi
+inv generate -s
+git add -u .
 """
 
 @task
