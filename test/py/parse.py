@@ -19,3 +19,22 @@ try:
 except Exception as e:
     print(e, e.trace())
 
+print(10, argtest("",[],1,2,3))
+print(11, argtest("",[],1,2,3,"abc"))
+print(12, argtest("",[],1,2,3,"abc","def"))
+print(13, argtest("",[],1,2,3,"abc","def",6))
+print(14, argtest("",[],1,2,3,"abc","def",6,7))
+print(15, argtest("",[],1,2,3,"abc","def",6,7,8))
+
+print(20, argtest(9,[],1,2,3))
+print(21, argtest(9,[],1,2,3,"abc"))
+print(22, argtest(9,[],1,2,3,"abc","def"))
+print(23, argtest(9,[],1,2,3,"abc","def",6))
+print(24, argtest(9,[],1,2,3,"abc","def",6,7))
+print(25, argtest(9,[],1,2,3,"abc","def",6,7,8))
+
+import machine
+try:
+    machine.ticks(1)
+except Exception as e:
+    print(e, e.trace())

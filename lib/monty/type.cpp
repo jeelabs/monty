@@ -32,12 +32,12 @@ auto ArgVec::parse (char const* desc, ...) const -> Value {
     va_list ap;
     va_start(ap, desc);
     for (int i = 0; desc[i] != 0; ++i) {
-        if (desc[i] == '?') { // following args are optional
-            optSkip = 1;
-            continue;
+        switch (desc[i]) {
+            case '?': optSkip = 1; continue; // following args are optional
+            case '*': return end()-args;     // extra args are ok
         }
 
-        if (i - optSkip >= size()) { // ran out of values
+        if (i-optSkip >= size()) { // ran out of values
             if (optSkip == 0)
                 return {E::TypeError, "need more args", i};
 
@@ -48,23 +48,24 @@ auto ArgVec::parse (char const* desc, ...) const -> Value {
                 case 'v': { auto p = va_arg(ap, Value*); *p = {}; break; }
                 default:  assert(false);
             }
-            continue;
+        } else {
+            auto a = *args;
+            assert(a.isOk()); // args can't be nil ("None" is fine)
+            switch (desc[i]) {
+                case 'i': { auto p = va_arg(ap, int*); *p = a; break; }
+                case 'o': { auto p = va_arg(ap, Object**); *p = &a.asObj(); break; }
+                case 's': { auto p = va_arg(ap, char const**); *p = a; break; }
+                case 'v': { auto p = va_arg(ap, Value*); *p = a; break; }
+                default:  assert(false);
+            }
         }
 
-        auto a = *args++;
-        assert(a.isOk()); // args can't be nil ("None" is fine)
-        switch (desc[i]) {
-            case 'i': { auto p = va_arg(ap, int*); *p = a; break; }
-            case 'o': { auto p = va_arg(ap, Object**); *p = &a.asObj(); break; }
-            case 's': { auto p = va_arg(ap, char const**); *p = a; break; }
-            case 'v': { auto p = va_arg(ap, Value*); *p = a; break; }
-            default:  assert(false);
-        }
+        ++args;
     }
     va_end(ap);
 
-    if (args > end())
-        return {E::TypeError, "too many args", args-end()};
+    if (args < end())
+        return {E::TypeError, "too many args", end()-args};
 
     return 0;
 }

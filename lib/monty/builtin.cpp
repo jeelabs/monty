@@ -10,8 +10,10 @@ using namespace monty;
 
 //CG1 bind argtest
 static auto f_argtest (ArgVec const& args) -> Value {
-    //CG: args a1 a2 a3:o a4:i ? a5 a6:s a7:s a8
+    //CG: args a1 a2 a3:o a4:i ? a5 a6:s a7:s a8 *
     //CG: kwargs foo bar baz
+    if (a1.isInt()) // special, returns parse result: N<0 = missing, N>0 = extra
+        return ainfo;
     auto n = a1.id()+a2.id()+a5.id()+a8.id()+(int)(uintptr_t)a3+a4;
     return n + (a6 != nullptr ? *a6 : 0) + (a7 != nullptr ? *a7 : 0);
 }
