@@ -65,7 +65,7 @@ auto ArgVec::parse (char const* desc, ...) const -> Value {
     va_end(ap);
 
     if (args < end())
-        return {E::TypeError, "too many args", end()-args};
+        return {E::TypeError, "too many args", (int) (end()-args)};
 
     return 0;
 }
