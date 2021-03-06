@@ -365,7 +365,6 @@ struct PyVM : Stacklet {
     void opDeleteFast (int arg) {
         fastSlot(arg) = {};
     }
-
     //CG1 op
     void opDupTop () {
         ++_sp; _sp[0] = _sp[-1];
@@ -386,7 +385,6 @@ struct PyVM : Stacklet {
     void opRotThree () {
         auto v = _sp[0]; _sp[0] = _sp[-1]; _sp[-1] = _sp[-2]; _sp[-2] = v;
     }
-
     //CG1 op s
     void opJump (int arg) {
         _ip += arg;
@@ -417,7 +415,6 @@ struct PyVM : Stacklet {
         else
             --_sp;
     }
-
     //CG1 op q
     void opLoadName (Q arg) {
         *++_sp = frame().locals->getAt(arg);
@@ -481,7 +478,6 @@ struct PyVM : Stacklet {
         _sp->obj().setAt(_sp[1], _sp[-1]);
         _sp -= 2;
     }
-
     //CG1 op v
     void opBuildSlice (int arg) {
         _sp -= arg - 1;
@@ -545,7 +541,6 @@ struct PyVM : Stacklet {
             _sp += left + right;
         }
     }
-
     //CG1 op o
     void opSetupExcept (int arg) {
         auto exc = excBase(1);
@@ -599,7 +594,6 @@ struct PyVM : Stacklet {
         _sp[1] = Null;
         _sp[2] = Null;
         _sp -= 2;
-
         wrappedCall(*_sp, {*this, 4, _sp+1});
     }
     //CG1 op o
@@ -626,7 +620,6 @@ struct PyVM : Stacklet {
         frame().ep = ep - *_ip; // TODO hardwired for simplest case
         _ip += arg;
     }
-
     //CG1 op
     void opLoadBuildClass () {
         *++_sp = Class::info;
@@ -684,7 +677,6 @@ struct PyVM : Stacklet {
         _sp -= npos + 2 * nkw + 2;
         wrappedCall(*_sp, {*this, arg+ArgVec::SPREAD, _sp+1});
     }
-
     //CG1 op v
     void opMakeClosure (int arg) {
         int num = *_ip++;
@@ -712,7 +704,6 @@ struct PyVM : Stacklet {
     void opDeleteDeref (int arg) {
         derefSlot(arg) = {};
     }
-
     //CG1 op
     void opYieldValue () {
         resumeCaller(*_sp);
@@ -735,7 +726,6 @@ struct PyVM : Stacklet {
         if (size() > 0)
             *_sp = v;
     }
-
     //CG1 op
     void opGetIter () {
         auto v = _sp->obj().iter();
@@ -759,7 +749,6 @@ struct PyVM : Stacklet {
             _ip += arg;
         }
     }
-
     //CG1 op q
     void opImportName (Q arg) {
         --_sp; // TODO ignore fromlist for now, *_sp level also ignored
@@ -794,7 +783,6 @@ struct PyVM : Stacklet {
         }
         --_sp;
     }
-
     //CG1 op m 64
     void opLoadConstSmallIntMulti (uint32_t arg) {
         *++_sp = arg - 16;

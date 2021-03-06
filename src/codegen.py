@@ -448,13 +448,19 @@ def OP(block, typ='', multi=0):
 
 # parse the py/runtime0.h header
 def BINOPS(block, fname, count):
-    out = []
+    out = [""]
     with open(fname, 'r') as f:
         for line in f:
             line = line.strip()
             if line.startswith('MP_BINARY_OP_'):
-                out.append(line.split()[0][13:].title().replace('_', ''))
-                if len(out) >= count:
+                item = line.split()[0][13:].title().replace('_', '')
+                if len(out[-1]) + len(item) > 70:
+                    out.append("")
+                if out[-1]:
+                    out[-1] += " "
+                out[-1] += item
+                count -= 1
+                if count <= 0:
                     break
     return out
 

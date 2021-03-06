@@ -146,47 +146,16 @@ namespace monty {
         //CG>
     };
 
-    enum UnOp : uint8_t {
-        Pos, Neg, Inv, Not,
-        Boln, Hash, Abso, Intg,
-    };
+    enum UnOp : uint8_t { Pos, Neg, Inv, Not, Boln, Hash, Abso, Intg, };
 
     enum BinOp : uint8_t {
         //CG< binops ../../git/micropython/py/runtime0.h 35
-        Less,
-        More,
-        Equal,
-        LessEqual,
-        MoreEqual,
-        NotEqual,
-        In,
-        Is,
-        ExceptionMatch,
-        InplaceOr,
-        InplaceXor,
-        InplaceAnd,
-        InplaceLshift,
-        InplaceRshift,
-        InplaceAdd,
-        InplaceSubtract,
-        InplaceMultiply,
-        InplaceMatMultiply,
-        InplaceFloorDivide,
-        InplaceTrueDivide,
-        InplaceModulo,
-        InplacePower,
-        Or,
-        Xor,
-        And,
-        Lshift,
-        Rshift,
-        Add,
-        Subtract,
-        Multiply,
-        MatMultiply,
-        FloorDivide,
-        TrueDivide,
-        Modulo,
+        Less, More, Equal, LessEqual, MoreEqual, NotEqual, In, Is,
+        ExceptionMatch, InplaceOr, InplaceXor, InplaceAnd, InplaceLshift,
+        InplaceRshift, InplaceAdd, InplaceSubtract, InplaceMultiply,
+        InplaceMatMultiply, InplaceFloorDivide, InplaceTrueDivide,
+        InplaceModulo, InplacePower, Or, Xor, And, Lshift, Rshift, Add,
+        Subtract, Multiply, MatMultiply, FloorDivide, TrueDivide, Modulo,
         Power,
         //CG>
         Contains,
