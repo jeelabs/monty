@@ -174,7 +174,7 @@ def builds(c):
     c.run("pio run -e noassert | tail -7 | head -1")
     c.run("pio run -e nopyvm | tail -7 | head -1")
 
-@task(call(generate, strip=True))
+@task
 def clean(c):
     """delete all build results"""
     c.run("rm -rf .pio examples/*/.pio test/py/*.mpy")
@@ -228,7 +228,7 @@ def serial(c):
 
 @task(post=[clean, test, call(python, python_skip),
             upload, flash, mrfs, call(runner, runner_skip),
-            builds, examples])
+            builds, examples, call(generate, strip=True)])
 def all(c):
     """i.e. clean test python upload flash mrfs runner builds examples"""
     # make sure the JeeH library is not found locally, i.e. unset this env var
