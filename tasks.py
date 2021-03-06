@@ -211,6 +211,14 @@ def watch(c, file, remote=False):
     else:
         c.run("src/watcher.py %s" % file, pty=True)
 
+preCommitScript = """#!/bin/sh
+if ! grep -q '"<stripped>"' lib/monty/monty.h
+then
+    echo "can't commit expanded code, please run: inv generate -s"
+    exit 1
+fi
+"""
+
 @task
 def health(c):
     """verify proper toolchain setup"""
@@ -220,6 +228,12 @@ def health(c):
     c.run("pio --version")
     c.run("mpy-cross --version")
     #c.run("which micropython || echo NOT FOUND: micropython")
+    fn = ".git/hooks/pre-commit"
+    if not os.path.isfile(fn):
+        print('creating pre-commit hook in "%s" for codegen strip check' % fn)
+        with open(fn, "w") as f:
+            f.write(preCommitScript)
+        os.chmod(fn, 0o755)
 
 @task
 def serial(c):
