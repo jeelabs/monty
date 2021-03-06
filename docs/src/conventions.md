@@ -11,10 +11,10 @@
 │   ├── arch-stm32/     # only included in ... yeah, STM32 builds
 │   ├── monty/          # main code area for Monty
 │   └── ...
-├── pytests/            # Python tests for native & remote use
 ├── src/                # small main.cpp and some utility scripts
-└── test/               # Unity C++ tests for native & remote use
-    └── ...
+└── test/
+    ├── py/             # Python tests for native & remote use
+    └── ...             # Unity C++ tests for native & remote use
 ```
 
 [MPY]: https://micropython.org/
@@ -77,6 +77,10 @@ Then, in `qstr.cpp`, all these ids and strings are dumped in `VaryVec` format.
 See Invoke's `tasks.py` for details about how and when code generation is
 triggered. Do not run `codegen.py` manually, as it wants its arguments in a
 specific order - use `inv generate` for this.
+
+There is also a "stripped" mode (`-s` option) for the code generator. This is
+used to check source code into `git` _without_ all the boilerplate expansion.
+All source code is expanded by `inv` before use to ensure proper compilation.
 
 #### Configuration
 

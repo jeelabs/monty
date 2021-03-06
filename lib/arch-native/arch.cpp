@@ -37,7 +37,7 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
         return data;
     assert(strlen(name) < 25);
     char buf [40];
-    sprintf(buf, "pytests/%s.mpy", name);
+    sprintf(buf, "test/py/%s.mpy", name);
     return loadFile(buf);
 }
 

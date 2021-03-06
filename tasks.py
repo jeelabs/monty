@@ -55,8 +55,8 @@ def generate(c, strip=False, verbose=False):
 
 @task(generate, default=True,
       help={"file": "name of the .py or .mpy file to run"})
-def native(c, file="pytests/hello.py"):
-    """run script using the native build  [pytests/hello.py]"""
+def native(c, file="test/py/hello.py"):
+    """run script using the native build  [test/py/hello.py]"""
     c.run("pio run -e native -s", pty=True)
     c.run(".pio/build/native/program " + compileIfOutdated(file))
 
@@ -73,10 +73,10 @@ def shortTestOutput(r):
       help={"tests": "specific tests to run, comma-separated",
             "ignore": "one specific test to ignore"})
 def python(c, ignore, tests=""):
-    """run Python tests natively          [in pytests/: {*}.py]"""
+    """run Python tests natively          [in test/py/: {*}.py]"""
     c.run("pio run -e native -s", pty=True)
     if dry:
-        msg = tests or "pytests/*.py"
+        msg = tests or "test/py/*.py"
         print("# tasks.py: run and compare each test (%s)" % msg)
         return
 
@@ -85,7 +85,7 @@ def python(c, ignore, tests=""):
     if tests:
         files = [t + ".py" for t in tests.split(",")]
     else:
-        files = os.listdir("pytests")
+        files = os.listdir("test/py/")
         files.sort()
     for fn in files:
         if fn.endswith(".py") and fn[:-3] not in ignore:
@@ -93,7 +93,7 @@ def python(c, ignore, tests=""):
                 skip += 1
                 continue # skip non-native tests
             num += 1
-            py = "pytests/" + fn
+            py = "test/py/" + fn
             try:
                 mpy = compileIfOutdated(py)
             except FileNotFoundError as e:
@@ -160,12 +160,12 @@ def upload(c, filter="*"):
       help={"tests": "specific tests to run, comma-separated",
             "ignore": "one specific test to ignore"})
 def runner(c, ignore, tests=""):
-    """run Python tests, sent to µC       [in pytests/: {*}.py]"""
+    """run Python tests, sent to µC       [in test/py/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
     iflag = ""
     if ignore:
         iflag = "-i " + ",".join(ignore)
-    c.run("src/runner.py %s pytests/%s.py" % (iflag, match), pty=True)
+    c.run("src/runner.py %s test/py/%s.py" % (iflag, match), pty=True)
 
 @task(generate)
 def builds(c):
@@ -174,10 +174,10 @@ def builds(c):
     c.run("pio run -e noassert | tail -7 | head -1")
     c.run("pio run -e nopyvm | tail -7 | head -1")
 
-@task
+@task(call(generate, strip=True))
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio pytests/*.mpy")
+    c.run("rm -rf .pio examples/*/.pio test/py/*.mpy")
 
 @task
 def examples(c):
@@ -196,11 +196,11 @@ def examples(c):
 def mrfs(c, offset=0, file=""):
     """upload tests as Minimal Replaceable File Storage image"""
     #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
-    #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save pytests/*.mpy" )
+    #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save test/py/*.mpy" )
     if file:
-        c.run(f"src/mrfs.py -o %s pytests/*.py" % file)
+        c.run(f"src/mrfs.py -o %s test/py/*.py" % file)
     else:
-        c.run(f"src/mrfs.py -u %s pytests/*.py" % offset, pty=True)
+        c.run(f"src/mrfs.py -u %s test/py/*.py" % offset, pty=True)
 
 @task(help={"file": "the Python script to send whenever it changes",
             "remote": "run script remotely iso natively"})

@@ -5,9 +5,9 @@ To build and run:
 ```
 $ inv
 hello monty minimal
-$ inv run ../../pytests/hello.mpy
+$ inv run ../../test/py/hello.mpy
 hello monty minimal
-$ inv run ../../pytests/builtins.mpy
+$ inv run ../../test/py/builtins.mpy
 {}
 12345
 {"abc":12345}

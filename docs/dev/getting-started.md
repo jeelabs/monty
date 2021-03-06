@@ -24,8 +24,8 @@ via the command line:
 
 | Type | Command | Notes |
 |------|---------|-------|
-| quick check | `inv` | compile, then run `pytests/hello.py` |
-| Python test | `inv python` | runs all the code from `pytests/` |
+| quick check | `inv` | compile, then run `test/py/hello.py` |
+| Python test | `inv python` | runs all the code from `test/py/` |
 | C++ test | `inv test` | based on Unity, see `test/*/main.cpp` |
 
 **Embedded µC**

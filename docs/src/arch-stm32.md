@@ -119,9 +119,9 @@ only on STM32:
 These functions are highly experimental at this stage. The following test
 scripts illustrate some of the functionality that is currently available:
 
-* `pytests/s_blinker.py` - blink the Nucleo's on-board LED on pin PB3
-* `pytests/s_spi.py` - define an SPI bus on pins PB7, PB6, PB0, and PA12
-* `pytests/s_rf69.py` - connect to the RFM69 and report any received packets
+* `test/py/s_blinker.py` - blink the Nucleo's on-board LED on pin PB3
+* `test/py/s_spi.py` - define an SPI bus on pins PB7, PB6, PB0, and PA12
+* `test/py/s_rf69.py` - connect to the RFM69 and report any received packets
 
 The `s_rf69.py` example also illustrates how to use the hardware watchdog.
 
