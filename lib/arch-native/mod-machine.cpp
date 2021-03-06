@@ -37,10 +37,10 @@ void timerHook () {
 
 //CG1 bind ticker
 static auto f_ticker (ArgVec const& args) -> Value {
-    // TODO optional args
-    if (args.size() > 0) {
-        assert(args.size() == 1 && args[0].isInt());
-        ms = args[0];
+    //CG: args ? arg:i
+
+    if (arg > 0) {
+        ms = arg;
         start = msNow(); // set first timeout relative to now
         last = 0;
         tickerId = tickEvent.regHandler();
@@ -50,6 +50,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
         tickEvent.clear();
         tickerId = 0;
     }
+
     return tickEvent;
 }
 

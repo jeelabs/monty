@@ -27,12 +27,29 @@ void monty::markVec (Vector const& vec) {
 
 auto ArgVec::parse (char const* desc, ...) const -> Value {
     auto args = begin();
+    auto optSkip = 0;
 
     va_list ap;
     va_start(ap, desc);
     for (int i = 0; desc[i] != 0; ++i) {
-        if (i >= size())
-            return {E::TypeError, "need more args", (int) strlen(desc)};
+        if (desc[i] == '?') { // following args are optional
+            optSkip = 1;
+            continue;
+        }
+
+        if (i - optSkip >= size()) { // ran out of values
+            if (optSkip == 0)
+                return {E::TypeError, "need more args", i};
+
+            switch (desc[i]) { // set to default
+                case 'i': { auto p = va_arg(ap, int*); *p = 0; break; }
+                case 'o': { auto p = va_arg(ap, Object**); *p = nullptr; break; }
+                case 's': { auto p = va_arg(ap, char const**); *p = nullptr; break; }
+                case 'v': { auto p = va_arg(ap, Value*); *p = {}; break; }
+                default:  assert(false);
+            }
+            continue;
+        }
 
         auto a = *args++;
         assert(a.isOk()); // args can't be nil ("None" is fine)

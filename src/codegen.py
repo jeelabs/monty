@@ -22,11 +22,17 @@ dirs  = {}          # map of scanned dirnames to path, see IF
 
 # generate positional arg checks and conversions
 def ARGS(block, *arg):
-    out, names, types, decls = [], [], [], {}
+    out, names, types, decls = [], [], "", {}
+    nOpt = 999
     for a in arg:
+        if a in ["?", "*"]:
+            if a == "?":
+                nOpt = a.index(a)
+            types += a
+            continue
         n, t = (a + ":v").split(":")[:2]
         names.append(n)
-        types.append(t or "v")
+        types += t or "v"
         if t not in decls:
             decls[t] = []
         decls[t].append(n)

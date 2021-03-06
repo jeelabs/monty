@@ -1,0 +1,14 @@
+/ -?\d{5,}/ {ADDR}/
+main
+1 {ADDR}
+2 {ADDR}
+3 {ADDR}
+4 {ADDR}
+5 {ADDR}
+TypeError("need more args",3) ["parse.py",8,"<module>"]
+6 {ADDR}
+7 {ADDR}
+8 {ADDR}
+9 {ADDR}
+TypeError("unknown option","huh") ["parse.py",18,"<module>"]
+done
