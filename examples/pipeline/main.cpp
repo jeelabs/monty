@@ -88,7 +88,7 @@ struct Command {
 };
 
 static void printBuildVer () {
-    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
+    printf("Monty %s (" __DATE__ ", " __TIME__ ")\n", VERSION);
 }
 
 static void helpCmd ();

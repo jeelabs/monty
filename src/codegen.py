@@ -12,6 +12,7 @@ class Flags: # make all missing attributes return ""
 flags = Flags()     # this is cleared for each new source file
 cgCounts = 0        # number of CG directives seen in this file
 verbose = 0         # 0=quiet, 1=stats, 2=full
+strip = False       # strip most auto-generated code if set
 arch  = ""          # current architecture, "" is common to all
 archs = {}          # list of qstr details per architecture
 mods  = {"": []}    # list of extension module names per architecture
@@ -100,7 +101,7 @@ def MOD_LIST(block, sel):
                     out.append("#if %s" % mArch)
                 for m in mNames:
                     # lookup in arch-specific map, must already exist
-                    id = archs[mArch][1][m]
+                    id = 0 if strip else archs[mArch][1][m]
                     out.append('    { Q (%d,"%s"), ext_%s },' % (id, m, m))
             if mArch:
                 out.append("#endif")
@@ -124,6 +125,11 @@ def WRAP(block, typ, *methods):
 def WRAPPERS(block, typ=None):
     mod = typ or flags.mod
     out = []
+
+    if strip:
+        if mod and funs[mod]:
+            out.append("static Lookup::Item const %s_map [] = {" % mod)
+        return out
 
     funs[mod].sort()
     for f in funs[mod]:
@@ -200,7 +206,10 @@ def EXCEPTION_EMIT(block, sel='h'):
 
 # define a git version (not used anymore, it messes up the commit hash)
 def VERSION(block):
-    v = subprocess.getoutput('git describe --tags')
+    if strip:
+        v = "<stripped>"
+    else:
+        v = subprocess.getoutput('git describe --tags --always')
     return ['constexpr auto VERSION = "%s";' % v]
 
 # generate qstr definition
@@ -217,6 +226,8 @@ def qarch(name):
 
 # look up a qstr id, define a new one if needed
 def qid(s):
+    if strip:
+        return 0
     if s in qstrMap:
         i = qstrMap[s]
     else:
@@ -335,6 +346,8 @@ def TYPE(block, tag, *_):
         '    auto type () const -> Type const& override { return info; }',
         '    void repr (Buffer&) const override;',
     ]
+    if strip:
+        return out[:1]
     if tag.startswith('<'):
         hiddenTypes.append([tag,name,base])
         del out[1:3] # can't construct from the VM
@@ -526,6 +539,11 @@ def processLines(lines):
                         raise 'unexpected //CG, got: ' + s
                     block.append(s)
 
+            stripall = strip and tag not in [
+                "bind", "binops", "exceptions", "if", "module", "op",
+                "opcodes", "qstr", "type", "version", "wrap", "wrappers"
+            ]
+
             name = tag.replace('-','_').upper()
             try:
                 handler = globals()[name]
@@ -538,7 +556,10 @@ def processLines(lines):
 
             args, kwargs = parseArgs(params)
             try:
-                replacement = handler(block, *args, **kwargs)
+                if stripall:
+                    replacement = []
+                else:
+                    replacement = handler(block, *args, **kwargs)
             except FileNotFoundError:
                 replacement = None
                 print('not found, keep as is:', args[0])
@@ -589,11 +610,16 @@ def processFile(path):
                 fd.write(s+'\n')
 
 if __name__ == '__main__':
-    # args should be: [-v] first* dirs* middle* [+ARCH dirs+]* last*
+    # args should be: [-s] [-v]* first* dirs* middle* [+ARCH dirs+]* last*
     del sys.argv[0]
-    while sys.argv and sys.argv[0] == "-v":
+    while sys.argv:
+        if sys.argv[0] == "-s":
+            strip = True
+        elif sys.argv[0] == "-v":
+            verbose += 1
+        else:
+            break
         del sys.argv[0]
-        verbose += 1
 
     # identify the separately-processed files
     sepFiles, root = [], None

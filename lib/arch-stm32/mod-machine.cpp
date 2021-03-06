@@ -150,7 +150,6 @@ static auto f_spi (ArgVec const& args) -> Value {
     char const *arg;
     auto ainfo = args.parse("s",&arg);
     if (ainfo.isObj()) return ainfo;
-
     auto spi = new Spi;
     auto err = jeeh::Pin::define(arg, &spi->_mosi, 4);
     if (err != nullptr || !spi->isValid())
@@ -167,7 +166,6 @@ static auto f_rf69 (ArgVec const& args) -> Value {
     auto ainfo = args.parse("siii",&a1,&a2,&a3,&a4);
     if (ainfo.isObj()) return ainfo;
     //CG>
-
     auto rf69 = new RF69;
     auto err = jeeh::Pin::define(a1, &rf69->spi._mosi, 4);
     if (err != nullptr || !rf69->spi.isValid())
@@ -224,7 +222,6 @@ static auto f_ticks (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     return msNow();
 }
 
@@ -245,7 +242,6 @@ static auto f_kick (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     Iwdg::kick();
     return {};
 }

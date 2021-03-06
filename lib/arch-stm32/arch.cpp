@@ -252,7 +252,7 @@ static void bc_cmd (char const* cmd) {
 }
 
 static void bv_cmd () {
-    printf("Monty " VERSION " (" __DATE__ ", " __TIME__ ")\n");
+    printf("Monty %s (" __DATE__ ", " __TIME__ ")\n", VERSION);
 }
 
 static void di_cmd () {

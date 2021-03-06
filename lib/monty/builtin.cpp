@@ -46,7 +46,6 @@ static auto f_print (ArgVec const& args) -> Value {
         }
     }
     //CG>
-
     Buffer buf;
     for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
@@ -85,7 +84,6 @@ static auto f_iter (ArgVec const& args) -> Value {
     Object *obj;
     auto ainfo = args.parse("o",&obj);
     if (ainfo.isObj()) return ainfo;
-
     auto v = obj->iter();
     return v.isObj() ? v : new Iterator (args[0], 0);
 }
@@ -96,7 +94,6 @@ static auto f_next (ArgVec const& args) -> Value {
     Value arg;
     auto ainfo = args.parse("v",&arg);
     if (ainfo.isObj()) return ainfo;
-
     auto v = arg->next();
     return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
@@ -107,7 +104,6 @@ static auto f_len (ArgVec const& args) -> Value {
     Value arg;
     auto ainfo = args.parse("v",&arg);
     if (ainfo.isObj()) return ainfo;
-
     return arg.isStr() ? strlen(arg) : arg->len();
 }
 
@@ -117,7 +113,6 @@ static auto f_abs (ArgVec const& args) -> Value {
     Value arg;
     auto ainfo = args.parse("v",&arg);
     if (ainfo.isObj()) return ainfo;
-
     return arg.unOp(UnOp::Abso);
 }
 
@@ -127,7 +122,6 @@ static auto f_hash (ArgVec const& args) -> Value {
     Value arg;
     auto ainfo = args.parse("v",&arg);
     if (ainfo.isObj()) return ainfo;
-
     return arg.unOp(UnOp::Hash);
 }
 
@@ -137,7 +131,6 @@ static auto f_id (ArgVec const& args) -> Value {
     Value arg;
     auto ainfo = args.parse("v",&arg);
     if (ainfo.isObj()) return ainfo;
-
     return arg.id();
 }
 

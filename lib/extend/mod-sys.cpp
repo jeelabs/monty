@@ -12,7 +12,6 @@ static auto f_gc (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     Stacklet::gcAll();
     return {};
 }
@@ -22,7 +21,6 @@ static auto f_gcmax (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     return gcMax();
 }
 
@@ -31,7 +29,6 @@ static auto f_gcstats (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     auto data = new List;
     for (auto e : gcStats.v)
         data->append(e);
@@ -52,9 +49,7 @@ static Lookup::Item const sys_map [] = {
     { Q(176,"modules"), Module::loaded },
     { Q(63,"builtins"), Module::builtins },
     { Q(177,"implementation"), Q(178,"monty") },
-#ifdef VERSION
     { Q(179,"version"), VERSION },
-#endif
 };
 
 //CG2 module-end

@@ -58,7 +58,6 @@ static auto f_ticks (ArgVec const& args) -> Value {
     //CG2 args
     auto ainfo = args.parse("");
     if (ainfo.isObj()) return ainfo;
-
     return msNow();
 }
 

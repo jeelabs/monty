@@ -6,8 +6,6 @@ from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 dry = "-R" in sys.argv or "--dry" in sys.argv
 
-os.environ["MONTY_VERSION"] = subprocess.getoutput("git describe --tags --always")
-
 # parse the platformio.ini file and any extra_configs it mentions
 cfg = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
 cfg.read('platformio.ini')
@@ -35,14 +33,16 @@ def x_tags(c):
 @task
 def x_version(c):
     """show git repository version"""
-    print(os.environ["MONTY_VERSION"])
+    c.run("git describe --tags --always")
 
 @task(incrementable=["verbose"],
-      help={"verbose": "print some extra debugging output (repeat for more)"})
-def generate(c, verbose=False):
+      help={"verbose": "print some extra debugging output (repeat for more)",
+            "strip": "strip most generated code from the source files"})
+def generate(c, strip=False, verbose=False):
     """pass source files through the code generator"""
     # construct codegen args from the [codegen] section in platformio.ini
-    cmd = ["src/codegen.py"] + verbose*["-v"] + ["qstr.h", "lib/monty/"]
+    cmd = ["src/codegen.py"] + strip*["-s"] + verbose*["-v"] + \
+            ["qstr.h", "lib/monty/"]
     if "all" in cfg["codegen"]:
         cmd += cfg["codegen"]["all"].split()
     cmd.append("builtin.cpp")

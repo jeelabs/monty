@@ -8,6 +8,8 @@
 extern "C" int printf (char const*, ...);
 
 namespace monty {
+    //CG1 version
+    constexpr auto VERSION = "v1.0-70-g0f7e24e";
 
 // see gc.cpp - objects and vectors with garbage collection
 
@@ -497,7 +499,6 @@ namespace monty {
     struct Iterator : Object, RawIter {
         static Type info;
         auto type () const -> Type const& override { return info; }
-
         Iterator (Value obj, Value pos ={}) : RawIter (obj, pos) {}
 
         auto next () -> Value override { return stepper(); }
@@ -635,7 +636,6 @@ namespace monty {
     struct Lookup : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
-
         struct Item { Q k; Value v; };
 
         constexpr Lookup (Lookup const* chain =nullptr) : _chain (chain) {}
@@ -806,7 +806,6 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
     //CG>
-
         void marker () const override { _sclass.marker(); _sinst.marker(); }
     private:
         Super (ArgVec const& args);
@@ -842,7 +841,6 @@ namespace monty {
         auto type () const -> Type const& override { return info; }
         void repr (Buffer&) const override;
     //CG>
-
         ~Event () override { deregHandler(); set(); }
 
         auto unop (UnOp) const -> Value override;
@@ -955,7 +953,6 @@ namespace monty {
     struct Method : StaticObj {
         static Type info;
         auto type () const -> Type const& override { return info; }
-
     private:
         // Method objects point to these base instances to make virtual calls
         struct Base {
