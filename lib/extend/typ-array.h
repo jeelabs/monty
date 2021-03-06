@@ -1,13 +1,7 @@
 namespace monty {
 
-    //CG< type array
+    //CG1 type array
     struct Array : Bytes {
-        static auto create (ArgVec const&,Type const* =nullptr) -> Value;
-        static Lookup const attrs;
-        static Type info;
-        auto type () const -> Type const& override { return info; }
-        void repr (Buffer&) const override;
-    //CG>
         constexpr static auto LEN_BITS = 27;
 
         //constexpr Array () =default; // default is array of Value items

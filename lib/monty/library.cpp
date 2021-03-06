@@ -16,5 +16,5 @@ static Function const fo_bytes_count (f_bytes_count);
 void monty::libInstall () {
     printf("in libInstall\n");
 
-    Bytes::info.at(Q(74,"count")) = fo_bytes_count;
+    Bytes::info.at(Q(0,"count")) = fo_bytes_count;
 }

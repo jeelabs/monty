@@ -9,7 +9,7 @@ using namespace monty;
 Tuple const Tuple::emptyObj;
 Value const monty::Empty {Tuple::emptyObj};
 
-Type Inst::info (Q(168,"<instance>"));
+Type Inst::info (Q(0,"<instance>"));
 
 Lookup const Bytes::attrs;
 Lookup const Class::attrs;
@@ -566,7 +566,7 @@ private:
     int _vtype;
 };
 
-Type DictView::info (Q(169,"<dictview>"));
+Type DictView::info (Q(0,"<dictview>"));
 
 // dict invariant: items layout is: N keys, then N values, with N == d.size()
 auto Dict::Proxy::operator= (Value v) -> Value {
@@ -681,8 +681,8 @@ Class::Class (ArgVec const& args) : Type (args[1], nullptr, Inst::create) {
     if (args.size() > 2)
         _chain = &args[2].asType<Class>();
 
-    at(Q(23,"__name__")) = args[1];
-    at(Q(170,"__bases__")) = new Tuple ({args._vec, args.size()-2, args._off+2});
+    at(Q(0,"__name__")) = args[1];
+    at(Q(0,"__bases__")) = new Tuple ({args._vec, args.size()-2, args._off+2});
 
     args[0]->call({args._vec, args.size() - 2, args._off + 2});
 }
@@ -712,7 +712,7 @@ void Super::repr (Buffer& buf) const {
 
 Inst::Inst (ArgVec const& args, Class const& cls) : Dict (&cls) {
     Value self;
-    Value init = attr(Q(17,"__init__"), self);
+    Value init = attr(Q(0,"__init__"), self);
     if (init.isOk()) {
         // stuff "self" before the args passed in TODO is this always ok ???
         args[-1] = this;

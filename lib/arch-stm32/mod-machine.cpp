@@ -48,7 +48,7 @@ struct Pins : Object {
     }
 };
 
-Type Pins::info (Q(217,"<pins>"));
+Type Pins::info (Q(0,"<pins>"));
 
 static Pins pins; // there is one static pins object, used via attr access
 
@@ -72,25 +72,9 @@ struct Spi : Object, jeeh::SpiGpio {
     auto disable () -> Value { jeeh::SpiGpio::disable(); return {}; }
 };
 
-//CG< wrappers Spi
-static auto const m_spi_disable = Method::wrap(&Spi::disable);
-static Method const mo_spi_disable (m_spi_disable);
+//CG: wrappers Spi
 
-static auto const m_spi_enable = Method::wrap(&Spi::enable);
-static Method const mo_spi_enable (m_spi_enable);
-
-static auto const m_spi_xfer = Method::wrap(&Spi::xfer);
-static Method const mo_spi_xfer (m_spi_xfer);
-
-static Lookup::Item const spi_map [] = {
-    { Q(204,"disable"), mo_spi_disable },
-    { Q(205,"enable"), mo_spi_enable },
-    { Q(206,"xfer"), mo_spi_xfer },
-};
-Lookup const Spi::attrs (spi_map);
-//CG>
-
-Type Spi::info (Q(218,"<spi>"), &Spi::attrs);
+Type Spi::info (Q(0,"<spi>"), &Spi::attrs);
 
 struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     static Lookup const attrs;
@@ -124,33 +108,13 @@ struct RF69 : Object, jeeh::RF69<jeeh::SpiGpio> {
     //CG: wrap RF69 recv xmit sleep
 };
 
-//CG< wrappers RF69
-static auto const m_rf69_recv = Method::wrap(&RF69::recv);
-static Method const mo_rf69_recv (m_rf69_recv);
+//CG: wrappers RF69
 
-static auto const m_rf69_sleep = Method::wrap(&RF69::sleep);
-static Method const mo_rf69_sleep (m_rf69_sleep);
-
-static auto const m_rf69_xmit = Method::wrap(&RF69::xmit);
-static Method const mo_rf69_xmit (m_rf69_xmit);
-
-static Lookup::Item const rf69_map [] = {
-    { Q(207,"recv"), mo_rf69_recv },
-    { Q(208,"sleep"), mo_rf69_sleep },
-    { Q(209,"xmit"), mo_rf69_xmit },
-};
-Lookup const RF69::attrs (rf69_map);
-//CG>
-
-Type RF69::info (Q(219,"<rf69>"), &RF69::attrs);
+Type RF69::info (Q(0,"<rf69>"), &RF69::attrs);
 
 //CG1 bind spi
 static auto f_spi (ArgVec const& args) -> Value {
-    //CG3 args arg:s
-    char const *arg;
-    auto ainfo = args.parse("s",&arg);
-    if (ainfo.isObj()) return ainfo;
-
+    //CG: args arg:s
     auto spi = new Spi;
     auto err = jeeh::Pin::define(arg, &spi->_mosi, 4);
     if (err != nullptr || !spi->isValid())
@@ -161,13 +125,7 @@ static auto f_spi (ArgVec const& args) -> Value {
 
 //CG1 bind rf69
 static auto f_rf69 (ArgVec const& args) -> Value {
-    //CG< args a1:s a2:i a3:i a4:i
-    char const *a1;
-    int a2, a3, a4;
-    auto ainfo = args.parse("siii",&a1,&a2,&a3,&a4);
-    if (ainfo.isObj()) return ainfo;
-    //CG>
-
+    //CG: args a1:s a2:i a3:i a4:i
     auto rf69 = new RF69;
     auto err = jeeh::Pin::define(a1, &rf69->spi._mosi, 4);
     if (err != nullptr || !rf69->spi.isValid())
@@ -221,10 +179,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
 
 //CG1 bind ticks
 static auto f_ticks (ArgVec const& args) -> Value {
-    //CG2 args
-    auto ainfo = args.parse("");
-    if (ainfo.isObj()) return ainfo;
-
+    //CG: args
     return msNow();
 }
 
@@ -242,33 +197,14 @@ static auto f_dog (ArgVec const& args) -> Value {
 
 //CG1 bind kick
 static auto f_kick (ArgVec const& args) -> Value {
-    //CG2 args
-    auto ainfo = args.parse("");
-    if (ainfo.isObj()) return ainfo;
-
+    //CG: args
     Iwdg::kick();
     return {};
 }
 
-//CG< wrappers
-static Function const fo_dog (f_dog);
-static Function const fo_kick (f_kick);
-static Function const fo_rf69 (f_rf69);
-static Function const fo_spi (f_spi);
-static Function const fo_ticker (f_ticker);
-static Function const fo_ticks (f_ticks);
-
+//CG1 wrappers
 static Lookup::Item const machine_map [] = {
-    { Q(210,"dog"), fo_dog },
-    { Q(211,"kick"), fo_kick },
-    { Q(212,"rf69"), fo_rf69 },
-    { Q(213,"spi"), fo_spi },
-    { Q(214,"ticker"), fo_ticker },
-    { Q(215,"ticks"), fo_ticks },
-//CG>
-    { Q(220,"pins"), pins },
+    { Q(0,"pins"), pins },
 };
 
-//CG2 module-end
-static Lookup const machine_attrs (machine_map);
-Module ext_machine (Q(216,"machine"), machine_attrs);
+//CG: module-end

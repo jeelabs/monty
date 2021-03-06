@@ -25,6 +25,9 @@ install:
   - inv health
 
 script:
+  # expand code generator directives
+  - inv generate
+
   # quick native checks
   - pio run -e native -s
   - mpy-cross pytests/hello.py
