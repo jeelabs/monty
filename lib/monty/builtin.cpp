@@ -20,7 +20,11 @@ extern auto f_argtest (ArgVec const& args) -> Value {
 
 //CG1 bind print
 extern auto f_print (ArgVec const& args) -> Value {
-    //CG: kwargs end sep
+    //CG: kwargs sep end
+    if (!sep.isStr())
+        sep = " ";
+    if (!end.isStr())
+        end = "\n";
     Buffer buf;
     for (int i = 0; i < args.size(); ++i) {
         // TODO ugly logic to avoid quotes and escapes for string args
@@ -34,22 +38,15 @@ extern auto f_print (ArgVec const& args) -> Value {
             if (p != nullptr)
                 s = *p;
         }
-        if (i > 0) {
-            if (sep.isStr())
-                buf << (char const*) sep;
-            else
-                buf << ' ';
-        }
+        if (i > 0)
+            buf.puts(sep);
         // if it's a plain string, print as is, else print via repr()
         if (s != nullptr)
             buf << s;
         else
             buf << v;
     }
-    if (end.isOk())
-        buf << end;
-    else
-        buf << '\n';
+    buf.puts(end);
     return {};
 }
 

@@ -11,7 +11,8 @@ class Flags: # make all missing attributes return ""
 
 flags = Flags()     # this is cleared for each new source file
 cgCounts = 0        # number of CG directives seen in this file
-verbose = 0         # 0=quiet, 1=stats, 2=full
+rwCounts = 0        # number of files which have been rewritten
+verbose = 0         # 0=summary, 1=quiet, 2=stats, 3=full
 strip = False       # strip most auto-generated code if set
 arch  = ""          # current architecture, "" is common to all
 archs = {}          # list of qstr details per architecture
@@ -289,7 +290,7 @@ def QSTR_EMIT(block):
                 s = ''
         if s:
             out.append('    "%s"' % s)
-        if verbose:
+        if verbose > 1:
             print("\t%s: %d qstrs, %s bytes" % (qArch, i-1, n))
         out += ['    // offsets [0..%d], hashes [%d..%d], %d strings [%d..%d]' %
                                 (2*i-1, 2*i, 2*i+num-3, i-2, 2*i+num-2, n-1),
@@ -538,7 +539,7 @@ def processLines(lines):
             result.append(line)
         else:
             cgCounts += 1
-            if verbose > 1:
+            if verbose > 2:
                 print("%6d: %s" % (linenum, line.strip()))
             request, *comment = line.split('#', 1)
             head, tag, *params = request.split()
@@ -617,21 +618,23 @@ def processLines(lines):
 
 # process one source file, replace it only if the new contents is different
 def processFile(path):
-    global flags, cgCounts
+    global flags, cgCounts, rwCounts
     flags = Flags()
     cgCounts = 0
-    if verbose:
+    if verbose > 1:
         print(path + ":")
     with open(path, 'r') as fd:
         lines = [s.rstrip('\r\n') for s in fd]
     result = processLines(iter(lines))
-    if verbose and cgCounts > 0:
+    if verbose > 1 and cgCounts > 0:
         print("%8d CG directives" % cgCounts)
     if result and result != lines:
-        print('rewriting:', path)
+        if verbose > 0:
+            print('rewriting:', path)
         with open(path, 'w') as fd: # FIXME not safe
             for s in result:
                 fd.write(s+'\n')
+        rwCounts += 1
 
 if __name__ == '__main__':
     # args should be: [-s] [-v]* first* dirs* middle* [+ARCH dirs+]* last*
@@ -663,12 +666,12 @@ if __name__ == '__main__':
             qarch(arg[1:])
             arch = arg[1:]
             mods[arch] = []
-            if verbose:
+            if verbose > 1:
                 print("<GROUP %s>" % arch)
             continue
         path = os.path.join(root, arg)
         if os.path.isfile(path):
-            if verbose and arch:
+            if verbose > 1 and arch:
                 print("<GROUP>")
             if arch != "":
                 qarch("")
@@ -681,3 +684,6 @@ if __name__ == '__main__':
                 if not f in sepFiles:
                     if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
                         processFile(os.path.join(arg, f))
+
+    if verbose == 0 and rwCounts > 0:
+        print("%d files rewritten" % rwCounts)

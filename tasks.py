@@ -53,6 +53,11 @@ def generate(c, strip=False, verbose=False):
     cmd.append("qstr.cpp")
     c.run(" ".join(cmd))
 
+@task(call(generate, strip=True))
+def diff(c):
+    """strip all sources and compare them to git HEAD"""
+    c.run("git diff", pty=True)
+
 @task(generate, default=True,
       help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="test/py/hello.py"):
