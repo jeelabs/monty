@@ -54,7 +54,7 @@ static Pins pins; // there is one static pins object, used via attr access
 
 // spi = machine.spi("A4,A5,A6,A7")
 // spi.enable()
-// x = spi.transfer(123)
+// x = spi.xfer(123)
 // spi.disable()
 
 struct Spi : Object, jeeh::SpiGpio {
@@ -125,13 +125,13 @@ static auto f_spi (ArgVec const& args) -> Value {
 
 //CG1 bind rf69
 static auto f_rf69 (ArgVec const& args) -> Value {
-    //CG: args a1:s a2:i a3:i a4:i
+    //CG: args pins:s node:i group:i freq:i
     auto rf69 = new RF69;
-    auto err = jeeh::Pin::define(a1, &rf69->spi._mosi, 4);
+    auto err = jeeh::Pin::define(pins, &rf69->spi._mosi, 4);
     if (err != nullptr || !rf69->spi.isValid())
         return {E::ValueError, "invalid SPI pin", err};
     rf69->spi.init();
-    rf69->init(a2, a3, a4);
+    rf69->init(node, group, freq);
     return rf69;
 }
 
