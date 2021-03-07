@@ -116,7 +116,8 @@ def MOD_LIST(block, sel):
 # bind a function, i.e. define a callable function object wrapper
 def BIND(block, fun):
     funs[flags.mod].append(fun)
-    return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
+    scope = "static" if flags.mod else "extern"
+    return ["%s auto f_%s (ArgVec const& args) -> Value {" % (scope, fun)]
 
 # bind a method, i.e. define a callable method object wrapper
 def WRAP(block, typ, *methods):
@@ -137,9 +138,12 @@ def WRAPPERS(block, typ=None):
             out.append("static Lookup::Item const %s_map [] = {" % mod)
         return out
 
-    funs[mod].sort()
-    for f in funs[mod]:
-        out.append("static Function const fo_%s (f_%s);" % (f, f))
+    if funs[mod]:
+        funs[mod].sort()
+        for f in funs[mod]:
+            if mod == "":
+                out += ["         extern auto   f_%s (ArgVec const& args) -> Value;" % f]
+            out.append("static Function const fo_%s (f_%s);" % (f, f))
 
     if mod:
         names = [mod]
@@ -147,15 +151,16 @@ def WRAPPERS(block, typ=None):
         names = list(meths.keys())
         names.sort()
 
-    fmt1 = "static auto const m_%s_%s = Method::wrap(&%s::%s);"
+    fmt1 = "static   auto const  m_%s_%s = Method::wrap(&%s::%s);"
     fmt2 = "static Method const mo_%s_%s (m_%s_%s);"
     for t in names:
         l = t.lower()
-        meths[t].sort()
-        for f in meths[t]:
-            out += ["",
-                    fmt1 % (l, f, t, f),
-                    fmt2 % (l, f, l, f)]
+        if meths[t]:
+            out += [""]
+            meths[t].sort()
+            for f in meths[t]:
+                out += [fmt1 % (l, f, t, f),
+                        fmt2 % (l, f, l, f)]
         if t == "":
             continue
         out += ["",
@@ -171,10 +176,17 @@ def WRAPPERS(block, typ=None):
             out += ["};",
                     "Lookup const %s::attrs (%s_map);" % (t, l)]
 
-    del funs[mod]
+    #del funs[mod]
     del meths[mod]
     if out and not out[0]:
         del out[0]
+    return out
+
+# emit the builtin functions, wrappers have been emitted
+def BUILTINS(block):
+    out = []
+    for f in funs[""]:
+        out.append("{ %s, fo_%s }," % (q(f), f))
     return out
 
 excIds = {}     # map exception name -> id
