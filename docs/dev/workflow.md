@@ -2,15 +2,16 @@
 
 There are two kinds of C++ development with Monty:
 
-1. Core development - this is about adding new features to the core and chasing
-   / fixing bugs. This involves editing files in a checked-out (and possibly
-   modified) copy of the git repository, compiling, and testing the code - both
-   natively and on embedded µC boards.
+1. **Core development** - this is about adding new features to the core and
+   chasing / fixing bugs. It involves editing files in a checked-out (and
+   possibly modified and branched) copy of the Monty git repository, compiling,
+   and testing the code - both natively and on an attached µC board.
 
-2. Extension and application development - in this case, you're working on C++
-   code which needs to be integrated into Monty. This could be a new module, a
-   new datatype, or even just a single function to add as built-in, for use from
-   PyVM. Application development is when `main.cpp` is also being customised.
+2. **Extension and application development** - in this case, It's about're
+   working on C++ code which needs to be integrated into Monty. This could be a
+   new module, a new datatype, or even just a single function to add as
+   built-in, for use from PyVM. It's called _application development_ when
+   `main.cpp` is also being customised, for example to alter the startup logic.
 
 ## Core development
 
@@ -149,7 +150,7 @@ built-in functions).
 link together. There is much more to say, but this will be documented on another
 page.
 
-## Extensions development
+## Extension development
 
 Extension development focuses on _adding_ to Monty instead of altering it. There
 may well be changes needed in Monty, but that part will need to be done as
@@ -217,8 +218,8 @@ You can try out the examples to see what each of them do, or delete
 them all to start from a clean slate (using `rm -rf
 $HOME/path/to/my/monty/projects/*/` - just be sure to keep the files!).
 
-> To summarise: all custom Monty builds must be a subdirectory of such an "out
-> of tree" development area. The `inv` command will automatically check the
-> parent directory and find its `tasks.py` file there, which is also where all
-> the magic happens. In addition, the `MONTY_ROOT` environment variable needs to
-> be set to tie this all into the checked out version of Monty.
+?> To summarise: all custom Monty builds must be a subdirectory of such an "out
+of tree" development area. The `inv` command will automatically check the parent
+directory and find its `tasks.py` file there, which is also where all the magic
+happens. In addition, the `MONTY_ROOT` environment variable needs to be set to
+tie this all into the checked out version of Monty.
