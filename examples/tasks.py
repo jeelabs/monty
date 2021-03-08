@@ -28,18 +28,19 @@ def help(c):
     ]:
         print(" ", s)
 
-@task
-def blah(c):
-    """blah blah blah"""
-    c.run("echo BLAH...")
+@task(help={"name": "name of the new directory"})
+def init(c, name):
+    """Intialise a new Monty-based project"""
+    c.run("echo INIT ...")
 
 @task
-def health(c):
-    """Monty's health"""
-    c.run("inv -r %s health" % root)
+def build(c):
+    """Build and run the native application"""
+    #c.run("inv -r %s health" % root)
+    c.run("echo NATIVE ...")
 
 @task
-def generate(c):
+def m_generate(c):
     """Monty's generate"""
     c.run("inv -r %s generate" % root)
 

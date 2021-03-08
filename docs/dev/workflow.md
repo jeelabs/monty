@@ -5,13 +5,15 @@ There are two kinds of C++ development with Monty:
 1. **Core development** - this is about adding new features to the core and
    chasing / fixing bugs. It involves editing files in a checked-out (and
    possibly modified and branched) copy of the Monty git repository, compiling,
-   and testing the code - both natively and on an attached µC board.
+   running tests, and trying out new scripts - both natively and on an attached
+   µC board.
 
-2. **Extension and application development** - in this case, It's about're
-   working on C++ code which needs to be integrated into Monty. This could be a
-   new module, a new datatype, or even just a single function to add as
-   built-in, for use from PyVM. It's called _application development_ when
-   `main.cpp` is also being customised, for example to alter the startup logic.
+2. **Extension and application development** - in this case it's about working
+   on C++ code which needs to be integrated with Monty. This could be a new
+   module, a new datatype, or even just a single function to add as built-in,
+   for use from PyVM. It's called _application development_ when `main.cpp` is
+   (also) being customised, perhaps to alter the startup logic or because the
+   platform requires a different way of embedding.
 
 ## Core development
 
@@ -40,13 +42,6 @@ files:
 * **`src/runner.py`** is a _test runner_ for attached µC boards, which will send
   tests, compare the output, and report the differences - this script is also
   launched from `tasks.py`
-* **`src/mrfs.py`** is a tool to compile Python scripts to bytecode (using
-  `mpy-cross`), combine them into a "MRFS image" and upload it to the attached
-  µC - (mostly) for use from `tasks.py`
-
-Just to mention this for completeness: both `tasks.py` and `mrfs`.py will import
-`runner.py` to reuse some of its code (in particular the code to connect to an
-embedded board).
 
 #### Build configurations
 
@@ -215,8 +210,7 @@ datatype for use from Python, or merely a single extra function which you want
 to implement in C++ and use from PyVM.
 
 You can try out the examples to see what each of them do, or delete them all to
-start with a clean slate using `rm -rf $HOME/path/to/my/monty-projects/*/` -
-_just be sure to keep the files!_
+start with a 100% clean slate.
 
 ?> To summarise: custom Monty builds must be a subdirectory of such an "out of
 tree" development area. The `inv` command will automatically check the parent
