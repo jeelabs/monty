@@ -15,6 +15,19 @@ if " " in root:
     sys.exit(1)
 os.environ["MONTY_ROOT"] = root
 
+@task(default=True)
+def help(c):
+    """Intro message and link to homepage"""
+    for s in [
+        '',
+        'This is the "inv" cmdline tool for custom (out-of-tree) Monty builds',
+        'Try "inv -l" for a list of all support commands or "inv -h" for help',
+        'Monty is a stackless VM for µCs - homepage https://monty.jeelabs,org',
+        'For source code and discussion, see https://github.com/jeelabs/monty',
+        '',
+    ]:
+        print("   ", s)
+
 @task
 def blah(c):
     """blah blah blah"""

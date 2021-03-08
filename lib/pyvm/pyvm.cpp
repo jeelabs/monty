@@ -825,7 +825,6 @@ struct PyVM : Stacklet {
                     assert(false);
                 }
             }
-
         } while (pending == 0);
 
         _spOff = _sp - begin();
@@ -833,9 +832,6 @@ struct PyVM : Stacklet {
 
         if (pending & (1<<0))
             caught();
-
-        if (current != this)
-            return; // last frame popped, there's no context left
     }
 
     void enter (Callable const& func) {
