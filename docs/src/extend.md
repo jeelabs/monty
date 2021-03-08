@@ -2,8 +2,7 @@
 
 The `lib/extend/` area is a first example of how optional functionality can be
 managed in Monty. This area is only included if it's mentioned in the
-`[codegen]` section in `platformio.ini` (or its extension:
-`platformio-local.ini`).
+`[codegen]` section in `platformio.ini` (or its extension: `pio-local.ini`).
 
 There are currently two different extension categories in here:
 

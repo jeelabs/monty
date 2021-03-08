@@ -104,7 +104,7 @@ they specify that:
 * there is an STM32 build with code from `lib/arch-stm32/` and `lib/mrfs/`
 
 A convenient way to overrule these settings, is to create a file named
-`platformio-local.ini`:
+`pio-local.ini`:
 
 ```
 [codegen]

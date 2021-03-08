@@ -1,7 +1,7 @@
 .pio/
 __pycache__/
 
-/platformio-local.ini
+/pio-local.ini
 /tags
 
 *.mpy

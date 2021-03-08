@@ -6,45 +6,35 @@ from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 dry = "-R" in sys.argv or "--dry" in sys.argv
 
+# root must be non-empty if-and-only-if invoked "out of tree"
+root = os.environ.get("MONTY_ROOT", "")
+if root and root[-1:] != "/":
+    root += "/" # yeah, only macos & linux
+if not os.path.isfile(os.path.join(root, "tasks.py")):
+    print("please run invoke from '%s'" % os.path.dirname(__file__))
+    sys.exit(1)
+
 # parse the platformio.ini file and any extra_configs it mentions
 cfg = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation())
-cfg.read('platformio.ini')
-if "platformio" in cfg and "extra_configs" in cfg["platformio"]:
-    for f in cfg["platformio"]["extra_configs"].split():
-        cfg.read(f)
-python_skip, runner_skip = [], []
-if "invoke" in cfg:
-    if "python_skip" in cfg["invoke"]:
-        python_skip = cfg["invoke"]["python_skip"].split()
-    if "runner_skip" in cfg["invoke"]:
-        runner_skip = cfg["invoke"]["runner_skip"].split()
+cfg.read_dict({"invoke": {}, "codegen": {}, "platformio": {}})
+cfg.read(os.path.join(root, 'platformio.ini'))
 
-@task(help={"host": "hostname for rsync (required)",
-            "dest": "destination directory (default: monty-test)"})
-def x_rsync(c, host, dest="monty-test"):
-    """copy this entire area to the specified host"""
-    c.run("rsync -av --exclude .git --exclude .pio . %s:%s/" % (host, dest))
-
-@task
-def x_tags(c):
-    """update the (c)tags file"""
-    c.run("ctags -R lib src test")
-
-@task
-def x_version(c):
-    """show git repository version"""
-    c.run("git describe --tags --always")
+for f in cfg["platformio"].get("extra_configs", "").split():
+    cfg.read(f)
+python_skip = cfg["invoke"].get("python_skip", "").split()
+runner_skip = cfg["invoke"].get("runner_skip", "").split()
 
 @task(incrementable=["verbose"],
       help={"verbose": "print some extra debugging output (repeat for more)",
-            "strip": "strip most generated code from the source files"})
-def generate(c, strip=False, verbose=False):
+            "strip": "strip most generated code from the source files",
+            "norun": "only report the changes, don't write them out"})
+def generate(c, strip=False, verbose=False, norun=False):
     """pass source files through the code generator"""
     # construct codegen args from the [codegen] section in platformio.ini
-    cmd = ["src/codegen.py"] + strip*["-s"] + verbose*["-v"] + \
-            ["qstr.h", "lib/monty/"]
-    if "all" in cfg["codegen"]:
-        cmd += cfg["codegen"]["all"].split()
+    cmd = [os.path.join(root, "src/codegen.py")]
+    cmd += strip*["-s"] + verbose*["-v"] + norun*["-n"]
+    cmd += ["qstr.h", "lib/monty/"]
+    cmd += cfg["codegen"].get("all", "").split()
     cmd.append("builtin.cpp")
     for k, v in cfg["codegen"].items():
         if k != "all" and v:
@@ -53,12 +43,7 @@ def generate(c, strip=False, verbose=False):
     cmd.append("qstr.cpp")
     c.run(" ".join(cmd))
 
-@task(call(generate, strip=True))
-def diff(c):
-    """strip all sources and compare them to git HEAD"""
-    c.run("git diff", pty=True)
-
-@task(generate, default=True,
+@task(generate, default=not root,
       help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="test/py/hello.py"):
     """run script using the native build  [test/py/hello.py]"""
@@ -131,7 +116,8 @@ def python(c, ignore, tests=""):
 def test(c, filter='*'):
     """run C++ tests natively"""
     try:
-        r = c.run('pio test -e native -f "%s"' % filter, hide='stdout', pty=True)
+        r = c.run('pio test -e native -i py -f "%s"' % filter,
+                  hide='stdout', pty=True)
     except Exception as e:
         print(e.result.stdout)
     else:
@@ -155,7 +141,7 @@ def flash(c):
 def upload(c, filter="*"):
     """run C++ tests, uploaded to µC"""
     try:
-        r = c.run('pio test -f "%s"' % filter, hide='stdout', pty=True)
+        r = c.run('pio test -i py -f "%s"' % filter, hide='stdout', pty=True)
     except Exception as e:
         print(e.result.stdout)
     else:
@@ -170,42 +156,13 @@ def runner(c, ignore, tests=""):
     iflag = ""
     if ignore:
         iflag = "-i " + ",".join(ignore)
-    c.run("src/runner.py %s test/py/%s.py" % (iflag, match), pty=True)
-
-@task(generate)
-def builds(c):
-    """show µC build sizes, w/ and w/o assertions or Python VM"""
-    c.run("pio run -t size | tail -8 | head -2")
-    c.run("pio run -e noassert | tail -7 | head -1")
-    c.run("pio run -e nopyvm | tail -7 | head -1")
+    cmd = [os.path.join(root, "src/runner.py"), iflag, "test/py/%s.py" % match]
+    c.run(" ".join(cmd), pty=True)
 
 @task(call(generate, strip=True))
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio test/py/*.mpy")
-
-@task
-def examples(c):
-    """build each of the example projects"""
-    examples = os.listdir("examples")
-    examples.sort()
-    for ex in examples:
-        if os.path.isdir("examples/%s" % ex):
-            if os.path.isfile("examples/%s/README.md" % ex):
-                print(ex)
-                c.run("pio run -c examples/pio-examples.ini "
-                      "-d examples/%s -t size -s" % ex, warn=True)
-
-@task(help={"offset": "flash offset (default: 0x0)",
-            "file": "save to file instead of uploading to flash"})
-def mrfs(c, offset=0, file=""):
-    """upload tests as Minimal Replaceable File Storage image"""
-    #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
-    #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save test/py/*.mpy" )
-    if file:
-        c.run(f"src/mrfs.py -o %s test/py/*.py" % file)
-    else:
-        c.run(f"src/mrfs.py -u %s test/py/*.py" % offset, pty=True)
+    c.run("rm -rf %s.pio %sexamples/*/.pio %stest/py/*.mpy" % (root, root, root))
 
 @task(help={"file": "the Python script to send whenever it changes",
             "remote": "run script remotely iso natively"})
@@ -216,41 +173,88 @@ def watch(c, file, remote=False):
     else:
         c.run("src/watcher.py %s" % file, pty=True)
 
-@task
-def health(c):
-    """verify proper toolchain setup"""
-    c.run("uname -sm")
-    c.run("python3 --version")
-    c.run("inv --version")
-    c.run("pio --version")
-    c.run("mpy-cross --version")
-    #c.run("which micropython || echo NOT FOUND: micropython")
+if not root: # the following tasks cannot be used out-of-tree
 
-    if False: # TODO why can't PyInvoke find pySerial ???
-        try:
-            import serial
-            print('pySerial', serial.__version__)
-        except Exception as e:
-            print(e)
-            print("please install with: pip3 install pyserial")
+    @task(call(generate, strip=True))
+    def diff(c):
+        """strip all sources and compare them to git HEAD"""
+        c.run("git diff", pty=True)
 
-    fn = ".git/hooks/pre-commit"
-    if not os.path.isfile(fn):
-        print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
-        if not dry:
-            with open(fn, "w") as f:
-                f.write("#!/bin/sh\ninv generate -s\ngit add -u .\n")
-            os.chmod(fn, 0o755)
+    @task(generate)
+    def builds(c):
+        """show µC build sizes, w/ and w/o assertions or Python VM"""
+        c.run("pio run -t size | tail -8 | head -2")
+        c.run("pio run -e noassert | tail -7 | head -1")
+        c.run("pio run -e nopyvm | tail -7 | head -1")
 
-@task
-def serial(c):
-    """serial terminal session, use in separate window"""
-    c.run("pio device monitor --echo --quiet", pty=True)
+    @task
+    def examples(c):
+        """build each of the example projects"""
+        examples = os.listdir("examples")
+        examples.sort()
+        for ex in examples:
+            if os.path.isdir("examples/%s" % ex):
+                if os.path.isfile("examples/%s/README.md" % ex):
+                    print(ex)
+                    c.run("pio run -c examples/pio-examples.ini "
+                        "-d examples/%s -t size -s" % ex, warn=True)
 
-@task(post=[clean, test, call(python, python_skip),
-            upload, flash, mrfs, call(runner, runner_skip),
-            builds, examples])
-def all(c):
-    """i.e. clean test python upload flash mrfs runner builds examples"""
-    # make sure the JeeH library is not found locally, i.e. unset this env var
-    os.environ.pop("PLATFORMIO_LIB_EXTRA_DIRS", None)
+    @task(help={"offset": "flash offset (default: 0x0)",
+                "file": "save to file instead of uploading to flash"})
+    def mrfs(c, offset=0, file=""):
+        """upload tests as Minimal Replaceable File Storage image"""
+        #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
+        #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save test/py/*.mpy" )
+        if file:
+            c.run(f"src/mrfs.py -o %s test/py/*.py" % file)
+        else:
+            c.run(f"src/mrfs.py -u %s test/py/*.py" % offset, pty=True)
+
+    @task
+    def health(c):
+        """verify proper toolchain setup"""
+        c.run("uname -sm")
+        c.run("python3 --version")
+        c.run("inv --version")
+        c.run("pio --version")
+        c.run("mpy-cross --version")
+        #c.run("which micropython || echo NOT FOUND: micropython")
+
+        if False: # TODO why can't PyInvoke find pySerial ???
+            try:
+                import serial
+                print('pySerial', serial.__version__)
+            except Exception as e:
+                print(e)
+                print("please install with: pip3 install pyserial")
+
+        fn = ".git/hooks/pre-commit"
+        if not os.path.isfile(fn):
+            print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
+            if not dry:
+                with open(fn, "w") as f:
+                    f.write("#!/bin/sh\ninv generate -s\ngit add -u .\n")
+                os.chmod(fn, 0o755)
+
+    @task
+    def serial(c):
+        """serial terminal session, use in separate window"""
+        c.run("pio device monitor --echo --quiet", pty=True)
+
+    @task(post=[clean, test, call(python, python_skip),
+                upload, flash, mrfs, call(runner, runner_skip),
+                builds, examples])
+    def all(c):
+        """i.e. clean test python upload flash mrfs runner builds examples"""
+        # make sure the JeeH library is not found locally, i.e. unset this env var
+        os.environ.pop("PLATFORMIO_LIB_EXTRA_DIRS", None)
+
+    @task
+    def x_tags(c):
+        """update the (c)tags file"""
+        c.run("ctags -R lib src test")
+
+    @task
+    def version(c):
+        """display the current version tag (using "git describe)"""
+        c.run("git describe --tags --always")

@@ -52,7 +52,7 @@ There are several other tasks (the `x-*` tasks are mostly special-purpose):
 
 By default, the embedded builds are for a Nucleo-32 board with STM32L432KC
 µC.<br/>
-To use another STM32 board, create PIO definitions in `platformio-local.ini`,
+To use another STM32 board, create PIO definitions in `pio-local.ini`,
 for example:
 
 ```

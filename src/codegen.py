@@ -20,6 +20,16 @@ mods  = {"": []}    # list of extension module names per architecture
 funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
 dirs  = {}          # map of scanned dirnames to path, see IF
+dry   = False       # true if this is a dry-run, i.e. "-n" flag set
+
+root = os.environ.get("MONTY_ROOT", "") # set when used out-of-tree
+
+def maybeInRoot(f):
+    if root and not os.path.exists(f):
+        f2 = os.path.join(root, f)
+        if os.path.exists(f2):
+            return f2
+    return f
 
 # generate positional arg checks and conversions
 def ARGS(block, *arg):
@@ -468,7 +478,7 @@ def OP(block, typ='', multi=0):
 # parse the py/runtime0.h header
 def BINOPS(block, fname, count):
     out = [""]
-    with open(fname, 'r') as f:
+    with open(maybeInRoot(fname), 'r') as f:
         for line in f:
             line = line.strip()
             if line.startswith('MP_BINARY_OP_'):
@@ -487,7 +497,7 @@ def BINOPS(block, fname, count):
 def OPCODES(block, fname):
     defs = []
     bases = {}
-    with open(fname, 'r') as f:
+    with open(maybeInRoot(fname), 'r') as f:
         for line in f:
             if line.startswith('#define'):
                 fields = line.split()
@@ -591,6 +601,8 @@ def processLines(lines):
             if replacement is None:
                 prefix = ''
             else:
+                if verbose > 3 and replacement:
+                    print("> " + "\n> ".join(replacement))
                 block = replacement
 
             if len(block) > 3:
@@ -629,36 +641,43 @@ def processFile(path):
     if verbose > 1 and cgCounts > 0:
         print("%8d CG directives" % cgCounts)
     if result and result != lines:
-        if verbose > 0:
-            print('rewriting:', path)
-        with open(path, 'w') as fd: # FIXME not safe
-            for s in result:
-                fd.write(s+'\n')
-        rwCounts += 1
+        if dry:
+            print('would rewrite:', path)
+        else:
+            if verbose:
+                print('rewriting:', path)
+            else:
+                rwCounts += 1
+            with open(path, 'w') as fd: # FIXME not safe
+                for s in result:
+                    fd.write(s+'\n')
 
 if __name__ == '__main__':
-    # args should be: [-s] [-v]* first* dirs* middle* [+ARCH dirs+]* last*
+    # args: [-s] [-v]* [-n] first* dirs* middle* [+ARCH dirs+]* last*
     del sys.argv[0]
     while sys.argv:
         if sys.argv[0] == "-s":
             strip = True
         elif sys.argv[0] == "-v":
             verbose += 1
+        elif sys.argv[0] == "-n":
+            dry = True
         else:
             break
         del sys.argv[0]
 
     # identify the separately-processed files
-    sepFiles, root = [], None
+    sepFiles, base = [], None
     for arg in sys.argv:
+        arg = maybeInRoot(arg)
         if os.path.isdir(arg):
             bn = os.path.basename(arg.rstrip("/"))
             dirs[bn] = arg
-            if not root:
-                root = arg # remember first one
+            if not base:
+                base = arg # remember first one
         if arg[0] != "+":
             sepFiles.append(arg)
-    assert root, "no directory arg found"
+    assert base, "no directory arg found"
 
     # process all specified args in order
     for arg in sys.argv:
@@ -669,7 +688,7 @@ if __name__ == '__main__':
             if verbose > 1:
                 print("<GROUP %s>" % arch)
             continue
-        path = os.path.join(root, arg)
+        path = os.path.join(base, arg)
         if os.path.isfile(path):
             if verbose > 1 and arch:
                 print("<GROUP>")
@@ -678,6 +697,7 @@ if __name__ == '__main__':
             arch = ""
             processFile(path)
         else:
+            arg = maybeInRoot(arg)
             files = os.listdir(arg)
             files.sort();
             for f in files:
@@ -685,5 +705,6 @@ if __name__ == '__main__':
                     if os.path.splitext(f)[1] in ['.h', '.c', '.cpp']:
                         processFile(os.path.join(arg, f))
 
-    if verbose == 0 and rwCounts > 0:
-        print("%d files rewritten" % rwCounts)
+    if rwCounts:
+        msg = "stripped" if strip else "rewritten"
+        print("%d files %s" % (rwCounts, msg))
