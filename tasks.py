@@ -216,11 +216,6 @@ def watch(c, file, remote=False):
     else:
         c.run("src/watcher.py %s" % file, pty=True)
 
-preCommitScript = """#!/bin/sh
-inv generate -s
-git add -u .
-"""
-
 @task
 def health(c):
     """verify proper toolchain setup"""
@@ -230,17 +225,27 @@ def health(c):
     c.run("pio --version")
     c.run("mpy-cross --version")
     #c.run("which micropython || echo NOT FOUND: micropython")
+
+    if False: # TODO why can't PyInvoke find pySerial ???
+        try:
+            import serial
+            print('pySerial', serial.__version__)
+        except Exception as e:
+            print(e)
+            print("please install with: pip3 install pyserial")
+
     fn = ".git/hooks/pre-commit"
     if not os.path.isfile(fn):
         print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
-        with open(fn, "w") as f:
-            f.write(preCommitScript)
-        os.chmod(fn, 0o755)
+        if not dry:
+            with open(fn, "w") as f:
+                f.write("#!/bin/sh\ninv generate -s\ngit add -u .\n")
+            os.chmod(fn, 0o755)
 
 @task
 def serial(c):
     """serial terminal session, use in separate window"""
-    c.run("pio device monitor -b115200 --echo --quiet", pty=True)
+    c.run("pio device monitor --echo --quiet", pty=True)
 
 @task(post=[clean, test, call(python, python_skip),
             upload, flash, mrfs, call(runner, runner_skip),
