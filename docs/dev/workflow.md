@@ -83,7 +83,7 @@ build_flags = ${stm32.build_flags} -DSTM32L4
 There are two ways to customise this:
 
 1. add a `pioconf.ini` file with new (and possibly overriding) settings
-2. switch to Extension developmen, i.e. "out of tree" mode, as described below
+2. switch to Extension development, i.e. "out of tree" mode, as described below
 
 The first approach allows somewhat faster and more advanced development (and may
 be needed to debug "deep" problems), but the second one is preferred as it keeps
@@ -175,7 +175,7 @@ To start extension / application development, proceed as follows:
 
 1. Set up the `MONTY_ROOT` environment variable to point to the root on the
    Monty checkout clone you want to use - probably easest to do this in
-   `~/.bashrc`, etc, e.g.
+   `~/.bashrc` or equivalent, e.g.
 
     ```text
     export MONTY_ROOT=/path/to/my/monty/
@@ -186,7 +186,7 @@ To start extension / application development, proceed as follows:
     area is located _next_ to the Monty source tree (i.e. a sibling), then it
     will be found even when `MONTY_ROOT` is not set.
 
-2. Grab a copy of the examples folder as starting template for your own work:
+2. Grab a copy of the examples folder as starting template for out-of-tree work:
 
     ```text
     cp -a $MONTY_ROOT/examples/ $HOME/path/to/my/monty-projects
@@ -199,8 +199,8 @@ To start extension / application development, proceed as follows:
     inv init myproject
     ```
 
-4. Verify that the new area can build Monty out-of-tree (this will be default to
-   a native build):
+4. Verify that the new area can build Monty out-of-tree (this will default to a
+   native build):
 
     ```text
     inv build
@@ -218,8 +218,8 @@ You can try out the examples to see what each of them do, or delete them all to
 start with a clean slate using `rm -rf $HOME/path/to/my/monty-projects/*/` -
 _just be sure to keep the files!_
 
-?> To summarise: all custom Monty builds must be a subdirectory of such an "out
-of tree" development area. The `inv` command will automatically check the parent
+?> To summarise: custom Monty builds must be a subdirectory of such an "out of
+tree" development area. The `inv` command will automatically check the parent
 directory and find its `tasks.py` file there, which is also where all the magic
 happens. In addition, the `MONTY_ROOT` environment variable needs to be set to
 tie this all into the checked out version of Monty.
