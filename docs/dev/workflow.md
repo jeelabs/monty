@@ -24,14 +24,14 @@ request" to bring the new changes into the public git repository.
 This workflow relies heavily on the following tools, scripts, and configuration
 files:
 
-* **`inv <cmd>`** performs key developmen tasks - the list of all available
+* **`inv <cmd>`** performs key development tasks - the list of all available
   commands can be obtained with `inv -l` - this is an installed package
 * **`tasks.py`** is the central configuration file for `inv` - as Python script,
   it defines what tasks are available and how to "run" them (similar to
   `makefile`)
 * **`pio <cmd>`** is the [PlatformIO](https://platformio.org) build tool which
   takes care of all the toolchain details, e.g. compilers and uploaders - this
-  too is an installed packaga bit like ae
+  too is an installed package
 * **`platformio.ini`** is the central configuration file for `pio` - it has many
   sections, and is also parsed by the `tasks.py` script to extract some settings
 * **`src/codegen.py`** is a custom-built _code generator_ for Monty, which it
