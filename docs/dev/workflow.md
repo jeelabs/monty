@@ -112,8 +112,8 @@ plugged into USB:
 
 * workflow #3: compile, upload, run C++ & Python tests on µC: **`inv upload
   flash runner`**
-* workflow #4: clean and recompile + test everything => **`inv all`** compile
-  the examples
+* workflow #4: clean, recompile, test everything => **`inv all`** (also
+  compiles the examples)
 
 Last but not least, there is a `watch` command, which will track a specified
 Python script and re-compile / re-upload it whenever it changes. This is similar
@@ -138,7 +138,7 @@ There are a few sections in the `platformio,ini` file which are ignored by
 * **`[codegen]`** lists the _extra_ directories scanned by the code generator
 
 The skipping is necessary to silence inevitable differences between native and
-embedded tests (e.g. differences in garbage collector statistics on 64-bt and
+embedded tests (e.g. differences in garbage collector statistics on 64-bit and
 32-bit).
 
 The code generator _needs_ to go through all the source files which are included
@@ -147,8 +147,8 @@ then generates a number of tables (e.g. the collected qstr data, known modules,
 built-in functions).
 
 !> The code generator scan needs to match exactly what `pio` will compile and
-link together. There is much more to say, but this will be documented on another
-page.
+link together. There is much more to say, but this will need to be documented on
+another page.
 
 ## Extension development
 
@@ -158,8 +158,8 @@ described above, i.e. "in-tree".
 
 Extension and application development using Monty happens "out of tree", i.e. a
 separate area with a small amount of _boilerplate tooling_ to support the
-development process - hopefully it will be as convenient as in-tree, but the
-variety of tasks and changes is essentially impossible to foresee.
+development process - hopefully it will be as convenient as in-tree, but with
+the variety of tasks and changes it's virtually impossible to foresee.
 
 The development workflow can be quite similar, i.e. using `inv` as the main tool
 for driving all the compiles and uploads and tests. But there will be
@@ -189,10 +189,10 @@ To start extension / application development, proceed as follows:
 2. Grab a copy of the examples folder as starting template for your own work:
 
     ```text
-    cp -a $MONTY_ROOT/examples/ $HOME/path/to/my/monty/projects
+    cp -a $MONTY_ROOT/examples/ $HOME/path/to/my/monty-projects
     ```
 
-3. Create a subfolder for your first monty project (it _has to be in a
+3. Create a subfolder for your first monty project (it _has to be_ in a
    subfolder):
 
     ```text
@@ -214,9 +214,9 @@ a modified `main.cpp` app, or a port to a different platform, or a new module /
 datatype for use from Python, or merely a single extra function which you want
 to implement in C++ and use from PyVM.
 
-You can try out the examples to see what each of them do, or delete
-them all to start from a clean slate (using `rm -rf
-$HOME/path/to/my/monty/projects/*/` - just be sure to keep the files!).
+You can try out the examples to see what each of them do, or delete them all to
+start with a clean slate using `rm -rf $HOME/path/to/my/monty-projects/*/` -
+_just be sure to keep the files!_
 
 ?> To summarise: all custom Monty builds must be a subdirectory of such an "out
 of tree" development area. The `inv` command will automatically check the parent
