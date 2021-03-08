@@ -32,7 +32,7 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 » [MPy cross compiler][MPX] for bytecode generation  
 » [PlatformIO][PIO] for native and embedded builds  
 » [PyInvoke][INV] for general development workflow  
-» Good familiarity with C++11 and Python 3  
+» Good familiarity with C++17 and Python 3  
 » Lots of patience and a long-term perspective :-)
 
 This is a test run on native + embedded, as of mid-Feb 2021:

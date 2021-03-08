@@ -203,7 +203,7 @@ if not root: # the following tasks cannot be used out-of-tree
                 "file": "save to file instead of uploading to flash"})
     def mrfs(c, offset=0, file=""):
         """upload tests as Minimal Replaceable File Storage image"""
-        #c.run("cd lib/mrfs/ && g++ -std=c++11 -DTEST -o mrfs mrfs.cpp")
+        #c.run("cd lib/mrfs/ && g++ -std=c++17 -DTEST -o mrfs mrfs.cpp")
         #c.run("lib/mrfs/mrfs wipe && lib/mrfs/mrfs save test/py/*.mpy" )
         if file:
             c.run(f"src/mrfs.py -o %s test/py/*.py" % file)

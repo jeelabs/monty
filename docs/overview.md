@@ -32,7 +32,7 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 » [MPy cross compiler][MPX] for bytecode generation  
 » [PlatformIO][PIO] for native and embedded builds  
 » [PyInvoke][INV] for general development workflow  
-» Good familiarity with C++11 and Python 3  
+» Good familiarity with C++17 and Python 3  
 » Lots of patience and a long-term perspective :-)
 
 The source code & docs are in the public domain and are [available on GitHub][GIT].
@@ -94,7 +94,7 @@ expected.
 
 So in a way, Monty is very much tied to MicroPython, as it uses its unmodified
 `mpy-cross` compiler to produce the bytecode files. But the back end, i.e. VM,
-is completely different, using a "stackless" design and many C++11 techniques
+is completely different, using a "stackless" design and many C++17 techniques
 instead of standard C. The way this works in practice, is that bytecode is
 compiled on a host (MacOS or Linux) and sent to the µC running Monty. This
 bytecode can be executed directly or stored in Minimal Replaceable File Storage,

@@ -73,7 +73,7 @@ store pointers to all its element objects.
 From C++, a list object can be treated as a `Vector` most of the time, with
 convenient indexed access using natural `list[i]` notation for both getting
 _and_ setting elements. Because vectors also define STL's `begin()` and
-`end()` methods, it is possible to write concise loops using C++11 syntax:
+`end()` methods, it is possible to write concise loops using C++17 syntax:
 
 ```
 for (auto& e : myList)

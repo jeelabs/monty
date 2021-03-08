@@ -74,7 +74,7 @@ b'DCBA'
 
 import doctest, os, subprocess
 
-subprocess.run(["g++", "-std=c++11", "-DTEST", "mrfs.cpp"], check=True)
+subprocess.run(["g++", "-std=c++17", "-DTEST", "mrfs.cpp"], check=True)
 
 def mrfs(*args):
     e = subprocess.run(["./a.out", *map(str, args)],

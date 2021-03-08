@@ -32,7 +32,7 @@ There is a third ingredient, which brings everything together and makes it all
 really convenient in C++: a **Value** is an instance of the C++ class `Value`
 which represent a _typed reference_. A value can hold either an integer, a
 string, a _qstr_ ("quick string"), a pointer to an object, or nil (`nullptr` in
-C++11).
+C++17).
 
 !> In C++, "things" are called _instances_, which have _member fields_ and
 _member functions_. In Python, "things" are called _objects_, and they have
