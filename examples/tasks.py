@@ -21,14 +21,9 @@ def blah(c):
     c.run("echo BLAH...")
 
 @task
-def orun(c):
-    """compile and upload this example"""
-    c.run("pio run -c ../pio-examples.ini -s", echo=True, hide='stdout', pty=True)
-
-@task
 def health(c):
     """Monty's health"""
-    c.run("inv -r ../.. health")
+    c.run("inv -r %s health" % root)
 
 @task
 def generate(c):
@@ -36,4 +31,6 @@ def generate(c):
     c.run("inv -r %s generate" % root)
 
 sys.path.insert(0, ".")
-from invconf import *
+try:
+    from invconf import *
+except ModuleNotFoundError: pass
