@@ -254,6 +254,8 @@ There are several very practical reasons and benefits with this approach:
   re-applied
 * there are no special headers or pre-processor define's, it all happens in
   plain sight
+* and - by far - the best reason of all: _writing code is a lot more fun this
+  way!_
 
 Note that this style of code generation is _inline_, i.e. the generated code
 becomes part of the source code. That's also why that final `//CG>` tag is
@@ -278,3 +280,81 @@ demonstrate the technique, perhaps). The current `src/codegen.py` script is
 about 700 LOC, and is regularly tweaked and extended to fit the evolving needs
 of the project. And it already "pays for itself": well over 1,000 lines of
 Monty's core source code are auto-generated.
+
+#### Syntax
+
+The code generator chases through all the C++ code (`.h` and `.cpp` files), and
+looks for two kinds of markers via line-by-line string matching:
+
+* directives of the form `//CG...` with only whitespace in front
+* qstr references of the form `Q(<num>,"<str>")` (can be more than one per
+  line)
+
+The `CG` directives come in a few different shapes and sizes:
+
+* `//CG ident ...` is a newly added directive, and consists of just that one
+  line
+* `//CG: ident ...` is a dierctive with no further expansion, it just informs
+  the code generator
+* `//CG< ident ...` + some lines + `//CG>` is a bracket range, as in the
+  example above
+
+Is the expansion contains only 1 to 3 lines, then the leading line will start
+with `//CG1` to `//CG3` respectively, then the expansion, but no closing
+marker. This helps reduce visual clutter for very short expansions.
+
+The `ident` field is a fixed keyword (e.g. `args` is processed in the code
+generator by a def called `ARGS` (upper case). The code generator will throw a
+(somewhat nasty) exception when processing mis-typed identifiers. The rest of
+the line is parsed as words and passed as arguments to the codegen function.
+
+The `Q(...)` matcher is a bit more involved. It needs to recognise multiple
+uses on the same line, and it does some work behind the scenes:
+
+* the first source file is `qstr.h`, which contains a directive to _collect_
+  all the qstrs in it - these are the fixed qstrs in the system (same as in
+  MicroPython, since they are also built into `mpy-cross`)
+* subsequent files are parsed normally, with the numeric first arg replaced by
+  whatever the codegenerator decides the proper ID should be (it will assign
+  new ones as it comes across new strings)
+
+The interaction with C++ and `constexpr` in particular is what makes this work:
+the string argument is mostly for the _code generator_, but in C++, `Q(n,s)` is
+simply an on-the-fly constructed instance of class `Q` - and in most contexts,
+it evaluates to its first arg, i.e. an integer. This goes _very_ far, as the
+following example illustrates:
+
+```
+//CG< kwargs foo bar baz
+```
+
+This expands to the following code (which works in C++11 and upwards):
+
+```
+//CG< kwargs foo bar baz
+Value foo, bar, baz;
+for (int i = 0; i < args.kwNum(); ++i) {
+    auto k = args.kwKey(i), v = args.kwVal(i);
+    switch (k.asQid()) {
+        case Q(186,"foo"): foo = v; break;
+        case Q(187,"bar"): bar = v; break;
+        case Q(188,"baz"): baz = v; break;
+        default: return {E::TypeError, "unknown option", k};
+    }
+}
+//CG>
+```
+
+It _looks_ a bit like a switch on strings (which is not possible in C/C++), but
+under the hood it ends up being a switch on the qstr IDs. All of this will
+vanish in the stripped version of the code, but even expanded it should be
+quite clear that this is parsing keyword arguments ... in a C++ function, and
+doing so in a nicely readable way.
+
+Note that the assigned qstr IDs will change each time a new qstr is added
+_anywhere_ in the source files. This has no further implications, since the
+same codegenerator run which issues these numbers also generates the matching
+constant table in the last file processed by the code generator: `qstr.cpp`.
+
+?> No pre-processor defines were used or harmed in this design. It's all
+`codegen.py` and C++17 ...
