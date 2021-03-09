@@ -9,12 +9,12 @@ PIO's [documentation site][INI].
 
 To easily customise builds for Monty, it's a good idea to keep all these changes
 separate from Monty's defaults by placing all settings in a file called
-`pio-local.ini` (which is not part of Monty and excluded from `git`).  This
+`monty-pio.ini` (which is not part of Monty and excluded from `git`).  This
 optional "local" file will be loaded after `platformio.ini` to extend and
 override any settings.
 
 E.g. to use a "Blue Pill" board connected via a Black Magic Probe, create
-`pio-local.ini` with the following content:
+`monty-pio.ini` with the following content:
 
 ```
 [platformio]
@@ -38,7 +38,7 @@ new `<NAME>` for the code generator).
 
 ### Multiple configurations
 
-The `pio-local.ini` file can define multiple configurations, each with their own
+The `monty-pio.ini` file can define multiple configurations, each with their own
 `[env:<somename>]` section.  This makes it easy to keep _all_ possible build
 variants in a single file, and then pick one to work with.  For brevity,
 sections can also extend others and override just a few settings (see the

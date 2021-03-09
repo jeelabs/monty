@@ -32,15 +32,10 @@ if os.path.isfile("tasks.py"):
         """.split("\n"):
             print(" ", s.strip())
 
-else: # only define the next tasks when in project (i.e. sub-) directories
+else: # only define the other tasks if inside project (i.e. sub-) directories
 
     sys.path.insert(0, os.environ["MONTY_ROOT"])
     from src.devtasks import *
-
-    @task
-    def all(c):
-        """(not defined - add to "monty-inv.py" if you want it)"""
-        print('not yet, see "monty.inv.py" for details')
 
     # the filename has a dash in it, so a plain "from ... import *" won't work
     # (I'm not a fan of underscores_in_names, even less so in file names -jcw)

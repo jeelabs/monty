@@ -6,7 +6,7 @@ from invoke import task
 
 @task(default=True)
 def all(c):
-    """This is a demo "all" task, defined in invconf.py"""
+    """This is a demo "all" task, defined in monty-inv.py"""
 
     print("""
         See the PyInvoke site for how tasks work: https://www.pyinvoke.org

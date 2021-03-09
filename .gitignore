@@ -1,7 +1,7 @@
 .pio/
 __pycache__/
 
-/pio-local.ini
+/monty-pio.ini
 /tags
 
 *.mpy
