@@ -6,15 +6,15 @@ from invoke import task
 
 @task(default=True)
 def all(c):
-    """This is a demo "all" task, defined in monty-inv.py"""
+    """this is an example "all" task, defined in monty-inv.py"""
 
     print("""
         See the PyInvoke site for how tasks work: https://www.pyinvoke.org
         One quick option is to simply make "all" dependent on some of the
-        other tasks. Since it is the default, running "inv" without any args
-        will then run each of the dependent tasks in sequence. For example:
+        other tasks. Since it is set as default, running "inv" without any
+        args will run each of the dependent tasks in sequence. For example:
 
-            @task(native, test, python)
+            @task(native, test, python, default=True)
             def all(c):
                 pass
 

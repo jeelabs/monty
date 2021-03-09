@@ -3,6 +3,8 @@ from invoke import task
 
 import os, sys
 
+dry = "-R" in sys.argv or "--dry" in sys.argv
+
 def getMontyDir():
     f = os.path.realpath(__file__)
     for d in ["..", "../monty"]:
@@ -14,11 +16,29 @@ def getMontyDir():
 
 if "MONTY_ROOT" not in os.environ:
     os.environ["MONTY_ROOT"] = getMontyDir()
+root = os.environ["MONTY_ROOT"]
+
+def inRoot(f):
+    return os.path.join(root, f)
 
 @task(help={"name": "name of the new directory"})
 def init(c, name):
     """Intialise a new Monty-based project"""
-    c.run("echo INIT ...")
+    orig = os.path.join(root, "examples/template/")
+    c.run("mkdir %s" % name)
+    c.run("cp -a %s %s" % (orig, name))
+    base = os.path.relpath(root, name)
+    if not dry:
+        with open(os.path.join(name, "monty-pio.ini"), "w") as f:
+            for s in [
+                "[platformio]",
+                "src_dir = %s" % os.path.join(base, "src"),
+                "",
+                "[env]",
+                "lib_extra_dirs = %s" % os.path.join(base, "lib"),
+            ]:
+                print(s, file=f)
+        print("Ready, the next step is: cd %s && inv -l" % name)
 
 if os.path.isfile("tasks.py"):
 
@@ -35,7 +55,7 @@ if os.path.isfile("tasks.py"):
 
 else: # only define the other tasks if inside project (i.e. sub-) directories
 
-    sys.path.insert(0, os.environ["MONTY_ROOT"])
+    sys.path.insert(0, root)
     from src.devtasks import *
 
     # the filename has a dash in it, so a plain "from ... import *" won't work
