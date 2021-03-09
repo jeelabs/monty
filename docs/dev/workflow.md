@@ -190,7 +190,7 @@ To start extension / application development, proceed as follows:
     ```text
     $ inv native
     main
-    hello monty my-project
+    hello monty v1.0-112-ged9932d
     done
     $ inv python
     1 tests, 1 matches, 0 failures, 0 skipped, 0 ignored
