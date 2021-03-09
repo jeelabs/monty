@@ -4,11 +4,12 @@ from invoke import task
 import os, sys
 
 def getMontyDir():
+    f = os.path.realpath(__file__)
     for d in ["..", "../monty"]:
-        r = os.path.relpath(os.path.join(__file__, "..", d))
+        r = os.path.relpath(os.path.join(f, "..", d))
         if os.path.isfile(os.path.join(r, "src/devtasks.py")):
             return r
-    print("Can't find the 'monty' source code folder (should be a sibling)")
+    print("Can't find the 'monty' source code folder, bailing out")
     sys.exit(1)
 
 if "MONTY_ROOT" not in os.environ:

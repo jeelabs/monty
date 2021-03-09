@@ -167,55 +167,60 @@ easiest way to keep everything together and in sync).
 
 To start extension / application development, proceed as follows:
 
-1. Set up the `MONTY_ROOT` environment variable to point to the root on the
-   Monty checkout clone you want to use - probably easest to do this in
-   `~/.bashrc` or equivalent, e.g.
+1. Create a new folder with a **symlink** to `examples/tasks.py` in it, e.g.
 
     ```text
-    export MONTY_ROOT=/path/to/my/monty/
+    mkdir -p /path/to/my-monty
+    cd /path/to/my-monty
+    ln -s /patch/to/source/of/monty/examples/tasks.py
     ```
 
-    Make sure it's now properly set (re-login if necessary), but also note that
-    for convenience there is _one relaxation_ of this rule: if the out-of-tree
-    area is located _next_ to the Monty source tree (i.e. a sibling), then it
-    will be found even when `MONTY_ROOT` is not set.
+    This becomes the "out of tree" root area for custom builds of Monty, each
+    in their own "project" directory.
 
-2. Grab a copy of the examples folder as starting template for out-of-tree work:
+2. Set up a first project where you can make custom Monty builds:
 
     ```text
-    cp -a $MONTY_ROOT/examples/ $HOME/path/to/my/monty-projects
+    inv my-project
+    cd my-project
     ```
 
-3. Create a subfolder for your first monty project (it _has to be_ in a
-   subfolder):
+3.  Now you can compile, run, and test this first not-so-custom build of Monty:
 
     ```text
-    inv init myproject
+    $ inv native
+    main
+    hello monty my-project
+    done
+    $ inv python
+    1 tests, 1 matches, 0 failures, 0 skipped, 0 ignored
+    $
     ```
 
-4. Verify that the new area can build Monty out-of-tree (this will default to a
-   native build):
+The `inv init ...` command created a few files. One important detail, is that
+the `monty-pio.ini` file contains two paths which point _inside_ the Monty
+source tree (and will have to be adjusted if this folder is ever moved):
 
-    ```text
-    inv build
-    ```
+```text
+$ tree
+.
+├── monty-inv.py
+├── monty-pio.ini
+└── test
+    └── py
+        ├── hello.exp
+        └── hello.py
+```
 
-    If all is well, you should now have a working `.pio/build/native/program`
-    executable.
-
-That's it. The stage has been set to create a custom build of Monty. It could be
-a modified `main.cpp` app, or a port to a different platform, or a new module /
+That's it. The stage has been set to create custom versions. This could be a
+modified `main.cpp` app, a port to a different platform, a new module /
 datatype for use from Python, or merely a single extra function which you want
-to implement in C++ and use from PyVM.
-
-You can try out the examples to see what each of them do, or delete them all to
-start with a 100% clean slate.
+to implement in C++ and call from PyVM.
 
 ?> To summarise: custom Monty builds must be a subdirectory of such an "out of
 tree" development area. The `inv` command will automatically check the parent
-directory and find its `tasks.py` file there, which is also where all the magic
-happens. In addition, the `MONTY_ROOT` environment variable needs to be set to
-tie this all into the checked out version of Monty.
+directory chain and find its `tasks.py` file there, which is also where all the
+magic happens. The symlink will then be used to locate the Monty source tree.
 
 ## Code generation
 
