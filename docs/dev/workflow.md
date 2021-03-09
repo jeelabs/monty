@@ -29,7 +29,7 @@ files:
 * **`inv <cmd>`** performs key development tasks - the list of all available
   commands can be obtained with `inv -l` - this is an installed package
 * **`tasks.py`** is the central configuration file for `inv` - as Python script,
-  it defines what tasks are available and how to "run" them (similar to
+  it defines what tasks are available and how to "run" them (similar to a
   `makefile`)
 * **`pio <cmd>`** is the [PlatformIO](https://platformio.org) build tool which
   takes care of all the toolchain details, e.g. compilers and uploaders - this
@@ -38,7 +38,7 @@ files:
   sections, and is also parsed by the `tasks.py` script to extract some settings
 * **`src/codegen.py`** is a custom-built _code generator_ for Monty, which it
   scans source code to insert / update / replace boilerplate code and a few
-  other things - this script is launched with the proper args from `tasks.py`
+  other things - this script is launched with proper args from `tasks.py`
 * **`src/runner.py`** is a _test runner_ for attached µC boards, which will send
   tests, compare the output, and report the differences - this script is also
   launched from `tasks.py`
@@ -81,10 +81,9 @@ There are two ways to customise this:
 2. switch to Extension development, i.e. "out of tree" mode, as described
    [below](#extension-development)
 
-The first approach allows somewhat faster and more advanced development (and may
-be needed to debug "deep" problems), but the second one is preferred as it keeps
-the Monty source tree clean, and allows quick "git pulls" when there are
-updates.
+The first approach supports faster and more advanced development (and
+is needed to debug "deep" problems), but the second one keeps the Monty
+source tree clean and allows quick "git pulls" when there are updates.
 
 The `pio` [documentation
 site](https://docs.platformio.org/en/latest/projectconf/index.html)
@@ -120,9 +119,9 @@ to running Python code interactively:
 * workflow #6: watch and re-send bytecode on each change: **`inv watch -r
   myscript.py`**
 
-This last variant does _not_ reflash the firmware, it only re-sends new bytecode
-(re-flashing can be done separately using `inv flash`). In case the µC has
-crashed and hangs, a manual reset will be needed.
+This last variant does _not_ upload firmware, it only re-sends new
+bytecode (re-flashing can be done in a separate terminal window using `inv
+flash`). In case the µC has crashed and hangs, a manual reset will be needed.
 
 #### Additional configuration tweaks
 
@@ -294,12 +293,12 @@ The `CG` directives come in a few different shapes and sizes:
 
 * `//CG ident ...` is a newly added directive, and consists of just that one
   line
-* `//CG: ident ...` is a dierctive with no further expansion, it just informs
+* `//CG: ident ...` is a directive with no further expansion, it just informs
   the code generator
 * `//CG< ident ...` + some lines + `//CG>` is a bracket range, as in the
   example above
 
-Is the expansion contains only 1 to 3 lines, then the leading line will start
+If the expansion contains only 1 to 3 lines, then the leading line will start
 with `//CG1` to `//CG3` respectively, then the expansion, but no closing
 marker. This helps reduce visual clutter for very short expansions.
 
@@ -353,7 +352,7 @@ doing so in a nicely readable way.
 
 Note that the assigned qstr IDs will change each time a new qstr is added
 _anywhere_ in the source files. This has no further implications, since the
-same codegenerator run which issues these numbers also generates the matching
+same code generator run which issues these numbers also generates the matching
 constant table in the last file processed by the code generator: `qstr.cpp`.
 
 ?> No pre-processor defines were used or harmed in this design. It's all
