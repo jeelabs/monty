@@ -324,7 +324,7 @@ it evaluates to its first arg, i.e. an integer. This goes _very_ far, as the
 following example illustrates:
 
 ```
-//CG< kwargs foo bar baz
+//CG kwargs foo bar baz
 ```
 
 This expands to the following code (which works in C++11 and upwards):
