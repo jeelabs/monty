@@ -5,6 +5,7 @@ import configparser, os, sys
 from src.runner import compileIfOutdated, compareWithExpected, printSeparator
 
 dry = "-R" in sys.argv or "--dry" in sys.argv
+exe = ".pio/build/native/program" # for native builds
 
 # root must be non-empty if-and-only-if invoked "out of tree"
 root = os.environ.get("MONTY_ROOT", "")
@@ -55,14 +56,14 @@ def generate(c, strip=False, verbose=False, norun=False):
 @task(call(generate, strip=True))
 def clean(c):
     """delete all build results"""
-    c.run("rm -rf .pio examples/*/.pio test/py/*.mpy")
+    c.run("rm -rf .pio examples/*/.pio kcov-out/ test/py/*.mpy")
 
 @task(generate, default=not root,
       help={"file": "name of the .py or .mpy file to run"})
 def native(c, file="test/py/hello.py"):
     """run script using the native build  [test/py/hello.py]"""
     c.run(pio("run -e native -s"), pty=True)
-    c.run(".pio/build/native/program " + compileIfOutdated(file))
+    c.run("%s %s" % (exe, compileIfOutdated(file)))
 
 def shortTestOutput(r):
     gen = (s for s in r.tail('stdout', 10).split("\n"))
@@ -75,8 +76,9 @@ def shortTestOutput(r):
 
 @task(generate, iterable=["ignore"],
       help={"tests": "specific tests to run, comma-separated",
-            "ignore": "one specific test to ignore"})
-def python(c, ignore, tests=""):
+            "ignore": "one specific test to ignore",
+            "coverage": "generate a code coverage report using 'kcov'"})
+def python(c, ignore, coverage=False, tests=""):
     """run Python tests natively          [in test/py/: {*}.py]"""
     c.run(pio("run -e native -s"), pty=True)
     if dry:
@@ -84,7 +86,12 @@ def python(c, ignore, tests=""):
         print("# tasks.py: run and compare each test (%s)" % msg)
         return
 
-    num, match, fail, skip = 0, 0, 0, 0
+    num, match, fail, skip, timeout, cmd = 0, 0, 0, 0, 2.5, [exe]
+    if coverage:
+        timeout = 60 # just in case
+        cmd = ["kcov", "--collect-only", "kcov-out", exe]
+        print("generating a code coverage report, this may take several minutes")
+        c.run("rm -rf kcov-out")
 
     if tests:
         files = [t + ".py" for t in tests.split(",")]
@@ -105,8 +112,7 @@ def python(c, ignore, tests=""):
                 fail += 1
             else:
                 try:
-                    r = c.run(".pio/build/native/program %s" % mpy,
-                              timeout=2.5, hide=True)
+                    r = c.run(" ".join(cmd + [mpy]), timeout=timeout, hide=True)
                 except Exception as e:
                     r = e.result
                     msg = "[...]\n%s\n" % r.tail('stdout', 5).strip("\n")
@@ -123,6 +129,9 @@ def python(c, ignore, tests=""):
     if not dry:
         print(f"{num} tests, {match} matches, "
               f"{fail} failures, {skip} skipped, {len(ignore)} ignored")
+    if coverage:
+        c.run(" ".join(["kcov", "--report-only", "kcov-out", exe]))
+        print("the coverage report is ready, see kcov-out/index.html")
     if num != match:
         c.run("exit 1") # yuck, force an error ...
 

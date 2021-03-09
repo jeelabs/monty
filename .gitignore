@@ -1,6 +1,7 @@
 .pio/
 __pycache__/
 
+/kcov-out/
 /monty-pio.ini
 /tags
 
