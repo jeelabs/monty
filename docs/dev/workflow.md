@@ -78,7 +78,8 @@ build_flags = ${stm32.build_flags} -DSTM32L4
 There are two ways to customise this:
 
 1. add a `pioconf.ini` file with new (and possibly overriding) settings
-2. switch to Extension development, i.e. "out of tree" mode, as described below
+2. switch to Extension development, i.e. "out of tree" mode, as described
+   [below](#extension-development)
 
 The first approach allows somewhat faster and more advanced development (and may
 be needed to debug "deep" problems), but the second one is preferred as it keeps
@@ -142,8 +143,7 @@ then generates a number of tables (e.g. the collected qstr data, known modules,
 built-in functions).
 
 !> The code generator scan needs to match exactly what `pio` will compile and
-link together. There is much more to say, but this will need to be documented on
-another page.
+link together. See [below](#code-generation).
 
 ## Extension development
 
@@ -217,3 +217,64 @@ tree" development area. The `inv` command will automatically check the parent
 directory and find its `tasks.py` file there, which is also where all the magic
 happens. In addition, the `MONTY_ROOT` environment variable needs to be set to
 tie this all into the checked out version of Monty.
+
+## Code generation
+
+A substantial part of the Monty source code is automatically generated. Some of
+it is simply out of laziness, using code-generation as shortand. This line, for
+example:
+
+```
+//CG args a1 a2 a3:o a4:i ? a5 a6:s a7:s a8 *
+```
+
+Will be expanded as follows:
+
+```
+//CG< args a1 a2 a3:o a4:i ? a5 a6:s a7:s a8 *
+Value a1, a2, a5, a8;
+Object *a3;
+int a4;
+char const *a6, *a7;
+auto ainfo = args.parse("vvoi?vssv*",&a1,&a2,&a3,&a4,&a5,&a6,&a7,&a8);
+if (ainfo.isObj()) return ainfo;
+//CG>
+```
+
+There are several very practical reasons and benefits with this approach:
+
+* why write repetitive code when the silicon can do it?
+* it adds consistency (arg checking and type conversion, in this case)
+* if there is a need to change it, just tweak and re-run the code generator
+* and in that same vein: fix a bug once, re-run, and it's gone everywhere
+* the code generator can also _strip_ it all out again, which makes for easy
+  reading
+* only the stripped version gets checked into git, why store redundant info?
+* expansion and stripping are both _idem-potent_ - they're no-ops when
+  re-applied
+* there are no special headers or pre-processor define's, it all happens in
+  plain sight
+
+Note that this style of code generation is _inline_, i.e. the generated code
+becomes part of the source code. That's also why that final `//CG>` tag is
+essential. On subsequent runs, the generated sections will be replaced by new
+versions (and the code generator is smart enough to only rewrite source files
+when there are actual changes).
+
+But that's just a small part of the whole story. This code generator is also
+used to:
+
+* generate Tediously Boring Boilerplate Function Definitions ™
+* collect all functions which need to be bound or wrapped for PyVM access
+* ... and then generate the attribute table definitions for these bindings
+* parse some headers in MicroPython to generate definitions for use in Monty
+* enable massive insertion of debug print statements (i.e. for each VM opcode)
+* insert of remove code based on the inclusion of certain features in the build
+* and last but certainly not least: auto-renumber all qstrs in the source code
+
+The effectiveness of this code generator comes from making it completely
+_specialised_ for Monty's use - it serves no purpose elsewhere (other than to
+demonstrate the technique, perhaps). The current `src/codegen.py` script is
+about 700 LOC, and is regularly tweaked and extended to fit the evolving needs
+of the project. And it already "pays for itself": well over 1,000 lines of
+Monty's core source code are auto-generated.
