@@ -58,9 +58,8 @@ else: # only define the other tasks if inside project (i.e. sub-) directories
     sys.path.insert(0, root)
     from src.devtasks import *
 
-    # the filename has a dash in it, so a plain "from ... import *" won't work
-    # (I'm not a fan of underscores_in_names, even less so in file names -jcw)
+    # don't use import but execute directly in this context - this lets tasks
+    # defined in "monty-inv.py" depend directly on all the tasks defined above
     if os.path.isfile("monty-inv.py"):
-        import importlib
-        sys.path.insert(0, ".")
-        globals().update(vars(importlib.import_module("monty-inv")))
+        with open("monty-inv.py") as f:
+            exec(f.read())

@@ -12,9 +12,8 @@
 │   ├── monty/          # main code area for Monty
 │   └── ...
 ├── src/                # small main.cpp and some utility scripts
-└── test/
-    ├── py/             # Python tests for native & remote use
-    └── ...             # Unity C++ tests for native & remote use
+├── test/               # Unity C++ tests for native & remote use
+└── verify/             # Python tests for native & remote use
 ```
 
 [MPY]: https://micropython.org/

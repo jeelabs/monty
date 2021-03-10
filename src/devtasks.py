@@ -195,33 +195,6 @@ def mrfs(c, offset=0, file=""):
         c.run("%s -u %s verify/*.py" % (mrfs, offset), pty=True)
 
 @task
-def health(c):
-    """verify proper toolchain setup"""
-    c.run("uname -sm")
-    c.run("python3 --version")
-    c.run("inv --version")
-    c.run("pio --version")
-    c.run("mpy-cross --version")
-    #c.run("which micropython || echo NOT FOUND: micropython")
-
-    if False: # TODO why can't PyInvoke find pySerial ???
-        try:
-            import serial
-            print('pySerial', serial.__version__)
-        except Exception as e:
-            print(e)
-            print("please install with: pip3 install pyserial")
-
-    fn = ".git/hooks/pre-commit"
-    if root or os.path.isfile(fn):
-        return
-    print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
-    if not dry:
-        with open(fn, "w") as f:
-            f.write("#!/bin/sh\ninv generate -s\ngit add -u .\n")
-        os.chmod(fn, 0o755)
-
-@task
 def serial(c):
     """serial terminal session, use in separate window"""
     if root:

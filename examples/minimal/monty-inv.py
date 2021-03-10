@@ -1,5 +1,3 @@
-from invoke import task
-
 """ This script is loaded by `inv` to define additional tasks for this area.
     The example below defines an "all" task. Uncomment and adjust to taste.
 """

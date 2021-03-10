@@ -49,14 +49,13 @@ struct Toggler : Stacklet {
     }
 };
 
-char mem [10000];
-
 int main () {
     enableSysTick();
     led.mode(Pinmode::out);
     Port<'A'>::modeMap(0b1111011, Pinmode::out);
 
-    gcSetup(mem, sizeof mem); // set up the GC memory pool
+    char mem [2000];
+    gcSetup(mem, sizeof mem); // set up a small GC memory pool
 
     // create 7 stacklets, with different delays
     for (int i = 0; i < 7; ++i)

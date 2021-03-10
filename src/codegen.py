@@ -122,6 +122,8 @@ def MOD_LIST(block, sel):
                     out.append('    { Q (%d,"%s"), ext_%s },' % (id, m, m))
             if mArch:
                 out.append("#endif")
+        if not out: # edge case: no modules
+            out.append("    { Q(0), {} },")
     return out
 
 # bind a function, i.e. define a callable function object wrapper
@@ -326,7 +328,11 @@ def QSTR_EMIT(block):
         if qArch != "":
             out.append("#endif")
 
-    out.append('    // end of 1-byte hashes, start of string data:')
+    if archs:
+        out.append('    // end of 1-byte hashes, start of string data:')
+    else: # edge case: no qstrs at all
+        out.append("    {}")
+
     for qArch, (qLen, qMap) in archs.items():
         pairs = qMap.items()
         if qArch != "":

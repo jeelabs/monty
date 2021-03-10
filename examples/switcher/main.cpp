@@ -14,12 +14,11 @@ struct Switcher : Stacklet {
     }
 };
 
-char mem [10000];
-
 int main () {
     led.mode(Pinmode::out);
 
-    gcSetup(mem, sizeof mem); // set up GC memory pool
+    char mem [2000];
+    gcSetup(mem, sizeof mem); // set up a small GC memory pool
 
     Stacklet::ready.append(new Switcher);
 

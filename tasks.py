@@ -32,6 +32,33 @@ def examples(c):
                 c.run("pio run -c examples/pio-examples.ini "
                     "-d examples/%s -t size -s" % ex, warn=True)
 
+@task
+def health(c):
+    """verify proper toolchain setup"""
+    c.run("uname -sm")
+    c.run("python3 --version")
+    c.run("inv --version")
+    c.run("pio --version")
+    c.run("mpy-cross --version")
+    #c.run("which micropython || echo NOT FOUND: micropython")
+
+    if False: # TODO why can't PyInvoke find pySerial ???
+        try:
+            import serial
+            print('pySerial', serial.__version__)
+        except Exception as e:
+            print(e)
+            print("please install with: pip3 install pyserial")
+
+    fn = ".git/hooks/pre-commit"
+    if root or os.path.isfile(fn):
+        return
+    print('creating pre-commit hook in "%s" for codegen auto-strip' % fn)
+    if not dry:
+        with open(fn, "w") as f:
+            f.write("#!/bin/sh\ninv generate -s\ngit add -u .\n")
+        os.chmod(fn, 0o755)
+
 @task(post=[clean, test, call(python, python_skip),
             upload, flash, mrfs, call(runner, runner_skip),
             builds, examples])
