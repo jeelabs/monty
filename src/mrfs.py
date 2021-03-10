@@ -15,7 +15,7 @@
 #
 #   input files with extension ".mrfs" are listed instead of wrapped
 
-import io, os, sys
+import io, os, sys, time
 from binascii import crc32
 from datetime import datetime
 from struct import pack, unpack
@@ -107,6 +107,7 @@ if upload is not None:
             #print(line, end="")
             ser.write(line.encode())
             ser.flush()
+            time.sleep(0.005) # needed for Black Magic Probe
         line = ser.readline()
         if b'offset' not in line:
             print("upload?", line)

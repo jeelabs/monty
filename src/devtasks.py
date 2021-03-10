@@ -197,12 +197,7 @@ def mrfs(c, offset=0, file=""):
 @task
 def serial(c):
     """serial terminal session, use in separate window"""
-    if not dry:
-        print("--- Quit: Ctrl-C | Help: Ctrl-T + Ctrl-H ---")
-    if root:
-        c.run("pio device monitor -d %s --echo --quiet" % root, pty=True)
-    else:
-        c.run("pio device monitor --echo --quiet", pty=True)
+    c.run(pio("run -t monitor -s"), pty=True)
 
 @task(help={"file": "the Python script to send whenever it changes",
             "remote": "run script remotely iso natively"})

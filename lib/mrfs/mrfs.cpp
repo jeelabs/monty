@@ -117,7 +117,7 @@ int main (int argc, char const* argv[]) {
 #include <jee.h>
 
 static void saveToFlash (uint8_t* addr, mrfs::Info& info, void const* buf) {
-    // STM32L4-specific code
+    // STM32-specific code
     auto start = (uint32_t*) addr;
     auto limit = (uint32_t*) (addr + (info.tail()+1-&info) * sizeof info);
     // store first 8 bytes from info, then buf, then last 24 bytes from info
@@ -127,11 +127,13 @@ static void saveToFlash (uint8_t* addr, mrfs::Info& info, void const* buf) {
             src = (uint32_t const*) buf;
         if (dst == limit - 6)
             src = (uint32_t const*) info.name;
+#if STM32L4
         if ((uint32_t) dst % 2048 == 0)
             Flash::erasePage(dst);
-#if STM32L4
         Flash::write64(dst, src[0], src[1]);
 #else
+        if ((uint32_t) dst % 1024 == 0) // TODO this assumes Blue Pill (F103Cx)
+            Flash::erasePage(dst);
         Flash::write32(dst, src[0]);
         Flash::write32(dst+1, src[1]);
 #endif

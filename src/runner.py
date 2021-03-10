@@ -80,6 +80,7 @@ def compileAndSend(ser, fn):
         for line in genHex(f.read()):
             ser.write(line.encode())
             ser.flush()
+            time.sleep(0.005) # needed for Black Magic Probe
 
 def compareWithExpected (fn, output):
     adjout = output
@@ -184,7 +185,7 @@ if __name__ == "__main__":
         while True:
             try:
                 line = ser.readline()
-                if line[:1] == b'\xFF':
+                if line[:1] in [b'\xFE', b'\xFF']:
                     continue # yuck: ignore power-up noise from UART TX
             except:
                 ok = False

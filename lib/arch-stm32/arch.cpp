@@ -11,7 +11,7 @@
 //CG< if dir mrfs
 #define HAS_MRFS 1
 #include <mrfs.h>
-const auto mrfsBase = (mrfs::Info*) 0x08020000;
+const auto mrfsBase = (mrfs::Info*) 0x08010000;
 const auto mrfsSize = 32*1024;
 //CG>
 
@@ -23,10 +23,8 @@ const auto mrfsSize = 32*1024;
 
 using namespace monty;
 
-#if STM32F103xB
-UartBufDev< PinA<2>, PinA<3>, 100 > console;
-#elif STM32L432xx
-UartBufDev< PinA<2>, PinA<15>, 3 > console;
+#if STM32L432xx
+UartBufDev< PinA<2>, PinA<15>, 100 > console;
 #else
 UartBufDev< PinA<9>, PinA<10>, 100 > console;
 #endif
