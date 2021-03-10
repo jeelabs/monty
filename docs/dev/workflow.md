@@ -266,9 +266,9 @@ Available tasks:
   generate   pass source files through the code generator
   health     verify proper toolchain setup
   mrfs       upload tests as Minimal Replaceable File Storage image
-  native     run script using the native build  [test/py/hello.py]
-  python     run Python tests natively          [in test/py/: {*}.py]
-  runner     run Python tests, sent to µC       [in test/py/: {*}.py]
+  native     run script using the native build  [verify/hello.py]
+  python     run Python tests natively          [in verify/: {*}.py]
+  runner     run Python tests, sent to µC       [in verify/: {*}.py]
   serial     serial terminal session, use in separate window
   test       run C++ tests natively
   upload     run C++ tests, uploaded to µC
@@ -286,7 +286,7 @@ $ inv -h python
 Usage: inv[oke] [--core-opts] python [--options] [other tasks here ...]
 
 Docstring:
-  run Python tests natively          [in test/py/: {*}.py]
+  run Python tests natively          [in verify/: {*}.py]
 
 Options:
   -c, --coverage              generate a code coverage report using 'kcov'

@@ -3,7 +3,7 @@ This is a basic processing pipeline experiment.
 To build and run:
 
 ```text
-$ inv run bv,-h,gr,../../test/py/hello.mpy,gr
+$ inv run bv,-h,gr,../../verify/hello.mpy,gr
 Monty pipeline (Feb 15 2021, 15:17:54)
   bv    show build version
   gc    trigger garbage collection

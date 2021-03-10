@@ -69,7 +69,7 @@ following structure:
 <number-of-entries> <type-as-char> <raw-data-as-hex>
 ```
 
-For examples, see the `test/py/array.py` code and `test/py/array.exp` output.
+For examples, see the `verify/array.py` code and `verify/array.exp` output.
 
 ## VaryVec
 

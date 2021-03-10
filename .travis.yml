@@ -33,8 +33,8 @@ script:
 
   # quick native checks
   - pio run -e native -s
-  - mpy-cross test/py/hello.py
-  - .pio/build/native/program test/py/hello.mpy
+  - mpy-cross verify/hello.py
+  - .pio/build/native/program verify/hello.mpy
 
   # native invoke tasks
   - inv test

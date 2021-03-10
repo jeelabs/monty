@@ -38,10 +38,10 @@ target is a low-power ARM Cortex-M4 [Nucleo-L432KC][L432] (256+64 kB @ 80 MHz).
 This is a test run on native + embedded, as of mid-Feb 2021:
 
 ```text
-$ cat test/py/hello.py
+$ cat verify/hello.py
 import sys
 print('hello', sys.implementation, sys.version)
-$ inv native -f test/py/hello.mpy
+$ inv native -f verify/hello.mpy
 main
 hello monty v1.0
 done

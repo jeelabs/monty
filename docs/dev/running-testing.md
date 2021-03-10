@@ -40,9 +40,9 @@ Here's how to build the native executable and run Python scripts:
 |---|---|
 | `inv` | same as `inv native`, used for quick compile checks |
 | `inv native` | this is the simplest test, it runs a minimal "hello" Python script |
-| `inv native -f hello` | the same test, with script from `test/py/` |
-| `inv native -f test/py/hello.py` | again the same, this time spelled out in full detail |
-| `inv native -f test/py/hello.mpy` | refers to the bytecode file, `inv` will not launch `mpy-cross` |
+| `inv native -f hello` | the same test, with script from `verify/` |
+| `inv native -f verify/hello.py` | again the same, this time spelled out in full detail |
+| `inv native -f verify/hello.mpy` | refers to the bytecode file, `inv` will not launch `mpy-cross` |
 | `inv python` | run the full Python test suite, reporting only differences and failures |
 | `inv python -t hello,mem` | run only the specified tests (can also be a glob pattern) |
 | `inv test` | run the C++ test suite, with results summarised at the end |
@@ -174,7 +174,7 @@ done
 that is the standard case.
 
 Adding a new Python test is a matter of adding a new `.py` file to the
-`test/py/` directory. A first run will never match, but once the received `.out`
+`verify/` directory. A first run will never match, but once the received `.out`
 file has been verified to be correct it can simply be renamed to have a `.exp`
 extension.
 
@@ -185,7 +185,7 @@ The "test runner" mentioned above is actually a separate Python script called
 it also compares the output to what is "expected", and does its best to present
 all outcomes in a concise manner. Matching tests do not produce any output.
 
-All tests in `test/py/` consist of up to 4 files, e.g. in the case of `hello`:
+All tests in `verify/` consist of up to 4 files, e.g. in the case of `hello`:
 
 * **hello.py** - this is the test script itself
 * **hello.mpy** - this is the bytecode, as produced by `mpy-cross`
@@ -209,7 +209,7 @@ substition:
   as "/search/replace/" instructions, which the runner then applies each to the
   output _before_ comparing it to the remainder of the `.exp` file.
 
-Here is `test/py/hello.exp`, for example:
+Here is `verify/hello.exp`, for example:
 
 ```
 /monty .+/monty {VERS}/
