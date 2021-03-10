@@ -1,7 +1,6 @@
 [![Documentation](https://img.shields.io/badge/jeelabs.org-docs-blue)](https://monty.jeelabs.org/)
 [![Discussions](https://img.shields.io/badge/github-discuss-orange)](https://github.com/jeelabs/monty/discussions)
 [![GitHub issues](https://img.shields.io/github/issues/jeelabs/monty)](https://github.com/jeelabs/monty/milestones)
-[![Build Status](https://www.travis-ci.com/jeelabs/monty.svg)](https://www.travis-ci.com/jeelabs/monty)
 
 **Monty** is a Virtual Machine which runs bytecode produced by [MicroPython][MPY].  
 It's grossly incomplete and totally unfit for general use, but ... it _does_ work.  
