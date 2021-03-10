@@ -175,10 +175,9 @@ void Stacklet::yield (bool fast) {
 // helper function to avoid stale register issues after setjmp return
 static auto resumeFixer (void* p) -> Value {
     auto c = Stacklet::current;
-    auto r = resumer;
-    auto n = (uint8_t*) r - (uint8_t*) p;
-    assert(Stacklet::current != nullptr);
+    assert(c != nullptr);
     assert(resumer != nullptr);
+    auto n = (uint8_t*) resumer - (uint8_t*) p;
     assert((n & 3) == 0);
     duff(p, c->end(), n);
     return c->_transfer.take();
