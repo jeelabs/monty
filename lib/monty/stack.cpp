@@ -48,6 +48,9 @@ void Stacklet::gcAll () {
 }
 
 static void duff (void* dst, void const* src, size_t len) {
+    assert(((uintptr_t) dst & 3) == 0);
+    assert(((uintptr_t) src & 3) == 0);
+    assert((len & 3) == 0);
 #if 0
     memcpy(dst, src, len);
 #else
@@ -169,6 +172,18 @@ void Stacklet::yield (bool fast) {
         suspend(ready);
 }
 
+// helper function to avoid stale register issues after setjmp return
+static auto resumeFixer (void* p) -> Value {
+    auto c = Stacklet::current;
+    auto r = resumer;
+    auto n = (uint8_t*) r - (uint8_t*) p;
+    assert(Stacklet::current != nullptr);
+    assert(resumer != nullptr);
+    assert((n & 3) == 0);
+    duff(p, c->end(), n);
+    return c->_transfer.take();
+}
+
 auto Stacklet::suspend (Vector& queue) -> Value {
     assert(current != nullptr);
     if (&queue != &Event::triggers) // special case: use as "do not append" mark
@@ -189,10 +204,7 @@ auto Stacklet::suspend (Vector& queue) -> Value {
     }
 
     // resuming: copy stack back in
-    assert(current != nullptr);
-    duff(&top, current->end(), need);
-
-    return current->_transfer.take();
+    return resumeFixer(&top);
 }
 
 auto Stacklet::runLoop () -> bool {

@@ -22,6 +22,5 @@ async def timeout():
     global evt
     delay(20)
     machine.ticker()
-    evt.wait()
 
 sys.ready.append(timeout())

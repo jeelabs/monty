@@ -20,6 +20,5 @@ for i in [2, 3, 5]:
 async def timeout():
     delay(20)
     machine.ticker()
-    evt.wait()
 
 sys.ready.append(timeout())
