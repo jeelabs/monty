@@ -5,4 +5,4 @@ def all(c):
     """compile and test the "minimal" demo"""
 
 # remove irrelevant tasks
-#del flash, mrfs, runner, serial, upload
+del mrfs, python, runner, test, upload, watch
