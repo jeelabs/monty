@@ -358,11 +358,7 @@ auto monty::vmImport (char const* name) -> uint8_t const* {
 
 void arch::init (int size) {
     console.init();
-#if STM32F103xB
-    enableSysTick(); // no HSE crystal
-#else
     console.baud(115200, fullSpeedClock());
-#endif
 
     printf("\n"); // TODO yuck, the uart TX sends a 0xFF junk char after reset
 
