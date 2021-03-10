@@ -20,7 +20,7 @@ def builds(c):
     c.run("pio run -e noassert | tail -7 | head -1")
     c.run("pio run -e nopyvm | tail -7 | head -1")
 
-@task
+@task(generate)
 def examples(c):
     """build each of the example projects"""
     examples = os.listdir("examples")
