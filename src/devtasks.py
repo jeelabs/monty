@@ -78,7 +78,7 @@ def shortTestOutput(r):
       help={"tests": "specific tests to run, comma-separated",
             "ignore": "one specific test to ignore",
             "coverage": "generate a code coverage report using 'kcov'"})
-def python(c, ignore, coverage=False, tests=""):
+def python(c, ignore=[], coverage=False, tests=""):
     """run Python tests natively          [in verify/: {*}.py]"""
     c.run(pio("run -e native -s"), pty=True)
     if dry:
@@ -173,7 +173,7 @@ def upload(c, filter="*"):
 @task(iterable=["ignore"],
       help={"tests": "specific tests to run, comma-separated",
             "ignore": "one specific test to ignore"})
-def runner(c, ignore, tests=""):
+def runner(c, ignore=[], tests=""):
     """run Python tests, sent to µC       [in verify/: {*}.py]"""
     match = "{%s}" % tests if "," in tests else (tests or "*")
     iflag = ""
@@ -197,6 +197,8 @@ def mrfs(c, offset=0, file=""):
 @task
 def serial(c):
     """serial terminal session, use in separate window"""
+    if not dry:
+        print("--- Quit: Ctrl-C | Help: Ctrl-T + Ctrl-H ---")
     if root:
         c.run("pio device monitor -d %s --echo --quiet" % root, pty=True)
     else:

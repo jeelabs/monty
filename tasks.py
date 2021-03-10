@@ -26,11 +26,10 @@ def examples(c):
     examples = os.listdir("examples")
     examples.sort()
     for ex in examples:
-        if os.path.isdir("examples/%s" % ex):
-            if os.path.isfile("examples/%s/README.md" % ex):
-                print(ex)
-                c.run("pio run -c examples/pio-examples.ini "
-                    "-d examples/%s -t size -s" % ex, warn=True)
+        if os.path.isfile("examples/%s/README.md" % ex):
+            print("building '%s' example" % ex)
+            c.run("pio run -c platformio.ini -d examples/%s -t size -s" % ex,
+                  warn=True)
 
 @task
 def health(c):
