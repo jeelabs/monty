@@ -16,3 +16,14 @@ print(not a, not b, not c)
 print(bool(a), bool(b), bool(c))
 print(hash(a), hash(b), hash(c))
 print(abs(a), abs(-a), abs(c), abs(-c))
+print(int("10000000000"), int("20000000000"), int("-30000000000"))
+
+z = a-a
+try:
+    a = a / z
+except ZeroDivisionError as e:
+    print(e, e.trace())
+try:
+    a = a % z
+except ZeroDivisionError as e:
+    print(e, e.trace())

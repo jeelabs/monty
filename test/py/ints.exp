@@ -20,5 +20,5 @@ main
 1000000000000000000
 -1000000000000000000
 0 3 3 4 0 0 1
-ZeroDivisionError() ["ints.py",25,"<module>"]
+ZeroDivisionError() ["ints.py",26,"<module>"]
 done

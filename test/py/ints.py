@@ -20,7 +20,8 @@ print(1000000000000000000)
 print(-1000000000000000000)
 
 # add a few expressions to improve test coverage
-print(1&2, 1|2, 1^2, 1<<2, 1>>2, 1/2, 1%2)
+a, b = 1, 2
+print(a&b, a|b, a^b, a<<b, a>>b, a/b, a%b)
 try:
     a = 1 % 0
 except ZeroDivisionError as e:
