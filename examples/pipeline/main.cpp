@@ -114,6 +114,7 @@ static auto cmdRunner (Runner* feed) -> Value {
         char const* buf = v;
         for (auto& cmd : commands)
             if (memcmp(buf, cmd.desc, 2) == 0) {
+                printf("%s\n", buf);
                 cmd.proc();
                 return 0;
             }
