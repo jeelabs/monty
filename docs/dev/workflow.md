@@ -167,27 +167,43 @@ easiest way to keep everything together and in sync).
 
 To start extension / application development, proceed as follows:
 
-1. Create a new folder with a **symlink** to `examples/tasks.py` in it, e.g.
+1. Get a clone of the Monty source directory, if you haven't already, and `cd`
+   into it:
 
     ```text
-    mkdir -p /path/to/my-monty
-    cd /path/to/my-monty
-    ln -s /patch/to/source/of/monty/examples/tasks.py
+    $ git clone https://github.com/jeelabs/monty.git
+    Cloning into 'monty'...
+    [...]
+    $ cd monty
+    $ ls
+    README.md   docs            lib             src             test
+    UNLICENSE   examples        platformio.ini  tasks.py        verify
+    $
     ```
 
-    This becomes the "out of tree" root area for custom builds of Monty, each
-    in their own "project" directory.
-
-2. Set up a first project where you can make custom Monty builds:
+2. Verify that you have all the prerequisites installed (your platform and
+   versions may differ):
 
     ```text
-    inv my-project
-    cd my-project
+    $ inv health
+    Darwin x86_64
+    Python 3.9.2
+    Invoke 1.5.0
+    PlatformIO Core, version 5.1.0
+    MicroPython v1.14 on 2021-02-25; mpy-cross emitting mpy v5
+    creating pre-commit hook in ".git/hooks/pre-commit" for codegen auto-strip
+    $
     ```
 
-3.  Now you can compile, run, and test this first not-so-custom build of Monty:
+    (that last message is harmless, it tweaks this new clone slightly)
+
+3. Form here you can set up a new area for your custom Monty builds, and try it
+   out:
 
     ```text
+    $ inv init /path/to/my-project
+    custom build area created: /path/to/my-project
+    $ cd /path/to/my-project
     $ inv native
     main
     hello monty v1.0-112-ged9932d
@@ -206,10 +222,10 @@ $ tree
 .
 ├── monty-inv.py
 ├── monty-pio.ini
-└── test
-    └── py
-        ├── hello.exp
-        └── hello.py
+├── tasks.py         <-- symlink
+└── verify
+    ├── hello.exp
+    └── hello.py
 ```
 
 That's it. The stage has been set to create custom versions. This could be a
@@ -217,10 +233,73 @@ modified `main.cpp` app, a port to a different platform, a new module /
 datatype for use from Python, or merely a single extra function which you want
 to implement in C++ and call from PyVM.
 
-?> To summarise: custom Monty builds must be a subdirectory of such an "out of
-tree" development area. The `inv` command will automatically check the parent
-directory chain and find its `tasks.py` file there, which is also where all the
-magic happens. The symlink will then be used to locate the Monty source tree.
+?> To summarise: custom Monty builds are directories with at least the files
+mentioned above. Their presence (especially the `tasks.py` symlink) indicates
+that this is an "out of tree" build area for Monty.
+
+## Invoke tasks
+
+All Monty builds are designed around the `inv` command, which is part of
+[PyInvoke](https://www.pyinvoke.org). This provides a self-documenting set of
+tools, tailored for the in-tree and out-of-tree workflows described above. You
+can add new tasks tailored to a specific build area by editing the
+`monty-inv.py` script. This file is merged (i.e. `import *`) into the common
+`tasks.py` on each launch, and can extend as well as override anything defined
+in there.
+
+The two main commands to remember are:
+
+* **`inv -l`** - produce a list of all available commands _in this build area_
+* **`inv -h <cmd>`** - show the help and argument details for a specific
+  command
+
+Out of the box, the `inv -l` command will show something like this in a new
+build area:
+
+```text
+$ inv -l
+Available tasks:
+
+  all        this is an example "all" task, defined in monty-inv.py
+  clean      delete all build results
+  flash      build embedded and re-flash attached µC
+  generate   pass source files through the code generator
+  health     verify proper toolchain setup
+  mrfs       upload tests as Minimal Replaceable File Storage image
+  native     run script using the native build  [test/py/hello.py]
+  python     run Python tests natively          [in test/py/: {*}.py]
+  runner     run Python tests, sent to µC       [in test/py/: {*}.py]
+  serial     serial terminal session, use in separate window
+  test       run C++ tests natively
+  upload     run C++ tests, uploaded to µC
+  watch      watch-exec/upload-print loop for quick Python iteration
+
+Default task: all
+
+$
+```
+
+And as example of the second case:
+
+```text
+$ inv -h python
+Usage: inv[oke] [--core-opts] python [--options] [other tasks here ...]
+
+Docstring:
+  run Python tests natively          [in test/py/: {*}.py]
+
+Options:
+  -c, --coverage              generate a code coverage report using 'kcov'
+  -i, --ignore                one specific test to ignore
+  -t STRING, --tests=STRING   specific tests to run, comma-separated
+
+$
+```
+
+A convenient feature of `inv` is support for shell tab completion. This last
+example could also have been typed as `inv p<tab><enter>`. See [this
+page](http://docs.pyinvoke.org/en/stable/invoke.html#shell-tab-completion) for
+details.
 
 ## Code generation
 
