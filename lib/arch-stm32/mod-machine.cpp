@@ -172,6 +172,7 @@ static auto f_ticker (ArgVec const& args) -> Value {
         };
 
         tickEvent.deregHandler();
+        tickEvent.clear();
         assert(tickerId > 0);
     }
     return tickEvent;
