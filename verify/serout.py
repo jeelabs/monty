@@ -1,6 +1,6 @@
 import sys, machine
 
-evt = machine.ticker(100)
+evt = machine.ticker(50)
 
 def delay(n):
     for _ in range(n):
