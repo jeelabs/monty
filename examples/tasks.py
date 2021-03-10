@@ -23,7 +23,7 @@ def inRoot(f):
 
 @task(help={"name": "name of the new directory"})
 def init(c, name):
-    """Intialise a new Monty-based project"""
+    """intialise a new Monty-based project"""
     orig = os.path.join(root, "examples/template/")
     c.run("mkdir %s" % name)
     c.run("cp -a %s %s" % (orig, name))
@@ -44,7 +44,7 @@ if os.path.isfile("tasks.py"):
 
     @task(default=True)
     def help(c):
-        """Intro message and link to homepage"""
+        """intro message and link to homepage"""
         for s in """
           This is the "inv" cmdline tool for custom (out-of-tree) Monty builds
           Use "inv -l" for a list of available commands, and "inv -h" for help
