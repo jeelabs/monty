@@ -20,7 +20,7 @@ namespace monty {
         virtual void marker () const {} // called to mark all ref'd objects
 
         static auto isInPool (void const* p) -> bool;
-        auto isCollectable () const -> bool { return isInPool(this); }
+        auto isCollectable () const { return isInPool(this); }
 
         auto operator new (size_t bytes) -> void*;
         auto operator new (size_t bytes, uint32_t extra) -> void* {
@@ -48,16 +48,14 @@ namespace monty {
         ~Vec () { (void) adj(0); }
 
         static auto isInPool (void const* p) -> bool;
-        auto isResizable () const -> bool {
-            return _data == nullptr || isInPool(_data);
-        }
+        auto isResizable () const { return _data == nullptr || isInPool(_data); }
 
         static void compact (); // reclaim and compact unused vector space
         static void dumpAll (); // like compact, but only to print all vec+free
 
     protected:
-        auto ptr () const -> uint8_t* { return _data; }
-        auto cap () const -> uint32_t { return _capa; }
+        auto ptr () const { return _data; }
+        auto cap () const { return _capa; }
         auto adj (uint32_t bytes) -> bool;
     private:
         uint8_t* _data = nullptr; // pointer to vector when capa > 0
@@ -174,7 +172,7 @@ namespace monty {
 
         operator int () const { return (intptr_t) _v >> 1; }
         operator char const* () const;
-        auto operator-> () const -> Object* { return _o; }
+        auto operator-> () const { return _o; }
 
         auto obj () const -> Object& { return *_o; }
         auto asObj () const -> Object&; // create int/str object if needed
@@ -182,42 +180,40 @@ namespace monty {
         auto asQid () const -> uint16_t;
 
         template< typename T > // return null pointer if not of required type
-        auto ifType () const -> T* {
-            return check(T::info) ? (T*) _o : nullptr;
-        }
+        auto ifType () const { return check(T::info) ? (T*) _o : nullptr; }
 
         template< typename T > // type-asserted safe cast via Object::type()
         auto asType () const -> T& { verify(T::info); return *(T*) _o; }
 
-        auto tag () const -> Tag {
+        auto tag () const {
             return (_v&1) != 0 ? Int : // bit 0 set
                        _v == 0 ? Nil : // all bits 0
                    (_v&2) != 0 ? Str : // bit 1 set, ptr shifted 2 up
                                  Obj;  // bits 0 and 1 clear, ptr stored as is
         }
 
-        auto id () const -> uintptr_t { return _v; }
+        auto id () const { return _v; }
 
-        auto isOk  () const -> bool { return _v != 0; }
-        auto isNil () const -> bool { return _v == 0; }
-        auto isInt () const -> bool { return (_v&1) == Int; }
-        auto isStr () const -> bool { return (_v&3) == Str; }
-        auto isObj () const -> bool { return (_v&3) == 0 && _v != 0; }
+        auto isOk  () const { return _v != 0; }
+        auto isNil () const { return _v == 0; }
+        auto isInt () const { return (_v&1) == Int; }
+        auto isStr () const { return (_v&3) == Str; }
+        auto isObj () const { return (_v&3) == 0 && _v != 0; }
 
         inline auto isNone  () const -> bool;
         inline auto isFalse () const -> bool;
         inline auto isTrue  () const -> bool;
-               auto isBool  () const -> bool { return isFalse() || isTrue(); }
+               auto isBool  () const { return isFalse() || isTrue(); }
 
         static auto asBool (bool f) -> Value;
         auto truthy () const -> bool;
-        auto invert () const -> Value { return asBool(!truthy()); }
+        auto invert () const { return asBool(!truthy()); }
 
         auto operator== (Value) const -> bool;
         auto unOp (UnOp op) const -> Value;
         auto binOp (BinOp op, Value rhs) const -> Value;
 
-        auto take () -> Value { Value r = *this; *this = {}; return r; }
+        auto take () { Value r = *this; *this = {}; return r; }
 
         inline void marker () const;
         void dump (char const* msg =nullptr) const;
@@ -252,15 +248,15 @@ namespace monty {
         constexpr VecOf (T const* ptr, uint32_t num)
                     : Vec (ptr, num * sizeof (T)), _fill (num) {}
 
-        auto cap () const -> uint32_t { return Vec::cap() / sizeof (T); }
-        auto adj (uint32_t num) -> bool { return Vec::adj(num * sizeof (T)); }
+        auto cap () const { return Vec::cap() / sizeof (T); }
+        auto adj (uint32_t num) { return Vec::adj(num * sizeof (T)); }
 
-        constexpr auto size () const -> uint32_t { return _fill; }
-        constexpr auto begin () const -> T* { return (T*) Vec::ptr(); }
-        constexpr auto end () const -> T* { return begin() + _fill; }
+        constexpr auto size () const { return _fill; }
+        constexpr auto begin () const { return (T*) Vec::ptr(); }
+        constexpr auto end () const { return begin() + _fill; }
         auto operator[] (uint32_t i) const -> T& { return begin()[i]; }
 
-        auto relPos (int i) const -> uint32_t { return i < 0 ? i + _fill : i; }
+        auto relPos (int i) const { return i < 0 ? i + _fill : i; }
 
         void move (uint32_t pos, uint32_t num, int off) {
             memmove((void*) (begin() + pos + off),
@@ -318,7 +314,7 @@ namespace monty {
             return v;
         }
 
-        auto pop () -> T { return pull(_fill-1); } // pull from end
+        auto pop () { return pull(_fill-1); } // pull from end
 
         void clear () { _fill = 0; adj(0); }
 
@@ -339,21 +335,21 @@ namespace monty {
         constexpr ArgVec (Vector const& vec, int num, int off =0)
             : _vec (vec), _off (off), _num (num) {}
 
-        auto size () const -> uint8_t { return _num; }
-        auto begin () const -> Value const* { return _vec.begin() + _off; }
-        auto end () const -> Value const* { return begin() + size(); }
+        auto size () const { return (uint8_t) _num; }
+        auto begin () const { return _vec.begin() + _off; }
+        auto end () const { return begin() + size(); }
         auto operator[] (uint32_t i) const -> Value& { return _vec[_off+i]; }
 
         auto parse (char const*, ...) const -> Value; // defined in type.cpp
 
-        auto kwNum () const -> uint8_t { return _num >> 8; }
-        auto kwKey (int i) const -> Value { return begin()[size()+2*i]; }
-        auto kwVal (int i) const -> Value { return begin()[size()+2*i+1]; }
+        auto kwNum () const { return (uint8_t) (_num >> 8); }
+        auto kwKey (int i) const { return begin()[size()+2*i]; }
+        auto kwVal (int i) const { return begin()[size()+2*i+1]; }
 
-        auto expSeq () const -> Value {
+        auto expSeq () const {
             return _num & SPREAD ? begin()[size()+2*kwNum()] : Value {};
         }
-        auto expMap () const -> Value {
+        auto expMap () const {
             return _num & SPREAD ? begin()[size()+2*kwNum()+1] : Value {};
         }
 
@@ -443,7 +439,7 @@ namespace monty {
 
         // range-based for loops for vectors, iterators, and generators, see
         // https://www.nextptr.com/tutorial/ta1208652092/how-cplusplus-rangebased-for-loop-works
-        auto operator* () -> Value { return _val; }
+        auto operator* () { return _val; }
         auto operator!= (RawIter const&) -> bool;
         void operator++ () { _val = {}; }
     protected:
@@ -539,15 +535,11 @@ namespace monty {
         using ByteVec::size;
         using ByteVec::clear;
 
-        auto first () const -> uint8_t const* { return begin(); }
-        auto limit () const -> uint8_t const* { return begin() + pos(_fill); }
+        auto first () const { return begin(); }
+        auto limit () const { return begin() + pos(_fill); }
 
-        auto atGet (uint32_t i) const -> uint8_t* {
-            return begin() + pos(i);
-        }
-        auto atLen (uint32_t i) const -> uint32_t {
-            return pos(i+1) - pos(i);
-        }
+        auto atGet (uint32_t i) const { return begin() + pos(i); }
+        auto atLen (uint32_t i) const -> uint32_t { return pos(i+1) - pos(i); }
         void atAdj (uint32_t idx, uint32_t num);
         void atSet (uint32_t i, void const* ptr, uint32_t num);
 
