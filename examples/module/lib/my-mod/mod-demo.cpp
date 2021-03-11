@@ -1,7 +1,6 @@
 // demo.cpp - a little demo module
 
 #include <monty.h>
-#include <cassert>
 
 using namespace monty;
 

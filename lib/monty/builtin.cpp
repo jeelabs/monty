@@ -126,7 +126,7 @@ static Lookup::Item const exceptionMap [] = {
 
 Lookup const Exception::bases (exceptionMap);
 
-//CG: wrappers
+//CG: wrappers *
 
 static Lookup::Item const builtinsMap [] = {
     // exceptions must be first in the map, see Exception::findId

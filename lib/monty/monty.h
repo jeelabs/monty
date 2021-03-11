@@ -882,9 +882,6 @@ namespace monty {
         E _code;
     };
 
-// see library.cpp - runtime library functions for several datatypes
-    void libInstall ();
-
 // defined outside of the Monty core itself, e.g. in main.cpp cq pyvm.cpp
     auto vmImport (char const* name) -> uint8_t const*;
     auto vmLaunch (void const* data) -> Stacklet*;

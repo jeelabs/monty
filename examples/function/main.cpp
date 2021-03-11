@@ -9,6 +9,8 @@ int main ([[maybe_unused]] int argc, [[maybe_unused]] char const** argv) {
     printf("main\n");
 #endif
 
+    initMyLib(); // defined in my-lib.h
+
 #if NATIVE
     auto task = argc > 1 ? vmLaunch(argv[1]) : nullptr;
 #else

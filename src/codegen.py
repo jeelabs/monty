@@ -157,6 +157,10 @@ def WRAP(block, typ, *methods):
 
 # emit the wrapper code, for one type/module, or for the builtins by default
 def WRAPPERS(block, typ=None):
+    glob = typ == "*"
+    if glob:
+        typ = None
+
     mod = typ or flags.mod
     out = []
 
@@ -165,12 +169,18 @@ def WRAPPERS(block, typ=None):
             out.append("static Lookup::Item const %s_map [] = {" % mod)
         return out
 
-    if funs[mod]:
-        funs[mod].sort()
-        for f in funs[mod]:
-            if mod == "":
-                out += ["         extern auto   f_%s (ArgVec const& args) -> Value;" % f]
-            out.append("static Function const fo_%s (f_%s);" % (f, f))
+    funs[mod].sort()
+    for f in funs[mod]:
+        e, s = "extern", "static"
+        if glob:
+            e, s = s, e
+        if mod == "":
+            out += ["         extern auto   f_%s (ArgVec const& args) -> Value;" % f]
+        out.append("%s Function const fo_%s (f_%s);" % (e, f, f))
+
+    if not glob and not typ and not mod:
+        funs[mod] = []
+        return out
 
     if mod:
         names = [mod]
@@ -204,7 +214,8 @@ def WRAPPERS(block, typ=None):
                     "Lookup const %s::attrs (%s_map);" % (t, l)]
 
     #del funs[mod]
-    del meths[mod]
+    if mod in meths:
+        del meths[mod]
     if out and not out[0]:
         del out[0]
     return out
@@ -249,7 +260,7 @@ def EXCEPTION_EMIT(block, sel='h'):
     if sel == 'd':
         return excDefs
 
-# define a git version (not used anymore, it messes up the commit hash)
+# define a git version
 def VERSION(block):
     if strip:
         v = "<stripped>"
