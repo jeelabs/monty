@@ -265,9 +265,12 @@ def VERSION(block):
     if strip:
         v = "<stripped>"
     else:
+        d = os.path.dirname(__file__)
         # make sure to run "git describe" from inside the Monty area
-        v = subprocess.getoutput("cd %s && git describe --tags --always" %
-                                                    os.path.dirname(__file__))
+        s, v = subprocess.getstatusoutput("cd %s && git describe --tags --always" % d)
+        if s:
+            # use name of Monty's root dir if this is not a git clone
+            v = os.path.basename(os.path.dirname(d))
     return ['constexpr auto VERSION = "%s";' % v]
 
 # generate qstr definition
