@@ -1,4 +1,5 @@
 main
-triple 111 is 333
+triple 333 is 999
 quadruple 222 is 888
+quadruple 111 is 444
 done

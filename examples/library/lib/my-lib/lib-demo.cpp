@@ -13,7 +13,7 @@ extern auto f_triple (ArgVec const& args) -> Value {
 //CG1 bind quadruple
 extern auto f_quadruple (ArgVec const& args) -> Value {
     //CG: args val
-    return 4 * val.asType<Int>();
+    return val.binOp(BinOp::Multiply, 4); // also handles Int type
 }
 
 //CG: wrappers
