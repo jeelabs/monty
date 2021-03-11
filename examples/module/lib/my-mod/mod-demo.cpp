@@ -1,4 +1,4 @@
-// demo.cpp - a little demo module
+// mod-demo.cpp - a little demo module
 
 #include <monty.h>
 

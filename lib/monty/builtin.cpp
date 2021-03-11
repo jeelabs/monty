@@ -9,7 +9,7 @@
 using namespace monty;
 
 //CG1 bind argtest
-extern auto f_argtest (ArgVec const& args) -> Value {
+static auto f_argtest (ArgVec const& args) -> Value {
     //CG: args a1 a2 a3:o a4:i ? a5 a6:s a7:s a8 *
     //CG: kwargs foo bar baz
     if (a1.isInt()) // special, returns parse result: N<0 = missing, N>0 = extra
@@ -19,7 +19,7 @@ extern auto f_argtest (ArgVec const& args) -> Value {
 }
 
 //CG1 bind print
-extern auto f_print (ArgVec const& args) -> Value {
+static auto f_print (ArgVec const& args) -> Value {
     //CG: kwargs sep end
     if (!sep.isStr())
         sep = " ";
@@ -51,45 +51,45 @@ extern auto f_print (ArgVec const& args) -> Value {
 }
 
 //CG1 bind iter
-extern auto f_iter (ArgVec const& args) -> Value {
+static auto f_iter (ArgVec const& args) -> Value {
     //CG: args obj:o
     auto v = obj->iter();
     return v.isObj() ? v : new Iterator (args[0], 0);
 }
 
 //CG1 bind next
-extern auto f_next (ArgVec const& args) -> Value {
+static auto f_next (ArgVec const& args) -> Value {
     //CG: args arg
     auto v = arg->next();
     return v.isNil() && Stacklet::current != nullptr ? Value {E::StopIteration} : v;
 }
 
 //CG1 bind len
-extern auto f_len (ArgVec const& args) -> Value {
+static auto f_len (ArgVec const& args) -> Value {
     //CG: args arg
     return arg.isStr() ? strlen(arg) : arg->len();
 }
 
 //CG1 bind abs
-extern auto f_abs (ArgVec const& args) -> Value {
+static auto f_abs (ArgVec const& args) -> Value {
     //CG: args arg
     return arg.unOp(UnOp::Abso);
 }
 
 //CG1 bind hash
-extern auto f_hash (ArgVec const& args) -> Value {
+static auto f_hash (ArgVec const& args) -> Value {
     //CG: args arg
     return arg.unOp(UnOp::Hash);
 }
 
 //CG1 bind id
-extern auto f_id (ArgVec const& args) -> Value {
+static auto f_id (ArgVec const& args) -> Value {
     //CG: args arg
     return arg.id();
 }
 
 //CG1 bind dir
-extern auto f_dir (ArgVec const& args) -> Value {
+static auto f_dir (ArgVec const& args) -> Value {
     //CG: args arg
 
     Object const* obj = &arg.asObj();

@@ -143,8 +143,7 @@ def MOD_LIST(block, sel):
 # bind a function, i.e. define a callable function object wrapper
 def BIND(block, fun):
     funs[flags.mod].append(fun)
-    scope = "static" if flags.mod else "extern"
-    return ["%s auto f_%s (ArgVec const& args) -> Value {" % (scope, fun)]
+    return ["static auto f_%s (ArgVec const& args) -> Value {" % fun]
 
 # bind a method, i.e. define a callable method object wrapper
 def WRAP(block, typ, *methods):
@@ -171,15 +170,10 @@ def WRAPPERS(block, typ=None):
 
     funs[mod].sort()
     for f in funs[mod]:
-        e, s = "extern", "static"
-        if glob:
-            e, s = s, e
-        if mod == "":
-            out += ["         extern auto   f_%s (ArgVec const& args) -> Value;" % f]
-        out.append("%s Function const fo_%s (f_%s);" % (e, f, f))
+        out.append("static Function const fo_%s (f_%s);" % (f, f))
 
     if not glob and not typ and not mod:
-        funs[mod] = []
+        funs[mod] = [] # local wrappers, don't emit again in builtin.cpp
         return out
 
     if mod:
