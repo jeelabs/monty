@@ -17,6 +17,7 @@ strip = False       # strip most auto-generated code if set
 arch  = ""          # current architecture, "" is common to all
 archs = {}          # list of qstr details per architecture
 mods  = {"": []}    # list of extension module names per architecture
+hdrs  = {"": []}    # list of same-name headers per architecture
 funs  = {"": []}    # list of bound functions per type/module
 meths = {"": []}    # list of bound methods per type/module
 dirs  = {}          # map of scanned dirnames to path, see IF
@@ -30,6 +31,19 @@ def maybeInRoot(f):
         if os.path.exists(f2):
             return f2
     return f
+
+# insert headers for PIO's library dependency finder
+def INCLUDES(block):
+    out = []
+    hdrs[""].sort()
+    for h in hdrs[""]:
+        out.append("#include <%s>" % h)
+    if arch and hdrs[arch]:
+        out.append("")
+        hdrs[arch].sort()
+        for h in hdrs[arch]:
+            out.append("#include <%s>" % h)
+    return out
 
 # generate positional arg checks and conversions
 def ARGS(block, *arg):
@@ -679,15 +693,22 @@ if __name__ == '__main__':
     for arg in sys.argv:
         arg = maybeInRoot(arg)
         if os.path.isdir(arg):
-            bn = os.path.basename(arg.rstrip("/"))
-            dirs[bn] = arg
+            b = os.path.basename(arg.rstrip("/"))
+            dirs[b] = arg
+            h = "%s.h" % b
+            if b != "monty" and os.path.isfile(os.path.join(arg, h)):
+                hdrs[arch].append(h)
             if not base:
                 base = arg # remember first one
-        if arg[0] != "+":
+        if arg[0] == "+":
+            arch = arg[1:]
+            hdrs[arch] = []
+        else:
             sepFiles.append(arg)
     assert base, "no directory arg found"
 
     # process all specified args in order
+    arch = ""
     for arg in sys.argv:
         if arg[0] == "+":
             qarch(arg[1:])

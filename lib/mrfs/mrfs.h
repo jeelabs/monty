@@ -1,3 +1,5 @@
+#define HAS_MRFS 1
+
 namespace mrfs {
     constexpr auto MAGIC = 0x3079746D; // 'mty0'
 

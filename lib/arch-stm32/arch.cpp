@@ -1,23 +1,6 @@
 #include <monty.h>
 #include "arch.h"
 
-//CG1 if dir my-modules
-//#include <my-modules.h>
-
-//CG1 if dir extend
-#include <extend.h>
-
-//CG2 if dir pyvm
-#define HAS_PYVM 1
-#include <pyvm.h>
-
-//CG< if dir mrfs
-#define HAS_MRFS 1
-#include <mrfs.h>
-const auto mrfsBase = (mrfs::Info*) 0x08010000;
-const auto mrfsSize = 32*1024;
-//CG>
-
 #include <cassert>
 #include <unistd.h>
 
@@ -25,6 +8,11 @@ const auto mrfsSize = 32*1024;
 #include <jee/text-ihex.h>
 
 using namespace monty;
+
+#if HAS_MRFS
+const auto mrfsBase = (mrfs::Info*) 0x08010000;
+const auto mrfsSize = 32*1024;
+#endif
 
 #if STM32L432xx
 UartBufDev< PinA<2>, PinA<15>, 100 > console;

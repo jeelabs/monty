@@ -1,16 +1,6 @@
 #include <monty.h>
 #include "arch.h"
 
-//CG1 if dir my-modules
-//#include <my-modules.h>
-
-//CG1 if dir extend
-#include <extend.h>
-
-//CG2 if dir pyvm
-#define HAS_PYVM 1
-#include <pyvm.h>
-
 #include <cassert>
 #include <cstdio>
 #include <ctime>
